@@ -71,3 +71,23 @@ read_at
 write_at
 flush
 ```
+
+## I/O execution model
+
+The initial `BlockDevice` API uses synchronous positional I/O.
+
+This is an architectural decision rather than an assumption that rvvdk
+will operate sequentially.
+
+Concurrency belongs to the data-movement layer.
+
+A future high-performance backend may expose a separate
+completion-oriented interface for Linux mechanisms such as `io_uring`.
+
+The core crate remains independent of any specific asynchronous runtime.
+
+See:
+
+```text
+docs/adr/0002-io-execution-model.md
+```
