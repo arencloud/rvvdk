@@ -48,3 +48,26 @@ independently.
            +-------------+-------------+
            |             |             |
        Local File       NBD           SAN
+```
+
+## BlockDevice
+
+`BlockDevice` represents random-access storage independently of the
+logical disk format.
+
+Examples include:
+
+- regular files
+- Linux block devices
+- NBD exports
+- SAN LUNs
+
+The current core interface exposes:
+
+```text
+geometry
+capabilities
+read_at
+write_at
+flush
+```
