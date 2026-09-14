@@ -91,3 +91,26 @@ See:
 ```text
 docs/adr/0002-io-execution-model.md
 ```
+
+## MemoryBlockDevice
+
+`MemoryBlockDevice` is the first concrete implementation of the
+`BlockDevice` abstraction.
+
+It stores device contents in process memory and exists primarily for:
+
+- validating the `BlockDevice` contract
+- unit testing
+- testing higher-level virtual disk implementations
+- testing the future DataMover without requiring physical storage
+- reproducing I/O edge cases deterministically
+
+The implementation supports configurable capabilities.
+
+A default memory device exposes:
+
+```text
+READ
+WRITE
+FLUSH
+```
