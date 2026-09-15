@@ -168,8 +168,7 @@ Destination VirtualDisk
 
 ## Exact positional I/O
 
-Both `BlockDevice` and `VirtualDisk` provide exact positional I/O
-helpers in addition to their primitive I/O operations.
+`BlockDevice` and `VirtualDisk` expose two levels of positional I/O.
 
 Primitive operations:
 

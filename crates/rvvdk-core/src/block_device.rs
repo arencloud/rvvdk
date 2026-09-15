@@ -182,4 +182,87 @@ mod tests {
 
         assert!(matches!(result, Err(Error::RangeOverflow { .. })));
     }
+
+    use std::sync::Mutex;
+
+    struct PartialBlockDevice {
+        data: Mutex<Vec<u8>>,
+        geometry: DiskGeometry,
+    }
+
+    impl PartialBlockDevice {
+        fn new(size: usize) -> Self {
+            Self {
+                data: Mutex::new(vec![0_u8; size]),
+                geometry: DiskGeometry::new(size as u64, 512, 4096).unwrap(),
+            }
+        }
+    }
+
+    impl BlockDevice for PartialBlockDevice {
+        fn geometry(&self) -> DiskGeometry {
+            self.geometry
+        }
+
+        fn capabilities(&self) -> Capabilities {
+            Capabilities::READ | Capabilities::WRITE | Capabilities::FLUSH
+        }
+
+        fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
+            self.validate_range(offset, buffer.len())?;
+
+            if buffer.is_empty() {
+                return Ok(0);
+            }
+
+            let transfer = buffer.len().min(2);
+
+            let start = usize::try_from(offset).unwrap();
+
+            let end = start + transfer;
+
+            let data = self.data.lock().unwrap();
+
+            buffer[..transfer].copy_from_slice(&data[start..end]);
+
+            Ok(transfer)
+        }
+
+        fn write_at(&self, offset: u64, buffer: &[u8]) -> Result<usize> {
+            self.validate_range(offset, buffer.len())?;
+
+            if buffer.is_empty() {
+                return Ok(0);
+            }
+
+            let transfer = buffer.len().min(2);
+
+            let start = usize::try_from(offset).unwrap();
+
+            let end = start + transfer;
+
+            let mut data = self.data.lock().unwrap();
+
+            data[start..end].copy_from_slice(&buffer[..transfer]);
+
+            Ok(transfer)
+        }
+
+        fn flush(&self) -> Result<()> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn exact_io_handles_partial_operations() {
+        let device = PartialBlockDevice::new(4096);
+
+        device.write_all_at(100, b"rvvdk").unwrap();
+
+        let mut buffer = [0_u8; 5];
+
+        device.read_exact_at(100, &mut buffer).unwrap();
+
+        assert_eq!(&buffer, b"rvvdk",);
+    }
 }

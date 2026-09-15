@@ -1,4 +1,4 @@
-use crate::{Capabilities, DiskGeometry, Extent, Result};
+use crate::{Capabilities, DiskGeometry, Error, Extent, Result};
 
 pub trait VirtualDisk: Send + Sync {
     fn geometry(&self) -> DiskGeometry;
@@ -12,23 +12,21 @@ pub trait VirtualDisk: Send + Sync {
             let read = self.read_at(offset, buffer)?;
 
             if read == 0 {
-                return Err(crate::Error::UnexpectedEof {
+                return Err(Error::UnexpectedEof {
                     offset,
                     remaining: buffer.len(),
                 });
             }
 
-            let read_u64 = u64::try_from(read).map_err(|_| crate::Error::RangeOverflow {
+            let read_u64 = u64::try_from(read).map_err(|_| Error::RangeOverflow {
                 offset,
                 length: u64::MAX,
             })?;
 
-            offset = offset
-                .checked_add(read_u64)
-                .ok_or(crate::Error::RangeOverflow {
-                    offset,
-                    length: read_u64,
-                })?;
+            offset = offset.checked_add(read_u64).ok_or(Error::RangeOverflow {
+                offset,
+                length: read_u64,
+            })?;
 
             buffer = &mut buffer[read..];
         }
@@ -43,20 +41,20 @@ pub trait VirtualDisk: Send + Sync {
             let written = self.write_at(offset, buffer)?;
 
             if written == 0 {
-                return Err(crate::Error::WriteZero {
+                return Err(Error::WriteZero {
                     offset,
                     remaining: buffer.len(),
                 });
             }
 
-            let written_u64 = u64::try_from(written).map_err(|_| crate::Error::RangeOverflow {
+            let written_u64 = u64::try_from(written).map_err(|_| Error::RangeOverflow {
                 offset,
                 length: u64::MAX,
             })?;
 
             offset = offset
                 .checked_add(written_u64)
-                .ok_or(crate::Error::RangeOverflow {
+                .ok_or(Error::RangeOverflow {
                     offset,
                     length: written_u64,
                 })?;
