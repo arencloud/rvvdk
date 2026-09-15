@@ -142,3 +142,27 @@ flush
 extents
 ```
 
+## DataMover
+
+`rvvdk-datamover` provides data movement between `VirtualDisk`
+implementations.
+
+The initial implementation is intentionally sequential and
+correctness-focused.
+
+```text
+Source VirtualDisk
+        |
+        v
+      read
+        |
+        v
+   reusable buffer
+        |
+        v
+      write
+        |
+        v
+Destination VirtualDisk
+```
+
