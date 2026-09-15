@@ -27,7 +27,16 @@ fn benchmark_direct_copy(criterion: &mut Criterion) {
 
     fs::write(&source_path, vec![0x5a_u8; DISK_SIZE]).unwrap();
 
+    fs::File::open(&source_path).unwrap().sync_all().unwrap();
+
     fs::write(&destination_path, vec![0_u8; DISK_SIZE]).unwrap();
+
+    fs::OpenOptions::new()
+        .write(true)
+        .open(&destination_path)
+        .unwrap()
+        .sync_all()
+        .unwrap();
 
     let mut group = criterion.benchmark_group("direct_raw_copy");
 

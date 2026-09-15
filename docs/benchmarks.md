@@ -139,4 +139,12 @@ LocalFileBlockDevice
 O_DIRECT destination
 ```
 
+### Milestone 14 direct-I/O results
+
+The Linux direct-I/O backend was verified using `strace`. The local
+data file was opened with:
+
+```text
+O_RDWR | O_DIRECT | O_CLOEXEC
+```
 
