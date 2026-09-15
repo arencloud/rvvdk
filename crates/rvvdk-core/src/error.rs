@@ -25,6 +25,12 @@ pub enum Error {
     #[error("write made no progress at offset={offset}, remaining={remaining}")]
     WriteZero { offset: u64, remaining: usize },
 
+    #[error("invalid buffer alignment: alignment={alignment}")]
+    InvalidBufferAlignment { alignment: usize },
+
+    #[error("buffer allocation failed: size={size}, alignment={alignment}")]
+    BufferAllocation { size: usize, alignment: usize },
+
     #[error("corrupt metadata: {0}")]
     CorruptMetadata(String),
 }

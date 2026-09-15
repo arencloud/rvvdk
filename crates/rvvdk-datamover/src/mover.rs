@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use rvvdk_core::{Capabilities, Error, Extent, ExtentKind, Result, VirtualDisk};
+use rvvdk_core::{AlignedBuffer, Capabilities, Error, Extent, ExtentKind, Result, VirtualDisk};
 
 use crate::{CopyOptions, CopyStats};
 
@@ -94,12 +94,19 @@ impl DataMover {
 
         self.validate_extents(&extents, source_size)?;
 
-        let mut buffer = vec![0_u8; self.options.block_size()];
+        let mut buffer =
+            AlignedBuffer::new(self.options.block_size(), self.options.buffer_alignment())?;
 
         let mut stats = MutableStats::default();
 
         for extent in extents {
-            self.process_extent(source, destination, extent, &mut buffer, &mut stats)?;
+            self.process_extent(
+                source,
+                destination,
+                extent,
+                buffer.as_mut_slice(),
+                &mut stats,
+            )?;
 
             stats.extents_processed += 1;
         }

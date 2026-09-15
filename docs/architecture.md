@@ -224,3 +224,14 @@ The backend advertises:
 EXTENTS
 SPARSE
 ```
+
+## Aligned I/O buffers
+
+rvvdk uses an explicit aligned buffer abstraction for DataMover I/O.
+
+The initial implementation is:
+
+```text
+AlignedBuffer
+```
+
