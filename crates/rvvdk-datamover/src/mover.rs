@@ -2,6 +2,8 @@ use std::time::Instant;
 
 use rvvdk_core::{BufferPool, Capabilities, Error, Extent, ExtentKind, Result, VirtualDisk};
 
+use crate::concurrent;
+use crate::planner::plan_extent;
 use crate::{CopyOptions, CopyStats};
 
 pub struct DataMover {
@@ -93,6 +95,9 @@ impl DataMover {
         let extents = source.extents(0, source_size)?;
 
         self.validate_extents(&extents, source_size)?;
+        if self.options.concurrency() > 1 {
+            return self.copy_concurrent(source, destination, extents, started);
+        }
 
         let pool = BufferPool::new(
             self.options.buffer_count(),
@@ -297,5 +302,43 @@ impl DataMover {
         }
 
         Ok(())
+    }
+    fn copy_concurrent<S, D>(
+        &self,
+        source: &S,
+        destination: &D,
+        extents: Vec<Extent>,
+        started: Instant,
+    ) -> Result<CopyStats>
+    where
+        S: VirtualDisk,
+        D: VirtualDisk,
+    {
+        let mut work = Vec::new();
+
+        for extent in &extents {
+            work.extend(plan_extent(*extent, self.options.block_size())?);
+        }
+
+        let pool = BufferPool::new(
+            self.options.buffer_count(),
+            self.options.block_size(),
+            self.options.buffer_alignment(),
+        )?;
+
+        let stats =
+            concurrent::execute(source, destination, work, self.options.concurrency(), &pool)?;
+
+        destination.flush()?;
+
+        Ok(CopyStats::new(
+            stats.bytes_read,
+            stats.bytes_written,
+            stats.bytes_zeroed,
+            stats.bytes_discarded,
+            stats.blocks_copied,
+            extents.len() as u64,
+            started.elapsed(),
+        ))
     }
 }

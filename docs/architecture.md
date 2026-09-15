@@ -247,3 +247,33 @@ BufferPool
    +-- AlignedBuffer
    +-- AlignedBuffer
 ```
+
+
+## Concurrent DataMover
+
+rvvdk supports a synchronous multi-worker DataMover execution path.
+
+The source extent map is translated into block-sized work items.
+
+```text
+VirtualDisk extents
+        |
+        v
+    Work planner
+        |
+        v
+   bounded work
+        |
+   +----+----+----+
+   |    |    |    |
+   v    v    v    v
+  W0   W1   W2   Wn
+   |    |    |    |
+   v    v    v    v
+BufferPool buffers
+   |    |    |    |
+   +----+----+----+
+        |
+        v
+Destination
+```
