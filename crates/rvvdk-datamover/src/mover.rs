@@ -50,28 +50,25 @@ impl DataMover {
 
             let current_buffer = &mut buffer[..request_size];
 
-            let read = source.read_at(offset, current_buffer)?;
+            source.read_exact_at(offset, current_buffer)?;
 
-            if read == 0 {
-                return Err(Error::CorruptMetadata(format!(
-                    "unexpected end of source at offset {offset}"
-                )));
-            }
+            destination.write_all_at(offset, current_buffer)?;
 
-            write_all_at(destination, offset, &current_buffer[..read])?;
+            let request_size_u64 =
+                u64::try_from(request_size).map_err(|_| Error::RangeOverflow {
+                    offset,
+                    length: u64::MAX,
+                })?;
 
-            let read_u64 = u64::try_from(read).map_err(|_| Error::RangeOverflow {
-                offset,
-                length: u64::MAX,
-            })?;
+            offset = offset
+                .checked_add(request_size_u64)
+                .ok_or(Error::RangeOverflow {
+                    offset,
+                    length: request_size_u64,
+                })?;
 
-            offset = offset.checked_add(read_u64).ok_or(Error::RangeOverflow {
-                offset,
-                length: read_u64,
-            })?;
-
-            bytes_read += read_u64;
-            bytes_written += read_u64;
+            bytes_read += request_size_u64;
+            bytes_written += request_size_u64;
             blocks_copied += 1;
         }
 
@@ -84,35 +81,4 @@ impl DataMover {
             started.elapsed(),
         ))
     }
-}
-
-fn write_all_at<D>(destination: &D, mut offset: u64, mut buffer: &[u8]) -> Result<()>
-where
-    D: VirtualDisk,
-{
-    while !buffer.is_empty() {
-        let written = destination.write_at(offset, buffer)?;
-
-        if written == 0 {
-            return Err(Error::CorruptMetadata(format!(
-                "destination made no write progress at offset {offset}"
-            )));
-        }
-
-        let written_u64 = u64::try_from(written).map_err(|_| Error::RangeOverflow {
-            offset,
-            length: u64::MAX,
-        })?;
-
-        offset = offset
-            .checked_add(written_u64)
-            .ok_or(Error::RangeOverflow {
-                offset,
-                length: written_u64,
-            })?;
-
-        buffer = &buffer[written..];
-    }
-
-    Ok(())
 }

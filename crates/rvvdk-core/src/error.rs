@@ -19,6 +19,12 @@ pub enum Error {
     #[error("operation is not supported")]
     Unsupported,
 
+    #[error("unexpected end of input at offset={offset}, remaining={remaining}")]
+    UnexpectedEof { offset: u64, remaining: usize },
+
+    #[error("write made no progress at offset={offset}, remaining={remaining}")]
+    WriteZero { offset: u64, remaining: usize },
+
     #[error("corrupt metadata: {0}")]
     CorruptMetadata(String),
 }

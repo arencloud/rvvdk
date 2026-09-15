@@ -249,4 +249,30 @@ mod tests {
 
         assert_eq!(device.write_at(4096, &buffer).unwrap(), 0);
     }
+
+    #[test]
+    fn read_exact_at_reads_complete_buffer() {
+        let device = MemoryBlockDevice::new(4096).unwrap();
+
+        device.write_at(100, b"rvvdk").unwrap();
+
+        let mut buffer = [0_u8; 5];
+
+        device.read_exact_at(100, &mut buffer).unwrap();
+
+        assert_eq!(&buffer, b"rvvdk");
+    }
+
+    #[test]
+    fn write_all_at_writes_complete_buffer() {
+        let device = MemoryBlockDevice::new(4096).unwrap();
+
+        device.write_all_at(200, b"rvvdk").unwrap();
+
+        let mut buffer = [0_u8; 5];
+
+        device.read_exact_at(200, &mut buffer).unwrap();
+
+        assert_eq!(&buffer, b"rvvdk");
+    }
 }

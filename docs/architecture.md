@@ -166,3 +166,15 @@ Source VirtualDisk
 Destination VirtualDisk
 ```
 
+## Exact positional I/O
+
+Both `BlockDevice` and `VirtualDisk` provide exact positional I/O
+helpers in addition to their primitive I/O operations.
+
+Primitive operations:
+
+```text
+read_at
+write_at
+```
+

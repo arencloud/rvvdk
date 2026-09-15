@@ -174,4 +174,19 @@ mod tests {
 
         assert_eq!(device.size(), 4096);
     }
+
+    #[test]
+    fn exact_io_works_through_virtual_disk() {
+        let device = MemoryBlockDevice::new(4096).unwrap();
+
+        let disk = RawDisk::new(device);
+
+        disk.write_all_at(1024, b"rvvdk").unwrap();
+
+        let mut buffer = [0_u8; 5];
+
+        disk.read_exact_at(1024, &mut buffer).unwrap();
+
+        assert_eq!(&buffer, b"rvvdk");
+    }
 }
