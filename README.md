@@ -54,3 +54,13 @@ The high-level architecture is:
           +------------+------------+
           |            |            |
        Local I/O      NBD          SAN
+
+```
+
+## Benchmarks
+
+Run the DataMover benchmarks with:
+
+```bash
+cargo bench -p rvvdk-datamover --bench copy
+```
