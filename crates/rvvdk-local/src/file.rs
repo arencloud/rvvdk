@@ -1,8 +1,9 @@
 use std::fs::File;
+use std::os::fd::AsRawFd;
 use std::os::unix::fs::FileExt;
 use std::path::Path;
 
-use rvvdk_core::{BlockDevice, Capabilities, DiskGeometry, Error, Result};
+use rvvdk_core::{BlockDevice, Capabilities, DiskGeometry, Error, Extent, ExtentKind, Result};
 
 pub struct LocalFileBlockDevice {
     file: File,
@@ -14,7 +15,10 @@ impl LocalFileBlockDevice {
     pub fn open_read_only(path: impl AsRef<Path>) -> Result<Self> {
         let file = File::options().read(true).open(path)?;
 
-        Self::from_file(file, Capabilities::READ)
+        Self::from_file(
+            file,
+            Capabilities::READ | Capabilities::EXTENTS | Capabilities::SPARSE,
+        )
     }
 
     pub fn open_read_write(path: impl AsRef<Path>) -> Result<Self> {
@@ -22,7 +26,11 @@ impl LocalFileBlockDevice {
 
         Self::from_file(
             file,
-            Capabilities::READ | Capabilities::WRITE | Capabilities::FLUSH,
+            Capabilities::READ
+                | Capabilities::WRITE
+                | Capabilities::FLUSH
+                | Capabilities::EXTENTS
+                | Capabilities::SPARSE,
         )
     }
 
@@ -72,6 +80,76 @@ impl BlockDevice for LocalFileBlockDevice {
         Ok(self.file.write_at(buffer, offset)?)
     }
 
+    fn extents(&self, offset: u64, length: u64) -> Result<Vec<Extent>> {
+        let length_usize =
+            usize::try_from(length).map_err(|_| Error::RangeOverflow { offset, length })?;
+
+        self.validate_range(offset, length_usize)?;
+
+        if length == 0 {
+            return Ok(Vec::new());
+        }
+
+        let range_end = offset
+            .checked_add(length)
+            .ok_or(Error::RangeOverflow { offset, length })?;
+
+        let fd = self.file.as_raw_fd();
+
+        let mut extents = Vec::new();
+        let mut position = offset;
+
+        while position < range_end {
+            let data_offset = seek_extent(fd, position, libc::SEEK_DATA)?;
+
+            let Some(data_offset) = data_offset else {
+                extents.push(Extent::new(
+                    position,
+                    range_end - position,
+                    ExtentKind::Hole,
+                )?);
+
+                break;
+            };
+
+            let data_offset = data_offset.min(range_end);
+
+            if data_offset > position {
+                extents.push(Extent::new(
+                    position,
+                    data_offset - position,
+                    ExtentKind::Hole,
+                )?);
+            }
+
+            if data_offset >= range_end {
+                break;
+            }
+
+            let hole_offset = seek_extent(fd, data_offset, libc::SEEK_HOLE)?;
+
+            let hole_offset = hole_offset.unwrap_or(range_end).min(range_end);
+
+            if hole_offset <= data_offset {
+                return Err(Error::CorruptMetadata(format!(
+                    "invalid sparse extent map: \
+                         data offset={data_offset}, \
+                         hole offset={hole_offset}"
+                )));
+            }
+
+            extents.push(Extent::new(
+                data_offset,
+                hole_offset - data_offset,
+                ExtentKind::Data,
+            )?);
+
+            position = hole_offset;
+        }
+
+        Ok(extents)
+    }
+
     fn flush(&self) -> Result<()> {
         if !self.capabilities.contains(Capabilities::FLUSH) {
             return Err(Error::Unsupported);
@@ -80,5 +158,31 @@ impl BlockDevice for LocalFileBlockDevice {
         self.file.sync_data()?;
 
         Ok(())
+    }
+}
+
+fn seek_extent(fd: std::os::fd::RawFd, offset: u64, whence: libc::c_int) -> Result<Option<u64>> {
+    let offset =
+        libc::off_t::try_from(offset).map_err(|_| Error::RangeOverflow { offset, length: 0 })?;
+
+    // SAFETY:
+    // `fd` is obtained from a live `File`.
+    // `lseek` does not dereference application pointers.
+    // SEEK_DATA and SEEK_HOLE only query the file's
+    // allocation map.
+    let result = unsafe { libc::lseek(fd, offset, whence) };
+
+    if result >= 0 {
+        return Ok(Some(u64::try_from(result).map_err(|_| {
+            Error::CorruptMetadata("lseek returned negative-compatible offset".into())
+        })?));
+    }
+
+    let error = std::io::Error::last_os_error();
+
+    match error.raw_os_error() {
+        Some(libc::ENXIO) => Ok(None),
+
+        _ => Err(Error::Io(error)),
     }
 }

@@ -213,3 +213,14 @@ source read_exact_at
 destination write_all_at
 ```
 
+## Linux sparse-file extent discovery
+
+`LocalFileBlockDevice` supports sparse extent discovery on Linux using
+`SEEK_DATA` and `SEEK_HOLE`.
+
+The backend advertises:
+
+```text
+EXTENTS
+SPARSE
+```

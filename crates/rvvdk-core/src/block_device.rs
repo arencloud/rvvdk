@@ -1,4 +1,4 @@
-use crate::{Capabilities, DiskGeometry, Error, Result};
+use crate::{Capabilities, DiskGeometry, Error, Extent, Result};
 
 pub trait BlockDevice: Send + Sync {
     fn geometry(&self) -> DiskGeometry;
@@ -96,6 +96,10 @@ pub trait BlockDevice: Send + Sync {
             return Ok(());
         }
 
+        Err(Error::Unsupported)
+    }
+
+    fn extents(&self, _offset: u64, _length: u64) -> Result<Vec<Extent>> {
         Err(Error::Unsupported)
     }
 

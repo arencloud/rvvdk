@@ -75,6 +75,10 @@ where
             return Ok(Vec::new());
         }
 
+        if self.device.capabilities().contains(Capabilities::EXTENTS) {
+            return self.device.extents(offset, length);
+        }
+
         Ok(vec![Extent::new(offset, length, ExtentKind::Data)?])
     }
 }
