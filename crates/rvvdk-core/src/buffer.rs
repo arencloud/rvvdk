@@ -9,6 +9,18 @@ pub struct AlignedBuffer {
     alignment: usize,
 }
 
+// SAFETY:
+//
+// `AlignedBuffer` exclusively owns the allocation referenced by `ptr`.
+//
+// Moving the buffer to another thread transfers ownership of that
+// allocation. The allocation comes from the global allocator and does
+// not reference thread-local state.
+//
+// Mutable access requires `&mut self`, so moving ownership between
+// threads does not introduce concurrent mutable access.
+unsafe impl Send for AlignedBuffer {}
+
 impl AlignedBuffer {
     pub fn new(len: usize, alignment: usize) -> Result<Self> {
         if alignment == 0 || !alignment.is_power_of_two() {

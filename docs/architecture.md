@@ -235,3 +235,15 @@ The initial implementation is:
 AlignedBuffer
 ```
 
+## Buffer pool
+
+rvvdk provides a bounded reusable buffer pool built from
+`AlignedBuffer` allocations.
+
+```text
+BufferPool
+   |
+   +-- AlignedBuffer
+   +-- AlignedBuffer
+   +-- AlignedBuffer
+```

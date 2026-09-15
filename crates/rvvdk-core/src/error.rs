@@ -31,6 +31,9 @@ pub enum Error {
     #[error("buffer allocation failed: size={size}, alignment={alignment}")]
     BufferAllocation { size: usize, alignment: usize },
 
+    #[error("buffer pool capacity must be greater than zero")]
+    InvalidBufferPoolCapacity,
+
     #[error("corrupt metadata: {0}")]
     CorruptMetadata(String),
 }

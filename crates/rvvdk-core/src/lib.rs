@@ -1,5 +1,6 @@
 pub mod block_device;
 pub mod buffer;
+pub mod buffer_pool;
 pub mod capabilities;
 pub mod error;
 pub mod extent;
@@ -11,6 +12,7 @@ pub mod virtual_disk;
 
 pub use block_device::BlockDevice;
 pub use buffer::AlignedBuffer;
+pub use buffer_pool::{BufferGuard, BufferPool};
 pub use capabilities::Capabilities;
 pub use error::{Error, Result};
 pub use extent::{Extent, ExtentKind};
