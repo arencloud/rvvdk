@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use rvvdk_core::{AlignedBuffer, BlockDevice, Capabilities, Error};
+use rvvdk_core::{AlignedBuffer, BlockDevice, Capabilities};
 use rvvdk_local::LocalFileBlockDevice;
 
 const ALIGNMENT: usize = 4096;
@@ -59,54 +59,56 @@ fn direct_io_reads_and_writes_aligned_buffer() {
 }
 
 #[test]
-fn direct_io_rejects_unaligned_offset() {
-    let path = temporary_path("offset");
+fn direct_io_falls_back_for_unaligned_offset() {
+    let path = temporary_path("offset-fallback");
 
     fs::write(&path, vec![0_u8; 1024 * 1024]).unwrap();
 
-    let device = LocalFileBlockDevice::open_direct_read_only(&path).unwrap();
+    let device = LocalFileBlockDevice::open_direct_read_write(&path).unwrap();
 
-    let mut buffer = AlignedBuffer::new(ALIGNMENT, ALIGNMENT).unwrap();
+    device.write_all_at(1, b"rvvdk").unwrap();
 
-    let result = device.read_at(1, buffer.as_mut_slice());
+    device.flush().unwrap();
 
-    assert!(matches!(result, Err(Error::DirectIoAlignment { .. })));
+    let mut buffer = [0_u8; 5];
+
+    device.read_exact_at(1, &mut buffer).unwrap();
+
+    assert_eq!(&buffer, b"rvvdk",);
 
     fs::remove_file(path).unwrap();
 }
 
 #[test]
-fn direct_io_rejects_unaligned_length() {
-    let path = temporary_path("length");
+fn direct_io_handles_aligned_bulk_and_unaligned_tail() {
+    const ALIGNMENT: usize = 4096;
+    const TAIL: usize = 123;
 
-    fs::write(&path, vec![0_u8; 1024 * 1024]).unwrap();
+    let size = ALIGNMENT * 4 + TAIL;
 
-    let device = LocalFileBlockDevice::open_direct_read_only(&path).unwrap();
+    let path = temporary_path("tail");
 
-    let mut buffer = AlignedBuffer::new(ALIGNMENT, ALIGNMENT).unwrap();
+    fs::write(&path, vec![0_u8; size]).unwrap();
 
-    let result = device.read_at(0, &mut buffer.as_mut_slice()[..2048]);
+    let device = LocalFileBlockDevice::open_direct_read_write(&path).unwrap();
 
-    assert!(matches!(result, Err(Error::DirectIoAlignment { .. })));
+    let mut bulk = AlignedBuffer::new(ALIGNMENT * 4, ALIGNMENT).unwrap();
 
-    fs::remove_file(path).unwrap();
-}
+    bulk.fill(0xaa);
 
-#[test]
-fn direct_io_rejects_unaligned_buffer_address() {
-    let path = temporary_path("address");
+    device.write_all_at(0, bulk.as_slice()).unwrap();
 
-    fs::write(&path, vec![0_u8; 1024 * 1024]).unwrap();
+    let tail = vec![0xbb_u8; TAIL];
 
-    let device = LocalFileBlockDevice::open_direct_read_only(&path).unwrap();
+    device.write_all_at((ALIGNMENT * 4) as u64, &tail).unwrap();
 
-    let mut buffer = AlignedBuffer::new(ALIGNMENT * 2, ALIGNMENT).unwrap();
+    device.flush().unwrap();
 
-    let slice = &mut buffer.as_mut_slice()[1..ALIGNMENT + 1];
+    let data = fs::read(&path).unwrap();
 
-    let result = device.read_at(0, slice);
+    assert!(data[..ALIGNMENT * 4].iter().all(|value| *value == 0xaa));
 
-    assert!(matches!(result, Err(Error::DirectIoAlignment { .. })));
+    assert!(data[ALIGNMENT * 4..].iter().all(|value| *value == 0xbb));
 
     fs::remove_file(path).unwrap();
 }

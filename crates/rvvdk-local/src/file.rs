@@ -7,6 +7,7 @@ use rvvdk_core::{BlockDevice, Capabilities, DiskGeometry, Error, Extent, ExtentK
 
 pub struct LocalFileBlockDevice {
     file: File,
+    buffered_file: Option<File>,
     geometry: DiskGeometry,
     capabilities: Capabilities,
     direct_io: bool,
@@ -14,11 +15,15 @@ pub struct LocalFileBlockDevice {
 }
 
 impl LocalFileBlockDevice {
+    fn buffered_file(&self) -> &File {
+        self.buffered_file.as_ref().unwrap_or(&self.file)
+    }
     pub fn open_read_only(path: impl AsRef<Path>) -> Result<Self> {
         let file = File::options().read(true).open(path)?;
 
         Self::from_file(
             file,
+            None,
             Capabilities::READ | Capabilities::EXTENTS | Capabilities::SPARSE,
             false,
         )
@@ -29,6 +34,7 @@ impl LocalFileBlockDevice {
 
         Self::from_file(
             file,
+            None,
             Capabilities::READ
                 | Capabilities::WRITE
                 | Capabilities::FLUSH
@@ -39,13 +45,18 @@ impl LocalFileBlockDevice {
     }
 
     pub fn open_direct_read_only(path: impl AsRef<Path>) -> Result<Self> {
+        let path = path.as_ref();
+
         let file = File::options()
             .read(true)
             .custom_flags(libc::O_DIRECT)
             .open(path)?;
 
+        let buffered_file = File::options().read(true).open(path)?;
+
         Self::from_file(
             file,
+            Some(buffered_file),
             Capabilities::READ
                 | Capabilities::EXTENTS
                 | Capabilities::SPARSE
@@ -55,14 +66,19 @@ impl LocalFileBlockDevice {
     }
 
     pub fn open_direct_read_write(path: impl AsRef<Path>) -> Result<Self> {
+        let path = path.as_ref();
+
         let file = File::options()
             .read(true)
             .write(true)
             .custom_flags(libc::O_DIRECT)
             .open(path)?;
 
+        let buffered_file = File::options().read(true).write(true).open(path)?;
+
         Self::from_file(
             file,
+            Some(buffered_file),
             Capabilities::READ
                 | Capabilities::WRITE
                 | Capabilities::FLUSH
@@ -81,30 +97,26 @@ impl LocalFileBlockDevice {
         self.io_alignment
     }
 
-    fn validate_direct_io(&self, offset: u64, buffer: &[u8]) -> Result<()> {
+    fn is_direct_io_compatible(&self, offset: u64, buffer: &[u8]) -> bool {
         if !self.direct_io {
-            return Ok(());
+            return false;
         }
 
         let alignment = self.io_alignment;
 
         let address = buffer.as_ptr() as usize;
 
-        if !offset.is_multiple_of(alignment as u64)
-            || !buffer.len().is_multiple_of(alignment)
-            || !address.is_multiple_of(alignment)
-        {
-            return Err(Error::DirectIoAlignment {
-                offset,
-                length: buffer.len(),
-                alignment,
-            });
-        }
-
-        Ok(())
+        offset.is_multiple_of(alignment as u64)
+            && buffer.len().is_multiple_of(alignment)
+            && address.is_multiple_of(alignment)
     }
 
-    fn from_file(file: File, capabilities: Capabilities, direct_io: bool) -> Result<Self> {
+    fn from_file(
+        file: File,
+        buffered_file: Option<File>,
+        capabilities: Capabilities,
+        direct_io: bool,
+    ) -> Result<Self> {
         let metadata = file.metadata()?;
 
         if !metadata.is_file() {
@@ -115,6 +127,7 @@ impl LocalFileBlockDevice {
 
         Ok(Self {
             file,
+            buffered_file,
             geometry,
             capabilities,
             direct_io,
@@ -139,9 +152,11 @@ impl BlockDevice for LocalFileBlockDevice {
 
         self.validate_range(offset, buffer.len())?;
 
-        self.validate_direct_io(offset, buffer)?;
+        if self.is_direct_io_compatible(offset, buffer) {
+            return Ok(self.file.read_at(buffer, offset)?);
+        }
 
-        Ok(self.file.read_at(buffer, offset)?)
+        Ok(self.buffered_file().read_at(buffer, offset)?)
     }
 
     fn write_at(&self, offset: u64, buffer: &[u8]) -> Result<usize> {
@@ -151,9 +166,11 @@ impl BlockDevice for LocalFileBlockDevice {
 
         self.validate_range(offset, buffer.len())?;
 
-        self.validate_direct_io(offset, buffer)?;
+        if self.is_direct_io_compatible(offset, buffer) {
+            return Ok(self.file.write_at(buffer, offset)?);
+        }
 
-        Ok(self.file.write_at(buffer, offset)?)
+        Ok(self.buffered_file().write_at(buffer, offset)?)
     }
 
     fn extents(&self, offset: u64, length: u64) -> Result<Vec<Extent>> {
@@ -232,6 +249,10 @@ impl BlockDevice for LocalFileBlockDevice {
         }
 
         self.file.sync_data()?;
+
+        if let Some(buffered_file) = &self.buffered_file {
+            buffered_file.sync_data()?;
+        }
 
         Ok(())
     }

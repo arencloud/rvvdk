@@ -148,3 +148,16 @@ data file was opened with:
 O_RDWR | O_DIRECT | O_CLOEXEC
 ```
 
+### Hybrid direct-I/O regression check
+
+After introducing buffered fallback for unaligned requests, the aligned
+direct-I/O benchmark was repeated.
+
+Aligned requests continue to use the `O_DIRECT` descriptor, while only
+unaligned requests use the secondary buffered descriptor.
+
+The aligned benchmark showed no material architectural regression
+relative to the Milestone 14 direct-I/O baseline.
+
+This confirms that hybrid tail handling does not move the aligned bulk
+copy path onto buffered I/O.

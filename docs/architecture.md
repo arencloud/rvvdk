@@ -320,3 +320,17 @@ LocalFileBlockDevice
            O_DIRECT
 ```
 
+## Hybrid direct-I/O fallback
+
+A direct `LocalFileBlockDevice` maintains two descriptors for the same
+logical file:
+
+```text
+O_DIRECT descriptor
+        |
+        +-- aligned requests
+
+buffered descriptor
+        |
+        +-- unaligned requests
+```
