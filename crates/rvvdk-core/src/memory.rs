@@ -12,7 +12,11 @@ impl MemoryBlockDevice {
     pub fn new(size: usize) -> Result<Self> {
         Self::with_capabilities(
             size,
-            Capabilities::READ | Capabilities::WRITE | Capabilities::FLUSH,
+            Capabilities::READ
+                | Capabilities::WRITE
+                | Capabilities::FLUSH
+                | Capabilities::WRITE_ZERO
+                | Capabilities::DISCARD,
         )
     }
 
@@ -101,6 +105,66 @@ impl BlockDevice for MemoryBlockDevice {
         data[start..end].copy_from_slice(buffer);
 
         Ok(buffer.len())
+    }
+
+    fn write_zero_at(&self, offset: u64, length: u64) -> Result<()> {
+        if !self.capabilities.contains(Capabilities::WRITE_ZERO) {
+            return Err(Error::Unsupported);
+        }
+
+        let length_usize =
+            usize::try_from(length).map_err(|_| Error::RangeOverflow { offset, length })?;
+
+        self.validate_range(offset, length_usize)?;
+
+        if length == 0 {
+            return Ok(());
+        }
+
+        let start = usize::try_from(offset).map_err(|_| Error::RangeOverflow { offset, length })?;
+
+        let end = start
+            .checked_add(length_usize)
+            .ok_or(Error::RangeOverflow { offset, length })?;
+
+        let mut data = self
+            .data
+            .write()
+            .map_err(|_| Error::CorruptMetadata("memory block device lock poisoned".into()))?;
+
+        data[start..end].fill(0);
+
+        Ok(())
+    }
+
+    fn discard(&self, offset: u64, length: u64) -> Result<()> {
+        if !self.capabilities.contains(Capabilities::DISCARD) {
+            return Err(Error::Unsupported);
+        }
+
+        let length_usize =
+            usize::try_from(length).map_err(|_| Error::RangeOverflow { offset, length })?;
+
+        self.validate_range(offset, length_usize)?;
+
+        if length == 0 {
+            return Ok(());
+        }
+
+        let start = usize::try_from(offset).map_err(|_| Error::RangeOverflow { offset, length })?;
+
+        let end = start
+            .checked_add(length_usize)
+            .ok_or(Error::RangeOverflow { offset, length })?;
+
+        let mut data = self
+            .data
+            .write()
+            .map_err(|_| Error::CorruptMetadata("memory block device lock poisoned".into()))?;
+
+        data[start..end].fill(0);
+
+        Ok(())
     }
 
     fn flush(&self) -> Result<()> {
@@ -274,5 +338,61 @@ mod tests {
         device.read_exact_at(200, &mut buffer).unwrap();
 
         assert_eq!(&buffer, b"rvvdk");
+    }
+
+    #[test]
+    fn write_zero_clears_requested_range() {
+        let device = MemoryBlockDevice::new(4096).unwrap();
+
+        device.write_all_at(100, b"abcdefghij").unwrap();
+
+        device.write_zero_at(103, 4).unwrap();
+
+        let mut buffer = [0_u8; 10];
+
+        device.read_exact_at(100, &mut buffer).unwrap();
+
+        assert_eq!(buffer, [b'a', b'b', b'c', 0, 0, 0, 0, b'h', b'i', b'j',]);
+    }
+
+    #[test]
+    fn discard_clears_memory_backend_range() {
+        let device = MemoryBlockDevice::new(4096).unwrap();
+
+        device.write_all_at(100, b"abcdefghij").unwrap();
+
+        device.discard(102, 5).unwrap();
+
+        let mut buffer = [0_u8; 10];
+
+        device.read_exact_at(100, &mut buffer).unwrap();
+
+        assert_eq!(buffer, [b'a', b'b', 0, 0, 0, 0, 0, b'h', b'i', b'j',]);
+    }
+
+    #[test]
+    fn write_zero_rejects_out_of_bounds_range() {
+        let device = MemoryBlockDevice::new(4096).unwrap();
+
+        let result = device.write_zero_at(4000, 512);
+
+        assert!(matches!(result, Err(Error::OutOfBounds { .. })));
+    }
+
+    #[test]
+    fn read_only_device_rejects_write_zero() {
+        let device = MemoryBlockDevice::read_only(4096).unwrap();
+
+        assert!(matches!(
+            device.write_zero_at(0, 512),
+            Err(Error::Unsupported)
+        ));
+    }
+
+    #[test]
+    fn read_only_device_rejects_discard() {
+        let device = MemoryBlockDevice::read_only(4096).unwrap();
+
+        assert!(matches!(device.discard(0, 512), Err(Error::Unsupported)));
     }
 }

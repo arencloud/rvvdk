@@ -65,6 +65,40 @@ pub trait BlockDevice: Send + Sync {
         Ok(())
     }
 
+    fn write_zero_at(&self, offset: u64, length: u64) -> Result<()> {
+        if !self.capabilities().contains(Capabilities::WRITE_ZERO) {
+            return Err(Error::Unsupported);
+        }
+
+        let length_usize =
+            usize::try_from(length).map_err(|_| Error::RangeOverflow { offset, length })?;
+
+        self.validate_range(offset, length_usize)?;
+
+        if length == 0 {
+            return Ok(());
+        }
+
+        Err(Error::Unsupported)
+    }
+
+    fn discard(&self, offset: u64, length: u64) -> Result<()> {
+        if !self.capabilities().contains(Capabilities::DISCARD) {
+            return Err(Error::Unsupported);
+        }
+
+        let length_usize =
+            usize::try_from(length).map_err(|_| Error::RangeOverflow { offset, length })?;
+
+        self.validate_range(offset, length_usize)?;
+
+        if length == 0 {
+            return Ok(());
+        }
+
+        Err(Error::Unsupported)
+    }
+
     fn flush(&self) -> Result<()>;
 
     fn size(&self) -> u64 {

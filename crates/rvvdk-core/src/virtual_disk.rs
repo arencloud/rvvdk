@@ -65,6 +65,10 @@ pub trait VirtualDisk: Send + Sync {
         Ok(())
     }
 
+    fn write_zero_at(&self, offset: u64, length: u64) -> Result<()>;
+
+    fn discard(&self, offset: u64, length: u64) -> Result<()>;
+
     fn flush(&self) -> Result<()>;
 
     fn extents(&self, offset: u64, length: u64) -> Result<Vec<Extent>>;

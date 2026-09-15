@@ -46,6 +46,14 @@ where
         self.device.write_at(offset, buffer)
     }
 
+    fn write_zero_at(&self, offset: u64, length: u64) -> Result<()> {
+        self.device.write_zero_at(offset, length)
+    }
+
+    fn discard(&self, offset: u64, length: u64) -> Result<()> {
+        self.device.discard(offset, length)
+    }
+
     fn flush(&self) -> Result<()> {
         self.device.flush()
     }
@@ -188,5 +196,39 @@ mod tests {
         disk.read_exact_at(1024, &mut buffer).unwrap();
 
         assert_eq!(&buffer, b"rvvdk");
+    }
+
+    #[test]
+    fn write_zero_works_through_raw_disk() {
+        let device = MemoryBlockDevice::new(4096).unwrap();
+
+        let disk = RawDisk::new(device);
+
+        disk.write_all_at(100, b"abcdefghij").unwrap();
+
+        disk.write_zero_at(103, 4).unwrap();
+
+        let mut buffer = [0_u8; 10];
+
+        disk.read_exact_at(100, &mut buffer).unwrap();
+
+        assert_eq!(buffer, [b'a', b'b', b'c', 0, 0, 0, 0, b'h', b'i', b'j',]);
+    }
+
+    #[test]
+    fn discard_works_through_raw_disk() {
+        let device = MemoryBlockDevice::new(4096).unwrap();
+
+        let disk = RawDisk::new(device);
+
+        disk.write_all_at(100, b"abcdefghij").unwrap();
+
+        disk.discard(102, 5).unwrap();
+
+        let mut buffer = [0_u8; 10];
+
+        disk.read_exact_at(100, &mut buffer).unwrap();
+
+        assert_eq!(buffer, [b'a', b'b', 0, 0, 0, 0, 0, b'h', b'i', b'j',]);
     }
 }

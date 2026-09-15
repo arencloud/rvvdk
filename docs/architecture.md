@@ -177,3 +177,18 @@ read_at
 write_at
 ```
 
+## Zero ranges and discard
+
+rvvdk distinguishes between logical zeroing and storage discard.
+
+### write_zero_at
+
+`write_zero_at(offset, length)` guarantees that subsequent reads of
+the specified logical range return zeroes.
+
+Backends advertise support using:
+
+```text
+WRITE_ZERO
+```
+
