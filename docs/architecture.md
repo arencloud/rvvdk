@@ -126,3 +126,19 @@ The first implementation is:
 LocalFileBlockDevice
 ```
 
+## VirtualDisk
+
+`VirtualDisk` represents a logical virtual disk independently of its
+physical storage representation.
+
+The interface currently provides:
+
+```text
+geometry
+capabilities
+read_at
+write_at
+flush
+extents
+```
+

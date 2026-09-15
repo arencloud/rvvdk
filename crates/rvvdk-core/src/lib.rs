@@ -5,6 +5,8 @@ pub mod extent;
 pub mod geometry;
 pub mod memory;
 pub mod range;
+pub mod raw;
+pub mod virtual_disk;
 
 pub use block_device::BlockDevice;
 pub use capabilities::Capabilities;
@@ -13,3 +15,5 @@ pub use extent::{Extent, ExtentKind};
 pub use geometry::DiskGeometry;
 pub use memory::MemoryBlockDevice;
 pub use range::DiskRange;
+pub use raw::RawDisk;
+pub use virtual_disk::VirtualDisk;
