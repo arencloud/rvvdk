@@ -277,3 +277,27 @@ BufferPool buffers
         v
 Destination
 ```
+
+## Streaming work scheduler
+
+The concurrent DataMover does not materialize the complete block-level
+work plan before copying.
+
+Each source extent is converted lazily into `WorkItem` values using
+`ExtentWorkIter`.
+
+```text
+VirtualDisk extents
+        |
+        v
+ ExtentWorkIter
+        |
+        v
+ bounded channel
+        |
+   +----+----+
+   |         |
+   v         v
+ worker    worker
+```
+

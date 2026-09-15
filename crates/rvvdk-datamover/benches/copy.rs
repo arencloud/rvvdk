@@ -168,11 +168,56 @@ fn benchmark_concurrent_copy(criterion: &mut Criterion) {
     fs::remove_file(destination_path).unwrap();
 }
 
+fn benchmark_queue_capacity(criterion: &mut Criterion) {
+    let source_path = temporary_path("queue-source");
+
+    let destination_path = temporary_path("queue-destination");
+
+    fs::write(&source_path, vec![0x5a_u8; DISK_SIZE]).unwrap();
+
+    fs::write(&destination_path, vec![0_u8; DISK_SIZE]).unwrap();
+
+    let mut group = criterion.benchmark_group("queue_capacity");
+
+    group.throughput(Throughput::Bytes(DISK_SIZE as u64));
+
+    for queue_capacity in [1, 2, 4, 8, 16, 32, 64, 128] {
+        group.bench_with_input(
+            BenchmarkId::from_parameter(queue_capacity),
+            &queue_capacity,
+            |bencher, &queue_capacity| {
+                bencher.iter(|| {
+                    let source_device = LocalFileBlockDevice::open_read_only(&source_path).unwrap();
+
+                    let destination_device =
+                        LocalFileBlockDevice::open_read_write(&destination_path).unwrap();
+
+                    let source = RawDisk::new(source_device);
+
+                    let destination = RawDisk::new(destination_device);
+
+                    let options =
+                        CopyOptions::with_execution(1024 * 1024, 4096, 2, queue_capacity).unwrap();
+
+                    DataMover::new(options).copy(&source, &destination).unwrap();
+                });
+            },
+        );
+    }
+
+    group.finish();
+
+    fs::remove_file(source_path).unwrap();
+
+    fs::remove_file(destination_path).unwrap();
+}
+
 criterion_group!(
     benches,
     benchmark_dense_copy,
     benchmark_sparse_copy,
-    benchmark_concurrent_copy
+    benchmark_concurrent_copy,
+    benchmark_queue_capacity,
 );
 
 criterion_main!(benches);

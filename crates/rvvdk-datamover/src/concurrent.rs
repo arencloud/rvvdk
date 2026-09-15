@@ -1,5 +1,7 @@
-use std::collections::VecDeque;
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    Arc, Mutex,
+    mpsc::{Receiver, SyncSender, sync_channel},
+};
 
 use rvvdk_core::{BufferPool, Capabilities, Result, VirtualDisk};
 
@@ -14,29 +16,33 @@ pub(crate) struct WorkerStats {
     pub(crate) blocks_copied: u64,
 }
 
-pub(crate) fn execute<S, D>(
+pub(crate) fn execute<S, D, P>(
     source: &S,
     destination: &D,
-    work: Vec<WorkItem>,
     worker_count: usize,
+    queue_capacity: usize,
     pool: &BufferPool,
+    producer: P,
 ) -> Result<WorkerStats>
 where
     S: VirtualDisk,
     D: VirtualDisk,
+    P: FnOnce(&SyncSender<WorkItem>) -> Result<()>,
 {
-    let queue = Arc::new(Mutex::new(VecDeque::from(work)));
+    let (sender, receiver) = sync_channel::<WorkItem>(queue_capacity);
+
+    let receiver = Arc::new(Mutex::new(receiver));
 
     let results = Mutex::new(Vec::<Result<WorkerStats>>::new());
 
-    std::thread::scope(|scope| {
+    let producer_result = std::thread::scope(|scope| {
         for _ in 0..worker_count {
-            let queue = Arc::clone(&queue);
+            let receiver = Arc::clone(&receiver);
 
             let results = &results;
 
             scope.spawn(move || {
-                let result = run_worker(source, destination, &queue, pool);
+                let result = run_worker(source, destination, &receiver, pool);
 
                 results
                     .lock()
@@ -44,7 +50,15 @@ where
                     .push(result);
             });
         }
+
+        let result = producer(&sender);
+
+        drop(sender);
+
+        result
     });
+
+    producer_result?;
 
     let results = results
         .into_inner()
@@ -72,7 +86,7 @@ where
 fn run_worker<S, D>(
     source: &S,
     destination: &D,
-    queue: &Mutex<VecDeque<WorkItem>>,
+    receiver: &Arc<Mutex<Receiver<WorkItem>>>,
     pool: &BufferPool,
 ) -> Result<WorkerStats>
 where
@@ -83,15 +97,16 @@ where
 
     loop {
         let work = {
-            let mut queue = queue
+            let receiver = receiver
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
 
-            queue.pop_front()
+            receiver.recv()
         };
 
-        let Some(work) = work else {
-            break;
+        let work = match work {
+            Ok(work) => work,
+            Err(_) => break,
         };
 
         process_work(source, destination, work, pool, &mut stats)?;

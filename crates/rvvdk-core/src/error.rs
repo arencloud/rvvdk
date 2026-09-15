@@ -34,6 +34,12 @@ pub enum Error {
     #[error("buffer pool capacity must be greater than zero")]
     InvalidBufferPoolCapacity,
 
+    #[error("work queue capacity must be greater than zero")]
+    InvalidWorkQueueCapacity,
+
+    #[error("work queue closed unexpectedly")]
+    WorkQueueClosed,
+
     #[error("corrupt metadata: {0}")]
     CorruptMetadata(String),
 }

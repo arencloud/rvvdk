@@ -3,7 +3,7 @@ use std::time::Instant;
 use rvvdk_core::{BufferPool, Capabilities, Error, Extent, ExtentKind, Result, VirtualDisk};
 
 use crate::concurrent;
-use crate::planner::plan_extent;
+use crate::planner::ExtentWorkIter;
 use crate::{CopyOptions, CopyStats};
 
 pub struct DataMover {
@@ -314,20 +314,30 @@ impl DataMover {
         S: VirtualDisk,
         D: VirtualDisk,
     {
-        let mut work = Vec::new();
-
-        for extent in &extents {
-            work.extend(plan_extent(*extent, self.options.block_size())?);
-        }
-
         let pool = BufferPool::new(
             self.options.buffer_count(),
             self.options.block_size(),
             self.options.buffer_alignment(),
         )?;
 
-        let stats =
-            concurrent::execute(source, destination, work, self.options.concurrency(), &pool)?;
+        let stats = concurrent::execute(
+            source,
+            destination,
+            self.options.concurrency(),
+            self.options.queue_capacity(),
+            &pool,
+            |sender| {
+                for extent in &extents {
+                    for work in ExtentWorkIter::new(*extent, self.options.block_size()) {
+                        let work = work?;
+
+                        sender.send(work).map_err(|_| Error::WorkQueueClosed)?;
+                    }
+                }
+
+                Ok(())
+            },
+        )?;
 
         destination.flush()?;
 

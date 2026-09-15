@@ -2,88 +2,110 @@ use rvvdk_core::{Error, Extent, ExtentKind, Result};
 
 use crate::work::{WorkItem, WorkKind};
 
-pub(crate) fn plan_extent(extent: Extent, block_size: usize) -> Result<Vec<WorkItem>> {
-    let kind = match extent.kind() {
-        ExtentKind::Data => WorkKind::Copy,
-        ExtentKind::Zero => WorkKind::Zero,
-        ExtentKind::Hole => WorkKind::Discard,
-    };
+pub(crate) struct ExtentWorkIter {
+    next_offset: u64,
+    end: u64,
+    block_size: usize,
+    kind: WorkKind,
+}
 
-    let mut items = Vec::new();
+impl ExtentWorkIter {
+    pub(crate) fn new(extent: Extent, block_size: usize) -> Self {
+        let kind = match extent.kind() {
+            ExtentKind::Data => WorkKind::Copy,
 
-    let mut offset = extent.offset();
-    let end = extent.end();
+            ExtentKind::Zero => WorkKind::Zero,
 
-    while offset < end {
-        let remaining = end - offset;
+            ExtentKind::Hole => WorkKind::Discard,
+        };
 
-        let length_u64 = remaining.min(block_size as u64);
-
-        let length = usize::try_from(length_u64).map_err(|_| Error::RangeOverflow {
-            offset,
-            length: length_u64,
-        })?;
-
-        items.push(WorkItem::new(offset, length, kind));
-
-        offset = offset.checked_add(length_u64).ok_or(Error::RangeOverflow {
-            offset,
-            length: length_u64,
-        })?;
+        Self {
+            next_offset: extent.offset(),
+            end: extent.end(),
+            block_size,
+            kind,
+        }
     }
+}
 
-    Ok(items)
+impl Iterator for ExtentWorkIter {
+    type Item = Result<WorkItem>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.next_offset >= self.end {
+            return None;
+        }
+
+        let offset = self.next_offset;
+
+        let remaining = self.end - offset;
+
+        let length_u64 = remaining.min(self.block_size as u64);
+
+        let length = match usize::try_from(length_u64) {
+            Ok(length) => length,
+
+            Err(_) => {
+                return Some(Err(Error::RangeOverflow {
+                    offset,
+                    length: length_u64,
+                }));
+            }
+        };
+
+        self.next_offset = match offset.checked_add(length_u64) {
+            Some(next) => next,
+
+            None => {
+                return Some(Err(Error::RangeOverflow {
+                    offset,
+                    length: length_u64,
+                }));
+            }
+        };
+
+        Some(Ok(WorkItem::new(offset, length, self.kind)))
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
-    fn splits_extent_into_blocks() {
+    fn iterator_streams_extent_blocks() {
         let extent = Extent::new(1000, 2500, ExtentKind::Data).unwrap();
 
-        let items = plan_extent(extent, 1024).unwrap();
+        let mut iterator = ExtentWorkIter::new(extent, 1024);
 
-        assert_eq!(items.len(), 3,);
+        let first = iterator.next().unwrap().unwrap();
 
-        assert_eq!(items[0].offset(), 1000,);
+        assert_eq!(first.offset(), 1000,);
 
-        assert_eq!(items[0].length(), 1024,);
+        assert_eq!(first.length(), 1024,);
 
-        assert_eq!(items[1].offset(), 2024,);
+        let second = iterator.next().unwrap().unwrap();
 
-        assert_eq!(items[1].length(), 1024,);
+        assert_eq!(second.offset(), 2024,);
 
-        assert_eq!(items[2].offset(), 3048,);
+        let third = iterator.next().unwrap().unwrap();
 
-        assert_eq!(items[2].length(), 452,);
+        assert_eq!(third.offset(), 3048,);
+
+        assert_eq!(third.length(), 452,);
+
+        assert!(iterator.next().is_none());
     }
 
     #[test]
-    fn maps_data_to_copy() {
-        let extent = Extent::new(0, 4096, ExtentKind::Data).unwrap();
+    fn large_extent_is_lazy() {
+        let extent = Extent::new(0, 10 * 1024 * 1024 * 1024, ExtentKind::Data).unwrap();
 
-        let items = plan_extent(extent, 4096).unwrap();
+        let mut iterator = ExtentWorkIter::new(extent, 1024 * 1024);
 
-        assert_eq!(items[0].kind(), WorkKind::Copy,);
-    }
+        for expected in 0..10 {
+            let work = iterator.next().unwrap().unwrap();
 
-    #[test]
-    fn maps_zero_to_zero() {
-        let extent = Extent::new(0, 4096, ExtentKind::Zero).unwrap();
-
-        let items = plan_extent(extent, 4096).unwrap();
-
-        assert_eq!(items[0].kind(), WorkKind::Zero,);
-    }
-
-    #[test]
-    fn maps_hole_to_discard() {
-        let extent = Extent::new(0, 4096, ExtentKind::Hole).unwrap();
-
-        let items = plan_extent(extent, 4096).unwrap();
-
-        assert_eq!(items[0].kind(), WorkKind::Discard,);
+            assert_eq!(work.offset(), expected * 1024 * 1024,);
+        }
     }
 }
