@@ -4,7 +4,10 @@ use std::time::Duration;
 pub struct CopyStats {
     bytes_read: u64,
     bytes_written: u64,
+    bytes_zeroed: u64,
+    bytes_discarded: u64,
     blocks_copied: u64,
+    extents_processed: u64,
     elapsed: Duration,
 }
 
@@ -12,13 +15,19 @@ impl CopyStats {
     pub(crate) const fn new(
         bytes_read: u64,
         bytes_written: u64,
+        bytes_zeroed: u64,
+        bytes_discarded: u64,
         blocks_copied: u64,
+        extents_processed: u64,
         elapsed: Duration,
     ) -> Self {
         Self {
             bytes_read,
             bytes_written,
+            bytes_zeroed,
+            bytes_discarded,
             blocks_copied,
+            extents_processed,
             elapsed,
         }
     }
@@ -31,8 +40,20 @@ impl CopyStats {
         self.bytes_written
     }
 
+    pub const fn bytes_zeroed(&self) -> u64 {
+        self.bytes_zeroed
+    }
+
+    pub const fn bytes_discarded(&self) -> u64 {
+        self.bytes_discarded
+    }
+
     pub const fn blocks_copied(&self) -> u64 {
         self.blocks_copied
+    }
+
+    pub const fn extents_processed(&self) -> u64 {
+        self.extents_processed
     }
 
     pub const fn elapsed(&self) -> Duration {

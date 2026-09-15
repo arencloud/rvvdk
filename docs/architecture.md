@@ -192,3 +192,24 @@ Backends advertise support using:
 WRITE_ZERO
 ```
 
+## Extent-aware data movement
+
+The DataMover consumes the source `VirtualDisk` extent map rather than
+assuming that every logical byte must be read from the source.
+
+Extent processing depends on `ExtentKind`.
+
+### Data
+
+Data extents are transferred using normal exact positional I/O:
+
+```text
+source read_exact_at
+        |
+        v
+      buffer
+        |
+        v
+destination write_all_at
+```
+
