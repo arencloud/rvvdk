@@ -114,3 +114,15 @@ READ
 WRITE
 FLUSH
 ```
+
+## Local file backend
+
+`rvvdk-local` provides block-device implementations backed by local
+operating-system storage.
+
+The first implementation is:
+
+```text
+LocalFileBlockDevice
+```
+
