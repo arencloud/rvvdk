@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::os::fd::AsRawFd;
-use std::os::unix::fs::FileExt;
+use std::os::unix::fs::{FileExt, OpenOptionsExt};
 use std::path::Path;
 
 use rvvdk_core::{BlockDevice, Capabilities, DiskGeometry, Error, Extent, ExtentKind, Result};
@@ -9,6 +9,8 @@ pub struct LocalFileBlockDevice {
     file: File,
     geometry: DiskGeometry,
     capabilities: Capabilities,
+    direct_io: bool,
+    io_alignment: usize,
 }
 
 impl LocalFileBlockDevice {
@@ -18,6 +20,7 @@ impl LocalFileBlockDevice {
         Self::from_file(
             file,
             Capabilities::READ | Capabilities::EXTENTS | Capabilities::SPARSE,
+            false,
         )
     }
 
@@ -31,10 +34,77 @@ impl LocalFileBlockDevice {
                 | Capabilities::FLUSH
                 | Capabilities::EXTENTS
                 | Capabilities::SPARSE,
+            false,
         )
     }
 
-    fn from_file(file: File, capabilities: Capabilities) -> Result<Self> {
+    pub fn open_direct_read_only(path: impl AsRef<Path>) -> Result<Self> {
+        let file = File::options()
+            .read(true)
+            .custom_flags(libc::O_DIRECT)
+            .open(path)?;
+
+        Self::from_file(
+            file,
+            Capabilities::READ
+                | Capabilities::EXTENTS
+                | Capabilities::SPARSE
+                | Capabilities::DIRECT_IO,
+            true,
+        )
+    }
+
+    pub fn open_direct_read_write(path: impl AsRef<Path>) -> Result<Self> {
+        let file = File::options()
+            .read(true)
+            .write(true)
+            .custom_flags(libc::O_DIRECT)
+            .open(path)?;
+
+        Self::from_file(
+            file,
+            Capabilities::READ
+                | Capabilities::WRITE
+                | Capabilities::FLUSH
+                | Capabilities::EXTENTS
+                | Capabilities::SPARSE
+                | Capabilities::DIRECT_IO,
+            true,
+        )
+    }
+
+    pub const fn is_direct_io(&self) -> bool {
+        self.direct_io
+    }
+
+    pub const fn io_alignment(&self) -> usize {
+        self.io_alignment
+    }
+
+    fn validate_direct_io(&self, offset: u64, buffer: &[u8]) -> Result<()> {
+        if !self.direct_io {
+            return Ok(());
+        }
+
+        let alignment = self.io_alignment;
+
+        let address = buffer.as_ptr() as usize;
+
+        if !offset.is_multiple_of(alignment as u64)
+            || !buffer.len().is_multiple_of(alignment)
+            || !address.is_multiple_of(alignment)
+        {
+            return Err(Error::DirectIoAlignment {
+                offset,
+                length: buffer.len(),
+                alignment,
+            });
+        }
+
+        Ok(())
+    }
+
+    fn from_file(file: File, capabilities: Capabilities, direct_io: bool) -> Result<Self> {
         let metadata = file.metadata()?;
 
         if !metadata.is_file() {
@@ -47,6 +117,8 @@ impl LocalFileBlockDevice {
             file,
             geometry,
             capabilities,
+            direct_io,
+            io_alignment: 4096,
         })
     }
 }
@@ -67,6 +139,8 @@ impl BlockDevice for LocalFileBlockDevice {
 
         self.validate_range(offset, buffer.len())?;
 
+        self.validate_direct_io(offset, buffer)?;
+
         Ok(self.file.read_at(buffer, offset)?)
     }
 
@@ -76,6 +150,8 @@ impl BlockDevice for LocalFileBlockDevice {
         }
 
         self.validate_range(offset, buffer.len())?;
+
+        self.validate_direct_io(offset, buffer)?;
 
         Ok(self.file.write_at(buffer, offset)?)
     }

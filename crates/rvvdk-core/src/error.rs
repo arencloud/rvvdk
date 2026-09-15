@@ -40,6 +40,15 @@ pub enum Error {
     #[error("work queue closed unexpectedly")]
     WorkQueueClosed,
 
+    #[error(
+        "direct I/O alignment violation: offset={offset}, length={length}, alignment={alignment}"
+    )]
+    DirectIoAlignment {
+        offset: u64,
+        length: usize,
+        alignment: usize,
+    },
+
     #[error("corrupt metadata: {0}")]
     CorruptMetadata(String),
 }

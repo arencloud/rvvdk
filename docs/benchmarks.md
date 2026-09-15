@@ -112,3 +112,31 @@ network backends may behave differently.
 
 These measurements are page-cache-heavy local-file benchmarks and are
 not measurements of physical storage throughput.
+
+## Direct I/O benchmark
+
+The direct-I/O benchmark exercises:
+
+```text
+O_DIRECT source
+      |
+      v
+LocalFileBlockDevice
+      |
+      v
+RawDisk
+      |
+      v
+DataMover
+      |
+      v
+RawDisk
+      |
+      v
+LocalFileBlockDevice
+      |
+      v
+O_DIRECT destination
+```
+
+

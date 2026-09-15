@@ -301,3 +301,22 @@ VirtualDisk extents
  worker    worker
 ```
 
+## Linux direct I/O
+
+`LocalFileBlockDevice` supports an optional Linux direct-I/O mode using
+`O_DIRECT`.
+
+Direct I/O is explicitly selected when opening a local file and is not
+the default behavior.
+
+```text
+LocalFileBlockDevice
+        |
+        +-- buffered
+        |
+        +-- direct
+              |
+              v
+           O_DIRECT
+```
+
