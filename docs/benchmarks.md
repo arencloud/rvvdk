@@ -184,3 +184,51 @@ LUKS / dm-crypt
   v
 Samsung MZVL21T0HCLR-00BL7 NVMe
 ```
+## M17F — io_uring O_DIRECT comparison
+
+The ownership-safe balanced io_uring pipeline was compared with the
+existing threaded DataMover using O_DIRECT on both execution paths.
+
+### Environment
+
+The storage-backed benchmark used:
+
+- 2 GiB logical copy size
+- 1 MiB transfer blocks
+- 4096-byte buffer alignment
+- deterministic incompressible source data
+- Btrfs NOCOW benchmark directory
+- LUKS / dm-crypt
+- Samsung MZVL21T0HCLR-00BL7 NVMe
+- Criterion flat sampling
+- 10 samples
+- 30 second measurement target
+
+Both implementations used the same rvvdk local direct-I/O backend for
+opening source and destination files.
+
+### Representative results
+
+| Engine | Parallelism | Throughput |
+|---|---:|---:|
+| Threaded O_DIRECT | 1 worker | ~858 MiB/s |
+| Threaded O_DIRECT | 2 workers | ~982 MiB/s |
+| Threaded O_DIRECT | 4 workers | ~708 MiB/s |
+| io_uring O_DIRECT | QD 1 | ~866 MiB/s |
+| io_uring O_DIRECT | QD 2 | ~613 MiB/s |
+| io_uring O_DIRECT | QD 4 | ~928 MiB/s |
+| io_uring O_DIRECT | QD 8 | ~1011 MiB/s |
+| io_uring O_DIRECT | QD 16 | ~1012 MiB/s |
+
+The most stable configurations were:
+
+```text
+threaded workers=2:
+~977-987 MiB/s
+
+io_uring QD8:
+~1008-1014 MiB/s
+
+io_uring QD16:
+~1010-1015 MiB/s
+```
