@@ -7,6 +7,9 @@ use std::path::Path;
 
 use rvvdk_core::{BlockDevice, Capabilities, DiskGeometry, Error, Extent, ExtentKind, Result};
 
+#[cfg(target_os = "linux")]
+use rvvdk_platform::{LinuxFdBackend, LinuxFdCapabilities};
+
 pub struct LocalFileBlockDevice {
     file: File,
     buffered_file: Option<File>,
@@ -299,8 +302,27 @@ fn seek_extent(fd: std::os::fd::RawFd, offset: u64, whence: libc::c_int) -> Resu
 }
 
 #[cfg(target_os = "linux")]
-impl std::os::fd::AsRawFd for LocalFileBlockDevice {
+impl AsRawFd for LocalFileBlockDevice {
     fn as_raw_fd(&self) -> std::os::fd::RawFd {
         self.file.as_raw_fd()
+    }
+}
+
+#[cfg(target_os = "linux")]
+impl LinuxFdBackend for LocalFileBlockDevice {
+    fn raw_fd(&self) -> std::os::fd::RawFd {
+        self.file.as_raw_fd()
+    }
+
+    fn linux_fd_capabilities(&self) -> LinuxFdCapabilities {
+        match self.direct_io_alignment() {
+            Some(alignment) => LinuxFdCapabilities::new(
+                true,
+                alignment.memory_alignment(),
+                alignment.offset_alignment(),
+            ),
+
+            None => LinuxFdCapabilities::new(false, 1, 1),
+        }
     }
 }

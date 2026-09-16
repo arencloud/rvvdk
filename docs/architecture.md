@@ -465,4 +465,36 @@ ExecutionStrategy
             +-- read window
 ```
 
+## Linux backend capability boundary
+
+Linux-specific execution capabilities are separated from the generic
+disk abstraction.
+
+The generic `VirtualDisk` interface remains portable and does not
+expose Linux file descriptors.
+
+Platform-specific backend contracts are provided by the
+`rvvdk-platform` crate.
+
+```text
+                    rvvdk-core
+                        |
+                portable disk model
+
+                 rvvdk-platform
+                        |
+                 LinuxFdBackend
+                    /       \
+                   /         \
+                  v           v
+          rvvdk-local    rvvdk-datamover
+               |              |
+          implements       consumes
+               |              |
+               +------+-------+
+                      |
+                      v
+             Linux execution path
+```
+
 
