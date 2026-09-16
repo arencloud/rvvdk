@@ -7,6 +7,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use rvvdk_datamover::io_uring::copy_file_range;
 
+use rvvdk_datamover::IoUringExecutionOptions;
+
+use rvvdk_datamover::io_uring::copy_file_range_with_options;
+
 const MIB: usize = 1024 * 1024;
 
 const BLOCK_SIZE: usize = 64 * 1024;
@@ -402,6 +406,57 @@ fn pipeline_uses_reads_and_writes_concurrently() {
         stats.mixed_in_flight_observed(),
         "pipeline never had reads and writes in flight simultaneously",
     );
+
+    fs::remove_file(source_path).unwrap();
+
+    fs::remove_file(destination_path).unwrap();
+}
+
+#[test]
+fn supports_custom_read_window() {
+    let source_path = temporary_path("custom-window-source");
+
+    let destination_path = temporary_path("custom-window-destination");
+
+    let expected = source_data();
+
+    fs::write(&source_path, &expected).unwrap();
+
+    fs::write(&destination_path, vec![0_u8; FILE_SIZE]).unwrap();
+
+    let source = OpenOptions::new().read(true).open(&source_path).unwrap();
+
+    let destination = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(&destination_path)
+        .unwrap();
+
+    let options = IoUringExecutionOptions::with_read_window(8, 3).unwrap();
+
+    let stats = copy_file_range_with_options(
+        source.as_raw_fd(),
+        destination.as_raw_fd(),
+        0,
+        FILE_SIZE as u64,
+        BLOCK_SIZE,
+        4096,
+        options,
+    )
+    .unwrap();
+
+    assert_eq!(stats.bytes_written(), FILE_SIZE as u64,);
+
+    assert!(stats.peak_reads_in_flight() <= 3,);
+
+    assert!(stats.mixed_in_flight_observed(),);
+
+    drop(destination);
+    drop(source);
+
+    let actual = fs::read(&destination_path).unwrap();
+
+    assert_eq!(actual, expected,);
 
     fs::remove_file(source_path).unwrap();
 

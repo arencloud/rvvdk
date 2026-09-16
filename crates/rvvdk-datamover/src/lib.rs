@@ -1,4 +1,5 @@
 mod concurrent;
+mod execution;
 #[cfg(target_os = "linux")]
 pub mod io_uring;
 mod mover;
@@ -13,3 +14,8 @@ pub use options::{
     DEFAULT_CONCURRENCY, DEFAULT_QUEUE_CAPACITY,
 };
 pub use stats::CopyStats;
+
+pub use execution::ExecutionStrategy;
+
+#[cfg(target_os = "linux")]
+pub use execution::IoUringExecutionOptions;

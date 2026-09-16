@@ -9,4 +9,4 @@ pub use engine::IoUringEngine;
 
 pub use operation::{CompletedOperation, IoUringOperationKind};
 
-pub use copy::{IoUringCopyStats, copy_file_range};
+pub use copy::{IoUringCopyStats, copy_file_range, copy_file_range_with_options};

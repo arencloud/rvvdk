@@ -107,6 +107,29 @@ pub fn copy_file_range(
     queue_depth: u32,
     alignment: usize,
 ) -> Result<IoUringCopyStats> {
+    let options =
+        crate::IoUringExecutionOptions::new(queue_depth).ok_or(Error::InvalidIoUringQueueDepth)?;
+
+    copy_file_range_with_options(
+        source_fd,
+        destination_fd,
+        offset,
+        length,
+        block_size,
+        alignment,
+        options,
+    )
+}
+
+pub fn copy_file_range_with_options(
+    source_fd: RawFd,
+    destination_fd: RawFd,
+    offset: u64,
+    length: u64,
+    block_size: usize,
+    alignment: usize,
+    options: crate::IoUringExecutionOptions,
+) -> Result<IoUringCopyStats> {
     if block_size == 0 {
         return Err(Error::InvalidAlignment {
             value: 0,
@@ -114,21 +137,15 @@ pub fn copy_file_range(
         });
     }
 
-    if queue_depth == 0 {
-        return Err(Error::InvalidIoUringQueueDepth);
-    }
-
     if length == 0 {
         return Ok(IoUringCopyStats::default());
     }
 
+    let queue_depth = options.queue_depth();
+
     let pool = BufferPool::new(queue_depth as usize, block_size, alignment)?;
 
     let mut engine = IoUringEngine::new(queue_depth)?;
-
-    let queue_depth_usize = queue_depth as usize;
-
-    let read_window = queue_depth_usize.div_ceil(2).max(1);
 
     let context = CopyContext {
         source_fd,
@@ -137,7 +154,7 @@ pub fn copy_file_range(
         length,
         block_size,
         queue_depth,
-        read_window,
+        read_window: options.read_window(),
     };
 
     copy_with_engine(&mut engine, &pool, &context)

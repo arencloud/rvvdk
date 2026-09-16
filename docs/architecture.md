@@ -449,4 +449,20 @@ W W W W W W W W
         v
 R R R R R R R R
 ```
+## DataMover execution strategy
+
+DataMover execution policy is represented independently from storage
+backend abstractions.
+
+```text
+ExecutionStrategy
+    |
+    +-- Threaded
+    |
+    +-- IoUring
+            |
+            +-- queue depth
+            +-- read window
+```
+
 
