@@ -1,7 +1,6 @@
-use std::fs;
-use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
+mod support;
 
+use std::fs::File;
 use std::io::{Seek, SeekFrom, Write};
 
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
@@ -10,28 +9,23 @@ use rvvdk_core::RawDisk;
 use rvvdk_datamover::{CopyOptions, DataMover};
 use rvvdk_local::LocalFileBlockDevice;
 
-const MIB: usize = 1024 * 1024;
+use support::{
+    MIB, benchmark_path, create_incompressible_file, create_zero_file, ensure_benchmark_directory,
+    incompressible_buffer, remove_file,
+};
+
 const DISK_SIZE: usize = 256 * MIB;
 
-fn temporary_path(name: &str) -> PathBuf {
-    let unique = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
-
-    std::env::temp_dir().join(format!("rvvdk-bench-{name}-{unique}.img"))
-}
-
 fn benchmark_dense_copy(criterion: &mut Criterion) {
-    let source_path = temporary_path("source");
+    ensure_benchmark_directory();
 
-    let destination_path = temporary_path("destination");
+    let source_path = benchmark_path("dense-source");
 
-    let source_data = vec![0x5a_u8; DISK_SIZE];
+    let destination_path = benchmark_path("dense-destination");
 
-    fs::write(&source_path, &source_data).unwrap();
+    create_incompressible_file(&source_path, DISK_SIZE, 0x5256_5644_4b02);
 
-    fs::write(&destination_path, vec![0_u8; DISK_SIZE]).unwrap();
+    create_zero_file(&destination_path, DISK_SIZE);
 
     let mut group = criterion.benchmark_group("dense_raw_copy");
 
@@ -52,9 +46,9 @@ fn benchmark_dense_copy(criterion: &mut Criterion) {
 
                     let destination = RawDisk::new(destination_device);
 
-                    let mover = DataMover::new(CopyOptions::new(block_size).unwrap());
+                    let options = CopyOptions::new(block_size).unwrap();
 
-                    mover.copy(&source, &destination).unwrap();
+                    DataMover::new(options).copy(&source, &destination).unwrap();
                 });
             },
         );
@@ -62,31 +56,35 @@ fn benchmark_dense_copy(criterion: &mut Criterion) {
 
     group.finish();
 
-    fs::remove_file(source_path).unwrap();
+    remove_file(source_path);
 
-    fs::remove_file(destination_path).unwrap();
+    remove_file(destination_path);
 }
 
 fn benchmark_sparse_copy(criterion: &mut Criterion) {
-    let source_path = temporary_path("sparse-source");
+    ensure_benchmark_directory();
 
-    let destination_path = temporary_path("sparse-destination");
+    let source_path = benchmark_path("sparse-source");
 
-    let mut source_file = fs::File::create(&source_path).unwrap();
+    let destination_path = benchmark_path("sparse-destination");
+
+    let mut source_file = File::create(&source_path).unwrap();
 
     source_file.set_len(DISK_SIZE as u64).unwrap();
+
+    let data_block = incompressible_buffer(MIB, 0x5256_5644_4b05);
 
     for offset in [16 * MIB, 64 * MIB, 128 * MIB, 192 * MIB] {
         source_file.seek(SeekFrom::Start(offset as u64)).unwrap();
 
-        source_file.write_all(&vec![0xa5_u8; MIB]).unwrap();
+        source_file.write_all(&data_block).unwrap();
     }
 
     source_file.sync_all().unwrap();
 
     drop(source_file);
 
-    fs::write(&destination_path, vec![0_u8; DISK_SIZE]).unwrap();
+    create_zero_file(&destination_path, DISK_SIZE);
 
     let mut group = criterion.benchmark_group("sparse_raw_copy");
 
@@ -107,9 +105,9 @@ fn benchmark_sparse_copy(criterion: &mut Criterion) {
 
                     let destination = RawDisk::new(destination_device);
 
-                    let mover = DataMover::new(CopyOptions::new(block_size).unwrap());
+                    let options = CopyOptions::new(block_size).unwrap();
 
-                    mover.copy(&source, &destination).unwrap();
+                    DataMover::new(options).copy(&source, &destination).unwrap();
                 });
             },
         );
@@ -117,21 +115,21 @@ fn benchmark_sparse_copy(criterion: &mut Criterion) {
 
     group.finish();
 
-    fs::remove_file(source_path).unwrap();
+    remove_file(source_path);
 
-    fs::remove_file(destination_path).unwrap();
+    remove_file(destination_path);
 }
 
 fn benchmark_concurrent_copy(criterion: &mut Criterion) {
-    let source_path = temporary_path("concurrent-source");
+    ensure_benchmark_directory();
 
-    let destination_path = temporary_path("concurrent-destination");
+    let source_path = benchmark_path("concurrent-source");
 
-    let source_data = vec![0x5a_u8; DISK_SIZE];
+    let destination_path = benchmark_path("concurrent-destination");
 
-    fs::write(&source_path, &source_data).unwrap();
+    create_incompressible_file(&source_path, DISK_SIZE, 0x5256_5644_4b03);
 
-    fs::write(&destination_path, vec![0_u8; DISK_SIZE]).unwrap();
+    create_zero_file(&destination_path, DISK_SIZE);
 
     let mut group = criterion.benchmark_group("concurrent_raw_copy");
 
@@ -152,8 +150,7 @@ fn benchmark_concurrent_copy(criterion: &mut Criterion) {
 
                     let destination = RawDisk::new(destination_device);
 
-                    let options =
-                        CopyOptions::with_concurrency(1024 * 1024, 4096, concurrency).unwrap();
+                    let options = CopyOptions::with_concurrency(MIB, 4096, concurrency).unwrap();
 
                     DataMover::new(options).copy(&source, &destination).unwrap();
                 });
@@ -163,19 +160,21 @@ fn benchmark_concurrent_copy(criterion: &mut Criterion) {
 
     group.finish();
 
-    fs::remove_file(source_path).unwrap();
+    remove_file(source_path);
 
-    fs::remove_file(destination_path).unwrap();
+    remove_file(destination_path);
 }
 
 fn benchmark_queue_capacity(criterion: &mut Criterion) {
-    let source_path = temporary_path("queue-source");
+    ensure_benchmark_directory();
 
-    let destination_path = temporary_path("queue-destination");
+    let source_path = benchmark_path("queue-source");
 
-    fs::write(&source_path, vec![0x5a_u8; DISK_SIZE]).unwrap();
+    let destination_path = benchmark_path("queue-destination");
 
-    fs::write(&destination_path, vec![0_u8; DISK_SIZE]).unwrap();
+    create_incompressible_file(&source_path, DISK_SIZE, 0x5256_5644_4b04);
+
+    create_zero_file(&destination_path, DISK_SIZE);
 
     let mut group = criterion.benchmark_group("queue_capacity");
 
@@ -197,7 +196,7 @@ fn benchmark_queue_capacity(criterion: &mut Criterion) {
                     let destination = RawDisk::new(destination_device);
 
                     let options =
-                        CopyOptions::with_execution(1024 * 1024, 4096, 2, queue_capacity).unwrap();
+                        CopyOptions::with_execution(MIB, 4096, 2, queue_capacity).unwrap();
 
                     DataMover::new(options).copy(&source, &destination).unwrap();
                 });
@@ -207,9 +206,9 @@ fn benchmark_queue_capacity(criterion: &mut Criterion) {
 
     group.finish();
 
-    fs::remove_file(source_path).unwrap();
+    remove_file(source_path);
 
-    fs::remove_file(destination_path).unwrap();
+    remove_file(destination_path);
 }
 
 criterion_group!(
@@ -217,7 +216,7 @@ criterion_group!(
     benchmark_dense_copy,
     benchmark_sparse_copy,
     benchmark_concurrent_copy,
-    benchmark_queue_capacity,
+    benchmark_queue_capacity
 );
 
 criterion_main!(benches);

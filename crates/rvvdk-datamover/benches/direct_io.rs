@@ -1,44 +1,40 @@
-use std::fs;
-use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
+mod support;
 
-use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
+use criterion::{
+    BenchmarkId, Criterion, SamplingMode, Throughput, criterion_group, criterion_main,
+};
 
 use rvvdk_core::RawDisk;
 use rvvdk_datamover::{CopyOptions, DataMover};
 use rvvdk_local::LocalFileBlockDevice;
 
-const MIB: usize = 1024 * 1024;
+use support::{
+    MIB, benchmark_path, create_incompressible_file, create_zero_file, ensure_benchmark_directory,
+    remove_file,
+};
+
 const DISK_SIZE: usize = 256 * MIB;
 
-fn temporary_path(name: &str) -> PathBuf {
-    let unique = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
-
-    std::env::temp_dir().join(format!("rvvdk-direct-bench-{name}-{unique}.img"))
-}
-
 fn benchmark_direct_copy(criterion: &mut Criterion) {
-    let source_path = temporary_path("source");
+    ensure_benchmark_directory();
 
-    let destination_path = temporary_path("destination");
+    let source_path = benchmark_path("direct-source");
 
-    fs::write(&source_path, vec![0x5a_u8; DISK_SIZE]).unwrap();
+    let destination_path = benchmark_path("direct-destination");
 
-    fs::File::open(&source_path).unwrap().sync_all().unwrap();
+    create_incompressible_file(&source_path, DISK_SIZE, 0x5256_5644_4b01);
 
-    fs::write(&destination_path, vec![0_u8; DISK_SIZE]).unwrap();
-
-    fs::OpenOptions::new()
-        .write(true)
-        .open(&destination_path)
-        .unwrap()
-        .sync_all()
-        .unwrap();
+    create_zero_file(&destination_path, DISK_SIZE);
 
     let mut group = criterion.benchmark_group("direct_raw_copy");
+
+    group.sample_size(20);
+
+    group.sampling_mode(SamplingMode::Flat);
+
+    group.measurement_time(std::time::Duration::from_secs(20));
+
+    group.warm_up_time(std::time::Duration::from_secs(3));
 
     group.throughput(Throughput::Bytes(DISK_SIZE as u64));
 
@@ -68,9 +64,9 @@ fn benchmark_direct_copy(criterion: &mut Criterion) {
 
     group.finish();
 
-    fs::remove_file(source_path).unwrap();
+    remove_file(source_path);
 
-    fs::remove_file(destination_path).unwrap();
+    remove_file(destination_path);
 }
 
 criterion_group!(benches, benchmark_direct_copy);

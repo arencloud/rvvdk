@@ -161,3 +161,26 @@ relative to the Milestone 14 direct-I/O baseline.
 
 This confirms that hybrid tail handling does not move the aligned bulk
 copy path onto buffered I/O.
+
+### Milestone 16 storage environment
+
+The storage-backed direct-I/O benchmark was moved from `/tmp` to a
+dedicated benchmark directory on the development system.
+
+Storage path:
+
+```text
+rvvdk
+  |
+  v
+O_DIRECT
+  |
+  v
+Btrfs (NOCOW benchmark directory)
+  |
+  v
+LUKS / dm-crypt
+  |
+  v
+Samsung MZVL21T0HCLR-00BL7 NVMe
+```

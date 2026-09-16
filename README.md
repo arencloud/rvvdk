@@ -64,3 +64,10 @@ Run the DataMover benchmarks with:
 ```bash
 cargo bench -p rvvdk-datamover --bench copy
 ```
+
+For storage-backed benchmarks, select an explicit benchmark directory:
+
+```bash
+RVVDK_BENCH_DIR=/path/to/benchmark-storage \
+cargo bench -p rvvdk-datamover --bench direct_io
+```
