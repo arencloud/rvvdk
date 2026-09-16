@@ -9,6 +9,10 @@ pub struct IoUringCopyStats {
     bytes_read: u64,
     bytes_written: u64,
     blocks_completed: u64,
+    peak_in_flight: usize,
+    peak_reads_in_flight: usize,
+    peak_writes_in_flight: usize,
+    mixed_in_flight_observed: bool,
 }
 
 impl IoUringCopyStats {
@@ -23,6 +27,22 @@ impl IoUringCopyStats {
     pub const fn blocks_completed(&self) -> u64 {
         self.blocks_completed
     }
+
+    pub const fn peak_in_flight(&self) -> usize {
+        self.peak_in_flight
+    }
+
+    pub const fn peak_reads_in_flight(&self) -> usize {
+        self.peak_reads_in_flight
+    }
+
+    pub const fn peak_writes_in_flight(&self) -> usize {
+        self.peak_writes_in_flight
+    }
+
+    pub const fn mixed_in_flight_observed(&self) -> bool {
+        self.mixed_in_flight_observed
+    }
 }
 
 struct CopyContext {
@@ -32,6 +52,50 @@ struct CopyContext {
     length: u64,
     block_size: usize,
     queue_depth: u32,
+    read_window: usize,
+}
+
+#[derive(Debug, Default)]
+struct PipelineState {
+    reads_in_flight: usize,
+    writes_in_flight: usize,
+}
+
+impl PipelineState {
+    fn total_in_flight(&self) -> usize {
+        self.reads_in_flight + self.writes_in_flight
+    }
+
+    fn read_submitted(&mut self) {
+        self.reads_in_flight += 1;
+    }
+
+    fn read_completed(&mut self) {
+        debug_assert!(self.reads_in_flight > 0);
+
+        self.reads_in_flight -= 1;
+    }
+
+    fn write_submitted(&mut self) {
+        self.writes_in_flight += 1;
+    }
+
+    fn write_completed(&mut self) {
+        debug_assert!(self.writes_in_flight > 0);
+
+        self.writes_in_flight -= 1;
+    }
+}
+
+fn update_peaks(stats: &mut IoUringCopyStats, state: &PipelineState) {
+    stats.peak_in_flight = stats.peak_in_flight.max(state.total_in_flight());
+
+    stats.peak_reads_in_flight = stats.peak_reads_in_flight.max(state.reads_in_flight);
+
+    stats.peak_writes_in_flight = stats.peak_writes_in_flight.max(state.writes_in_flight);
+    if state.reads_in_flight > 0 && state.writes_in_flight > 0 {
+        stats.mixed_in_flight_observed = true;
+    }
 }
 
 pub fn copy_file_range(
@@ -62,6 +126,10 @@ pub fn copy_file_range(
 
     let mut engine = IoUringEngine::new(queue_depth)?;
 
+    let queue_depth_usize = queue_depth as usize;
+
+    let read_window = queue_depth_usize.div_ceil(2).max(1);
+
     let context = CopyContext {
         source_fd,
         destination_fd,
@@ -69,6 +137,7 @@ pub fn copy_file_range(
         length,
         block_size,
         queue_depth,
+        read_window,
     };
 
     copy_with_engine(&mut engine, &pool, &context)
@@ -96,53 +165,48 @@ fn copy_with_engine(
      *
      * Each submitted read owns one BufferGuard from the pool.
      */
-    while next_offset < end && engine.in_flight() < context.queue_depth as usize {
-        let request_length = request_length(next_offset, end, context.block_size)?;
+    let mut state = PipelineState::default();
 
-        submit_read(engine, pool, context.source_fd, next_offset, request_length)?;
-
-        next_offset = advance_offset(next_offset, request_length)?;
-    }
+    refill_reads(
+        engine,
+        pool,
+        context,
+        &mut state,
+        &mut stats,
+        &mut next_offset,
+        end,
+    )?;
 
     engine.submit()?;
 
-    /*
-     * Every read completion becomes a write using the same
-     * BufferGuard.
-     *
-     * Every write completion releases a buffer and allows another
-     * source read to be submitted.
-     */
-    while engine.in_flight() > 0 {
+    while state.total_in_flight() > 0 {
         let completed = engine.wait_owned_completion()?;
 
         match completed.kind() {
             IoUringOperationKind::Read => {
-                process_read_completion(engine, context, &mut stats, completed)?;
+                process_read_completion(engine, context, &mut state, &mut stats, completed)?;
             }
 
             IoUringOperationKind::Write => {
-                process_write_completion(&mut stats, completed)?;
+                process_write_completion(&mut state, &mut stats, completed)?;
 
                 /*
-                 * A write completion returns its BufferGuard to the
-                 * pool when CompletedOperation is dropped.
-                 *
-                 * We can now use that buffer for another source read.
+                 * The completed write has now dropped its BufferGuard,
+                 * so one or more buffers may be available for new reads.
                  */
-                if next_offset < end {
-                    let request_length = request_length(next_offset, end, context.block_size)?;
-
-                    submit_read(engine, pool, context.source_fd, next_offset, request_length)?;
-
-                    next_offset = advance_offset(next_offset, request_length)?;
-                }
+                refill_reads(
+                    engine,
+                    pool,
+                    context,
+                    &mut state,
+                    &mut stats,
+                    &mut next_offset,
+                    end,
+                )?;
             }
         }
+        debug_assert_eq!(state.total_in_flight(), engine.in_flight(),);
 
-        /*
-         * Push any SQEs generated while processing this completion.
-         */
         engine.submit()?;
     }
 
@@ -152,9 +216,11 @@ fn copy_with_engine(
 fn process_read_completion(
     engine: &mut IoUringEngine,
     context: &CopyContext,
+    state: &mut PipelineState,
     stats: &mut IoUringCopyStats,
     completed: CompletedOperation,
 ) -> Result<()> {
+    state.read_completed();
     let offset = completed.offset();
 
     let expected = completed.length();
@@ -197,13 +263,19 @@ fn process_read_completion(
 
     engine.submit_owned_write(context.destination_fd, offset, actual, buffer)?;
 
+    state.write_submitted();
+
+    update_peaks(stats, state);
+
     Ok(())
 }
 
 fn process_write_completion(
+    state: &mut PipelineState,
     stats: &mut IoUringCopyStats,
     completed: CompletedOperation,
 ) -> Result<()> {
+    state.write_completed();
     let offset = completed.offset();
 
     let expected = completed.length();
@@ -250,10 +322,16 @@ fn submit_read(
     source_fd: RawFd,
     offset: u64,
     length: usize,
+    state: &mut PipelineState,
+    stats: &mut IoUringCopyStats,
 ) -> Result<()> {
     let buffer = pool.acquire();
 
     engine.submit_owned_read(source_fd, offset, length, buffer)?;
+
+    state.read_submitted();
+
+    update_peaks(stats, state);
 
     Ok(())
 }
@@ -280,6 +358,38 @@ fn advance_offset(offset: u64, length: usize) -> Result<u64> {
             offset,
             length: length as u64,
         })
+}
+
+fn refill_reads(
+    engine: &mut IoUringEngine,
+    pool: &BufferPool,
+    context: &CopyContext,
+    state: &mut PipelineState,
+    stats: &mut IoUringCopyStats,
+    next_offset: &mut u64,
+    end: u64,
+) -> Result<()> {
+    while *next_offset < end
+        && state.total_in_flight() < context.queue_depth as usize
+        && state.reads_in_flight < context.read_window
+        && pool.available() > 0
+    {
+        let length = request_length(*next_offset, end, context.block_size)?;
+
+        submit_read(
+            engine,
+            pool,
+            context.source_fd,
+            *next_offset,
+            length,
+            state,
+            stats,
+        )?;
+
+        *next_offset = advance_offset(*next_offset, length)?;
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

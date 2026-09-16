@@ -141,6 +141,16 @@ fn copies_with_multiple_queue_depths() {
             "incorrect block count at QD {queue_depth}",
         );
 
+        assert!(
+            stats.peak_in_flight() <= queue_depth as usize,
+            "pipeline exceeded QD {queue_depth}",
+        );
+
+        assert!(
+            stats.peak_reads_in_flight() <= (queue_depth as usize).div_ceil(2).max(1),
+            "read window exceeded at QD {queue_depth}",
+        );
+
         drop(destination);
         drop(source);
 
@@ -338,6 +348,60 @@ fn zero_length_copy_does_nothing() {
     let actual = fs::read(&destination_path).unwrap();
 
     assert_eq!(actual, destination_data,);
+
+    fs::remove_file(source_path).unwrap();
+
+    fs::remove_file(destination_path).unwrap();
+}
+
+#[test]
+fn pipeline_uses_reads_and_writes_concurrently() {
+    let source_path = temporary_path("balanced-source");
+
+    let destination_path = temporary_path("balanced-destination");
+
+    let expected = source_data();
+
+    fs::write(&source_path, &expected).unwrap();
+
+    fs::write(&destination_path, vec![0_u8; FILE_SIZE]).unwrap();
+
+    let source = OpenOptions::new().read(true).open(&source_path).unwrap();
+
+    let destination = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(&destination_path)
+        .unwrap();
+
+    let stats = copy_file_range(
+        source.as_raw_fd(),
+        destination.as_raw_fd(),
+        0,
+        FILE_SIZE as u64,
+        BLOCK_SIZE,
+        8,
+        4096,
+    )
+    .unwrap();
+
+    assert!(stats.peak_reads_in_flight() >= 2,);
+
+    assert!(stats.peak_writes_in_flight() >= 2,);
+
+    assert!(stats.peak_in_flight() <= 8,);
+
+    drop(destination);
+    drop(source);
+
+    let actual = fs::read(&destination_path).unwrap();
+
+    assert_eq!(actual, expected,);
+
+    assert!(
+        stats.mixed_in_flight_observed(),
+        "pipeline never had reads and writes in flight simultaneously",
+    );
 
     fs::remove_file(source_path).unwrap();
 

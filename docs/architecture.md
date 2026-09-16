@@ -432,3 +432,21 @@ CompletedOperation
 BufferGuard
 ```
 
+## Balanced io_uring pipeline scheduling
+
+The initial io_uring copy pipeline correctly maintained buffer
+ownership but could produce read/write waves.
+
+For example, with a queue depth of eight, filling the complete queue
+with reads could produce:
+
+```text
+R R R R R R R R
+        |
+        v
+W W W W W W W W
+        |
+        v
+R R R R R R R R
+```
+
