@@ -517,3 +517,16 @@ DataMover
                     +-- read window
 ```
 
+## Execution reporting and automatic native selection
+
+DataMover execution results identify the backend that actually
+performed the copy.
+
+```text
+NativeCopyReport
+    |
+    +-- ExecutionBackend
+    |
+    +-- NativeCopyStats
+```
+

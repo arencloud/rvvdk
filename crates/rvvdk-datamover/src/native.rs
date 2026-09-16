@@ -29,3 +29,25 @@ impl From<crate::io_uring::IoUringCopyStats> for NativeCopyStats {
         }
     }
 }
+
+use crate::ExecutionBackend;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NativeCopyReport {
+    backend: ExecutionBackend,
+    stats: NativeCopyStats,
+}
+
+impl NativeCopyReport {
+    pub const fn backend(&self) -> ExecutionBackend {
+        self.backend
+    }
+
+    pub const fn stats(&self) -> &NativeCopyStats {
+        &self.stats
+    }
+
+    pub(crate) const fn new(backend: ExecutionBackend, stats: NativeCopyStats) -> Self {
+        Self { backend, stats }
+    }
+}

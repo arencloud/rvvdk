@@ -5,6 +5,9 @@ pub enum ExecutionStrategy {
 
     #[cfg(target_os = "linux")]
     IoUring(IoUringExecutionOptions),
+
+    #[cfg(target_os = "linux")]
+    Auto(IoUringExecutionOptions),
 }
 
 #[cfg(target_os = "linux")]
@@ -47,6 +50,14 @@ impl IoUringExecutionOptions {
     pub const fn read_window(&self) -> usize {
         self.read_window
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExecutionBackend {
+    Threaded,
+
+    #[cfg(target_os = "linux")]
+    IoUring,
 }
 
 #[cfg(test)]

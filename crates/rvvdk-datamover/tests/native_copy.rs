@@ -4,7 +4,9 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use rvvdk_datamover::{CopyOptions, DataMover, ExecutionStrategy, IoUringExecutionOptions};
+use rvvdk_datamover::{
+    CopyOptions, DataMover, ExecutionBackend, ExecutionStrategy, IoUringExecutionOptions,
+};
 
 use rvvdk_local::LocalFileBlockDevice;
 
@@ -153,6 +155,84 @@ fn datamover_copies_with_io_uring_direct_execution() {
     let actual = fs::read(&destination_path).unwrap();
 
     assert_eq!(actual, expected,);
+
+    fs::remove_file(source_path).unwrap();
+
+    fs::remove_file(destination_path).unwrap();
+}
+
+#[test]
+fn native_report_identifies_io_uring_backend() {
+    let source_path = temporary_path("report-source");
+
+    let destination_path = temporary_path("report-destination");
+
+    let expected = vec![0x5a_u8; FILE_SIZE];
+
+    fs::write(&source_path, &expected).unwrap();
+
+    fs::write(&destination_path, vec![0_u8; FILE_SIZE]).unwrap();
+
+    let source = LocalFileBlockDevice::open_read_only(&source_path).unwrap();
+
+    let destination = LocalFileBlockDevice::open_read_write(&destination_path).unwrap();
+
+    let mover = DataMover::with_execution_strategy(
+        CopyOptions::new(BLOCK_SIZE).unwrap(),
+        ExecutionStrategy::IoUring(IoUringExecutionOptions::new(8).unwrap()),
+    );
+
+    let report = mover
+        .copy_native_with_report(&source, &destination, 0, FILE_SIZE as u64)
+        .unwrap();
+
+    assert_eq!(report.backend(), ExecutionBackend::IoUring,);
+
+    assert_eq!(report.stats().bytes_written(), FILE_SIZE as u64,);
+
+    drop(destination);
+    drop(source);
+
+    assert_eq!(fs::read(&destination_path,).unwrap(), expected,);
+
+    fs::remove_file(source_path).unwrap();
+
+    fs::remove_file(destination_path).unwrap();
+}
+
+#[test]
+fn auto_selects_io_uring_for_linux_fd_backends() {
+    let source_path = temporary_path("auto-source");
+
+    let destination_path = temporary_path("auto-destination");
+
+    let expected = vec![0xa5_u8; FILE_SIZE];
+
+    fs::write(&source_path, &expected).unwrap();
+
+    fs::write(&destination_path, vec![0_u8; FILE_SIZE]).unwrap();
+
+    let source = LocalFileBlockDevice::open_read_only(&source_path).unwrap();
+
+    let destination = LocalFileBlockDevice::open_read_write(&destination_path).unwrap();
+
+    let mover = DataMover::with_execution_strategy(
+        CopyOptions::new(BLOCK_SIZE).unwrap(),
+        ExecutionStrategy::Auto(IoUringExecutionOptions::new(8).unwrap()),
+    );
+
+    let report = mover
+        .copy_native_with_report(&source, &destination, 0, FILE_SIZE as u64)
+        .unwrap();
+
+    assert_eq!(report.backend(), ExecutionBackend::IoUring,);
+
+    assert_eq!(report.stats().bytes_written(), FILE_SIZE as u64,);
+
+    drop(destination);
+    drop(source);
+
+    assert_eq!(fs::read(&destination_path,).unwrap(), expected,);
 
     fs::remove_file(source_path).unwrap();
 

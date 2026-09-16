@@ -18,7 +18,7 @@ pub use options::{
 };
 pub use stats::CopyStats;
 
-pub use execution::ExecutionStrategy;
+pub use execution::{ExecutionBackend, ExecutionStrategy};
 
 #[cfg(target_os = "linux")]
 pub use execution::IoUringExecutionOptions;
@@ -26,4 +26,4 @@ pub use execution::IoUringExecutionOptions;
 #[cfg(target_os = "linux")]
 pub use linux_backend::{LinuxFdBackend, LinuxFdCapabilities};
 
-pub use native::NativeCopyStats;
+pub use native::{NativeCopyReport, NativeCopyStats};

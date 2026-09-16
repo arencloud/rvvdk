@@ -1,5 +1,4 @@
-use crate::ExecutionStrategy;
-use crate::NativeCopyStats;
+use crate::{ExecutionBackend, ExecutionStrategy, NativeCopyReport, NativeCopyStats};
 use std::time::Instant;
 
 use rvvdk_core::{BufferPool, Capabilities, Error, Extent, ExtentKind, Result, VirtualDisk};
@@ -31,13 +30,13 @@ struct MutableStats {
 
 impl DataMover {
     #[cfg(target_os = "linux")]
-    pub fn copy_native<S, D>(
+    pub fn copy_native_with_report<S, D>(
         &self,
         source: &S,
         destination: &D,
         offset: u64,
         length: u64,
-    ) -> Result<NativeCopyStats>
+    ) -> Result<NativeCopyReport>
     where
         S: LinuxFdBackend,
         D: LinuxFdBackend,
@@ -45,7 +44,8 @@ impl DataMover {
         match self.execution_strategy {
             ExecutionStrategy::Threaded => Err(Error::NativeExecutionNotSelected),
 
-            ExecutionStrategy::IoUring(execution_options) => {
+            ExecutionStrategy::IoUring(execution_options)
+            | ExecutionStrategy::Auto(execution_options) => {
                 let compatibility = evaluate_compatibility(source, destination);
 
                 if !compatibility.compatible() {
@@ -66,9 +66,28 @@ impl DataMover {
                     execution_options,
                 )?;
 
-                Ok(NativeCopyStats::from(stats))
+                Ok(NativeCopyReport::new(
+                    ExecutionBackend::IoUring,
+                    NativeCopyStats::from(stats),
+                ))
             }
         }
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn copy_native<S, D>(
+        &self,
+        source: &S,
+        destination: &D,
+        offset: u64,
+        length: u64,
+    ) -> Result<NativeCopyStats>
+    where
+        S: LinuxFdBackend,
+        D: LinuxFdBackend,
+    {
+        self.copy_native_with_report(source, destination, offset, length)
+            .map(|report| *report.stats())
     }
     fn validate_extents(&self, extents: &[Extent], disk_size: u64) -> Result<()> {
         if disk_size == 0 {
