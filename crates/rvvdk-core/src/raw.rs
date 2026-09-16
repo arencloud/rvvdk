@@ -17,7 +17,7 @@ where
         Self { device }
     }
 
-    pub fn device(&self) -> &D {
+    pub const fn device(&self) -> &D {
         &self.device
     }
 

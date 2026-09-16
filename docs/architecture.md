@@ -530,3 +530,46 @@ NativeCopyReport
     +-- NativeCopyStats
 ```
 
+## Unified typed execution dispatch
+
+DataMover provides unified execution dispatch for raw disks whose
+underlying block devices expose Linux native execution capabilities.
+
+```text
+RawDisk<S>                     RawDisk<D>
+    |                              |
+    v                              v
+BlockDevice +                  BlockDevice +
+LinuxFdBackend                LinuxFdBackend
+        \                         /
+         \                       /
+          +---------------------+
+                    |
+                    v
+        DataMover::copy_with_report
+                    |
+                    v
+            ExecutionStrategy
+           /        |         \
+          /         |          \
+   Threaded      IoUring       Auto
+      |             |            |
+      |             |       capability
+      |             |         evaluation
+      |             |        /        \
+      |             |      yes          no
+      |             |       |            |
+      v             v       v            v
+  portable       io_uring io_uring    threaded
+  DataMover
+      \             |       |            /
+       \            |       |           /
+        +-----------+-------+----------+
+                    |
+                    v
+                CopyReport
+                    |
+              +-----+-----+
+              |           |
+           backend      CopyStats
+```

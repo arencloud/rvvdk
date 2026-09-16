@@ -70,3 +70,43 @@ impl CopyStats {
         self.bytes_written as f64 / seconds
     }
 }
+
+use crate::ExecutionBackend;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CopyReport {
+    backend: ExecutionBackend,
+    stats: CopyStats,
+}
+
+impl CopyReport {
+    pub const fn backend(&self) -> ExecutionBackend {
+        self.backend
+    }
+
+    pub const fn stats(&self) -> &CopyStats {
+        &self.stats
+    }
+
+    pub(crate) const fn new(backend: ExecutionBackend, stats: CopyStats) -> Self {
+        Self { backend, stats }
+    }
+}
+
+#[cfg(target_os = "linux")]
+impl CopyStats {
+    pub(crate) fn from_io_uring(
+        stats: crate::io_uring::IoUringCopyStats,
+        elapsed: Duration,
+    ) -> Self {
+        Self::new(
+            stats.bytes_read(),
+            stats.bytes_written(),
+            0,
+            0,
+            stats.blocks_completed(),
+            u64::from(stats.bytes_written() > 0),
+            elapsed,
+        )
+    }
+}

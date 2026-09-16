@@ -1,11 +1,13 @@
 use crate::{ExecutionBackend, ExecutionStrategy, NativeCopyReport, NativeCopyStats};
 use std::time::Instant;
 
-use rvvdk_core::{BufferPool, Capabilities, Error, Extent, ExtentKind, Result, VirtualDisk};
+use rvvdk_core::{
+    BlockDevice, BufferPool, Capabilities, Error, Extent, ExtentKind, RawDisk, Result, VirtualDisk,
+};
 
 use crate::concurrent;
 use crate::planner::ExtentWorkIter;
-use crate::{CopyOptions, CopyStats};
+use crate::{CopyOptions, CopyReport, CopyStats};
 
 #[cfg(target_os = "linux")]
 use rvvdk_platform::LinuxFdBackend;
@@ -142,6 +144,109 @@ impl DataMover {
         Self {
             options,
             execution_strategy: ExecutionStrategy::Threaded,
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn copy_with_report<S, D>(
+        &self,
+        source: &RawDisk<S>,
+        destination: &RawDisk<D>,
+    ) -> Result<CopyReport>
+    where
+        S: BlockDevice + LinuxFdBackend,
+        D: BlockDevice + LinuxFdBackend,
+    {
+        let source_size = source.size();
+
+        let destination_size = destination.size();
+
+        if destination_size < source_size {
+            return Err(Error::OutOfBounds {
+                offset: 0,
+                length: source_size,
+                size: destination_size,
+            });
+        }
+
+        match self.execution_strategy {
+            ExecutionStrategy::Threaded => {
+                let stats = self.copy(source, destination)?;
+
+                Ok(CopyReport::new(ExecutionBackend::Threaded, stats))
+            }
+
+            ExecutionStrategy::IoUring(execution_options) => {
+                let source_backend = source.device();
+
+                let destination_backend = destination.device();
+
+                let compatibility = evaluate_compatibility(source_backend, destination_backend);
+
+                if !compatibility.compatible() {
+                    return Err(Error::NativeExecutionUnsupported);
+                }
+
+                let alignment = compatibility
+                    .alignment()
+                    .max(self.options.buffer_alignment());
+
+                let started = Instant::now();
+
+                let stats = copy_file_range_with_options(
+                    source_backend.raw_fd(),
+                    destination_backend.raw_fd(),
+                    0,
+                    source_size,
+                    self.options.block_size(),
+                    alignment,
+                    execution_options,
+                )?;
+
+                destination.flush()?;
+
+                Ok(CopyReport::new(
+                    ExecutionBackend::IoUring,
+                    CopyStats::from_io_uring(stats, started.elapsed()),
+                ))
+            }
+
+            ExecutionStrategy::Auto(execution_options) => {
+                let source_backend = source.device();
+
+                let destination_backend = destination.device();
+
+                let compatibility = evaluate_compatibility(source_backend, destination_backend);
+
+                if compatibility.compatible() {
+                    let alignment = compatibility
+                        .alignment()
+                        .max(self.options.buffer_alignment());
+
+                    let started = Instant::now();
+
+                    let stats = copy_file_range_with_options(
+                        source_backend.raw_fd(),
+                        destination_backend.raw_fd(),
+                        0,
+                        source_size,
+                        self.options.block_size(),
+                        alignment,
+                        execution_options,
+                    )?;
+
+                    destination.flush()?;
+
+                    Ok(CopyReport::new(
+                        ExecutionBackend::IoUring,
+                        CopyStats::from_io_uring(stats, started.elapsed()),
+                    ))
+                } else {
+                    let stats = self.copy(source, destination)?;
+
+                    Ok(CopyReport::new(ExecutionBackend::Threaded, stats))
+                }
+            }
         }
     }
 
