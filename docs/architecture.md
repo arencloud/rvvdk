@@ -334,3 +334,26 @@ buffered descriptor
         |
         +-- unaligned requests
 ```
+
+## Direct-I/O alignment discovery
+
+Direct-I/O alignment is discovered at runtime rather than assumed to
+be universally 4096 bytes.
+
+The local Linux backend represents direct-I/O constraints as:
+
+```text
+DirectIoAlignment
+    |
+    +-- memory_alignment
+    |
+    +-- offset_alignment
+```
+Alignment metadata also records how the values were obtained.
+
+```text
+DirectIoAlignmentSource
+
+Statx
+Fallback
+```

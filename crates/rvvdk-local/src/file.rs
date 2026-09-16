@@ -1,3 +1,4 @@
+use crate::DirectIoAlignment;
 use std::fs::File;
 use std::os::fd::AsRawFd;
 use std::os::unix::fs::{FileExt, OpenOptionsExt};
@@ -11,7 +12,7 @@ pub struct LocalFileBlockDevice {
     geometry: DiskGeometry,
     capabilities: Capabilities,
     direct_io: bool,
-    io_alignment: usize,
+    direct_io_alignment: Option<DirectIoAlignment>,
 }
 
 impl LocalFileBlockDevice {
@@ -93,8 +94,8 @@ impl LocalFileBlockDevice {
         self.direct_io
     }
 
-    pub const fn io_alignment(&self) -> usize {
-        self.io_alignment
+    pub const fn direct_io_alignment(&self) -> Option<DirectIoAlignment> {
+        self.direct_io_alignment
     }
 
     fn is_direct_io_compatible(&self, offset: u64, buffer: &[u8]) -> bool {
@@ -102,13 +103,19 @@ impl LocalFileBlockDevice {
             return false;
         }
 
-        let alignment = self.io_alignment;
+        let Some(alignment) = self.direct_io_alignment else {
+            return false;
+        };
+
+        let memory_alignment = alignment.memory_alignment();
+
+        let offset_alignment = alignment.offset_alignment();
 
         let address = buffer.as_ptr() as usize;
 
-        offset.is_multiple_of(alignment as u64)
-            && buffer.len().is_multiple_of(alignment)
-            && address.is_multiple_of(alignment)
+        address.is_multiple_of(memory_alignment)
+            && offset.is_multiple_of(offset_alignment as u64)
+            && buffer.len().is_multiple_of(offset_alignment)
     }
 
     fn from_file(
@@ -125,13 +132,19 @@ impl LocalFileBlockDevice {
 
         let geometry = DiskGeometry::new(metadata.len(), 512, 4096)?;
 
+        let direct_io_alignment = if direct_io {
+            Some(crate::direct_io::discover_direct_io_alignment(&file)?)
+        } else {
+            None
+        };
+
         Ok(Self {
             file,
             buffered_file,
             geometry,
             capabilities,
             direct_io,
-            io_alignment: 4096,
+            direct_io_alignment,
         })
     }
 }
