@@ -85,8 +85,7 @@ impl BufferPool {
         self.inner.available.notify_one();
     }
 
-    #[cfg(test)]
-    fn available(&self) -> usize {
+    pub fn available(&self) -> usize {
         self.inner
             .buffers
             .lock()

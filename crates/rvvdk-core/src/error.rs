@@ -64,6 +64,25 @@ pub enum Error {
     #[error("unexpected io_uring completion: expected user_data={expected}, actual={actual}")]
     IoUringUnexpectedCompletion { expected: u64, actual: u64 },
 
+    #[error("buffer is too small: requested={requested}, available={available}")]
+    BufferTooSmall { requested: usize, available: usize },
+
+    #[error("io_uring completion references unknown user_data={user_data}")]
+    IoUringUnknownCompletion { user_data: u64 },
+
+    #[error("cannot mix borrowed and owned io_uring operations")]
+    IoUringOperationModeConflict,
+
+    #[error("io_uring engine has been shut down")]
+    IoUringEngineShutDown,
+
+    #[error("short write at offset {offset}: expected {expected} bytes, wrote {actual}")]
+    ShortWrite {
+        offset: u64,
+        expected: usize,
+        actual: usize,
+    },
+
     #[error("corrupt metadata: {0}")]
     CorruptMetadata(String),
 }

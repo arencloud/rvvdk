@@ -387,3 +387,48 @@ next user-data identifier
 operations in flight
 ```
 
+## io_uring buffer ownership
+
+io_uring read and write operations contain pointers to userspace
+buffers.
+
+Those buffers must remain valid from SQE submission until the
+corresponding CQE has been consumed.
+
+rvvdk therefore does not expose raw asynchronous submission using
+ordinary borrowed slices as a public API.
+
+Ownership-safe asynchronous operations transfer a `BufferGuard` into
+an in-flight operation:
+
+```text
+BufferPool
+    |
+    v
+BufferGuard
+    |
+    v
+InFlightOperation
+    |
+    +-- user_data
+    +-- operation kind
+    +-- offset
+    +-- length
+    +-- owned BufferGuard
+    |
+    v
+io_uring SQE
+    |
+    v
+Linux kernel
+    |
+    v
+CQE
+    |
+    v
+CompletedOperation
+    |
+    v
+BufferGuard
+```
+
