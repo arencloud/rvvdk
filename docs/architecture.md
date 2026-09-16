@@ -377,3 +377,13 @@ DataMover
         Linux kernel
 ```
 
+## io_uring engine lifecycle
+
+The Linux `IoUringEngine` owns an `io_uring` instance and tracks:
+
+```text
+queue depth
+next user-data identifier
+operations in flight
+```
+

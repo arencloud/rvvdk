@@ -55,20 +55,20 @@ mod tests {
 
         assert!(matches!(result, Err(Error::InvalidIoUringQueueDepth)));
     }
-}
 
-#[test]
-fn creates_io_uring() {
-    let capabilities = probe_io_uring(8).unwrap();
+    #[test]
+    fn creates_io_uring() {
+        let capabilities = probe_io_uring(8).unwrap();
 
-    assert_eq!(capabilities.queue_depth(), 8,);
-}
+        assert_eq!(capabilities.queue_depth(), 8,);
+    }
 
-#[test]
-fn supports_multiple_queue_depths() {
-    for queue_depth in [1, 2, 4, 8, 16, 32, 64] {
-        let capabilities = probe_io_uring(queue_depth).unwrap();
+    #[test]
+    fn supports_multiple_queue_depths() {
+        for queue_depth in [1, 2, 4, 8, 16, 32, 64] {
+            let capabilities = probe_io_uring(queue_depth).unwrap();
 
-        assert_eq!(capabilities.queue_depth(), queue_depth,);
+            assert_eq!(capabilities.queue_depth(), queue_depth,);
+        }
     }
 }

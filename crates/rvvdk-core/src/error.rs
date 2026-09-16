@@ -52,6 +52,18 @@ pub enum Error {
     #[error("io_uring queue depth must be greater than zero")]
     InvalidIoUringQueueDepth,
 
+    #[error("io_uring submission queue is full: queue_depth={queue_depth}")]
+    IoUringQueueFull { queue_depth: u32 },
+
+    #[error("io_uring has no operations in flight")]
+    IoUringNoInFlight,
+
+    #[error("io_uring completion was expected but none was available")]
+    IoUringCompletionMissing,
+
+    #[error("unexpected io_uring completion: expected user_data={expected}, actual={actual}")]
+    IoUringUnexpectedCompletion { expected: u64, actual: u64 },
+
     #[error("corrupt metadata: {0}")]
     CorruptMetadata(String),
 }
