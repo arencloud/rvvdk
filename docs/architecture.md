@@ -357,3 +357,23 @@ DirectIoAlignmentSource
 Statx
 Fallback
 ```
+
+## io_uring execution foundation
+
+rvvdk includes a Linux-specific `io_uring` integration layer.
+
+The initial integration provides runtime capability probing only.
+
+```text
+DataMover
+   |
+   +-- sequential engine
+   |
+   +-- threaded engine
+   |
+   +-- io_uring foundation
+            |
+            v
+        Linux kernel
+```
+

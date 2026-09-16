@@ -49,6 +49,9 @@ pub enum Error {
         alignment: usize,
     },
 
+    #[error("io_uring queue depth must be greater than zero")]
+    InvalidIoUringQueueDepth,
+
     #[error("corrupt metadata: {0}")]
     CorruptMetadata(String),
 }

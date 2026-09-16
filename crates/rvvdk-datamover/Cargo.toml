@@ -7,6 +7,8 @@ repository.workspace = true
 
 [dependencies]
 rvvdk-core = { path = "../rvvdk-core" }
+[target.'cfg(target_os = "linux")'.dependencies]
+io-uring = "0.7.15"
 
 [dev-dependencies]
 rvvdk-local = { path = "../rvvdk-local" }
