@@ -2,6 +2,8 @@ mod concurrent;
 mod execution;
 #[cfg(target_os = "linux")]
 pub mod io_uring;
+#[cfg(target_os = "linux")]
+mod linux_backend;
 mod mover;
 mod options;
 mod planner;
@@ -19,3 +21,6 @@ pub use execution::ExecutionStrategy;
 
 #[cfg(target_os = "linux")]
 pub use execution::IoUringExecutionOptions;
+
+#[cfg(target_os = "linux")]
+pub use linux_backend::{LinuxFdBackend, LinuxFdCapabilities};
