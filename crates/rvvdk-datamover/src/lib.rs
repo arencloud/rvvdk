@@ -5,6 +5,7 @@ pub mod io_uring;
 #[cfg(target_os = "linux")]
 mod linux_backend;
 mod mover;
+mod native;
 mod options;
 mod planner;
 mod stats;
@@ -24,3 +25,5 @@ pub use execution::IoUringExecutionOptions;
 
 #[cfg(target_os = "linux")]
 pub use linux_backend::{LinuxFdBackend, LinuxFdCapabilities};
+
+pub use native::NativeCopyStats;

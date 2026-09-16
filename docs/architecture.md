@@ -497,4 +497,23 @@ Platform-specific backend contracts are provided by the
              Linux execution path
 ```
 
+## DataMover native execution dispatch
+
+DataMover supports explicit selection of an execution strategy while
+preserving the existing threaded behavior as the default.
+
+```text
+DataMover
+    |
+    +-- CopyOptions
+    |
+    +-- ExecutionStrategy
+            |
+            +-- Threaded
+            |
+            +-- IoUring
+                    |
+                    +-- queue depth
+                    +-- read window
+```
 

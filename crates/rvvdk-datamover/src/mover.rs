@@ -1,3 +1,5 @@
+use crate::ExecutionStrategy;
+use crate::NativeCopyStats;
 use std::time::Instant;
 
 use rvvdk_core::{BufferPool, Capabilities, Error, Extent, ExtentKind, Result, VirtualDisk};
@@ -6,8 +8,15 @@ use crate::concurrent;
 use crate::planner::ExtentWorkIter;
 use crate::{CopyOptions, CopyStats};
 
+#[cfg(target_os = "linux")]
+use rvvdk_platform::LinuxFdBackend;
+
+#[cfg(target_os = "linux")]
+use crate::io_uring::{copy_file_range_with_options, evaluate_compatibility};
+
 pub struct DataMover {
     options: CopyOptions,
+    execution_strategy: ExecutionStrategy,
 }
 
 #[derive(Debug, Default)]
@@ -21,6 +30,46 @@ struct MutableStats {
 }
 
 impl DataMover {
+    #[cfg(target_os = "linux")]
+    pub fn copy_native<S, D>(
+        &self,
+        source: &S,
+        destination: &D,
+        offset: u64,
+        length: u64,
+    ) -> Result<NativeCopyStats>
+    where
+        S: LinuxFdBackend,
+        D: LinuxFdBackend,
+    {
+        match self.execution_strategy {
+            ExecutionStrategy::Threaded => Err(Error::NativeExecutionNotSelected),
+
+            ExecutionStrategy::IoUring(execution_options) => {
+                let compatibility = evaluate_compatibility(source, destination);
+
+                if !compatibility.compatible() {
+                    return Err(Error::NativeExecutionUnsupported);
+                }
+
+                let alignment = compatibility
+                    .alignment()
+                    .max(self.options.buffer_alignment());
+
+                let stats = copy_file_range_with_options(
+                    source.raw_fd(),
+                    destination.raw_fd(),
+                    offset,
+                    length,
+                    self.options.block_size(),
+                    alignment,
+                    execution_options,
+                )?;
+
+                Ok(NativeCopyStats::from(stats))
+            }
+        }
+    }
     fn validate_extents(&self, extents: &[Extent], disk_size: u64) -> Result<()> {
         if disk_size == 0 {
             if extents.is_empty() {
@@ -70,8 +119,25 @@ impl DataMover {
 
         Ok(())
     }
-    pub const fn new(options: CopyOptions) -> Self {
-        Self { options }
+    pub fn new(options: CopyOptions) -> Self {
+        Self {
+            options,
+            execution_strategy: ExecutionStrategy::Threaded,
+        }
+    }
+
+    pub fn with_execution_strategy(
+        options: CopyOptions,
+        execution_strategy: ExecutionStrategy,
+    ) -> Self {
+        Self {
+            options,
+            execution_strategy,
+        }
+    }
+
+    pub const fn execution_strategy(&self) -> ExecutionStrategy {
+        self.execution_strategy
     }
 
     pub fn copy<S, D>(&self, source: &S, destination: &D) -> Result<CopyStats>

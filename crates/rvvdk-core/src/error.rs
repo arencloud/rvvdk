@@ -83,6 +83,12 @@ pub enum Error {
         actual: usize,
     },
 
+    #[error("native execution strategy was not selected")]
+    NativeExecutionNotSelected,
+
+    #[error("selected native execution strategy is unsupported by the backend pair")]
+    NativeExecutionUnsupported,
+
     #[error("corrupt metadata: {0}")]
     CorruptMetadata(String),
 }
