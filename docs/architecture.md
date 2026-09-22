@@ -610,4 +610,34 @@ Native Zero handling is therefore validated at the generic
 The capability remains relevant to VirtualDisk backends that can
 distinguish logical Zero extents from Data and Hole extents.
 
+## Native Zero extent execution
+
+The native extent executor supports Data and Zero extents while
+preserving their different storage semantics.
+
+```text
+NativeExtentPlan
+        |
+        +-- Data
+        |     |
+        |     v
+        |  io_uring read/write pipeline
+        |
+        +-- Zero
+        |     |
+        |     +-- WRITE_ZERO available
+        |     |       |
+        |     |       v
+        |     |  write_zero_at
+        |     |
+        |     +-- WRITE_ZERO unavailable
+        |             |
+        |             v
+        |       zero-write fallback
+        |
+        +-- Hole
+              |
+              v
+        unsupported
+```
 

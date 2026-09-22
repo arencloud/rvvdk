@@ -6,58 +6,59 @@ Accepted
 
 ## Context
 
-M19B introduced extent-aware native execution but supported only Data
-extents.
+M19B introduced extent-aware native execution but only Data extents
+could be executed natively.
 
-Zero extents contain logical zero data and do not require source reads.
+Zero extents represent logical zero data and therefore do not require
+source reads.
 
-Copying them through the Data io_uring pipeline would perform
-unnecessary I/O and lose the semantic information supplied by the
-source extent map.
+Treating Zero as ordinary Data would perform unnecessary source I/O and
+discard semantic information supplied by the source backend.
 
 ## Decision
 
-Native extent execution handles Zero extents using destination
-semantics.
+Native extent execution handles Zero separately from Data.
 
-If the destination advertises `WRITE_ZERO`, DataMover invokes
-`write_zero_at`.
+For a Zero extent:
 
-Otherwise, DataMover performs a zero-filled write fallback.
+1. use `write_zero_at` when the destination advertises `WRITE_ZERO`
+2. otherwise write zero-filled blocks through the portable destination
+   interface
 
-Zero extents do not generate source reads.
+Zero extents do not enter the io_uring source-read pipeline.
 
-The native extent statistics separately account for logical zero
-processing and physical fallback writes.
+Native statistics separately account for logical zero processing and
+physical fallback writes.
 
-Auto execution considers Data and Zero extents native-compatible.
+Automatic native execution accepts plans containing Data and Zero.
 
-Hole extents remain unsupported until the next milestone.
+Hole remains unsupported by native execution at this stage.
 
-## Consequences
+## Execution model
 
-### Positive
+```text
+Data
+  |
+  v
+io_uring read/write
 
-Zero regions no longer require source reads.
 
-Destination-native zero operations can be used when available.
+Zero
+  |
+  +-- WRITE_ZERO
+  |      |
+  |      v
+  |  write_zero_at
+  |
+  +-- fallback
+         |
+         v
+   zero-filled writes
 
-The native path preserves more of the logical extent model.
 
-Auto can remain on native execution for Data+Zero workloads.
+Hole
+  |
+  v
+unsupported
 
-### Negative
-
-Native execution is now a hybrid executor: Data operations use
-io_uring while Zero operations may use the portable destination API.
-
-Hole semantics remain incomplete.
-
-## Future work
-
-M19D will add Hole processing using the same policy as the portable
-DataMover:
-
-1. discard when supported
-2. otherwise write-zero when supported
-3. otherwise zero-write fallback
+```
