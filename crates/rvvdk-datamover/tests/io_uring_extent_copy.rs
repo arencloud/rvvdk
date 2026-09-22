@@ -42,9 +42,9 @@ fn source_data() -> Vec<u8> {
 
 #[test]
 fn copies_multiple_data_extents() {
-    let source_path = temporary_path("source");
+    let source_path = temporary_path("data-source");
 
-    let destination_path = temporary_path("destination");
+    let destination_path = temporary_path("data-destination");
 
     let expected = source_data();
 
@@ -60,18 +60,20 @@ fn copies_multiple_data_extents() {
         .open(&destination_path)
         .unwrap();
 
-    let extents = vec![
-        Extent::new(0, EXTENT_SIZE as u64, ExtentKind::Data).unwrap(),
-        Extent::new(EXTENT_SIZE as u64, EXTENT_SIZE as u64, ExtentKind::Data).unwrap(),
-        Extent::new(
-            (2 * EXTENT_SIZE) as u64,
-            EXTENT_SIZE as u64,
-            ExtentKind::Data,
-        )
-        .unwrap(),
-    ];
-
-    let plan = NativeExtentPlan::new(extents, FILE_SIZE as u64).unwrap();
+    let plan = NativeExtentPlan::new(
+        vec![
+            Extent::new(0, EXTENT_SIZE as u64, ExtentKind::Data).unwrap(),
+            Extent::new(EXTENT_SIZE as u64, EXTENT_SIZE as u64, ExtentKind::Data).unwrap(),
+            Extent::new(
+                (2 * EXTENT_SIZE) as u64,
+                EXTENT_SIZE as u64,
+                ExtentKind::Data,
+            )
+            .unwrap(),
+        ],
+        FILE_SIZE as u64,
+    )
+    .unwrap();
 
     let stats = copy_extent_plan(
         source.as_raw_fd(),
@@ -88,6 +90,8 @@ fn copies_multiple_data_extents() {
     assert_eq!(stats.bytes_written(), FILE_SIZE as u64,);
 
     assert_eq!(stats.bytes_zeroed(), 0,);
+
+    assert_eq!(stats.bytes_discarded(), 0,);
 
     assert_eq!(stats.extents_processed(), 3,);
 
@@ -109,21 +113,18 @@ fn copies_zero_extent_with_destination_semantics() {
 
     fs::write(&source_path, vec![0_u8; FILE_SIZE]).unwrap();
 
-    /*
-     * Initialize destination with non-zero data so the test proves
-     * that the Zero extent actually changes destination contents.
-     */
     fs::write(&destination_path, vec![0xff_u8; FILE_SIZE]).unwrap();
 
     let source_backend = LocalFileBlockDevice::open_read_only(&source_path).unwrap();
 
-    let destination_backend = LocalFileBlockDevice::open_read_write(&destination_path).unwrap();
+    let destination =
+        RawDisk::new(LocalFileBlockDevice::open_read_write(&destination_path).unwrap());
 
-    let destination = RawDisk::new(destination_backend);
-
-    let extents = vec![Extent::new(0, FILE_SIZE as u64, ExtentKind::Zero).unwrap()];
-
-    let plan = NativeExtentPlan::new(extents, FILE_SIZE as u64).unwrap();
+    let plan = NativeExtentPlan::new(
+        vec![Extent::new(0, FILE_SIZE as u64, ExtentKind::Zero).unwrap()],
+        FILE_SIZE as u64,
+    )
+    .unwrap();
 
     let stats = copy_extent_plan_with_destination(
         source_backend.as_raw_fd(),
@@ -140,6 +141,8 @@ fn copies_zero_extent_with_destination_semantics() {
 
     assert_eq!(stats.bytes_zeroed(), FILE_SIZE as u64,);
 
+    assert_eq!(stats.bytes_discarded(), 0,);
+
     assert_eq!(stats.extents_processed(), 1,);
 
     drop(destination);
@@ -154,9 +157,9 @@ fn copies_zero_extent_with_destination_semantics() {
 
 #[test]
 fn copies_data_zero_data_extent_plan() {
-    let source_path = temporary_path("mixed-source");
+    let source_path = temporary_path("mixed-zero-source");
 
-    let destination_path = temporary_path("mixed-destination");
+    let destination_path = temporary_path("mixed-zero-destination");
 
     let source_contents = source_data();
 
@@ -166,22 +169,23 @@ fn copies_data_zero_data_extent_plan() {
 
     let source_backend = LocalFileBlockDevice::open_read_only(&source_path).unwrap();
 
-    let destination_backend = LocalFileBlockDevice::open_read_write(&destination_path).unwrap();
+    let destination =
+        RawDisk::new(LocalFileBlockDevice::open_read_write(&destination_path).unwrap());
 
-    let destination = RawDisk::new(destination_backend);
-
-    let extents = vec![
-        Extent::new(0, EXTENT_SIZE as u64, ExtentKind::Data).unwrap(),
-        Extent::new(EXTENT_SIZE as u64, EXTENT_SIZE as u64, ExtentKind::Zero).unwrap(),
-        Extent::new(
-            (2 * EXTENT_SIZE) as u64,
-            EXTENT_SIZE as u64,
-            ExtentKind::Data,
-        )
-        .unwrap(),
-    ];
-
-    let plan = NativeExtentPlan::new(extents, FILE_SIZE as u64).unwrap();
+    let plan = NativeExtentPlan::new(
+        vec![
+            Extent::new(0, EXTENT_SIZE as u64, ExtentKind::Data).unwrap(),
+            Extent::new(EXTENT_SIZE as u64, EXTENT_SIZE as u64, ExtentKind::Zero).unwrap(),
+            Extent::new(
+                (2 * EXTENT_SIZE) as u64,
+                EXTENT_SIZE as u64,
+                ExtentKind::Data,
+            )
+            .unwrap(),
+        ],
+        FILE_SIZE as u64,
+    )
+    .unwrap();
 
     let stats = copy_extent_plan_with_destination(
         source_backend.as_raw_fd(),
@@ -198,7 +202,150 @@ fn copies_data_zero_data_extent_plan() {
 
     assert_eq!(stats.bytes_zeroed(), EXTENT_SIZE as u64,);
 
+    assert_eq!(stats.bytes_discarded(), 0,);
+
     assert_eq!(stats.extents_processed(), 3,);
+
+    let mut expected = source_contents;
+
+    expected[EXTENT_SIZE..(2 * EXTENT_SIZE)].fill(0);
+
+    drop(destination);
+    drop(source_backend);
+
+    assert_eq!(fs::read(&destination_path,).unwrap(), expected,);
+
+    fs::remove_file(source_path).unwrap();
+
+    fs::remove_file(destination_path).unwrap();
+}
+
+#[test]
+fn copies_hole_extent_with_destination_semantics() {
+    let source_path = temporary_path("hole-source");
+
+    let destination_path = temporary_path("hole-destination");
+
+    fs::write(&source_path, vec![0_u8; FILE_SIZE]).unwrap();
+
+    /*
+     * Non-zero initial contents prove that Hole processing actually
+     * changes the logical destination contents.
+     */
+    fs::write(&destination_path, vec![0xff_u8; FILE_SIZE]).unwrap();
+
+    let source_backend = LocalFileBlockDevice::open_read_only(&source_path).unwrap();
+
+    let destination =
+        RawDisk::new(LocalFileBlockDevice::open_read_write(&destination_path).unwrap());
+
+    let plan = NativeExtentPlan::new(
+        vec![Extent::new(0, FILE_SIZE as u64, ExtentKind::Hole).unwrap()],
+        FILE_SIZE as u64,
+    )
+    .unwrap();
+
+    let stats = copy_extent_plan_with_destination(
+        source_backend.as_raw_fd(),
+        destination.device().as_raw_fd(),
+        &destination,
+        &plan,
+        BLOCK_SIZE,
+        4096,
+        IoUringExecutionOptions::new(8).unwrap(),
+    )
+    .unwrap();
+
+    println!(
+        "hole stats: \
+         written={}, \
+         zeroed={}, \
+         discarded={}, \
+         blocks={}, \
+         extents={}",
+        stats.bytes_written(),
+        stats.bytes_zeroed(),
+        stats.bytes_discarded(),
+        stats.blocks_completed(),
+        stats.extents_processed(),
+    );
+
+    assert_eq!(stats.bytes_read(), 0,);
+
+    assert_eq!(stats.extents_processed(), 1,);
+
+    /*
+     * Exactly one semantic Hole path should account for the logical
+     * extent:
+     *
+     * DISCARD,
+     * WRITE_ZERO,
+     * or zero-write fallback.
+     */
+    assert!(
+        stats.bytes_discarded() == FILE_SIZE as u64 || stats.bytes_zeroed() == FILE_SIZE as u64
+    );
+
+    drop(destination);
+    drop(source_backend);
+
+    assert_eq!(fs::read(&destination_path,).unwrap(), vec![0_u8; FILE_SIZE],);
+
+    fs::remove_file(source_path).unwrap();
+
+    fs::remove_file(destination_path).unwrap();
+}
+
+#[test]
+fn copies_data_hole_data_extent_plan() {
+    let source_path = temporary_path("mixed-hole-source");
+
+    let destination_path = temporary_path("mixed-hole-destination");
+
+    let source_contents = source_data();
+
+    fs::write(&source_path, &source_contents).unwrap();
+
+    fs::write(&destination_path, vec![0xff_u8; FILE_SIZE]).unwrap();
+
+    let source_backend = LocalFileBlockDevice::open_read_only(&source_path).unwrap();
+
+    let destination =
+        RawDisk::new(LocalFileBlockDevice::open_read_write(&destination_path).unwrap());
+
+    let plan = NativeExtentPlan::new(
+        vec![
+            Extent::new(0, EXTENT_SIZE as u64, ExtentKind::Data).unwrap(),
+            Extent::new(EXTENT_SIZE as u64, EXTENT_SIZE as u64, ExtentKind::Hole).unwrap(),
+            Extent::new(
+                (2 * EXTENT_SIZE) as u64,
+                EXTENT_SIZE as u64,
+                ExtentKind::Data,
+            )
+            .unwrap(),
+        ],
+        FILE_SIZE as u64,
+    )
+    .unwrap();
+
+    let stats = copy_extent_plan_with_destination(
+        source_backend.as_raw_fd(),
+        destination.device().as_raw_fd(),
+        &destination,
+        &plan,
+        BLOCK_SIZE,
+        4096,
+        IoUringExecutionOptions::new(8).unwrap(),
+    )
+    .unwrap();
+
+    assert_eq!(stats.bytes_read(), (2 * EXTENT_SIZE) as u64,);
+
+    assert_eq!(stats.extents_processed(), 3,);
+
+    assert!(
+        stats.bytes_discarded() == EXTENT_SIZE as u64 || stats.bytes_zeroed() == EXTENT_SIZE as u64
+    );
 
     let mut expected = source_contents;
 
@@ -261,20 +408,22 @@ fn low_level_extent_copy_still_rejects_zero() {
 }
 
 #[test]
-fn rejects_hole_extent_for_now() {
-    let source_path = temporary_path("hole-source");
+fn low_level_extent_copy_still_rejects_hole() {
+    let source_path = temporary_path("low-level-hole-source");
 
-    let destination_path = temporary_path("hole-destination");
+    let destination_path = temporary_path("low-level-hole-destination");
 
     fs::write(&source_path, vec![0_u8; FILE_SIZE]).unwrap();
 
     fs::write(&destination_path, vec![0xff_u8; FILE_SIZE]).unwrap();
 
-    let source_backend = LocalFileBlockDevice::open_read_only(&source_path).unwrap();
+    let source = OpenOptions::new().read(true).open(&source_path).unwrap();
 
-    let destination_backend = LocalFileBlockDevice::open_read_write(&destination_path).unwrap();
-
-    let destination = RawDisk::new(destination_backend);
+    let destination = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(&destination_path)
+        .unwrap();
 
     let plan = NativeExtentPlan::new(
         vec![Extent::new(0, FILE_SIZE as u64, ExtentKind::Hole).unwrap()],
@@ -282,10 +431,9 @@ fn rejects_hole_extent_for_now() {
     )
     .unwrap();
 
-    let result = copy_extent_plan_with_destination(
-        source_backend.as_raw_fd(),
-        destination.device().as_raw_fd(),
-        &destination,
+    let result = copy_extent_plan(
+        source.as_raw_fd(),
+        destination.as_raw_fd(),
         &plan,
         BLOCK_SIZE,
         4096,
@@ -298,7 +446,7 @@ fn rejects_hole_extent_for_now() {
     ));
 
     drop(destination);
-    drop(source_backend);
+    drop(source);
 
     fs::remove_file(source_path).unwrap();
 

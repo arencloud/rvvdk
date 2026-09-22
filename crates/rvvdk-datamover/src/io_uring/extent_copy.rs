@@ -11,6 +11,7 @@ pub struct IoUringExtentCopyStats {
     bytes_read: u64,
     bytes_written: u64,
     bytes_zeroed: u64,
+    bytes_discarded: u64,
     blocks_completed: u64,
     extents_processed: u64,
 }
@@ -34,6 +35,30 @@ impl IoUringExtentCopyStats {
 
     pub const fn extents_processed(&self) -> u64 {
         self.extents_processed
+    }
+
+    pub const fn bytes_discarded(&self) -> u64 {
+        self.bytes_discarded
+    }
+
+    fn add_discard_extent(&mut self, length: u64) -> Result<()> {
+        self.bytes_discarded =
+            self.bytes_discarded
+                .checked_add(length)
+                .ok_or(Error::RangeOverflow {
+                    offset: self.bytes_discarded,
+                    length,
+                })?;
+
+        self.extents_processed =
+            self.extents_processed
+                .checked_add(1)
+                .ok_or(Error::RangeOverflow {
+                    offset: self.extents_processed,
+                    length: 1,
+                })?;
+
+        Ok(())
     }
 
     fn add_data_extent(&mut self, stats: IoUringCopyStats) -> Result<()> {
@@ -195,11 +220,7 @@ where
             }
 
             ExtentKind::Hole => {
-                return Err(Error::UnsupportedNativeExtent {
-                    kind: "hole",
-                    offset: extent.offset(),
-                    length: extent.length(),
-                });
+                process_hole_extent(destination, *extent, block_size, &mut aggregate)?;
             }
         }
     }
@@ -269,4 +290,34 @@ where
     }
 
     stats.add_zero_extent(extent.length())
+}
+
+fn process_hole_extent<D>(
+    destination: &D,
+    extent: Extent,
+    block_size: usize,
+    stats: &mut IoUringExtentCopyStats,
+) -> Result<()>
+where
+    D: VirtualDisk,
+{
+    let capabilities = destination.capabilities();
+
+    if capabilities.contains(Capabilities::DISCARD) {
+        destination.discard(extent.offset(), extent.length())?;
+
+        stats.add_discard_extent(extent.length())?;
+
+        return Ok(());
+    }
+
+    if capabilities.contains(Capabilities::WRITE_ZERO) {
+        destination.write_zero_at(extent.offset(), extent.length())?;
+
+        stats.add_zero_extent(extent.length())?;
+
+        return Ok(());
+    }
+
+    write_zero_fallback(destination, extent, block_size, stats)
 }

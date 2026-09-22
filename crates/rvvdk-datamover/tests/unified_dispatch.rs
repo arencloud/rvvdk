@@ -5,7 +5,7 @@ use std::io::{Seek, SeekFrom, Write};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use rvvdk_core::{Error, RawDisk};
+use rvvdk_core::RawDisk;
 
 use rvvdk_datamover::{
     CopyOptions, DataMover, ExecutionBackend, ExecutionStrategy, IoUringExecutionOptions,
@@ -67,25 +67,27 @@ fn create_sparse_source(path: &PathBuf) {
     let mut file = File::create(path).unwrap();
 
     /*
-     * Materialized Data extent at the beginning.
+     * Materialized Data at the beginning.
      */
     file.write_all(&vec![0x5a_u8; BLOCK_SIZE]).unwrap();
 
     /*
      * Seek forward without writing.
      *
-     * LocalFileBlockDevice reports this sparse filesystem region as
+     * LocalFileBlockDevice reports this sparse region as
      * ExtentKind::Hole.
      */
     file.seek(SeekFrom::Start((4 * BLOCK_SIZE) as u64)).unwrap();
 
     /*
-     * Materialized Data extent after the hole.
+     * Materialized Data after the first Hole.
      */
     file.write_all(&vec![0xa5_u8; BLOCK_SIZE]).unwrap();
 
     /*
-     * Leave the remainder sparse as well.
+     * Extend the file without writing the remainder.
+     *
+     * This leaves another sparse region after the second Data extent.
      */
     file.set_len(FILE_SIZE as u64).unwrap();
 
@@ -139,6 +141,8 @@ fn explicit_io_uring_reports_io_uring_backend() {
 
     assert_eq!(report.stats().bytes_zeroed(), 0,);
 
+    assert_eq!(report.stats().bytes_discarded(), 0,);
+
     drop(destination);
     drop(source);
 
@@ -146,8 +150,8 @@ fn explicit_io_uring_reports_io_uring_backend() {
 }
 
 #[test]
-fn auto_selects_io_uring_for_linux_fd_backends() {
-    let (source_path, destination_path, expected, source, destination) = create_disks("auto");
+fn auto_selects_io_uring_for_dense_linux_fd_backends() {
+    let (source_path, destination_path, expected, source, destination) = create_disks("auto-dense");
 
     let mover = DataMover::with_execution_strategy(
         CopyOptions::new(BLOCK_SIZE).unwrap(),
@@ -157,6 +161,8 @@ fn auto_selects_io_uring_for_linux_fd_backends() {
     let report = mover.copy_with_report(&source, &destination).unwrap();
 
     assert_eq!(report.backend(), ExecutionBackend::IoUring,);
+
+    assert_eq!(report.stats().bytes_read(), FILE_SIZE as u64,);
 
     assert_eq!(report.stats().bytes_written(), FILE_SIZE as u64,);
 
@@ -171,18 +177,23 @@ fn auto_selects_io_uring_for_linux_fd_backends() {
  * ExtentKind::Hole and does not synthesize ExtentKind::Zero.
  *
  * Data+Zero native execution is therefore tested directly through
- * NativeExtentPlan in io_uring_extent_copy.rs rather than through this
- * LocalFileBlockDevice integration test.
+ * NativeExtentPlan in io_uring_extent_copy.rs.
+ *
+ * M19D allows Hole extents to remain on the native execution path.
  */
 
 #[test]
-fn explicit_io_uring_rejects_hole_extent() {
+fn explicit_io_uring_handles_hole_extents() {
     let source_path = temporary_path("sparse-explicit-source");
 
     let destination_path = temporary_path("sparse-explicit-destination");
 
     create_sparse_source(&source_path);
 
+    /*
+     * Start with non-zero destination contents so successful Hole
+     * processing must modify the sparse ranges.
+     */
     fs::write(&destination_path, vec![0xff_u8; FILE_SIZE]).unwrap();
 
     let source = RawDisk::new(LocalFileBlockDevice::open_read_only(&source_path).unwrap());
@@ -195,15 +206,26 @@ fn explicit_io_uring_rejects_hole_extent() {
         ExecutionStrategy::IoUring(IoUringExecutionOptions::new(8).unwrap()),
     );
 
-    let result = mover.copy_with_report(&source, &destination);
+    let report = mover.copy_with_report(&source, &destination).unwrap();
 
-    assert!(matches!(
-        result,
-        Err(Error::UnsupportedNativeExtent { kind: "hole", .. })
-    ));
+    assert_eq!(report.backend(), ExecutionBackend::IoUring,);
+
+    /*
+     * The sparse source contains real Data plus Hole regions.
+     *
+     * At least one Hole semantic operation should therefore have been
+     * accounted as discard or zero processing.
+     */
+    assert!(report.stats().bytes_discarded() > 0 || report.stats().bytes_zeroed() > 0);
 
     drop(destination);
     drop(source);
+
+    let expected = fs::read(&source_path).unwrap();
+
+    let actual = fs::read(&destination_path).unwrap();
+
+    assert_eq!(actual, expected,);
 
     fs::remove_file(source_path).unwrap();
 
@@ -211,20 +233,13 @@ fn explicit_io_uring_rejects_hole_extent() {
 }
 
 #[test]
-fn auto_falls_back_to_threaded_for_hole_extent() {
+fn auto_uses_io_uring_for_hole_extents() {
     let source_path = temporary_path("sparse-auto-source");
 
     let destination_path = temporary_path("sparse-auto-destination");
 
     create_sparse_source(&source_path);
 
-    /*
-     * Deliberately initialize destination with non-zero data.
-     *
-     * This makes the final byte comparison validate that the threaded
-     * fallback correctly applies the source Hole semantics rather than
-     * merely leaving the previous destination contents untouched.
-     */
     fs::write(&destination_path, vec![0xff_u8; FILE_SIZE]).unwrap();
 
     let source = RawDisk::new(LocalFileBlockDevice::open_read_only(&source_path).unwrap());
@@ -239,7 +254,15 @@ fn auto_falls_back_to_threaded_for_hole_extent() {
 
     let report = mover.copy_with_report(&source, &destination).unwrap();
 
-    assert_eq!(report.backend(), ExecutionBackend::Threaded,);
+    /*
+     * M19D is the important behavior change:
+     *
+     * Auto no longer falls back to Threaded merely because the source
+     * extent map contains Hole.
+     */
+    assert_eq!(report.backend(), ExecutionBackend::IoUring,);
+
+    assert!(report.stats().bytes_discarded() > 0 || report.stats().bytes_zeroed() > 0);
 
     drop(destination);
     drop(source);
@@ -280,11 +303,12 @@ fn destination_smaller_than_source_is_rejected() {
     assert!(matches!(
         result,
         Err(
-            Error::OutOfBounds {
-                offset: 0,
-                length,
-                size,
-            }
+            rvvdk_core::Error::
+                OutOfBounds {
+                    offset: 0,
+                    length,
+                    size,
+                }
         ) if
             length == FILE_SIZE as u64
                 && size

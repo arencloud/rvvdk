@@ -256,7 +256,7 @@ impl DataMover {
 
                 let compatibility = evaluate_compatibility(source_backend, destination_backend);
 
-                if compatibility.compatible() && plan.supports_data_and_zero() {
+                if compatibility.compatible() {
                     let alignment = compatibility
                         .alignment()
                         .max(self.options.buffer_alignment());

@@ -103,7 +103,7 @@ impl CopyStats {
             stats.bytes_read(),
             stats.bytes_written(),
             stats.bytes_zeroed(),
-            0,
+            stats.bytes_discarded(),
             stats.blocks_completed(),
             stats.extents_processed(),
             elapsed,

@@ -640,4 +640,30 @@ NativeExtentPlan
               v
         unsupported
 ```
+## Native Hole extent execution
+
+Native extent execution supports all VirtualDisk extent kinds:
+
+```text
+NativeExtentPlan
+        |
+        +-- Data
+        |     |
+        |     v
+        |  io_uring read/write
+        |
+        +-- Zero
+        |     |
+        |     +-- WRITE_ZERO
+        |     |
+        |     +-- zero-write fallback
+        |
+        +-- Hole
+              |
+              +-- DISCARD
+              |
+              +-- WRITE_ZERO
+              |
+              +-- zero-write fallback
+```
 
