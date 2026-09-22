@@ -675,3 +675,22 @@ deterministic extent model:
 Data -> Zero -> Hole -> Data
 ```
 
+## Copy planning
+
+RVVDK separates copy planning from execution.
+
+The destination-aware workflow is:
+
+```text
+source + destination
+        |
+        v
+plan_with_destination()
+        |
+        v
+     CopyPlan
+        |
+        v
+execute_plan()
+```
+

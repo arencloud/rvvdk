@@ -6,6 +6,7 @@ pub mod io_uring;
 mod mover;
 mod native;
 mod options;
+mod plan;
 mod planner;
 mod stats;
 mod work;
@@ -22,3 +23,4 @@ pub use stats::{CopyReport, CopyStats};
 pub use execution::IoUringExecutionOptions;
 
 pub use native::{NativeCopyReport, NativeCopyStats};
+pub use plan::{CopyPlan, CopyPlanSummary};
