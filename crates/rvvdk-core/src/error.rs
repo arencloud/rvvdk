@@ -89,6 +89,15 @@ pub enum Error {
     #[error("selected native execution strategy is unsupported by the backend pair")]
     NativeExecutionUnsupported,
 
+    #[error(
+        "native execution does not yet support extent kind {kind} at offset={offset}, length={length}"
+    )]
+    UnsupportedNativeExtent {
+        kind: &'static str,
+        offset: u64,
+        length: u64,
+    },
+
     #[error("corrupt metadata: {0}")]
     CorruptMetadata(String),
 }

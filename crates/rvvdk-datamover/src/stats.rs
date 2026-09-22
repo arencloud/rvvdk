@@ -95,8 +95,8 @@ impl CopyReport {
 
 #[cfg(target_os = "linux")]
 impl CopyStats {
-    pub(crate) fn from_io_uring(
-        stats: crate::io_uring::IoUringCopyStats,
+    pub(crate) fn from_io_uring_extents(
+        stats: crate::io_uring::IoUringExtentCopyStats,
         elapsed: Duration,
     ) -> Self {
         Self::new(
@@ -105,7 +105,7 @@ impl CopyStats {
             0,
             0,
             stats.blocks_completed(),
-            u64::from(stats.bytes_written() > 0),
+            stats.extents_processed(),
             elapsed,
         )
     }

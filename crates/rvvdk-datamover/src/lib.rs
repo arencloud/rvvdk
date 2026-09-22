@@ -1,5 +1,6 @@
 mod concurrent;
 mod execution;
+mod extent_validation;
 #[cfg(target_os = "linux")]
 pub mod io_uring;
 mod mover;

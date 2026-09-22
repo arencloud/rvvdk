@@ -573,3 +573,27 @@ LinuxFdBackend                LinuxFdBackend
               |           |
            backend      CopyStats
 ```
+
+## Sparse-aware io_uring extent planning
+
+The io_uring execution path is being extended from dense whole-disk
+copying to execution based on the same logical extent model used by
+the portable DataMover.
+
+The source extent map is converted into a validated
+`NativeExtentPlan` before native execution begins.
+
+```text
+VirtualDisk::extents()
+        |
+        v
+validate_extents()
+        |
+        v
+NativeExtentPlan
+        |
+        +-- Data
+        +-- Zero
+        +-- Hole
+```
+

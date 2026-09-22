@@ -1,4 +1,3 @@
-use crate::{ExecutionBackend, ExecutionStrategy, NativeCopyReport, NativeCopyStats};
 use std::time::Instant;
 
 use rvvdk_core::{
@@ -7,13 +6,19 @@ use rvvdk_core::{
 
 use crate::concurrent;
 use crate::planner::ExtentWorkIter;
-use crate::{CopyOptions, CopyReport, CopyStats};
+
+use crate::{
+    CopyOptions, CopyReport, CopyStats, ExecutionBackend, ExecutionStrategy, NativeCopyReport,
+    NativeCopyStats,
+};
 
 #[cfg(target_os = "linux")]
 use rvvdk_platform::LinuxFdBackend;
 
 #[cfg(target_os = "linux")]
-use crate::io_uring::{copy_file_range_with_options, evaluate_compatibility};
+use crate::io_uring::{
+    NativeExtentPlan, copy_extent_plan, copy_file_range_with_options, evaluate_compatibility,
+};
 
 pub struct DataMover {
     options: CopyOptions,
@@ -31,6 +36,27 @@ struct MutableStats {
 }
 
 impl DataMover {
+    pub fn new(options: CopyOptions) -> Self {
+        Self {
+            options,
+            execution_strategy: ExecutionStrategy::Threaded,
+        }
+    }
+
+    pub fn with_execution_strategy(
+        options: CopyOptions,
+        execution_strategy: ExecutionStrategy,
+    ) -> Self {
+        Self {
+            options,
+            execution_strategy,
+        }
+    }
+
+    pub const fn execution_strategy(&self) -> ExecutionStrategy {
+        self.execution_strategy
+    }
+
     #[cfg(target_os = "linux")]
     pub fn copy_native_with_report<S, D>(
         &self,
@@ -91,178 +117,6 @@ impl DataMover {
         self.copy_native_with_report(source, destination, offset, length)
             .map(|report| *report.stats())
     }
-    fn validate_extents(&self, extents: &[Extent], disk_size: u64) -> Result<()> {
-        if disk_size == 0 {
-            if extents.is_empty() {
-                return Ok(());
-            }
-
-            return Err(Error::CorruptMetadata(
-                "zero-sized disk returned extents".into(),
-            ));
-        }
-
-        if extents.is_empty() {
-            return Err(Error::CorruptMetadata(
-                "non-empty disk returned no extents".into(),
-            ));
-        }
-
-        let mut expected_offset = 0_u64;
-
-        for extent in extents {
-            if extent.offset() != expected_offset {
-                return Err(Error::CorruptMetadata(format!(
-                    "invalid extent map: expected offset \
-                     {expected_offset}, got {}",
-                    extent.offset(),
-                )));
-            }
-
-            if extent.end() > disk_size {
-                return Err(Error::CorruptMetadata(format!(
-                    "extent exceeds disk size: \
-                     end={}, size={disk_size}",
-                    extent.end(),
-                )));
-            }
-
-            expected_offset = extent.end();
-        }
-
-        if expected_offset != disk_size {
-            return Err(Error::CorruptMetadata(format!(
-                "extent map ends at \
-                 {expected_offset}, disk size is \
-                 {disk_size}",
-            )));
-        }
-
-        Ok(())
-    }
-    pub fn new(options: CopyOptions) -> Self {
-        Self {
-            options,
-            execution_strategy: ExecutionStrategy::Threaded,
-        }
-    }
-
-    #[cfg(target_os = "linux")]
-    pub fn copy_with_report<S, D>(
-        &self,
-        source: &RawDisk<S>,
-        destination: &RawDisk<D>,
-    ) -> Result<CopyReport>
-    where
-        S: BlockDevice + LinuxFdBackend,
-        D: BlockDevice + LinuxFdBackend,
-    {
-        let source_size = source.size();
-
-        let destination_size = destination.size();
-
-        if destination_size < source_size {
-            return Err(Error::OutOfBounds {
-                offset: 0,
-                length: source_size,
-                size: destination_size,
-            });
-        }
-
-        match self.execution_strategy {
-            ExecutionStrategy::Threaded => {
-                let stats = self.copy(source, destination)?;
-
-                Ok(CopyReport::new(ExecutionBackend::Threaded, stats))
-            }
-
-            ExecutionStrategy::IoUring(execution_options) => {
-                let source_backend = source.device();
-
-                let destination_backend = destination.device();
-
-                let compatibility = evaluate_compatibility(source_backend, destination_backend);
-
-                if !compatibility.compatible() {
-                    return Err(Error::NativeExecutionUnsupported);
-                }
-
-                let alignment = compatibility
-                    .alignment()
-                    .max(self.options.buffer_alignment());
-
-                let started = Instant::now();
-
-                let stats = copy_file_range_with_options(
-                    source_backend.raw_fd(),
-                    destination_backend.raw_fd(),
-                    0,
-                    source_size,
-                    self.options.block_size(),
-                    alignment,
-                    execution_options,
-                )?;
-
-                destination.flush()?;
-
-                Ok(CopyReport::new(
-                    ExecutionBackend::IoUring,
-                    CopyStats::from_io_uring(stats, started.elapsed()),
-                ))
-            }
-
-            ExecutionStrategy::Auto(execution_options) => {
-                let source_backend = source.device();
-
-                let destination_backend = destination.device();
-
-                let compatibility = evaluate_compatibility(source_backend, destination_backend);
-
-                if compatibility.compatible() {
-                    let alignment = compatibility
-                        .alignment()
-                        .max(self.options.buffer_alignment());
-
-                    let started = Instant::now();
-
-                    let stats = copy_file_range_with_options(
-                        source_backend.raw_fd(),
-                        destination_backend.raw_fd(),
-                        0,
-                        source_size,
-                        self.options.block_size(),
-                        alignment,
-                        execution_options,
-                    )?;
-
-                    destination.flush()?;
-
-                    Ok(CopyReport::new(
-                        ExecutionBackend::IoUring,
-                        CopyStats::from_io_uring(stats, started.elapsed()),
-                    ))
-                } else {
-                    let stats = self.copy(source, destination)?;
-
-                    Ok(CopyReport::new(ExecutionBackend::Threaded, stats))
-                }
-            }
-        }
-    }
-
-    pub fn with_execution_strategy(
-        options: CopyOptions,
-        execution_strategy: ExecutionStrategy,
-    ) -> Self {
-        Self {
-            options,
-            execution_strategy,
-        }
-    }
-
-    pub const fn execution_strategy(&self) -> ExecutionStrategy {
-        self.execution_strategy
-    }
 
     pub fn copy<S, D>(&self, source: &S, destination: &D) -> Result<CopyStats>
     where
@@ -270,6 +124,7 @@ impl DataMover {
         D: VirtualDisk,
     {
         let source_size = source.size();
+
         let destination_size = destination.size();
 
         if destination_size < source_size {
@@ -284,7 +139,8 @@ impl DataMover {
 
         let extents = source.extents(0, source_size)?;
 
-        self.validate_extents(&extents, source_size)?;
+        crate::extent_validation::validate_extents(&extents, source_size)?;
+
         if self.options.concurrency() > 1 {
             return self.copy_concurrent(source, destination, extents, started);
         }
@@ -322,6 +178,111 @@ impl DataMover {
             stats.extents_processed,
             started.elapsed(),
         ))
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn copy_with_report<S, D>(
+        &self,
+        source: &RawDisk<S>,
+        destination: &RawDisk<D>,
+    ) -> Result<CopyReport>
+    where
+        S: BlockDevice + LinuxFdBackend,
+        D: BlockDevice + LinuxFdBackend,
+    {
+        let source_size = source.size();
+
+        let destination_size = destination.size();
+
+        if destination_size < source_size {
+            return Err(Error::OutOfBounds {
+                offset: 0,
+                length: source_size,
+                size: destination_size,
+            });
+        }
+
+        let extents = source.extents(0, source_size)?;
+
+        let plan = NativeExtentPlan::new(extents, source_size)?;
+
+        match self.execution_strategy {
+            ExecutionStrategy::Threaded => {
+                let stats = self.copy(source, destination)?;
+
+                Ok(CopyReport::new(ExecutionBackend::Threaded, stats))
+            }
+
+            ExecutionStrategy::IoUring(execution_options) => {
+                let source_backend = source.device();
+
+                let destination_backend = destination.device();
+
+                let compatibility = evaluate_compatibility(source_backend, destination_backend);
+
+                if !compatibility.compatible() {
+                    return Err(Error::NativeExecutionUnsupported);
+                }
+
+                let alignment = compatibility
+                    .alignment()
+                    .max(self.options.buffer_alignment());
+
+                let started = Instant::now();
+
+                let stats = copy_extent_plan(
+                    source_backend.raw_fd(),
+                    destination_backend.raw_fd(),
+                    &plan,
+                    self.options.block_size(),
+                    alignment,
+                    execution_options,
+                )?;
+
+                destination.flush()?;
+
+                Ok(CopyReport::new(
+                    ExecutionBackend::IoUring,
+                    CopyStats::from_io_uring_extents(stats, started.elapsed()),
+                ))
+            }
+
+            ExecutionStrategy::Auto(execution_options) => {
+                let source_backend = source.device();
+
+                let destination_backend = destination.device();
+
+                let compatibility = evaluate_compatibility(source_backend, destination_backend);
+
+                if compatibility.compatible() && plan.is_data_only() {
+                    let alignment = compatibility
+                        .alignment()
+                        .max(self.options.buffer_alignment());
+
+                    let started = Instant::now();
+
+                    let stats = copy_extent_plan(
+                        source_backend.raw_fd(),
+                        destination_backend.raw_fd(),
+                        &plan,
+                        self.options.block_size(),
+                        alignment,
+                        execution_options,
+                    )?;
+
+                    destination.flush()?;
+
+                    Ok(CopyReport::new(
+                        ExecutionBackend::IoUring,
+                        CopyStats::from_io_uring_extents(stats, started.elapsed()),
+                    ))
+                } else {
+                    let stats = self.copy(source, destination)?;
+
+                    Ok(CopyReport::new(ExecutionBackend::Threaded, stats))
+                }
+            }
+        }
     }
 
     fn process_extent<S, D>(
@@ -493,6 +454,7 @@ impl DataMover {
 
         Ok(())
     }
+
     fn copy_concurrent<S, D>(
         &self,
         source: &S,
