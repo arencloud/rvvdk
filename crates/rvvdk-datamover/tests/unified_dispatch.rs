@@ -1,12 +1,11 @@
 #![cfg(target_os = "linux")]
 
-use std::fs;
+use std::fs::{self, File};
+use std::io::{Seek, SeekFrom, Write};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use std::io::{Seek, SeekFrom, Write};
-
-use rvvdk_core::RawDisk;
+use rvvdk_core::{Error, RawDisk};
 
 use rvvdk_datamover::{
     CopyOptions, DataMover, ExecutionBackend, ExecutionStrategy, IoUringExecutionOptions,
@@ -25,20 +24,6 @@ fn temporary_path(name: &str) -> PathBuf {
         .as_nanos();
 
     std::env::temp_dir().join(format!("rvvdk-unified-{name}-{unique}.img"))
-}
-
-fn create_sparse_source(path: &PathBuf) {
-    let mut file = fs::File::create(path).unwrap();
-
-    file.write_all(&vec![0x5a_u8; BLOCK_SIZE]).unwrap();
-
-    file.seek(SeekFrom::Start((4 * BLOCK_SIZE) as u64)).unwrap();
-
-    file.write_all(&vec![0xa5_u8; BLOCK_SIZE]).unwrap();
-
-    file.set_len(FILE_SIZE as u64).unwrap();
-
-    file.sync_all().unwrap();
 }
 
 fn source_data() -> Vec<u8> {
@@ -76,6 +61,35 @@ fn create_disks(
         RawDisk::new(LocalFileBlockDevice::open_read_write(&destination_path).unwrap());
 
     (source_path, destination_path, expected, source, destination)
+}
+
+fn create_sparse_source(path: &PathBuf) {
+    let mut file = File::create(path).unwrap();
+
+    /*
+     * Materialized Data extent at the beginning.
+     */
+    file.write_all(&vec![0x5a_u8; BLOCK_SIZE]).unwrap();
+
+    /*
+     * Seek forward without writing.
+     *
+     * LocalFileBlockDevice reports this sparse filesystem region as
+     * ExtentKind::Hole.
+     */
+    file.seek(SeekFrom::Start((4 * BLOCK_SIZE) as u64)).unwrap();
+
+    /*
+     * Materialized Data extent after the hole.
+     */
+    file.write_all(&vec![0xa5_u8; BLOCK_SIZE]).unwrap();
+
+    /*
+     * Leave the remainder sparse as well.
+     */
+    file.set_len(FILE_SIZE as u64).unwrap();
+
+    file.sync_all().unwrap();
 }
 
 fn verify_and_cleanup(source_path: PathBuf, destination_path: PathBuf, expected: &[u8]) {
@@ -123,6 +137,8 @@ fn explicit_io_uring_reports_io_uring_backend() {
 
     assert_eq!(report.stats().bytes_written(), FILE_SIZE as u64,);
 
+    assert_eq!(report.stats().bytes_zeroed(), 0,);
+
     drop(destination);
     drop(source);
 
@@ -150,15 +166,24 @@ fn auto_selects_io_uring_for_linux_fd_backends() {
     verify_and_cleanup(source_path, destination_path, &expected);
 }
 
+/*
+ * LocalFileBlockDevice currently reports filesystem sparse regions as
+ * ExtentKind::Hole and does not synthesize ExtentKind::Zero.
+ *
+ * Data+Zero native execution is therefore tested directly through
+ * NativeExtentPlan in io_uring_extent_copy.rs rather than through this
+ * LocalFileBlockDevice integration test.
+ */
+
 #[test]
-fn explicit_io_uring_rejects_unsupported_sparse_extent() {
+fn explicit_io_uring_rejects_hole_extent() {
     let source_path = temporary_path("sparse-explicit-source");
 
     let destination_path = temporary_path("sparse-explicit-destination");
 
     create_sparse_source(&source_path);
 
-    fs::write(&destination_path, vec![0_u8; FILE_SIZE]).unwrap();
+    fs::write(&destination_path, vec![0xff_u8; FILE_SIZE]).unwrap();
 
     let source = RawDisk::new(LocalFileBlockDevice::open_read_only(&source_path).unwrap());
 
@@ -174,7 +199,7 @@ fn explicit_io_uring_rejects_unsupported_sparse_extent() {
 
     assert!(matches!(
         result,
-        Err(rvvdk_core::Error::UnsupportedNativeExtent { .. })
+        Err(Error::UnsupportedNativeExtent { kind: "hole", .. })
     ));
 
     drop(destination);
@@ -186,13 +211,20 @@ fn explicit_io_uring_rejects_unsupported_sparse_extent() {
 }
 
 #[test]
-fn auto_falls_back_to_threaded_for_sparse_extent() {
+fn auto_falls_back_to_threaded_for_hole_extent() {
     let source_path = temporary_path("sparse-auto-source");
 
     let destination_path = temporary_path("sparse-auto-destination");
 
     create_sparse_source(&source_path);
 
+    /*
+     * Deliberately initialize destination with non-zero data.
+     *
+     * This makes the final byte comparison validate that the threaded
+     * fallback correctly applies the source Hole semantics rather than
+     * merely leaving the previous destination contents untouched.
+     */
     fs::write(&destination_path, vec![0xff_u8; FILE_SIZE]).unwrap();
 
     let source = RawDisk::new(LocalFileBlockDevice::open_read_only(&source_path).unwrap());
@@ -212,11 +244,56 @@ fn auto_falls_back_to_threaded_for_sparse_extent() {
     drop(destination);
     drop(source);
 
-    let source_data = fs::read(&source_path).unwrap();
+    let expected = fs::read(&source_path).unwrap();
 
-    let destination_data = fs::read(&destination_path).unwrap();
+    let actual = fs::read(&destination_path).unwrap();
 
-    assert_eq!(destination_data, source_data,);
+    assert_eq!(actual, expected,);
+
+    fs::remove_file(source_path).unwrap();
+
+    fs::remove_file(destination_path).unwrap();
+}
+
+#[test]
+fn destination_smaller_than_source_is_rejected() {
+    let source_path = temporary_path("small-destination-source");
+
+    let destination_path = temporary_path("small-destination");
+
+    fs::write(&source_path, vec![0x5a_u8; FILE_SIZE]).unwrap();
+
+    fs::write(&destination_path, vec![0_u8; FILE_SIZE / 2]).unwrap();
+
+    let source = RawDisk::new(LocalFileBlockDevice::open_read_only(&source_path).unwrap());
+
+    let destination =
+        RawDisk::new(LocalFileBlockDevice::open_read_write(&destination_path).unwrap());
+
+    let mover = DataMover::with_execution_strategy(
+        CopyOptions::new(BLOCK_SIZE).unwrap(),
+        ExecutionStrategy::Auto(IoUringExecutionOptions::new(8).unwrap()),
+    );
+
+    let result = mover.copy_with_report(&source, &destination);
+
+    assert!(matches!(
+        result,
+        Err(
+            Error::OutOfBounds {
+                offset: 0,
+                length,
+                size,
+            }
+        ) if
+            length == FILE_SIZE as u64
+                && size
+                    == (FILE_SIZE / 2)
+                        as u64
+    ));
+
+    drop(destination);
+    drop(source);
 
     fs::remove_file(source_path).unwrap();
 

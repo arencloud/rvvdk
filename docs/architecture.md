@@ -596,4 +596,18 @@ NativeExtentPlan
         +-- Zero
         +-- Hole
 ```
+### Local backend extent reporting
+
+`LocalFileBlockDevice` currently reports file-backed source ranges as
+Data and Hole extents.
+
+It does not currently synthesize Zero extents for allocated ranges whose
+contents happen to be zero.
+
+Native Zero handling is therefore validated at the generic
+`NativeExtentPlan` execution layer.
+
+The capability remains relevant to VirtualDisk backends that can
+distinguish logical Zero extents from Data and Hole extents.
+
 

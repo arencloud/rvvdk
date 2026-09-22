@@ -17,7 +17,8 @@ use rvvdk_platform::LinuxFdBackend;
 
 #[cfg(target_os = "linux")]
 use crate::io_uring::{
-    NativeExtentPlan, copy_extent_plan, copy_file_range_with_options, evaluate_compatibility,
+    NativeExtentPlan, copy_extent_plan_with_destination, copy_file_range_with_options,
+    evaluate_compatibility,
 };
 
 pub struct DataMover {
@@ -230,9 +231,10 @@ impl DataMover {
 
                 let started = Instant::now();
 
-                let stats = copy_extent_plan(
+                let stats = copy_extent_plan_with_destination(
                     source_backend.raw_fd(),
                     destination_backend.raw_fd(),
+                    destination,
                     &plan,
                     self.options.block_size(),
                     alignment,
@@ -254,16 +256,17 @@ impl DataMover {
 
                 let compatibility = evaluate_compatibility(source_backend, destination_backend);
 
-                if compatibility.compatible() && plan.is_data_only() {
+                if compatibility.compatible() && plan.supports_data_and_zero() {
                     let alignment = compatibility
                         .alignment()
                         .max(self.options.buffer_alignment());
 
                     let started = Instant::now();
 
-                    let stats = copy_extent_plan(
+                    let stats = copy_extent_plan_with_destination(
                         source_backend.raw_fd(),
                         destination_backend.raw_fd(),
+                        destination,
                         &plan,
                         self.options.block_size(),
                         alignment,

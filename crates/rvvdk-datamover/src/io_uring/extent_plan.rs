@@ -34,6 +34,18 @@ impl NativeExtentPlan {
             .iter()
             .all(|extent| extent.kind() == ExtentKind::Data)
     }
+
+    pub fn has_holes(&self) -> bool {
+        self.extents
+            .iter()
+            .any(|extent| extent.kind() == ExtentKind::Hole)
+    }
+
+    pub fn supports_data_and_zero(&self) -> bool {
+        self.extents
+            .iter()
+            .all(|extent| matches!(extent.kind(), ExtentKind::Data | ExtentKind::Zero))
+    }
 }
 
 fn validate_extents(extents: &[Extent], disk_size: u64) -> Result<()> {

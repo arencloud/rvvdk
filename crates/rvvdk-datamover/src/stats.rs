@@ -102,7 +102,7 @@ impl CopyStats {
         Self::new(
             stats.bytes_read(),
             stats.bytes_written(),
-            0,
+            stats.bytes_zeroed(),
             0,
             stats.blocks_completed(),
             stats.extents_processed(),
