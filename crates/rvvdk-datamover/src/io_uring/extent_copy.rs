@@ -29,6 +29,10 @@ impl IoUringExtentCopyStats {
         self.bytes_zeroed
     }
 
+    pub const fn bytes_discarded(&self) -> u64 {
+        self.bytes_discarded
+    }
+
     pub const fn blocks_completed(&self) -> u64 {
         self.blocks_completed
     }
@@ -37,19 +41,7 @@ impl IoUringExtentCopyStats {
         self.extents_processed
     }
 
-    pub const fn bytes_discarded(&self) -> u64 {
-        self.bytes_discarded
-    }
-
-    fn add_discard_extent(&mut self, length: u64) -> Result<()> {
-        self.bytes_discarded =
-            self.bytes_discarded
-                .checked_add(length)
-                .ok_or(Error::RangeOverflow {
-                    offset: self.bytes_discarded,
-                    length,
-                })?;
-
+    fn complete_extent(&mut self) -> Result<()> {
         self.extents_processed =
             self.extents_processed
                 .checked_add(1)
@@ -86,15 +78,7 @@ impl IoUringExtentCopyStats {
                 length: stats.blocks_completed(),
             })?;
 
-        self.extents_processed =
-            self.extents_processed
-                .checked_add(1)
-                .ok_or(Error::RangeOverflow {
-                    offset: self.extents_processed,
-                    length: 1,
-                })?;
-
-        Ok(())
+        self.complete_extent()
     }
 
     fn add_zero_extent(&mut self, length: u64) -> Result<()> {
@@ -106,15 +90,19 @@ impl IoUringExtentCopyStats {
                 length,
             })?;
 
-        self.extents_processed =
-            self.extents_processed
-                .checked_add(1)
+        self.complete_extent()
+    }
+
+    fn add_discard_extent(&mut self, length: u64) -> Result<()> {
+        self.bytes_discarded =
+            self.bytes_discarded
+                .checked_add(length)
                 .ok_or(Error::RangeOverflow {
-                    offset: self.extents_processed,
-                    length: 1,
+                    offset: self.bytes_discarded,
+                    length,
                 })?;
 
-        Ok(())
+        self.complete_extent()
     }
 
     fn add_fallback_write(&mut self, length: u64) -> Result<()> {
@@ -251,6 +239,36 @@ where
     write_zero_fallback(destination, extent, block_size, stats)
 }
 
+fn process_hole_extent<D>(
+    destination: &D,
+    extent: Extent,
+    block_size: usize,
+    stats: &mut IoUringExtentCopyStats,
+) -> Result<()>
+where
+    D: VirtualDisk,
+{
+    let capabilities = destination.capabilities();
+
+    if capabilities.contains(Capabilities::DISCARD) {
+        destination.discard(extent.offset(), extent.length())?;
+
+        stats.add_discard_extent(extent.length())?;
+
+        return Ok(());
+    }
+
+    if capabilities.contains(Capabilities::WRITE_ZERO) {
+        destination.write_zero_at(extent.offset(), extent.length())?;
+
+        stats.add_zero_extent(extent.length())?;
+
+        return Ok(());
+    }
+
+    write_zero_fallback(destination, extent, block_size, stats)
+}
+
 fn write_zero_fallback<D>(
     destination: &D,
     extent: Extent,
@@ -289,35 +307,16 @@ where
         stats.add_fallback_write(request_length_u64)?;
     }
 
-    stats.add_zero_extent(extent.length())
-}
-
-fn process_hole_extent<D>(
-    destination: &D,
-    extent: Extent,
-    block_size: usize,
-    stats: &mut IoUringExtentCopyStats,
-) -> Result<()>
-where
-    D: VirtualDisk,
-{
-    let capabilities = destination.capabilities();
-
-    if capabilities.contains(Capabilities::DISCARD) {
-        destination.discard(extent.offset(), extent.length())?;
-
-        stats.add_discard_extent(extent.length())?;
-
-        return Ok(());
-    }
-
-    if capabilities.contains(Capabilities::WRITE_ZERO) {
-        destination.write_zero_at(extent.offset(), extent.length())?;
-
-        stats.add_zero_extent(extent.length())?;
-
-        return Ok(());
-    }
-
-    write_zero_fallback(destination, extent, block_size, stats)
+    /*
+     * Fallback zeroing was performed through ordinary writes.
+     *
+     * Match the established threaded CopyStats semantics:
+     *
+     *   bytes_written     += length
+     *   blocks_completed  += number of writes
+     *   bytes_zeroed      += 0
+     *
+     * The extent itself still counts as processed.
+     */
+    stats.complete_extent()
 }

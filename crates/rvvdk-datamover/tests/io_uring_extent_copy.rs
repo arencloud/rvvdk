@@ -93,6 +93,8 @@ fn copies_multiple_data_extents() {
 
     assert_eq!(stats.bytes_discarded(), 0,);
 
+    assert_eq!(stats.blocks_completed(), (FILE_SIZE / BLOCK_SIZE) as u64,);
+
     assert_eq!(stats.extents_processed(), 3,);
 
     drop(destination);
@@ -137,11 +139,20 @@ fn copies_zero_extent_with_destination_semantics() {
     )
     .unwrap();
 
+    /*
+     * LocalFileBlockDevice does not advertise WRITE_ZERO here.
+     *
+     * Zero therefore uses ordinary zero-filled fallback writes.
+     */
     assert_eq!(stats.bytes_read(), 0,);
 
-    assert_eq!(stats.bytes_zeroed(), FILE_SIZE as u64,);
+    assert_eq!(stats.bytes_written(), FILE_SIZE as u64,);
+
+    assert_eq!(stats.bytes_zeroed(), 0,);
 
     assert_eq!(stats.bytes_discarded(), 0,);
+
+    assert_eq!(stats.blocks_completed(), (FILE_SIZE / BLOCK_SIZE) as u64,);
 
     assert_eq!(stats.extents_processed(), 1,);
 
@@ -198,11 +209,23 @@ fn copies_data_zero_data_extent_plan() {
     )
     .unwrap();
 
+    /*
+     * Two Data extents are read from the source.
+     */
     assert_eq!(stats.bytes_read(), (2 * EXTENT_SIZE) as u64,);
 
-    assert_eq!(stats.bytes_zeroed(), EXTENT_SIZE as u64,);
+    /*
+     * Data writes = 4 MiB.
+     * Zero fallback writes = 2 MiB.
+     * Total ordinary writes = 6 MiB.
+     */
+    assert_eq!(stats.bytes_written(), FILE_SIZE as u64,);
+
+    assert_eq!(stats.bytes_zeroed(), 0,);
 
     assert_eq!(stats.bytes_discarded(), 0,);
+
+    assert_eq!(stats.blocks_completed(), (FILE_SIZE / BLOCK_SIZE) as u64,);
 
     assert_eq!(stats.extents_processed(), 3,);
 
@@ -228,10 +251,6 @@ fn copies_hole_extent_with_destination_semantics() {
 
     fs::write(&source_path, vec![0_u8; FILE_SIZE]).unwrap();
 
-    /*
-     * Non-zero initial contents prove that Hole processing actually
-     * changes the logical destination contents.
-     */
     fs::write(&destination_path, vec![0xff_u8; FILE_SIZE]).unwrap();
 
     let source_backend = LocalFileBlockDevice::open_read_only(&source_path).unwrap();
@@ -256,35 +275,23 @@ fn copies_hole_extent_with_destination_semantics() {
     )
     .unwrap();
 
-    println!(
-        "hole stats: \
-         written={}, \
-         zeroed={}, \
-         discarded={}, \
-         blocks={}, \
-         extents={}",
-        stats.bytes_written(),
-        stats.bytes_zeroed(),
-        stats.bytes_discarded(),
-        stats.blocks_completed(),
-        stats.extents_processed(),
-    );
-
+    /*
+     * LocalFileBlockDevice advertises neither DISCARD nor WRITE_ZERO
+     * for this destination.
+     *
+     * Hole therefore uses ordinary zero-filled fallback writes.
+     */
     assert_eq!(stats.bytes_read(), 0,);
 
-    assert_eq!(stats.extents_processed(), 1,);
+    assert_eq!(stats.bytes_written(), FILE_SIZE as u64,);
 
-    /*
-     * Exactly one semantic Hole path should account for the logical
-     * extent:
-     *
-     * DISCARD,
-     * WRITE_ZERO,
-     * or zero-write fallback.
-     */
-    assert!(
-        stats.bytes_discarded() == FILE_SIZE as u64 || stats.bytes_zeroed() == FILE_SIZE as u64
-    );
+    assert_eq!(stats.bytes_zeroed(), 0,);
+
+    assert_eq!(stats.bytes_discarded(), 0,);
+
+    assert_eq!(stats.blocks_completed(), (FILE_SIZE / BLOCK_SIZE) as u64,);
+
+    assert_eq!(stats.extents_processed(), 1,);
 
     drop(destination);
     drop(source_backend);
@@ -341,11 +348,20 @@ fn copies_data_hole_data_extent_plan() {
 
     assert_eq!(stats.bytes_read(), (2 * EXTENT_SIZE) as u64,);
 
-    assert_eq!(stats.extents_processed(), 3,);
+    /*
+     * Data writes = 4 MiB.
+     * Hole fallback writes = 2 MiB.
+     * Total ordinary writes = 6 MiB.
+     */
+    assert_eq!(stats.bytes_written(), FILE_SIZE as u64,);
 
-    assert!(
-        stats.bytes_discarded() == EXTENT_SIZE as u64 || stats.bytes_zeroed() == EXTENT_SIZE as u64
-    );
+    assert_eq!(stats.bytes_zeroed(), 0,);
+
+    assert_eq!(stats.bytes_discarded(), 0,);
+
+    assert_eq!(stats.blocks_completed(), (FILE_SIZE / BLOCK_SIZE) as u64,);
+
+    assert_eq!(stats.extents_processed(), 3,);
 
     let mut expected = source_contents;
 

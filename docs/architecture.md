@@ -666,4 +666,12 @@ NativeExtentPlan
               |
               +-- zero-write fallback
 ```
+## Execution semantic parity
+
+Threaded and native execution are validated against the same
+deterministic extent model:
+
+```text
+Data -> Zero -> Hole -> Data
+```
 

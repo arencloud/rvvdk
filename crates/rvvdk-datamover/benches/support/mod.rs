@@ -1,5 +1,7 @@
+#![allow(dead_code)]
+
 use std::fs::{self, File};
-use std::io::{BufWriter, Write};
+use std::io::{BufWriter, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -71,6 +73,103 @@ pub fn create_zero_file(path: &Path, size: usize) {
         .expect("failed to synchronize destination file");
 }
 
+pub fn create_sparse_incompressible_file(
+    path: &Path,
+    size: usize,
+    extent_size: usize,
+    data_extents_per_group: usize,
+    extents_per_group: usize,
+    seed: u64,
+) {
+    assert!(extent_size > 0, "extent size must be non-zero");
+
+    assert!(extents_per_group > 0, "extent group size must be non-zero");
+
+    assert!(
+        data_extents_per_group <= extents_per_group,
+        "data extents cannot exceed group size"
+    );
+
+    let mut file = File::create(path).expect("failed to create sparse benchmark file");
+
+    /*
+     * Establish the complete logical disk size without materializing
+     * all blocks.
+     *
+     * Ranges that are never written remain filesystem holes.
+     */
+    file.set_len(size as u64)
+        .expect("failed to size sparse benchmark file");
+
+    let mut generator = XorShift64::new(seed);
+
+    let mut buffer = vec![0_u8; extent_size];
+
+    let extent_count = size.div_ceil(extent_size);
+
+    for extent_index in 0..extent_count {
+        let group_index = extent_index % extents_per_group;
+
+        /*
+         * Extents outside the Data portion of the pattern remain
+         * sparse holes.
+         */
+        if group_index >= data_extents_per_group {
+            continue;
+        }
+
+        let offset = extent_index
+            .checked_mul(extent_size)
+            .expect("benchmark extent offset overflow");
+
+        let remaining = size - offset;
+
+        let length = remaining.min(extent_size);
+
+        generator.fill(&mut buffer[..length]);
+
+        file.seek(SeekFrom::Start(offset as u64))
+            .expect("failed to seek sparse benchmark source");
+
+        file.write_all(&buffer[..length])
+            .expect("failed to write sparse benchmark data");
+    }
+
+    file.sync_all()
+        .expect("failed to synchronize sparse benchmark source");
+}
+
+pub fn materialize_file(path: &Path, size: usize, value: u8) {
+    let file = File::create(path).expect("failed to create materialized benchmark file");
+
+    let mut writer = BufWriter::with_capacity(MIB, file);
+
+    let buffer = vec![value; MIB];
+
+    let mut remaining = size;
+
+    while remaining > 0 {
+        let length = remaining.min(buffer.len());
+
+        writer
+            .write_all(&buffer[..length])
+            .expect("failed to materialize benchmark file");
+
+        remaining -= length;
+    }
+
+    writer
+        .flush()
+        .expect("failed to flush materialized benchmark file");
+
+    let file = writer
+        .into_inner()
+        .expect("failed to recover materialized benchmark file");
+
+    file.sync_all()
+        .expect("failed to synchronize materialized benchmark file");
+}
+
 pub fn remove_file(path: impl AsRef<Path>) {
     fs::remove_file(path).expect("failed to remove benchmark file");
 }
@@ -94,7 +193,9 @@ impl XorShift64 {
         let mut value = self.state;
 
         value ^= value << 13;
+
         value ^= value >> 7;
+
         value ^= value << 17;
 
         self.state = value;
@@ -113,7 +214,6 @@ impl XorShift64 {
     }
 }
 
-#[allow(dead_code)]
 pub fn incompressible_buffer(size: usize, seed: u64) -> Vec<u8> {
     let mut buffer = vec![0_u8; size];
 

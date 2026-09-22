@@ -5,7 +5,7 @@ use std::io::{Seek, SeekFrom, Write};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use rvvdk_core::RawDisk;
+use rvvdk_core::{Error, RawDisk};
 
 use rvvdk_datamover::{
     CopyOptions, DataMover, ExecutionBackend, ExecutionStrategy, IoUringExecutionOptions,
@@ -67,27 +67,27 @@ fn create_sparse_source(path: &PathBuf) {
     let mut file = File::create(path).unwrap();
 
     /*
-     * Materialized Data at the beginning.
+     * Materialized Data extent at the beginning.
      */
     file.write_all(&vec![0x5a_u8; BLOCK_SIZE]).unwrap();
 
     /*
      * Seek forward without writing.
      *
-     * LocalFileBlockDevice reports this sparse region as
+     * LocalFileBlockDevice reports this sparse filesystem region as
      * ExtentKind::Hole.
      */
     file.seek(SeekFrom::Start((4 * BLOCK_SIZE) as u64)).unwrap();
 
     /*
-     * Materialized Data after the first Hole.
+     * Materialized Data extent after the first Hole.
      */
     file.write_all(&vec![0xa5_u8; BLOCK_SIZE]).unwrap();
 
     /*
      * Extend the file without writing the remainder.
      *
-     * This leaves another sparse region after the second Data extent.
+     * The remainder is therefore sparse as well.
      */
     file.set_len(FILE_SIZE as u64).unwrap();
 
@@ -166,6 +166,10 @@ fn auto_selects_io_uring_for_dense_linux_fd_backends() {
 
     assert_eq!(report.stats().bytes_written(), FILE_SIZE as u64,);
 
+    assert_eq!(report.stats().bytes_zeroed(), 0,);
+
+    assert_eq!(report.stats().bytes_discarded(), 0,);
+
     drop(destination);
     drop(source);
 
@@ -177,9 +181,21 @@ fn auto_selects_io_uring_for_dense_linux_fd_backends() {
  * ExtentKind::Hole and does not synthesize ExtentKind::Zero.
  *
  * Data+Zero native execution is therefore tested directly through
- * NativeExtentPlan in io_uring_extent_copy.rs.
+ * NativeExtentPlan in io_uring_extent_copy.rs and through the
+ * deterministic execution_parity.rs backend.
  *
  * M19D allows Hole extents to remain on the native execution path.
+ *
+ * M19E defines CopyStats operationally:
+ *
+ * ordinary write         -> bytes_written
+ * WRITE_ZERO             -> bytes_zeroed
+ * DISCARD                -> bytes_discarded
+ * zero-filled fallback   -> bytes_written
+ *
+ * LocalFileBlockDevice does not advertise WRITE_ZERO or DISCARD for
+ * the destination used by these tests. Hole ranges therefore use
+ * ordinary zero-filled fallback writes.
  */
 
 #[test]
@@ -191,8 +207,10 @@ fn explicit_io_uring_handles_hole_extents() {
     create_sparse_source(&source_path);
 
     /*
-     * Start with non-zero destination contents so successful Hole
-     * processing must modify the sparse ranges.
+     * Start with non-zero destination contents.
+     *
+     * Hole processing must therefore actively change those ranges to
+     * logical zeroes.
      */
     fs::write(&destination_path, vec![0xff_u8; FILE_SIZE]).unwrap();
 
@@ -208,15 +226,24 @@ fn explicit_io_uring_handles_hole_extents() {
 
     let report = mover.copy_with_report(&source, &destination).unwrap();
 
+    /*
+     * Hole support must not force explicit io_uring execution onto
+     * the threaded path.
+     */
     assert_eq!(report.backend(), ExecutionBackend::IoUring,);
 
     /*
-     * The sparse source contains real Data plus Hole regions.
+     * LocalFileBlockDevice uses ordinary zero-filled fallback writes
+     * for Hole ranges.
      *
-     * At least one Hole semantic operation should therefore have been
-     * accounted as discard or zero processing.
+     * Data and Hole therefore account as ordinary destination writes
+     * across the complete logical disk.
      */
-    assert!(report.stats().bytes_discarded() > 0 || report.stats().bytes_zeroed() > 0);
+    assert_eq!(report.stats().bytes_written(), FILE_SIZE as u64,);
+
+    assert_eq!(report.stats().bytes_zeroed(), 0,);
+
+    assert_eq!(report.stats().bytes_discarded(), 0,);
 
     drop(destination);
     drop(source);
@@ -255,14 +282,25 @@ fn auto_uses_io_uring_for_hole_extents() {
     let report = mover.copy_with_report(&source, &destination).unwrap();
 
     /*
-     * M19D is the important behavior change:
+     * M19D/M19E behavior:
      *
      * Auto no longer falls back to Threaded merely because the source
      * extent map contains Hole.
      */
     assert_eq!(report.backend(), ExecutionBackend::IoUring,);
 
-    assert!(report.stats().bytes_discarded() > 0 || report.stats().bytes_zeroed() > 0);
+    /*
+     * LocalFileBlockDevice uses ordinary zero-filled fallback writes
+     * for Hole ranges.
+     *
+     * Therefore the complete logical disk contributes to
+     * bytes_written.
+     */
+    assert_eq!(report.stats().bytes_written(), FILE_SIZE as u64,);
+
+    assert_eq!(report.stats().bytes_zeroed(), 0,);
+
+    assert_eq!(report.stats().bytes_discarded(), 0,);
 
     drop(destination);
     drop(source);
@@ -303,12 +341,11 @@ fn destination_smaller_than_source_is_rejected() {
     assert!(matches!(
         result,
         Err(
-            rvvdk_core::Error::
-                OutOfBounds {
-                    offset: 0,
-                    length,
-                    size,
-                }
+            Error::OutOfBounds {
+                offset: 0,
+                length,
+                size,
+            }
         ) if
             length == FILE_SIZE as u64
                 && size
