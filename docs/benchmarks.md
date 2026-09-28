@@ -1,5 +1,122 @@
 # rvvdk Benchmarks
 
+## Performance policy — adopted 2026-09-28
+
+Performance is a requirement throughout implementation. Every work package in
+the [roadmap](roadmap.md) must record its performance impact in the
+[implementation log](implementation-log.md). Performance qualification begins
+with R0; R9 is final qualification, not the first time we measure.
+
+The results below this policy are historical measurements. They are not yet an
+approved regression baseline: the review identified unequal flush boundaries in
+the direct io_uring comparison, and the current worktree contains uncommitted
+changes. Do not derive engine defaults or performance claims from an unmatched
+comparison.
+
+### PERF.0 — Establish a reproducible baseline
+
+- [ ] Equalize timed durability boundaries: the threaded direct benchmark flushes,
+  while the low-level native direct benchmark currently does not. Include the
+  same required flush on both sides before comparing durable-copy throughput.
+- [ ] Choose and record a dedicated storage directory, disk/filesystem, and
+  representative workload sizes. Keep tmpfs measurements separate from storage
+  throughput; `/tmp` is tmpfs in the reviewed environment.
+- [ ] Identify each tested source state by commit plus dirty patch/content hashes,
+  including relevant untracked source. Preserve enough evidence to reconstruct
+  that state. A commit SHA alone does not identify this worktree.
+- [ ] Capture the environment and initial repeated baseline results using the
+  same harness that will test the candidate. If the harness changes, rerun both
+  baseline and candidate with the corrected harness.
+- [ ] Add reproducible workload configuration and result collection incrementally.
+  Record which metrics are actually instrumented; do not invent unmeasured
+  latency, CPU, or memory values.
+
+PERF.0 is pending. Run it before accepting throughput comparisons for engine
+changes. Immediate safety fixes can proceed if the old path cannot safely run;
+record the unavailable comparison and establish the first safe baseline.
+
+### Required record for an implementation step
+
+| Field | Required evidence |
+|---|---|
+| Identity | Work-package ID, baseline and candidate commit/source fingerprints |
+| Workload | Disk size, data pattern/seed, Data/Zero/Hole proportions, extent count and sizes |
+| Configuration | Executor, block size, workers, queue depth/read window, buffers and memory budget |
+| Environment | CPU, memory, storage/controller, filesystem/mount options, encryption/compression, kernel, Rust version and build flags |
+| Cache and allocation | Warm/cold policy, buffered/direct mode, fresh/preallocated destination, source/destination placement |
+| Timing | Setup boundaries, plan time, copy time, flush time, and whether verification is included |
+| Results | Elapsed time, logical and transferred throughput, variability, correctness result, and available CPU/RSS/I/O metrics |
+| Decision | Accepted, needs investigation, or justified tradeoff; explanation and follow-up |
+
+Use optimized builds and repeat comparable baseline/candidate runs on the same
+machine. Alternate run order to help reveal thermal/cache drift. Reset destination
+state consistently outside the timed region. Observe contention and device/cache
+effects; one favorable run is not a tuning result. Store raw output with the
+summary, not just screenshots or a selected throughput number.
+
+For storage qualification, include a sustained workload large enough to expose
+cache/burst effects within the lab's available capacity. Define a controlled
+cache policy without relying on a global cache drop on a shared development host.
+Use physical hardware for final throughput claims; nested ESXi remains useful
+for functionality but introduces extra performance variables.
+
+### Workload matrix
+
+| Change area | Minimum relevant comparisons |
+|---|---|
+| Scheduler / native pipeline | Dense RAW, fragmented sparse RAW, workers/QD 1 and representative tuned settings |
+| Sparse / zero handling | Dense, 25/50/75% holes, zero-only, hole-only, nonzero-prefilled destination; inspect allocated blocks |
+| Alignment / local backend | Buffered, direct, mixed modes, aligned bulk, small disks and odd tails on real storage |
+| Planning | Dense and highly fragmented extent maps; plan latency and peak memory separately from copy |
+| Progress / cancellation | Observer disabled, no-op observer, realistic callback cadence; throughput and cancellation latency |
+| VMDK | Flat, supported sparse layouts, fragmented grains, parent-chain depth; decoded logical-byte equality |
+| VMware transport | Full-copy throughput, latency/queue-depth response, network utilization, host load, reconnect behavior |
+| CBT / resume | Small/large changed sets, metadata/checkpoint overhead, time and bytes needed for recovery |
+
+Keep separate accounting for logical disk bytes, payload read/written, zeroed and
+deallocated bytes. Sparse logical throughput can exceed storage transfer rate;
+report both so that removing I/O is distinguishable from moving bytes faster.
+
+Tune block size, concurrency, queue depth, read window, and buffer count under
+comparable memory limits. Prefer a small targeted sweep, then expand only when
+the measurements reveal a useful direction. Maintain workload-specific results;
+there may be no universal best setting.
+
+### Acceptance and regression handling
+
+1. Correctness and output verification must pass before timing informs a decision.
+2. Every implementation package has a performance disposition. Documentation-only
+   changes can say `N/A — no runtime change`; an unrun benchmark must say `Pending`
+   with a reason, never `Passed`.
+3. Initially investigate a repeatable throughput decrease or elapsed-time increase
+   greater than 5% on a representative workload, as well as any breach of a memory,
+   latency, or bounded-resource contract. This is a project investigation threshold,
+   not a claim that the current environment can resolve 5% reliably.
+4. Interpret changes against measured variability. Repeat noisy comparisons before
+   deciding. Do not hide regressions by increasing memory, changing flush policy,
+   shrinking the data set, or switching filesystems.
+5. A necessary correctness/safety fix may cost performance. Record that tradeoff
+   and its follow-up explicitly; do not retain incorrect behavior to win a benchmark.
+6. Establish numeric workload targets after PERF.0. Until then, avoid unsupported
+   promises of a fixed GiB/s rate or that io_uring is always faster.
+
+Run affected comparisons per implementation package; run the broader matrix at
+milestone boundaries. A dedicated benchmark runner should eventually execute the
+stable matrix on a schedule. Shared CI timing is smoke evidence, not a substitute
+for repeatable storage measurements.
+
+### Result storage convention
+
+Use `docs/benchmark-results/<run-id>/` for concise tracked summaries, environment
+metadata, workload configuration, and small raw text/JSON records. Each summary
+must link its baseline and candidate evidence. Record an immutable artifact
+location and checksum for large traces/reports; disk images and bulky Criterion
+output do not belong in the source tree. `target/criterion` alone is not durable
+project history.
+
+Keep existing `benchmark-m11.txt` as historical input until its provenance and
+environment are documented; it has not been deleted or promoted to a baseline.
+
 ## Purpose
 
 rvvdk uses benchmarks to validate performance changes rather than

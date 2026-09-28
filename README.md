@@ -1,73 +1,208 @@
+<div align="center">
+
 # rvvdk
 
-rvvdk is a high-performance virtual disk access and data movement
-framework written in Rust.
+### Virtual disk access and data movement in Rust
 
-The project aims to provide a modern, safe, extensible alternative for
-virtual disk access and migration workloads, with an initial focus on
-VMware environments.
+A foundation for disk inspection, copying, and migration.<br>
+Built toward independent VMware support, with reusable storage and format abstractions.
 
-rvvdk is designed around independent abstractions for:
+![Status: in development](https://img.shields.io/badge/status-in_development-f59e0b?style=flat-square)
+![Rust edition: 2024](https://img.shields.io/badge/Rust-2024-dea584?style=flat-square&logo=rust&logoColor=white)
+![Platform: Linux first](https://img.shields.io/badge/platform-Linux_first-38bdf8?style=flat-square&logo=linux&logoColor=white)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache_2.0-a78bfa?style=flat-square)](LICENSE)
 
-- virtual disks
-- block devices
-- storage transports
-- disk formats
-- extent discovery
-- changed block tracking
-- high-performance data movement
+[Get started](#get-started) · [Architecture](#architecture) · [Roadmap](docs/roadmap.md) · [Benchmarks](docs/benchmarks.md)
 
-The long-term goal is to support multiple virtualization and storage
-platforms rather than coupling the data plane exclusively to VMware.
+</div>
 
-## Project status
+---
 
-rvvdk is currently under active development.
+## The idea
 
-The current milestone establishes the Rust workspace and fundamental
-disk types used by the rest of the project.
+Virtual disk tools need to understand both **what a disk means** and **how its
+bytes are stored**. rvvdk separates logical disks, disk formats, backing storage,
+and execution so each can evolve independently.
 
-No production disk I/O is implemented yet.
+The current workspace provides a local RAW disk-copy engine with sparse source
+extent discovery, bounded concurrency, reusable aligned buffers, and Linux
+io_uring execution. The longer-term goal is an independent Rust toolkit for
+VMware disk access and migration, extensible to other platforms.
+
+> [!IMPORTANT]
+> **Active development.** The project currently exposes Rust libraries.
+> VMDK parsing, VMware remote access, CBT, and a CLI are planned.
+> Known correctness and failure-path gaps are documented in the
+> [project review](docs/project-review-2026-09-28.md); stabilization is the next milestone.
+
+## At a glance
+
+| Capability | Current state |
+|:---|:---|
+| **Logical disk model** | `BlockDevice`, `VirtualDisk`, checked ranges, geometry, and capabilities |
+| **RAW disk access** | Memory devices and local regular files |
+| **Sparse source discovery** | Linux Data/Hole extents; Data/Zero/Hole copy semantics |
+| **Copy execution** | Sequential and bounded threaded execution; Linux io_uring path |
+| **Memory management** | Aligned allocations and reusable buffer pools |
+| **Direct I/O** | Local `O_DIRECT`, runtime alignment discovery, buffered fallback for unaligned backend requests |
+| **Copy planning** | Structural plans, extent summaries, validation, and execution reports |
+| **Progress reporting** | In development; intermediate updates on the single-worker threaded path |
+| **Sparse destination allocation** | Planned; local holes currently use zero-write fallback |
+| **VMDK and VMware access** | Planned; no VMware VDDK dependency in the current workspace |
+
+Native execution still needs complete compatibility checks. Its direct-FD path
+does not inherit the local backend's buffered fallback for unaligned requests.
+See the [review findings](docs/project-review-2026-09-28.md#findings-requiring-action).
+
+## Get started
+
+Use Linux and a current stable Rust toolchain. The repository's
+[`rust-toolchain.toml`](rust-toolchain.toml) selects stable with Rustfmt and Clippy.
+Some tests require io_uring and filesystem support for sparse/direct I/O.
+
+```bash
+git clone https://github.com/arencloud/rvvdk.git
+cd rvvdk
+cargo build --workspace
+cargo test --workspace
+```
+
+No ESXi host is needed for local development or these tests.
+
+### Copy a disk in memory
+
+This example uses the `rvvdk-core` and `rvvdk-datamover` workspace crates:
+
+```rust
+use rvvdk_core::{MemoryBlockDevice, RawDisk, Result, VirtualDisk};
+use rvvdk_datamover::{CopyOptions, DataMover};
+
+fn main() -> Result<()> {
+    let source = RawDisk::new(MemoryBlockDevice::new(1024 * 1024)?);
+    let destination = RawDisk::new(MemoryBlockDevice::new(1024 * 1024)?);
+
+    source.write_all_at(0, b"hello, virtual disk")?;
+
+    let stats = DataMover::new(CopyOptions::default())
+        .copy(&source, &destination)?;
+
+    let mut contents = [0_u8; 19];
+    destination.read_exact_at(0, &mut contents)?;
+    assert_eq!(&contents, b"hello, virtual disk");
+
+    println!("Copied {} bytes", stats.bytes_written());
+    Ok(())
+}
+```
+
+For file-backed disks, wrap a `LocalFileBlockDevice` in `RawDisk`.
+The destination must already exist and be at least as large as the source.
+See the [local copy example in the integration tests](crates/rvvdk-datamover/tests/local_copy.rs).
 
 ## Architecture
 
-The high-level architecture is:
+The core contracts are independent of an async runtime. Concurrency belongs to
+the data mover; Linux execution capabilities live outside the logical disk traits.
 
-```text
-                rvvdk CLI / API
-                       |
-                       v
-                 Data Mover
-                       |
-                       v
-                 VirtualDisk
-                       |
-            +----------+----------+
-            |          |          |
-           RAW        VMDK       QCOW2
-            |          |          |
-            +----------+----------+
-                       |
-                       v
-                 BlockDevice
-                       |
-          +------------+------------+
-          |            |            |
-       Local I/O      NBD          SAN
+```mermaid
+flowchart TD
+    API["Rust library API"] --> Mover["DataMover · planning, scheduling, reporting"]
+    Mover --> Portable["Sequential / threaded executor"]
+    Mover --> Native["Linux io_uring executor"]
+    Portable --> Logical["VirtualDisk · logical disk contents"]
+    Logical --> Raw["RawDisk"]
+    Raw --> Device["BlockDevice · positional storage I/O"]
+    Device --> Memory["Memory"]
+    Device --> Local["Local files"]
+    Native --> FD["RAW backend access · LinuxFdBackend"]
+    FD --> Local
+    Logical -. "planned" .-> VMDK["VMDK formats and parent chains"]
+    VMDK -. "planned" .-> Device
 
+    classDef implemented fill:#0f172a,stroke:#38bdf8,color:#f8fafc;
+    classDef planned fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-dasharray:5 5;
+    class API,Mover,Portable,Native,Logical,Raw,Device,Memory,Local,FD implemented;
+    class VMDK planned;
 ```
 
-## Benchmarks
+Native acceleration currently serves Linux RAW backends. Future format readers
+must resolve logical offsets before physical I/O; a container file descriptor
+alone is not sufficient to bypass that mapping.
 
-Run the DataMover benchmarks with:
+### Workspace
+
+| Crate | Responsibility |
+|:---|:---|
+| [`rvvdk-core`](crates/rvvdk-core) | Disk contracts, ranges, extents, RAW/memory devices, and buffer ownership |
+| [`rvvdk-local`](crates/rvvdk-local) | Local regular-file access, sparse discovery, and direct-I/O handling |
+| [`rvvdk-platform`](crates/rvvdk-platform) | Platform-specific backend capabilities |
+| [`rvvdk-datamover`](crates/rvvdk-datamover) | Planning, execution strategies, scheduling, statistics, and progress |
+
+Explore the [architecture notes](docs/architecture.md) and
+[architectural decision records](docs/adr) for the design history.
+
+## Where we are going
+
+1. **Stabilize the engine** — validation parity, predictable worker shutdown, and io_uring resource lifetimes.
+2. **Complete local workflows** — portable plans, sparse output, reliable native selection, and a RAW CLI.
+3. **Read VMDK** — descriptors and flat extents, then sparse formats and parent chains.
+4. **Prove VMware access** — an early lab feasibility check, followed by a supported full-copy workflow.
+5. **Build recovery workflows** — CBT incrementals, durable resume, verification, and qualified restore.
+
+The [implementation roadmap](docs/roadmap.md) contains work-package IDs,
+dependencies, acceptance criteria, and the next implementation task.
+
+## Development
+
+Run the workspace checks:
+
+```bash
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+```
+
+Inspect runtime io_uring support:
+
+```bash
+cargo run -p rvvdk-datamover --example io_uring_probe
+```
+
+### Benchmarks
+
+Run the general copy benchmark:
 
 ```bash
 cargo bench -p rvvdk-datamover --bench copy
 ```
 
-For storage-backed benchmarks, select an explicit benchmark directory:
+Choose an explicit storage directory for direct-I/O measurements:
 
 ```bash
 RVVDK_BENCH_DIR=/path/to/benchmark-storage \
 cargo bench -p rvvdk-datamover --bench direct_io
 ```
+
+Additional targets cover buffer pools, io_uring, direct io_uring, and sparse
+workloads. Measurements depend on the filesystem, page cache, hardware, and
+flush policy. See the [benchmark notes](docs/benchmarks.md) for historical results
+and the [review](docs/project-review-2026-09-28.md) for measurement gaps.
+
+## Documentation
+
+| Start here | What you will find |
+|:---|:---|
+| [Implementation roadmap](docs/roadmap.md) | The sequence we will implement, with completion criteria |
+| [Implementation log](docs/implementation-log.md) | Work-package status, validation evidence, and performance decisions |
+| [Project review · September 2026](docs/project-review-2026-09-28.md) | Current capabilities, confirmed defects, and architectural gaps |
+| [Architecture](docs/architecture.md) | Layering and the evolution of the execution model |
+| [Decisions](docs/adr) | Rationale behind architectural changes |
+| [Benchmarks](docs/benchmarks.md) | Performance gates, baseline policy, workloads, and recorded measurements |
+
+---
+
+<div align="center">
+
+Licensed under [Apache 2.0](LICENSE).
+
+</div>
