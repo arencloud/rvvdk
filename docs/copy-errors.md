@@ -69,7 +69,7 @@ reports an error. Concurrent/native completion order need not match disk offsets
 | bytes_read | Fully completed backend read_exact_at calls, or observed positive native read CQE bytes |
 | bytes_written | Fully completed backend write_all_at calls, or observed positive native write CQE bytes |
 | bytes_zeroed | Successful accelerated zero operations |
-| bytes_discarded | Successful accelerated discard operations |
+| bytes_discarded | Logical bytes successfully processed by zero-guaranteed discard; not reclaimed physical space |
 | blocks_completed | Successful complete Data transfers or fallback zero-write blocks |
 | extents_completed | Completed sequential/native extents; None for worker failures whose work items do not identify completed extents |
 | unconfirmed_io | Additional I/O may have occurred outside these counters |

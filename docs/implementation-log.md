@@ -41,8 +41,8 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 | R0.5 | Complete | Endpoint capabilities/live capacity, known aliases, native binding, and contextual preflight errors | Required correctness cost accepted: planning +2.08–2.15 µs; final copy aggregates −1.93% to +2.37%; general qualification provisional |
 | V0 | Planned | Independent VMware access feasibility; licensed/evaluation host needed for representative API workflows | Pending — first transport baseline follows functional proof |
 
-R1.1–R1.6 are complete within their documented scopes; their detailed records
-appear below. R2–R9 and V0 remain planned in the roadmap. Performance qualification
+R1.1–R1.6 and R2.1 are complete within their documented scopes; their detailed
+records appear below. R2.2 onward and V0 remain planned in the roadmap. Performance qualification
 remains provisional as recorded for each step.
 
 ## Per-step record template
@@ -720,17 +720,90 @@ run-to-run variation without ruling out candidate effects. Full interpretation i
 [R1.6 report](benchmark-results/2026-09-29-r16/README.md). No buffer/queue tuning or
 ESXi work was needed for this local step.
 
+## R2.1 — Logical Hole zero-read guarantee
+
+Date: 2026-09-29. Status: **Complete within the logical-content contract**;
+local filesystem allocation and performance qualification remain open.
+Baseline: `25977f6` (R1.6), initially clean working tree. Candidate is committed
+with this record; [source/harness patches, binary hashes, and results](benchmark-results/2026-09-29-r21/README.md)
+identify the measured implementation.
+
+Problem: the shared policy chose DISCARD for Hole output without a guarantee
+that a successful call would produce zero-reading bytes. A backend could report
+success while leaving nonzero destination contents.
+
+Implementation:
+
+1. Defined Zero and Hole as logical zero-read guarantees. Physical unallocation
+   must not hide inherited parent data; logical backends resolve it before
+   reporting Hole. Source snapshot/consistency requirements remain unchanged.
+2. Added Capabilities::DISCARD_ZEROES (bit 8), a modifier requiring DISCARD.
+   Successful calls must zero the complete requested logical range, preserve
+   surrounding bytes and disk size, and do not promise physical reclamation,
+   atomic rollback, or durability. WRITE_ZERO retains its zero-content contract.
+3. Updated the shared selector used by sequential, worker, and native sparse
+   execution. Hole chooses discard only with both flags, otherwise WRITE_ZERO,
+   otherwise bounded zero writes. Data and Zero selection are unchanged.
+4. Default MemoryBlockDevice advertises the new guarantee because its discard
+   fills bytes with zero. Explicit capability masks are not silently upgraded;
+   read-only construction remains without discard. RawDisk forwards the flags.
+   Local filesystem operations remain R2.2, so local Hole output still uses
+   bounded zero writes.
+5. Preserved no-retry behavior for a failed advertised sparse operation, even
+   Unsupported after a partial mutation. Failure context/counters and flush/
+   observer boundaries remain unchanged. bytes_discarded measures logical bytes
+   successfully processed, not actual physical space reclaimed.
+6. Added six tests: explicit memory capability advertisement; all eight flag
+   combinations across four portable entry paths with one/four workers;
+   native sparse dispatch; partial guaranteed-discard failure; and two mixed
+   RAW/native parity profiles with unqualified DISCARD. Expanded existing
+   translated-disk/semantic matrices and migrated zero-guaranteeing fixtures so
+   accelerated and failure-path coverage still exercise their intended calls.
+7. Reproduced both portable and native regressions on the baseline with only a
+   new flag declaration and the new fixture. Baseline reports two expected test
+   failures; candidate passes. The reproduction patch, commands, and output are
+   retained, then baseline production code was restored before benchmarking.
+8. Updated semantic-policy/failure benchmark fixtures to explicitly advertise
+   zero-reading discard using a bit literal compilable on both revisions. Added
+   exact accelerated zero/discard counter assertions. Matched benchmark harness
+   edits are saved separately; baseline and candidate use identical harnesses.
+9. Accepted [ADR-0026](adr/0026-logical-hole-guarantee.md), superseding the unsafe
+   unconditional preference in ADR-0003/0022. Updated trait contracts,
+   architecture, README, error counter definitions, and roadmap.
+
+Validation: **305 workspace tests passed** (six new), formatting, strict
+all-target Clippy, and core/datamover library compilation for
+wasm32-unknown-unknown. The portable result is compilation, not runtime
+qualification. Tests validate logical bytes and operation selection; memory and
+synthetic discard implementations do not prove filesystem space reclamation.
+
+Performance disposition: main aggregates range from −2.16% to +4.01%; complete
+RAW copies are +0.82%/+0.29% Threaded/native. Four-worker dynamic memory has
++4.01% main and +2.60% longer-repeat aggregates, including +5.92%/+7.49% slow
+pairs. Fragmented no-op observation retains a +10.39% pair despite aggregate
+−0.61%. Accept the correctness fix provisionally; no general speedup or clean
+performance qualification is claimed. [The report](benchmark-results/2026-09-29-r21/README.md)
+records the focused repeat and identical-baseline control (+1.92%/−1.76%/+4.95%
+pairs). That variability does not rule out candidate-specific effects. Prior
+PERF.0 issues remain open.
+
+Additional harness audit: the pre-existing scheduler_failure benchmark omits
+FLUSH and asserts raw Io errors, predating current preflight/CopyExecution
+contracts. Its new guarantee declaration is migrated, but its runtime repair
+remains PERF.0 work before those failure-latency timings can be reused. It was
+not used for the R2.1 measurements.
+
 ## Next session
 
-Start **R2.1**: specify the logical Hole zero-read guarantee (ADR-0026), distinguish
-ordinary discard from zero-guaranteed deallocation, and update shared policy so
-copying onto nonzero-prefilled destinations always preserves logical bytes.
-Cover advertised capabilities, accelerated success/failure, and safe zero-write
-fallback across sequential, concurrent, and native paths. Local filesystem
-hole punching and native runtime/tail compatibility remain subsequent R2 work.
+Start **R2.2**: implement local zeroing and hole punching under the accepted
+logical-content guarantee. Check write access/ranges, preserve disk size and
+unaligned boundary bytes, handle unsupported filesystems inside the backend,
+and advertise only guarantees that every successful call satisfies. Test with
+nonzero-prefilled destinations and verify actual allocation separately on a
+supporting storage filesystem. Native availability/tail compatibility and
+per-job ring reuse remain later R2 steps.
 
-Carry R1.5 four-worker mixed sparse variability and prior PERF.0 issues into
-controlled-runner qualification; retain the R1.6 disposition above. Preserve
-failure progress, rejection-before-observation where guaranteed, and measured
-success-path performance. Keep tracking evidence and committing each completed
-step. ESXi is still unnecessary; request the 60-day trial when V0 is ready.
+Keep prior PERF.0 issues and this step's performance disposition open for a
+controlled runner. Preserve failure context, copy budgets, and shared-policy
+parity. Track evidence and commit each completed step. ESXi remains unnecessary;
+request the 60-day trial when V0 is ready.

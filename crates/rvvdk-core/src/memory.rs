@@ -16,7 +16,8 @@ impl MemoryBlockDevice {
                 | Capabilities::WRITE
                 | Capabilities::FLUSH
                 | Capabilities::WRITE_ZERO
-                | Capabilities::DISCARD,
+                | Capabilities::DISCARD
+                | Capabilities::DISCARD_ZEROES,
         )
     }
 
@@ -363,6 +364,28 @@ mod tests {
         device.read_exact_at(100, &mut buffer).unwrap();
 
         assert_eq!(buffer, [b'a', b'b', b'c', 0, 0, 0, 0, b'h', b'i', b'j',]);
+    }
+
+    #[test]
+    fn zero_read_discard_guarantee_is_explicit() {
+        let device = MemoryBlockDevice::new(4096).unwrap();
+        assert!(
+            device
+                .capabilities()
+                .contains(Capabilities::DISCARD | Capabilities::DISCARD_ZEROES)
+        );
+        let custom = MemoryBlockDevice::with_capabilities(
+            4096,
+            Capabilities::READ | Capabilities::WRITE | Capabilities::DISCARD,
+        )
+        .unwrap();
+        assert!(!custom.capabilities().contains(Capabilities::DISCARD_ZEROES));
+        assert!(
+            !MemoryBlockDevice::read_only(4096)
+                .unwrap()
+                .capabilities()
+                .contains(Capabilities::DISCARD_ZEROES)
+        );
     }
 
     #[test]

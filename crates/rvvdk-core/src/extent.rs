@@ -2,8 +2,13 @@ use crate::{DiskRange, Error, Result};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ExtentKind {
+    /// Logical bytes must be read from the source.
     Data,
+    /// Every logical byte reads zero; source payload reads may be omitted.
     Zero,
+    /// Every logical byte reads zero; prefer zero-guaranteed deallocation on
+    /// output. Physical unallocation alone is insufficient: backing/parent
+    /// contents must already be resolved before reporting a logical Hole.
     Hole,
 }
 

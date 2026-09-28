@@ -16,6 +16,8 @@ use support::{
     incompressible_buffer, remove_file,
 };
 
+// Bit 8 is DISCARD_ZEROES. Use its literal value so this identical harness
+// can also benchmark the pre-R2.1 baseline without changing its core API.
 const SIZE: usize = 16 * MIB;
 const BLOCK: usize = 64 * 1024;
 
@@ -125,7 +127,11 @@ impl VirtualDisk for FaultDisk {
         DiskGeometry::new(SIZE as u64, 512, 4096).unwrap()
     }
     fn capabilities(&self) -> Capabilities {
-        Capabilities::READ | Capabilities::WRITE | Capabilities::WRITE_ZERO | Capabilities::DISCARD
+        Capabilities::READ
+            | Capabilities::WRITE
+            | Capabilities::WRITE_ZERO
+            | Capabilities::DISCARD
+            | Capabilities::from_bits_retain(1 << 8)
     }
     fn read_at(&self, _: u64, buffer: &mut [u8]) -> Result<usize> {
         self.check(Operation::Read)?;

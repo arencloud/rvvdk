@@ -90,7 +90,7 @@ fn base_destination_capabilities() -> Capabilities {
     Capabilities::READ | Capabilities::WRITE | Capabilities::FLUSH
 }
 
-fn parity_profiles() -> [ParityProfile; 3] {
+fn parity_profiles() -> [ParityProfile; 5] {
     let base = base_destination_capabilities();
 
     let data_blocks = ((2 * EXTENT_SIZE) / BLOCK_SIZE) as u64;
@@ -98,6 +98,24 @@ fn parity_profiles() -> [ParityProfile; 3] {
     let all_blocks = (FILE_SIZE / BLOCK_SIZE) as u64;
 
     [
+        // DISCARD without the zero-read guarantee must never be selected,
+        // even when the fixture happens to implement it by writing zeroes.
+        ParityProfile {
+            name: "ordinary-discard-write-zero",
+            capabilities: base | Capabilities::DISCARD | Capabilities::WRITE_ZERO,
+            expected_bytes_written: (2 * EXTENT_SIZE) as u64,
+            expected_bytes_zeroed: (2 * EXTENT_SIZE) as u64,
+            expected_bytes_discarded: 0,
+            expected_blocks_copied: data_blocks,
+        },
+        ParityProfile {
+            name: "ordinary-discard-fallback",
+            capabilities: base | Capabilities::DISCARD,
+            expected_bytes_written: FILE_SIZE as u64,
+            expected_bytes_zeroed: 0,
+            expected_bytes_discarded: 0,
+            expected_blocks_copied: all_blocks,
+        },
         /*
          * Profile 1
          *
@@ -107,7 +125,10 @@ fn parity_profiles() -> [ParityProfile; 3] {
         ParityProfile {
             name: "write-zero-and-discard",
 
-            capabilities: base | Capabilities::WRITE_ZERO | Capabilities::DISCARD,
+            capabilities: base
+                | Capabilities::WRITE_ZERO
+                | Capabilities::DISCARD
+                | Capabilities::DISCARD_ZEROES,
 
             /*
              * Only the two Data extents are ordinary writes.
@@ -427,16 +448,26 @@ fn run_parity_profile(profile: ParityProfile) {
 }
 
 #[test]
-fn parity_with_write_zero_and_discard() {
+fn parity_with_ordinary_discard_and_write_zero() {
     run_parity_profile(parity_profiles()[0]);
 }
 
 #[test]
-fn parity_with_write_zero_only() {
+fn parity_with_ordinary_discard_fallback() {
     run_parity_profile(parity_profiles()[1]);
 }
 
 #[test]
-fn parity_with_zero_write_fallback() {
+fn parity_with_write_zero_and_discard() {
     run_parity_profile(parity_profiles()[2]);
+}
+
+#[test]
+fn parity_with_write_zero_only() {
+    run_parity_profile(parity_profiles()[3]);
+}
+
+#[test]
+fn parity_with_zero_write_fallback() {
+    run_parity_profile(parity_profiles()[4]);
 }

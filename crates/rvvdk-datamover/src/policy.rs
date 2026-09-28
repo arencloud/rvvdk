@@ -1,7 +1,7 @@
 use rvvdk_core::{Capabilities, ExtentKind};
 
-/// Physical operation selected from logical intent. DISCARD retains its current
-/// contract; requiring guaranteed zero reads is a separate R2 capability change.
+/// Physical operation selected from logical intent. Hole output must read zero;
+/// ordinary discard is insufficient without its explicit zero-read guarantee.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Operation {
     Copy,
@@ -16,7 +16,7 @@ pub(crate) fn select(kind: ExtentKind, capabilities: impl FnOnce() -> Capabiliti
         ExtentKind::Zero => zero_operation(capabilities()),
         ExtentKind::Hole => {
             let capabilities = capabilities();
-            if capabilities.contains(Capabilities::DISCARD) {
+            if capabilities.contains(Capabilities::DISCARD | Capabilities::DISCARD_ZEROES) {
                 Operation::Discard
             } else {
                 zero_operation(capabilities)

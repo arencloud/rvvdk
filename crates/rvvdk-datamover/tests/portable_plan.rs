@@ -134,9 +134,12 @@ fn trait_object_plans_preserve_translated_data_zero_and_hole_semantics() {
     for workers in [1, 4] {
         for capabilities in [
             Capabilities::empty(),
-            Capabilities::WRITE_ZERO,
             Capabilities::DISCARD,
+            Capabilities::DISCARD_ZEROES,
             Capabilities::WRITE_ZERO | Capabilities::DISCARD,
+            Capabilities::WRITE_ZERO,
+            Capabilities::DISCARD | Capabilities::DISCARD_ZEROES,
+            Capabilities::WRITE_ZERO | Capabilities::DISCARD | Capabilities::DISCARD_ZEROES,
         ] {
             for observed in [false, true] {
                 let source = TranslatedDisk::new(true, Capabilities::empty());
@@ -165,7 +168,9 @@ fn trait_object_plans_preserve_translated_data_zero_and_hole_semantics() {
                 assert_eq!(report.stats().extents_processed(), 4);
                 let zeroed = if capabilities.contains(Capabilities::WRITE_ZERO) {
                     BLOCK as u64
-                        * if capabilities.contains(Capabilities::DISCARD) {
+                        * if capabilities
+                            .contains(Capabilities::DISCARD | Capabilities::DISCARD_ZEROES)
+                        {
                             1
                         } else {
                             2
@@ -173,7 +178,9 @@ fn trait_object_plans_preserve_translated_data_zero_and_hole_semantics() {
                 } else {
                     0
                 };
-                let discarded = if capabilities.contains(Capabilities::DISCARD) {
+                let discarded = if capabilities
+                    .contains(Capabilities::DISCARD | Capabilities::DISCARD_ZEROES)
+                {
                     BLOCK as u64
                 } else {
                     0

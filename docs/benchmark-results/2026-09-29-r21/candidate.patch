@@ -1,0 +1,769 @@
+diff --git a/crates/rvvdk-core/src/block_device.rs b/crates/rvvdk-core/src/block_device.rs
+index 1cb21af..4702d48 100644
+--- a/crates/rvvdk-core/src/block_device.rs
++++ b/crates/rvvdk-core/src/block_device.rs
+@@ -74,6 +74,8 @@ pub trait BlockDevice: Send + Sync {
+         Ok(())
+     }
+ 
++    /// On success, the complete requested logical range reads zero. Preserve
++    /// bytes outside the range and disk size; durability requires flush.
+     fn write_zero_at(&self, offset: u64, length: u64) -> Result<()> {
+         if !self.capabilities().contains(Capabilities::WRITE_ZERO) {
+             return Err(Error::Unsupported);
+@@ -91,6 +93,10 @@ pub trait BlockDevice: Send + Sync {
+         Err(Error::Unsupported)
+     }
+ 
++    /// Request discard without assuming its read-back contents. With both
++    /// DISCARD and DISCARD_ZEROES advertised, success must make the entire
++    /// requested logical range read zero and preserve surrounding bytes/size.
++    /// A failed call may have partial effects; callers must not assume rollback.
+     fn discard(&self, offset: u64, length: u64) -> Result<()> {
+         if !self.capabilities().contains(Capabilities::DISCARD) {
+             return Err(Error::Unsupported);
+@@ -108,6 +114,8 @@ pub trait BlockDevice: Send + Sync {
+         Err(Error::Unsupported)
+     }
+ 
++    /// Describe logical contents. Zero and Hole both guarantee zero reads;
++    /// physical unallocation that exposes parent data must not be reported as Hole.
+     fn extents(&self, _offset: u64, _length: u64) -> Result<Vec<Extent>> {
+         Err(Error::Unsupported)
+     }
+diff --git a/crates/rvvdk-core/src/capabilities.rs b/crates/rvvdk-core/src/capabilities.rs
+index 6b8243d..1cc6e72 100644
+--- a/crates/rvvdk-core/src/capabilities.rs
++++ b/crates/rvvdk-core/src/capabilities.rs
+@@ -6,10 +6,17 @@ bitflags! {
+         const READ        = 1 << 0;
+         const WRITE       = 1 << 1;
+         const FLUSH       = 1 << 2;
++        /// Accepts discard requests; success alone does not guarantee zero reads.
+         const DISCARD     = 1 << 3;
++        /// Successful write_zero_at makes the complete requested range read zero.
+         const WRITE_ZERO  = 1 << 4;
+         const EXTENTS     = 1 << 5;
+         const SPARSE      = 1 << 6;
+         const DIRECT_IO   = 1 << 7;
++        /// With DISCARD, successful discard makes the entire requested logical
++        /// range read zero, preserves bytes outside it, and preserves disk size.
++        /// This modifier alone does not advertise an operation. It guarantees
++        /// logical contents, not physical space reclamation or durability.
++        const DISCARD_ZEROES = 1 << 8;
+     }
+ }
+diff --git a/crates/rvvdk-core/src/extent.rs b/crates/rvvdk-core/src/extent.rs
+index 95a1831..318e62a 100644
+--- a/crates/rvvdk-core/src/extent.rs
++++ b/crates/rvvdk-core/src/extent.rs
+@@ -2,8 +2,13 @@ use crate::{DiskRange, Error, Result};
+ 
+ #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+ pub enum ExtentKind {
++    /// Logical bytes must be read from the source.
+     Data,
++    /// Every logical byte reads zero; source payload reads may be omitted.
+     Zero,
++    /// Every logical byte reads zero; prefer zero-guaranteed deallocation on
++    /// output. Physical unallocation alone is insufficient: backing/parent
++    /// contents must already be resolved before reporting a logical Hole.
+     Hole,
+ }
+ 
+diff --git a/crates/rvvdk-core/src/memory.rs b/crates/rvvdk-core/src/memory.rs
+index 1e18c00..365ab04 100644
+--- a/crates/rvvdk-core/src/memory.rs
++++ b/crates/rvvdk-core/src/memory.rs
+@@ -16,7 +16,8 @@ impl MemoryBlockDevice {
+                 | Capabilities::WRITE
+                 | Capabilities::FLUSH
+                 | Capabilities::WRITE_ZERO
+-                | Capabilities::DISCARD,
++                | Capabilities::DISCARD
++                | Capabilities::DISCARD_ZEROES,
+         )
+     }
+ 
+@@ -365,6 +366,28 @@ mod tests {
+         assert_eq!(buffer, [b'a', b'b', b'c', 0, 0, 0, 0, b'h', b'i', b'j',]);
+     }
+ 
++    #[test]
++    fn zero_read_discard_guarantee_is_explicit() {
++        let device = MemoryBlockDevice::new(4096).unwrap();
++        assert!(
++            device
++                .capabilities()
++                .contains(Capabilities::DISCARD | Capabilities::DISCARD_ZEROES)
++        );
++        let custom = MemoryBlockDevice::with_capabilities(
++            4096,
++            Capabilities::READ | Capabilities::WRITE | Capabilities::DISCARD,
++        )
++        .unwrap();
++        assert!(!custom.capabilities().contains(Capabilities::DISCARD_ZEROES));
++        assert!(
++            !MemoryBlockDevice::read_only(4096)
++                .unwrap()
++                .capabilities()
++                .contains(Capabilities::DISCARD_ZEROES)
++        );
++    }
++
+     #[test]
+     fn discard_clears_memory_backend_range() {
+         let device = MemoryBlockDevice::new(4096).unwrap();
+diff --git a/crates/rvvdk-core/src/virtual_disk.rs b/crates/rvvdk-core/src/virtual_disk.rs
+index 11f02f1..cd8c0c5 100644
+--- a/crates/rvvdk-core/src/virtual_disk.rs
++++ b/crates/rvvdk-core/src/virtual_disk.rs
+@@ -74,12 +74,20 @@ pub trait VirtualDisk: Send + Sync {
+         Ok(())
+     }
+ 
++    /// On success, the complete requested logical range reads zero. Preserve
++    /// bytes outside the range and disk size; durability requires flush.
+     fn write_zero_at(&self, offset: u64, length: u64) -> Result<()>;
+ 
++    /// Request discard without assuming its read-back contents. With both
++    /// DISCARD and DISCARD_ZEROES advertised, success must make the entire
++    /// requested logical range read zero and preserve surrounding bytes/size.
++    /// A failed call may have partial effects; callers must not assume rollback.
+     fn discard(&self, offset: u64, length: u64) -> Result<()>;
+ 
+     fn flush(&self) -> Result<()>;
+ 
++    /// Describe logical contents. Zero and Hole both guarantee zero reads;
++    /// physical unallocation that exposes parent data must not be reported as Hole.
+     fn extents(&self, offset: u64, length: u64) -> Result<Vec<Extent>>;
+ 
+     fn size(&self) -> u64 {
+diff --git a/crates/rvvdk-datamover/benches/scheduler.rs b/crates/rvvdk-datamover/benches/scheduler.rs
+index d9e2e2e..219db96 100644
+--- a/crates/rvvdk-datamover/benches/scheduler.rs
++++ b/crates/rvvdk-datamover/benches/scheduler.rs
+@@ -16,6 +16,8 @@ use support::{
+     incompressible_buffer, remove_file,
+ };
+ 
++// Bit 8 is DISCARD_ZEROES. Use its literal value so this identical harness
++// can also benchmark the pre-R2.1 baseline without changing its core API.
+ const SIZE: usize = 16 * MIB;
+ const BLOCK: usize = 64 * 1024;
+ 
+@@ -125,7 +127,11 @@ impl VirtualDisk for FaultDisk {
+         DiskGeometry::new(SIZE as u64, 512, 4096).unwrap()
+     }
+     fn capabilities(&self) -> Capabilities {
+-        Capabilities::READ | Capabilities::WRITE | Capabilities::WRITE_ZERO | Capabilities::DISCARD
++        Capabilities::READ
++            | Capabilities::WRITE
++            | Capabilities::WRITE_ZERO
++            | Capabilities::DISCARD
++            | Capabilities::from_bits_retain(1 << 8)
+     }
+     fn read_at(&self, _: u64, buffer: &mut [u8]) -> Result<usize> {
+         self.check(Operation::Read)?;
+diff --git a/crates/rvvdk-datamover/benches/semantic_policy.rs b/crates/rvvdk-datamover/benches/semantic_policy.rs
+index dc2f233..74c0a2f 100644
+--- a/crates/rvvdk-datamover/benches/semantic_policy.rs
++++ b/crates/rvvdk-datamover/benches/semantic_policy.rs
+@@ -6,6 +6,8 @@ use rvvdk_core::{
+ };
+ use rvvdk_datamover::{CopyOptions, DataMover, NoopProgressObserver};
+ 
++// Bit 8 is DISCARD_ZEROES. Use its literal value so this identical harness
++// can also benchmark the pre-R2.1 baseline without changing its core API.
+ const SIZE: usize = 1024 * 1024;
+ const BLOCK: usize = 64 * 1024;
+ 
+@@ -76,7 +78,10 @@ fn semantic_policy(criterion: &mut Criterion) {
+             MemoryBlockDevice::with_capabilities(
+                 SIZE,
+                 if accelerated {
+-                    capabilities | Capabilities::WRITE_ZERO | Capabilities::DISCARD
++                    capabilities
++                        | Capabilities::WRITE_ZERO
++                        | Capabilities::DISCARD
++                        | Capabilities::from_bits_retain(1 << 8)
+                 } else {
+                     capabilities
+                 },
+@@ -112,6 +117,14 @@ fn semantic_policy(criterion: &mut Criterion) {
+                         elapsed += start.elapsed();
+                         let stats = report.stats();
+                         assert_eq!(stats.bytes_read(), data_bytes);
++                        assert_eq!(
++                            stats.bytes_discarded(),
++                            if accelerated { (SIZE / 4) as u64 } else { 0 }
++                        );
++                        assert_eq!(
++                            stats.bytes_zeroed(),
++                            if accelerated { (SIZE / 4) as u64 } else { 0 }
++                        );
+                         assert_eq!(
+                             stats.bytes_written() + stats.bytes_zeroed() + stats.bytes_discarded(),
+                             SIZE as u64
+diff --git a/crates/rvvdk-datamover/src/concurrent/tests.rs b/crates/rvvdk-datamover/src/concurrent/tests.rs
+index dca1102..94a99b1 100644
+--- a/crates/rvvdk-datamover/src/concurrent/tests.rs
++++ b/crates/rvvdk-datamover/src/concurrent/tests.rs
+@@ -105,6 +105,7 @@ impl VirtualDisk for FaultDisk<'_> {
+             | Capabilities::WRITE
+             | Capabilities::WRITE_ZERO
+             | Capabilities::DISCARD
++            | Capabilities::DISCARD_ZEROES
+             | Capabilities::FLUSH
+     }
+     fn read_at(&self, _: u64, buffer: &mut [u8]) -> Result<usize> {
+diff --git a/crates/rvvdk-datamover/src/policy.rs b/crates/rvvdk-datamover/src/policy.rs
+index 3f71183..5451f44 100644
+--- a/crates/rvvdk-datamover/src/policy.rs
++++ b/crates/rvvdk-datamover/src/policy.rs
+@@ -1,7 +1,7 @@
+ use rvvdk_core::{Capabilities, ExtentKind};
+ 
+-/// Physical operation selected from logical intent. DISCARD retains its current
+-/// contract; requiring guaranteed zero reads is a separate R2 capability change.
++/// Physical operation selected from logical intent. Hole output must read zero;
++/// ordinary discard is insufficient without its explicit zero-read guarantee.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ pub(crate) enum Operation {
+     Copy,
+@@ -16,7 +16,7 @@ pub(crate) fn select(kind: ExtentKind, capabilities: impl FnOnce() -> Capabiliti
+         ExtentKind::Zero => zero_operation(capabilities()),
+         ExtentKind::Hole => {
+             let capabilities = capabilities();
+-            if capabilities.contains(Capabilities::DISCARD) {
++            if capabilities.contains(Capabilities::DISCARD | Capabilities::DISCARD_ZEROES) {
+                 Operation::Discard
+             } else {
+                 zero_operation(capabilities)
+diff --git a/crates/rvvdk-datamover/tests/copy_failures.rs b/crates/rvvdk-datamover/tests/copy_failures.rs
+index 9a3cc54..4fbd1b5 100644
+--- a/crates/rvvdk-datamover/tests/copy_failures.rs
++++ b/crates/rvvdk-datamover/tests/copy_failures.rs
+@@ -32,7 +32,7 @@ impl VirtualDisk for Disk {
+         if self.fail == Some(CopyOperation::Write) {
+             base
+         } else {
+-            base | Capabilities::WRITE_ZERO | Capabilities::DISCARD
++            base | Capabilities::WRITE_ZERO | Capabilities::DISCARD | Capabilities::DISCARD_ZEROES
+         }
+     }
+     fn extents(&self, _: u64, _: u64) -> Result<Vec<Extent>> {
+diff --git a/crates/rvvdk-datamover/tests/execution_parity.rs b/crates/rvvdk-datamover/tests/execution_parity.rs
+index e354707..c91f6db 100644
+--- a/crates/rvvdk-datamover/tests/execution_parity.rs
++++ b/crates/rvvdk-datamover/tests/execution_parity.rs
+@@ -90,7 +90,7 @@ fn base_destination_capabilities() -> Capabilities {
+     Capabilities::READ | Capabilities::WRITE | Capabilities::FLUSH
+ }
+ 
+-fn parity_profiles() -> [ParityProfile; 3] {
++fn parity_profiles() -> [ParityProfile; 5] {
+     let base = base_destination_capabilities();
+ 
+     let data_blocks = ((2 * EXTENT_SIZE) / BLOCK_SIZE) as u64;
+@@ -98,6 +98,24 @@ fn parity_profiles() -> [ParityProfile; 3] {
+     let all_blocks = (FILE_SIZE / BLOCK_SIZE) as u64;
+ 
+     [
++        // DISCARD without the zero-read guarantee must never be selected,
++        // even when the fixture happens to implement it by writing zeroes.
++        ParityProfile {
++            name: "ordinary-discard-write-zero",
++            capabilities: base | Capabilities::DISCARD | Capabilities::WRITE_ZERO,
++            expected_bytes_written: (2 * EXTENT_SIZE) as u64,
++            expected_bytes_zeroed: (2 * EXTENT_SIZE) as u64,
++            expected_bytes_discarded: 0,
++            expected_blocks_copied: data_blocks,
++        },
++        ParityProfile {
++            name: "ordinary-discard-fallback",
++            capabilities: base | Capabilities::DISCARD,
++            expected_bytes_written: FILE_SIZE as u64,
++            expected_bytes_zeroed: 0,
++            expected_bytes_discarded: 0,
++            expected_blocks_copied: all_blocks,
++        },
+         /*
+          * Profile 1
+          *
+@@ -107,7 +125,10 @@ fn parity_profiles() -> [ParityProfile; 3] {
+         ParityProfile {
+             name: "write-zero-and-discard",
+ 
+-            capabilities: base | Capabilities::WRITE_ZERO | Capabilities::DISCARD,
++            capabilities: base
++                | Capabilities::WRITE_ZERO
++                | Capabilities::DISCARD
++                | Capabilities::DISCARD_ZEROES,
+ 
+             /*
+              * Only the two Data extents are ordinary writes.
+@@ -427,16 +448,26 @@ fn run_parity_profile(profile: ParityProfile) {
+ }
+ 
+ #[test]
+-fn parity_with_write_zero_and_discard() {
++fn parity_with_ordinary_discard_and_write_zero() {
+     run_parity_profile(parity_profiles()[0]);
+ }
+ 
+ #[test]
+-fn parity_with_write_zero_only() {
++fn parity_with_ordinary_discard_fallback() {
+     run_parity_profile(parity_profiles()[1]);
+ }
+ 
+ #[test]
+-fn parity_with_zero_write_fallback() {
++fn parity_with_write_zero_and_discard() {
+     run_parity_profile(parity_profiles()[2]);
+ }
++
++#[test]
++fn parity_with_write_zero_only() {
++    run_parity_profile(parity_profiles()[3]);
++}
++
++#[test]
++fn parity_with_zero_write_fallback() {
++    run_parity_profile(parity_profiles()[4]);
++}
+diff --git a/crates/rvvdk-datamover/tests/extents.rs b/crates/rvvdk-datamover/tests/extents.rs
+index 503f6e1..37ada2f 100644
+--- a/crates/rvvdk-datamover/tests/extents.rs
++++ b/crates/rvvdk-datamover/tests/extents.rs
+@@ -131,7 +131,8 @@ fn processes_data_zero_and_hole_extents() {
+             | Capabilities::WRITE
+             | Capabilities::FLUSH
+             | Capabilities::WRITE_ZERO
+-            | Capabilities::DISCARD,
++            | Capabilities::DISCARD
++            | Capabilities::DISCARD_ZEROES,
+         Vec::new(),
+     );
+ 
+diff --git a/crates/rvvdk-datamover/tests/portable_plan.rs b/crates/rvvdk-datamover/tests/portable_plan.rs
+index a5e4601..49423c0 100644
+--- a/crates/rvvdk-datamover/tests/portable_plan.rs
++++ b/crates/rvvdk-datamover/tests/portable_plan.rs
+@@ -134,9 +134,12 @@ fn trait_object_plans_preserve_translated_data_zero_and_hole_semantics() {
+     for workers in [1, 4] {
+         for capabilities in [
+             Capabilities::empty(),
+-            Capabilities::WRITE_ZERO,
+             Capabilities::DISCARD,
++            Capabilities::DISCARD_ZEROES,
+             Capabilities::WRITE_ZERO | Capabilities::DISCARD,
++            Capabilities::WRITE_ZERO,
++            Capabilities::DISCARD | Capabilities::DISCARD_ZEROES,
++            Capabilities::WRITE_ZERO | Capabilities::DISCARD | Capabilities::DISCARD_ZEROES,
+         ] {
+             for observed in [false, true] {
+                 let source = TranslatedDisk::new(true, Capabilities::empty());
+@@ -165,7 +168,9 @@ fn trait_object_plans_preserve_translated_data_zero_and_hole_semantics() {
+                 assert_eq!(report.stats().extents_processed(), 4);
+                 let zeroed = if capabilities.contains(Capabilities::WRITE_ZERO) {
+                     BLOCK as u64
+-                        * if capabilities.contains(Capabilities::DISCARD) {
++                        * if capabilities
++                            .contains(Capabilities::DISCARD | Capabilities::DISCARD_ZEROES)
++                        {
+                             1
+                         } else {
+                             2
+@@ -173,7 +178,9 @@ fn trait_object_plans_preserve_translated_data_zero_and_hole_semantics() {
+                 } else {
+                     0
+                 };
+-                let discarded = if capabilities.contains(Capabilities::DISCARD) {
++                let discarded = if capabilities
++                    .contains(Capabilities::DISCARD | Capabilities::DISCARD_ZEROES)
++                {
+                     BLOCK as u64
+                 } else {
+                     0
+diff --git a/crates/rvvdk-datamover/tests/semantic_policy.rs b/crates/rvvdk-datamover/tests/semantic_policy.rs
+index be85493..c070dbe 100644
+--- a/crates/rvvdk-datamover/tests/semantic_policy.rs
++++ b/crates/rvvdk-datamover/tests/semantic_policy.rs
+@@ -108,9 +108,12 @@ fn direct_planned_and_observed_calls_preserve_operation_trace_and_tail_accountin
+     ];
+     for capabilities in [
+         Capabilities::empty(),
+-        Capabilities::WRITE_ZERO,
+         Capabilities::DISCARD,
++        Capabilities::DISCARD_ZEROES,
+         Capabilities::WRITE_ZERO | Capabilities::DISCARD,
++        Capabilities::WRITE_ZERO,
++        Capabilities::DISCARD | Capabilities::DISCARD_ZEROES,
++        Capabilities::WRITE_ZERO | Capabilities::DISCARD | Capabilities::DISCARD_ZEROES,
+     ] {
+         let mut reference = None;
+         for mode in 0..3 {
+@@ -138,7 +141,7 @@ fn direct_planned_and_observed_calls_preserve_operation_trace_and_tail_accountin
+             assert_eq!(stats.bytes_read(), 4098);
+             assert_eq!(stats.extents_processed(), 4);
+             let zeroed = if capabilities.contains(Capabilities::WRITE_ZERO) {
+-                if capabilities.contains(Capabilities::DISCARD) {
++                if capabilities.contains(Capabilities::DISCARD | Capabilities::DISCARD_ZEROES) {
+                     8193
+                 } else {
+                     16386
+@@ -146,11 +149,12 @@ fn direct_planned_and_observed_calls_preserve_operation_trace_and_tail_accountin
+             } else {
+                 0
+             };
+-            let discarded = if capabilities.contains(Capabilities::DISCARD) {
+-                8193
+-            } else {
+-                0
+-            };
++            let discarded =
++                if capabilities.contains(Capabilities::DISCARD | Capabilities::DISCARD_ZEROES) {
++                    8193
++                } else {
++                    0
++                };
+             assert_eq!(stats.bytes_zeroed(), zeroed);
+             assert_eq!(stats.bytes_discarded(), discarded);
+             assert_eq!(stats.bytes_written(), 20484 - zeroed - discarded);
+@@ -190,7 +194,7 @@ fn byte_threshold_and_flush_order_are_preserved_for_data_and_sparse_operations()
+     for kind in [ExtentKind::Data, ExtentKind::Zero, ExtentKind::Hole] {
+         for capabilities in [
+             Capabilities::empty(),
+-            Capabilities::WRITE_ZERO | Capabilities::DISCARD,
++            Capabilities::WRITE_ZERO | Capabilities::DISCARD | Capabilities::DISCARD_ZEROES,
+         ] {
+             let source = Disk::new(&[(kind, 65 * MIB)], Capabilities::empty());
+             let destination = Disk::new(&[(kind, 65 * MIB)], capabilities);
+@@ -251,7 +255,7 @@ fn advertised_sparse_operation_failure_is_not_retried_as_a_write() {
+                 let source = Disk::new(&[(kind, 4096)], Capabilities::empty());
+                 let mut destination = Disk::new(
+                     &[(kind, 4096)],
+-                    Capabilities::WRITE_ZERO | Capabilities::DISCARD,
++                    Capabilities::WRITE_ZERO | Capabilities::DISCARD | Capabilities::DISCARD_ZEROES,
+                 );
+                 destination.failure = Some((operation, 0, 4096));
+                 let mover =
+@@ -299,7 +303,7 @@ fn native_sparse_failure_keeps_the_same_no_retry_policy() {
+     for (kind, operation) in [(ExtentKind::Zero, "zero"), (ExtentKind::Hole, "discard")] {
+         let mut destination = Disk::new(
+             &[(kind, 4096)],
+-            Capabilities::WRITE_ZERO | Capabilities::DISCARD,
++            Capabilities::WRITE_ZERO | Capabilities::DISCARD | Capabilities::DISCARD_ZEROES,
+         );
+         destination.failure = Some((operation, 0, 4096));
+         let plan = NativeExtentPlan::new(destination.extents.clone(), 4096).unwrap();
+diff --git a/crates/rvvdk-datamover/tests/hole_guarantee.rs b/crates/rvvdk-datamover/tests/hole_guarantee.rs
+new file mode 100644
+index 0000000..2cff3f4
+--- /dev/null
++++ b/crates/rvvdk-datamover/tests/hole_guarantee.rs
+@@ -0,0 +1,302 @@
++use std::sync::{
++    Mutex,
++    atomic::{AtomicUsize, Ordering},
++};
++
++use rvvdk_core::{Capabilities, DiskGeometry, Error, Extent, ExtentKind, Result, VirtualDisk};
++use rvvdk_datamover::{CopyOptions, DataMover, ProgressSnapshot};
++
++const SIZE: usize = 8212;
++const HOLE: usize = 8193;
++const GUARD: usize = 19;
++
++struct Disk {
++    bytes: Mutex<Vec<u8>>,
++    extents: Vec<Extent>,
++    capabilities: Capabilities,
++    source: bool,
++    fail_discard: bool,
++    reads: AtomicUsize,
++    writes: AtomicUsize,
++    zeroes: AtomicUsize,
++    discards: AtomicUsize,
++    flushes: AtomicUsize,
++}
++impl Disk {
++    fn new(extra: Capabilities, source: bool) -> Self {
++        Self {
++            bytes: Mutex::new(vec![if source { 0x5a } else { 0xa5 }; SIZE + GUARD]),
++            extents: vec![
++                Extent::new(0, 7, ExtentKind::Data).unwrap(),
++                Extent::new(7, 3, ExtentKind::Zero).unwrap(),
++                Extent::new(10, HOLE as u64, ExtentKind::Hole).unwrap(),
++                Extent::new(8203, 9, ExtentKind::Data).unwrap(),
++            ],
++            capabilities: Capabilities::READ | Capabilities::WRITE | Capabilities::FLUSH | extra,
++            source,
++            fail_discard: false,
++            reads: AtomicUsize::new(0),
++            writes: AtomicUsize::new(0),
++            zeroes: AtomicUsize::new(0),
++            discards: AtomicUsize::new(0),
++            flushes: AtomicUsize::new(0),
++        }
++    }
++    fn fill(&self, offset: u64, length: u64, value: u8) {
++        self.bytes.lock().unwrap()[offset as usize..(offset + length) as usize].fill(value);
++    }
++    fn check_bytes(&self, mixed: bool) {
++        let actual = self.bytes.lock().unwrap();
++        let mut expected = vec![0; SIZE];
++        if mixed {
++            expected[..7].fill(0x5a);
++            expected[8203..].fill(0x5a);
++        }
++        assert_eq!(&actual[..SIZE], expected);
++        assert_eq!(
++            &actual[SIZE..],
++            &[0xa5; GUARD],
++            "writes escaped logical size"
++        );
++    }
++}
++impl VirtualDisk for Disk {
++    fn geometry(&self) -> DiskGeometry {
++        DiskGeometry::new(SIZE as u64, 512, 4096).unwrap()
++    }
++    fn capabilities(&self) -> Capabilities {
++        self.capabilities
++    }
++    fn extents(&self, _: u64, _: u64) -> Result<Vec<Extent>> {
++        Ok(self.extents.clone())
++    }
++    fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
++        self.reads.fetch_add(buffer.len(), Ordering::Relaxed);
++        buffer.copy_from_slice(
++            &self.bytes.lock().unwrap()[offset as usize..offset as usize + buffer.len()],
++        );
++        if self.source {
++            // Resolve logical zeroes even though physical backing is nonzero.
++            for extent in &self.extents {
++                if extent.kind() != ExtentKind::Data {
++                    let start = offset.max(extent.offset());
++                    let end = (offset + buffer.len() as u64).min(extent.end());
++                    if start < end {
++                        buffer[(start - offset) as usize..(end - offset) as usize].fill(0);
++                    }
++                }
++            }
++        }
++        Ok(buffer.len())
++    }
++    fn write_at(&self, offset: u64, buffer: &[u8]) -> Result<usize> {
++        self.writes.fetch_add(1, Ordering::Relaxed);
++        self.bytes.lock().unwrap()[offset as usize..offset as usize + buffer.len()]
++            .copy_from_slice(buffer);
++        Ok(buffer.len())
++    }
++    fn write_zero_at(&self, offset: u64, length: u64) -> Result<()> {
++        assert!(self.capabilities.contains(Capabilities::WRITE_ZERO));
++        self.zeroes.fetch_add(1, Ordering::Relaxed);
++        self.fill(offset, length, 0);
++        Ok(())
++    }
++    fn discard(&self, offset: u64, length: u64) -> Result<()> {
++        assert!(self.capabilities.contains(Capabilities::DISCARD));
++        self.discards.fetch_add(1, Ordering::Relaxed);
++        if self.fail_discard {
++            self.fill(offset, 1, 0);
++            return Err(Error::Unsupported);
++        }
++        // Ordinary discard deliberately returns success with nonzero contents.
++        let value = if self.capabilities.contains(Capabilities::DISCARD_ZEROES) {
++            0
++        } else {
++            0xdd
++        };
++        self.fill(offset, length, value);
++        Ok(())
++    }
++    fn flush(&self) -> Result<()> {
++        self.flushes.fetch_add(1, Ordering::Relaxed);
++        Ok(())
++    }
++}
++fn variants() -> impl Iterator<Item = Capabilities> {
++    (0..8).map(|bits| {
++        let mut caps = Capabilities::empty();
++        if bits & 1 != 0 {
++            caps |= Capabilities::DISCARD;
++        }
++        if bits & 2 != 0 {
++            caps |= Capabilities::DISCARD_ZEROES;
++        }
++        if bits & 4 != 0 {
++            caps |= Capabilities::WRITE_ZERO;
++        }
++        caps
++    })
++}
++
++#[test]
++fn every_capability_combination_preserves_mixed_logical_bytes_across_portable_paths() {
++    for caps in variants() {
++        for workers in [1, 4] {
++            for mode in 0..4 {
++                let source = Disk::new(Capabilities::empty(), true);
++                let destination = Disk::new(caps, false);
++                let mover =
++                    DataMover::new(CopyOptions::with_execution(4096, 4096, workers, 1).unwrap());
++                let plan = mover.plan(&source).unwrap();
++                let callbacks = AtomicUsize::new(0);
++                let stats = match mode {
++                    0 => mover.copy(&source, &destination).unwrap(),
++                    1 => *mover
++                        .copy_with_report(&source, &destination)
++                        .unwrap()
++                        .stats(),
++                    2 => *mover
++                        .execute_plan(&plan, &source, &destination)
++                        .unwrap()
++                        .stats(),
++                    _ => *mover
++                        .execute_plan_with_observer(
++                            &plan,
++                            &source,
++                            &destination,
++                            &|_: &ProgressSnapshot| {
++                                callbacks.fetch_add(1, Ordering::Relaxed);
++                            },
++                        )
++                        .unwrap()
++                        .stats(),
++                };
++                let discarded =
++                    if caps.contains(Capabilities::DISCARD | Capabilities::DISCARD_ZEROES) {
++                        HOLE
++                    } else {
++                        0
++                    };
++                let zeroed = if caps.contains(Capabilities::WRITE_ZERO) {
++                    HOLE + 3 - discarded
++                } else {
++                    0
++                };
++                assert_eq!(stats.bytes_read(), 16);
++                assert_eq!(
++                    source.reads.load(Ordering::Relaxed),
++                    16,
++                    "read logical sparse bytes"
++                );
++                assert_eq!(stats.bytes_discarded(), discarded as u64);
++                assert_eq!(stats.bytes_zeroed(), zeroed as u64);
++                assert_eq!(stats.bytes_written(), (SIZE - zeroed - discarded) as u64);
++                assert_eq!(stats.extents_processed(), 4);
++                assert_eq!(
++                    destination.discards.load(Ordering::Relaxed) == 0,
++                    discarded == 0
++                );
++                assert_eq!(destination.flushes.load(Ordering::Relaxed), 1);
++                assert_eq!(callbacks.load(Ordering::Relaxed) > 0, mode == 3);
++                destination.check_bytes(true);
++            }
++        }
++    }
++}
++
++#[cfg(target_os = "linux")]
++#[test]
++fn native_sparse_dispatch_requires_the_same_zero_read_guarantee() {
++    use rvvdk_datamover::{
++        IoUringExecutionOptions,
++        io_uring::{NativeExtentPlan, copy_extent_plan_with_destination},
++    };
++    use std::os::fd::AsFd;
++    let path = std::env::temp_dir().join(format!("rvvdk-r21-hole-{}", std::process::id()));
++    std::fs::write(&path, vec![0x5a; SIZE]).unwrap();
++    let source = std::fs::File::open(&path).unwrap();
++    std::fs::remove_file(path).unwrap();
++    let plan = NativeExtentPlan::new(
++        vec![
++            Extent::new(0, 10, ExtentKind::Zero).unwrap(),
++            Extent::new(10, HOLE as u64, ExtentKind::Hole).unwrap(),
++            Extent::new(8203, 9, ExtentKind::Zero).unwrap(),
++        ],
++        SIZE as u64,
++    )
++    .unwrap();
++    for caps in variants() {
++        let destination = Disk::new(caps, false);
++        // Sparse-only dispatch never accesses the destination FD or submits Data.
++        let stats = copy_extent_plan_with_destination(
++            source.as_fd(),
++            source.as_fd(),
++            &destination,
++            &plan,
++            4096,
++            4096,
++            IoUringExecutionOptions::new(2).unwrap(),
++        )
++        .unwrap();
++        let discarded = if caps.contains(Capabilities::DISCARD | Capabilities::DISCARD_ZEROES) {
++            HOLE
++        } else {
++            0
++        };
++        let zeroed = if caps.contains(Capabilities::WRITE_ZERO) {
++            SIZE - discarded
++        } else {
++            0
++        };
++        assert_eq!(stats.bytes_read(), 0);
++        assert_eq!(stats.bytes_discarded(), discarded as u64);
++        assert_eq!(stats.bytes_zeroed(), zeroed as u64);
++        assert_eq!(stats.bytes_written(), (SIZE - zeroed - discarded) as u64);
++        assert_eq!(stats.extents_processed(), 3);
++        assert_eq!(
++            destination.discards.load(Ordering::Relaxed) == 0,
++            discarded == 0
++        );
++        assert_eq!(
++            destination.flushes.load(Ordering::Relaxed),
++            0,
++            "low-level API leaves flush to caller"
++        );
++        destination.check_bytes(false);
++    }
++}
++
++#[test]
++fn partial_guaranteed_discard_failure_is_not_retried_or_reported_complete() {
++    for workers in [1, 4] {
++        let mut source = Disk::new(Capabilities::empty(), true);
++        source.extents = vec![Extent::new(0, SIZE as u64, ExtentKind::Hole).unwrap()];
++        let mut destination = Disk::new(
++            Capabilities::DISCARD | Capabilities::DISCARD_ZEROES | Capabilities::WRITE_ZERO,
++            false,
++        );
++        destination.fail_discard = true;
++        // One work item makes failure progress deterministic even with four workers.
++        let mover = DataMover::new(CopyOptions::with_concurrency(SIZE, 4096, workers).unwrap());
++        let plan = mover.plan(&source).unwrap();
++        let callbacks = AtomicUsize::new(0);
++        let error = mover
++            .execute_plan_with_observer(&plan, &source, &destination, &|_: &ProgressSnapshot| {
++                callbacks.fetch_add(1, Ordering::Relaxed);
++            })
++            .unwrap_err();
++        let failure = error.copy_failure().unwrap();
++        assert_eq!(failure.operation, rvvdk_core::CopyOperation::Discard);
++        assert!(matches!(failure.cause, Error::Unsupported));
++        assert!(failure.progress.unconfirmed_io);
++        assert_eq!(failure.progress.bytes_discarded, 0);
++        assert_eq!(destination.discards.load(Ordering::Relaxed), 1);
++        assert_eq!(destination.zeroes.load(Ordering::Relaxed), 0);
++        assert_eq!(destination.writes.load(Ordering::Relaxed), 0);
++        assert_eq!(destination.flushes.load(Ordering::Relaxed), 0);
++        assert_eq!(callbacks.load(Ordering::Relaxed), 1);
++        let bytes = destination.bytes.lock().unwrap();
++        assert_eq!(bytes[0], 0);
++        assert!(bytes[1..].iter().all(|&b| b == 0xa5));
++    }
++}

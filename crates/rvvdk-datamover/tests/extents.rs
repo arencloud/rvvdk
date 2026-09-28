@@ -131,7 +131,8 @@ fn processes_data_zero_and_hole_extents() {
             | Capabilities::WRITE
             | Capabilities::FLUSH
             | Capabilities::WRITE_ZERO
-            | Capabilities::DISCARD,
+            | Capabilities::DISCARD
+            | Capabilities::DISCARD_ZEROES,
         Vec::new(),
     );
 

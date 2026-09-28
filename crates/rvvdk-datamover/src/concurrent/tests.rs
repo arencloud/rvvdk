@@ -105,6 +105,7 @@ impl VirtualDisk for FaultDisk<'_> {
             | Capabilities::WRITE
             | Capabilities::WRITE_ZERO
             | Capabilities::DISCARD
+            | Capabilities::DISCARD_ZEROES
             | Capabilities::FLUSH
     }
     fn read_at(&self, _: u64, buffer: &mut [u8]) -> Result<usize> {

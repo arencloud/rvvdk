@@ -6,6 +6,8 @@ use rvvdk_core::{
 };
 use rvvdk_datamover::{CopyOptions, DataMover, NoopProgressObserver};
 
+// Bit 8 is DISCARD_ZEROES. Use its literal value so this identical harness
+// can also benchmark the pre-R2.1 baseline without changing its core API.
 const SIZE: usize = 1024 * 1024;
 const BLOCK: usize = 64 * 1024;
 
@@ -76,7 +78,10 @@ fn semantic_policy(criterion: &mut Criterion) {
             MemoryBlockDevice::with_capabilities(
                 SIZE,
                 if accelerated {
-                    capabilities | Capabilities::WRITE_ZERO | Capabilities::DISCARD
+                    capabilities
+                        | Capabilities::WRITE_ZERO
+                        | Capabilities::DISCARD
+                        | Capabilities::from_bits_retain(1 << 8)
                 } else {
                     capabilities
                 },
@@ -112,6 +117,14 @@ fn semantic_policy(criterion: &mut Criterion) {
                         elapsed += start.elapsed();
                         let stats = report.stats();
                         assert_eq!(stats.bytes_read(), data_bytes);
+                        assert_eq!(
+                            stats.bytes_discarded(),
+                            if accelerated { (SIZE / 4) as u64 } else { 0 }
+                        );
+                        assert_eq!(
+                            stats.bytes_zeroed(),
+                            if accelerated { (SIZE / 4) as u64 } else { 0 }
+                        );
                         assert_eq!(
                             stats.bytes_written() + stats.bytes_zeroed() + stats.bytes_discarded(),
                             SIZE as u64

@@ -32,7 +32,7 @@ impl VirtualDisk for Disk {
         if self.fail == Some(CopyOperation::Write) {
             base
         } else {
-            base | Capabilities::WRITE_ZERO | Capabilities::DISCARD
+            base | Capabilities::WRITE_ZERO | Capabilities::DISCARD | Capabilities::DISCARD_ZEROES
         }
     }
     fn extents(&self, _: u64, _: u64) -> Result<Vec<Extent>> {

@@ -138,8 +138,14 @@ Portable API acceptance **met by R1.1**: memory, local RAW, and a synthetic tran
 
 ### R2 — Complete local sparse semantics and native preflight
 
-- [ ] **R2.1 (next):** Introduce the zero-read guarantee required by F05 and update ADR-0003/0022 through a superseding ADR.
-- [ ] Implement local zeroing and hole punching, with range checks, read-only checks, partial filesystem block handling, and fallbacks on unsupported filesystems.
+R2.1 performance qualification remains provisional: four-worker memory copying
+includes +5.92%/+7.49% main/repeat pairs, and fragmented no-op observation has a
++10.39% pair. See the [comparison and control](benchmark-results/2026-09-29-r21/README.md).
+PERF.0 also needs to update the pre-existing scheduler failure benchmark's FLUSH
+capability and CopyExecution-aware error assertion before reusing its timings.
+
+- [x] **R2.1:** Define logical Zero/Hole zero reads and require DISCARD plus DISCARD_ZEROES before selecting discard. Cover fallback, partial failures, portable/native parity, and explicit backend migration. [ADR-0026](adr/0026-logical-hole-guarantee.md); [evidence](benchmark-results/2026-09-29-r21/README.md).
+- [ ] **R2.2 (next):** Implement local zeroing and hole punching, with range checks, read-only checks, partial filesystem block handling, and fallbacks on unsupported filesystems.
 - [ ] Add dense extent fallback when sparse discovery is unavailable; never invent Hole extents from unknown allocation state.
 - [x] Verify direct/buffered descriptors refer to the same underlying file (R0.5).
 - [ ] Define how concurrent buffered/direct ranges are handled.
@@ -292,7 +298,7 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 | Proposed ADR | Decision |
 |---|---|
 | [0025](adr/0025-shared-plan-validation.md) | Accepted: shared structural plan validation; broader lifecycle/error termination remains future work |
-| 0026 | Logical Hole semantics and zero-guaranteed deallocation |
+| [0026](adr/0026-logical-hole-guarantee.md) | Accepted: logical Hole zero reads and explicit zero-guaranteed discard; local filesystem operations remain R2.2 |
 | [0027](adr/0027-portable-planning.md) | Accepted: portable planning, selection reasons, and invocation preparation; full native runtime preparation remains follow-up work |
 | [0028](adr/0028-endpoint-inspection.md) | Accepted: fresh descriptor inspection and current endpoint identity; persistent consistency/durability contracts remain future work |
 | 0029 | VMDK support subset, backing resolver, parent-chain rules |
@@ -302,7 +308,7 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 
 ## First implementation session — R0.1 completed
 
-The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete; continue with R2.1 logical Hole guarantees next.
+The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees are complete; continue with R2.2 local zeroing/hole punching next.
 
 R0.1 was the bounded change directly related to the observer work:
 
@@ -317,7 +323,7 @@ R0.1 was the bounded change directly related to the observer work:
    tradeoff in the implementation log. Update this checklist and ADR-0025 with
    the implemented behavior and remaining limitations.
 
-R0 and R1.1–R1.6 are complete within their documented scopes. Start **R2.1** with the logical Hole zero-read guarantee and safe deallocation selection. Keep PERF.0 and the prior performance follow-ups open.
+R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. Start **R2.2** with local zeroing and hole punching. Keep PERF.0 and the prior performance follow-ups open.
 
 ## Decisions to record before their milestone
 

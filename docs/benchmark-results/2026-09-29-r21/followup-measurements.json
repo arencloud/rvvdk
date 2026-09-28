@@ -1,0 +1,878 @@
+[
+  {
+    "tag": "followup1-baseline",
+    "pair": 1,
+    "variant": "baseline",
+    "benchmark": "portable_memory/workers4/dyn",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r21-77agnfx3/baseline-target/release/deps/portable_plan-2eb735dc08bbf61b",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "portable_memory/workers4/dyn$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "portable_memory/workers4",
+        "function_id": "dyn",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "portable_memory/workers4/dyn",
+        "directory_name": "portable_memory_workers4/dyn",
+        "title": "portable_memory/workers4/dyn"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1199946.579637681,
+            "upper_bound": 1237747.4088405797
+          },
+          "point_estimate": 1217975.4724637682,
+          "standard_error": 9631.72842257289
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1198010.9782608696,
+            "upper_bound": 1216661.2391304348
+          },
+          "point_estimate": 1202584.7826086956,
+          "standard_error": 6340.34111385542
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 14670.906887365529,
+            "upper_bound": 60975.72710876852
+          },
+          "point_estimate": 23917.625079725236,
+          "standard_error": 11779.61017274081
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 33193.44694670034,
+            "upper_bound": 69587.21581863679
+          },
+          "point_estimate": 53708.88011113573,
+          "standard_error": 9310.118897522643
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0
+        ],
+        "times": [
+          31655010.0,
+          27902519.0,
+          30620160.0,
+          28772088.0,
+          27260929.0,
+          27905058.0,
+          27331508.0,
+          28056666.0,
+          27551734.0,
+          25714693.0,
+          27574744.0,
+          29297808.0,
+          28254770.0,
+          27314584.0,
+          26421858.0,
+          28929371.0,
+          29152004.0,
+          27643975.0,
+          27500887.0,
+          27674925.0,
+          27441133.0,
+          27639689.0,
+          26713516.0,
+          30209879.0,
+          27909751.0,
+          26600530.0,
+          27592757.0,
+          28332774.0,
+          27556771.0,
+          27870985.0
+        ]
+      },
+      "tukey.json": [
+        1081933.3478260874,
+        1137837.7934782612,
+        1286916.3152173911,
+        1342820.7608695647
+      ]
+    }
+  },
+  {
+    "tag": "followup1-candidate",
+    "pair": 1,
+    "variant": "candidate",
+    "benchmark": "portable_memory/workers4/dyn",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r21-77agnfx3/candidate-target/release/deps/portable_plan-2eb735dc08bbf61b",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "portable_memory/workers4/dyn$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "portable_memory/workers4",
+        "function_id": "dyn",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "portable_memory/workers4/dyn",
+        "directory_name": "portable_memory_workers4/dyn",
+        "title": "portable_memory/workers4/dyn"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1180687.4246376813,
+            "upper_bound": 1212991.5718478262
+          },
+          "point_estimate": 1197007.682608696,
+          "standard_error": 8184.202373707046
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1185810.2608695654,
+            "upper_bound": 1217216.1304347827
+          },
+          "point_estimate": 1206714.0434782607,
+          "standard_error": 7237.1006679555
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 16862.93094844915,
+            "upper_bound": 64498.03011145284
+          },
+          "point_estimate": 36278.73789940188,
+          "standard_error": 12681.416537515668
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 33162.184961337996,
+            "upper_bound": 55255.011417974856
+          },
+          "point_estimate": 45393.61136617923,
+          "standard_error": 5637.890383358578
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0
+        ],
+        "times": [
+          28711532.0,
+          27743605.0,
+          28545048.0,
+          25817939.0,
+          28078129.0,
+          28233475.0,
+          26049081.0,
+          28822069.0,
+          27771807.0,
+          27107870.0,
+          27564010.0,
+          26653231.0,
+          28830533.0,
+          29901421.0,
+          27765241.0,
+          27779860.0,
+          25754527.0,
+          28016390.0,
+          28169150.0,
+          27661274.0,
+          26839255.0,
+          28220033.0,
+          27601090.0,
+          27025167.0,
+          26119287.0,
+          27975552.0,
+          27439402.0,
+          26535348.0,
+          27861881.0,
+          25342094.0
+        ]
+      },
+      "tukey.json": [
+        1004510.7717391301,
+        1086727.8423913042,
+        1305973.364130435,
+        1388190.434782609
+      ]
+    }
+  },
+  {
+    "tag": "followup2-candidate",
+    "pair": 2,
+    "variant": "candidate",
+    "benchmark": "portable_memory/workers4/dyn",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r21-77agnfx3/candidate-target/release/deps/portable_plan-2eb735dc08bbf61b",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "portable_memory/workers4/dyn$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "portable_memory/workers4",
+        "function_id": "dyn",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "portable_memory/workers4/dyn",
+        "directory_name": "portable_memory_workers4/dyn",
+        "title": "portable_memory/workers4/dyn"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1251522.395652174,
+            "upper_bound": 1371306.9478260875
+          },
+          "point_estimate": 1309418.8565217392,
+          "standard_error": 30597.713606647063
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1204919.2608695652,
+            "upper_bound": 1350303.3043478262
+          },
+          "point_estimate": 1233798.6304347827,
+          "standard_error": 33035.383762429934
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 47477.97579622805,
+            "upper_bound": 216701.25995278358
+          },
+          "point_estimate": 105965.93237959837,
+          "standard_error": 42071.95315000215
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 114393.89531584606,
+            "upper_bound": 207824.38687945422
+          },
+          "point_estimate": 169372.2664419452,
+          "standard_error": 23880.35368505735
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0
+        ],
+        "times": [
+          27067673.0,
+          27233227.0,
+          28498540.0,
+          26787956.0,
+          27267530.0,
+          28575987.0,
+          26637005.0,
+          27325792.0,
+          27811089.0,
+          31045688.0,
+          31944191.0,
+          35041284.0,
+          37057922.0,
+          32926408.0,
+          34031740.0,
+          40401709.0,
+          34884950.0,
+          38316006.0,
+          32752337.0,
+          31068264.0,
+          29110692.0,
+          27615197.0,
+          28215984.0,
+          26679021.0,
+          26627856.0,
+          28128444.0,
+          25557839.0,
+          28262089.0,
+          28133943.0,
+          28492648.0
+        ]
+      },
+      "tukey.json": [
+        499020.89130434673,
+        842599.4782608689,
+        1758809.0434782614,
+        2102387.6304347836
+      ]
+    }
+  },
+  {
+    "tag": "followup2-baseline",
+    "pair": 2,
+    "variant": "baseline",
+    "benchmark": "portable_memory/workers4/dyn",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r21-77agnfx3/baseline-target/release/deps/portable_plan-2eb735dc08bbf61b",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "portable_memory/workers4/dyn$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "portable_memory/workers4",
+        "function_id": "dyn",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "portable_memory/workers4/dyn",
+        "directory_name": "portable_memory_workers4/dyn",
+        "title": "portable_memory/workers4/dyn"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1191956.368115942,
+            "upper_bound": 1236611.4550724635
+          },
+          "point_estimate": 1211149.4231884056,
+          "standard_error": 11617.191523395364
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1187925.4130434783,
+            "upper_bound": 1211205.7826086958
+          },
+          "point_estimate": 1198473.347826087,
+          "standard_error": 6752.730752386088
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 18018.77878010273,
+            "upper_bound": 47348.76398547848
+          },
+          "point_estimate": 28582.980431681102,
+          "standard_error": 7472.234297730149
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 25855.375202963314,
+            "upper_bound": 100633.66341200935
+          },
+          "point_estimate": 65466.79874694295,
+          "standard_error": 22586.02545847093
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0
+        ],
+        "times": [
+          27867493.0,
+          27155623.0,
+          27784935.0,
+          28299422.0,
+          27565767.0,
+          26584668.0,
+          27821016.0,
+          27249670.0,
+          27564007.0,
+          28739328.0,
+          29104055.0,
+          26998610.0,
+          26821586.0,
+          28134390.0,
+          28023672.0,
+          26006475.0,
+          29867259.0,
+          34639679.0,
+          26590515.0,
+          27471323.0,
+          27840862.0,
+          27556052.0,
+          27506348.0,
+          26504453.0,
+          28305905.0,
+          27394899.0,
+          28084471.0,
+          27136840.0,
+          27225806.0,
+          27847973.0
+        ]
+      },
+      "tukey.json": [
+        1064559.1847826084,
+        1123000.6521739129,
+        1278844.5652173914,
+        1337286.0326086958
+      ]
+    }
+  },
+  {
+    "tag": "followup3-baseline",
+    "pair": 3,
+    "variant": "baseline",
+    "benchmark": "portable_memory/workers4/dyn",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r21-77agnfx3/baseline-target/release/deps/portable_plan-2eb735dc08bbf61b",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "portable_memory/workers4/dyn$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "portable_memory/workers4",
+        "function_id": "dyn",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "portable_memory/workers4/dyn",
+        "directory_name": "portable_memory_workers4/dyn",
+        "title": "portable_memory/workers4/dyn"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1204755.294311594,
+            "upper_bound": 1236578.0245289854
+          },
+          "point_estimate": 1220640.8507246375,
+          "standard_error": 8157.095178785816
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1200171.5217391304,
+            "upper_bound": 1240024.152173913
+          },
+          "point_estimate": 1212968.0,
+          "standard_error": 8519.963082566119
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 27140.50734859454,
+            "upper_bound": 67044.9757140617
+          },
+          "point_estimate": 47980.416035133974,
+          "standard_error": 9945.778494458333
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 34662.3709887712,
+            "upper_bound": 53724.52451080629
+          },
+          "point_estimate": 45436.20305760437,
+          "standard_error": 4875.734043942532
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0,
+          23.0
+        ],
+        "times": [
+          27257168.0,
+          26444079.0,
+          27842645.0,
+          29165932.0,
+          29798568.0,
+          27349728.0,
+          26979351.0,
+          27883186.0,
+          28053155.0,
+          27821428.0,
+          27913342.0,
+          27419452.0,
+          28667197.0,
+          27091328.0,
+          27788438.0,
+          28642072.0,
+          27089558.0,
+          26755944.0,
+          29930978.0,
+          27298170.0,
+          27855480.0,
+          25994897.0,
+          28016292.0,
+          28399039.0,
+          28643124.0,
+          29955166.0,
+          28137560.0,
+          29071952.0,
+          29371886.0,
+          29605072.0
+        ]
+      },
+      "tukey.json": [
+        1011334.8586956521,
+        1099386.1141304346,
+        1334189.4619565215,
+        1422240.7173913042
+      ]
+    }
+  },
+  {
+    "tag": "followup3-candidate",
+    "pair": 3,
+    "variant": "candidate",
+    "benchmark": "portable_memory/workers4/dyn",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r21-77agnfx3/candidate-target/release/deps/portable_plan-2eb735dc08bbf61b",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "portable_memory/workers4/dyn$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "portable_memory/workers4",
+        "function_id": "dyn",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "portable_memory/workers4/dyn",
+        "directory_name": "portable_memory_workers4/dyn",
+        "title": "portable_memory/workers4/dyn"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1301529.3484848484,
+            "upper_bound": 1333224.625530303
+          },
+          "point_estimate": 1316898.9515151514,
+          "standard_error": 8083.2512875383945
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1290448.75,
+            "upper_bound": 1335230.1590909092
+          },
+          "point_estimate": 1303770.5909090908,
+          "standard_error": 11490.099196846284
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 22396.593243290015,
+            "upper_bound": 62996.07722705075
+          },
+          "point_estimate": 38901.367886635235,
+          "standard_error": 10491.55514923973
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 32971.58442327549,
+            "upper_bound": 54274.025408598085
+          },
+          "point_estimate": 45268.208838925806,
+          "standard_error": 5433.243948983728
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0,
+          22.0
+        ],
+        "times": [
+          29536673.0,
+          30552412.0,
+          29933447.0,
+          28217848.0,
+          29077659.0,
+          28692198.0,
+          28855814.0,
+          28128115.0,
+          28505777.0,
+          28415130.0,
+          27922264.0,
+          31154476.0,
+          29213745.0,
+          31199448.0,
+          29589702.0,
+          30026360.0,
+          28535077.0,
+          29110102.0,
+          29577610.0,
+          30314135.0,
+          28673708.0,
+          28364615.0,
+          28172627.0,
+          27641293.0,
+          28648870.0,
+          28083292.0,
+          27832132.0,
+          28224726.0,
+          29536382.0,
+          27417671.0
+        ]
+      },
+      "tukey.json": [
+        1098915.579545455,
+        1190811.5965909094,
+        1435867.6420454544,
+        1527763.6590909087
+      ]
+    }
+  }
+]

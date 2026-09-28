@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted
+Accepted; the unconditional DISCARD preference below is superseded by
+[ADR-0026](0026-logical-hole-guarantee.md) (R2.1, 2026-09-29). Its current policy
+requires both DISCARD and DISCARD_ZEROES before choosing discard for Hole.
 
 ## Context
 

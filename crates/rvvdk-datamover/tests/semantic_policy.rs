@@ -108,9 +108,12 @@ fn direct_planned_and_observed_calls_preserve_operation_trace_and_tail_accountin
     ];
     for capabilities in [
         Capabilities::empty(),
-        Capabilities::WRITE_ZERO,
         Capabilities::DISCARD,
+        Capabilities::DISCARD_ZEROES,
         Capabilities::WRITE_ZERO | Capabilities::DISCARD,
+        Capabilities::WRITE_ZERO,
+        Capabilities::DISCARD | Capabilities::DISCARD_ZEROES,
+        Capabilities::WRITE_ZERO | Capabilities::DISCARD | Capabilities::DISCARD_ZEROES,
     ] {
         let mut reference = None;
         for mode in 0..3 {
@@ -138,7 +141,7 @@ fn direct_planned_and_observed_calls_preserve_operation_trace_and_tail_accountin
             assert_eq!(stats.bytes_read(), 4098);
             assert_eq!(stats.extents_processed(), 4);
             let zeroed = if capabilities.contains(Capabilities::WRITE_ZERO) {
-                if capabilities.contains(Capabilities::DISCARD) {
+                if capabilities.contains(Capabilities::DISCARD | Capabilities::DISCARD_ZEROES) {
                     8193
                 } else {
                     16386
@@ -146,11 +149,12 @@ fn direct_planned_and_observed_calls_preserve_operation_trace_and_tail_accountin
             } else {
                 0
             };
-            let discarded = if capabilities.contains(Capabilities::DISCARD) {
-                8193
-            } else {
-                0
-            };
+            let discarded =
+                if capabilities.contains(Capabilities::DISCARD | Capabilities::DISCARD_ZEROES) {
+                    8193
+                } else {
+                    0
+                };
             assert_eq!(stats.bytes_zeroed(), zeroed);
             assert_eq!(stats.bytes_discarded(), discarded);
             assert_eq!(stats.bytes_written(), 20484 - zeroed - discarded);
@@ -190,7 +194,7 @@ fn byte_threshold_and_flush_order_are_preserved_for_data_and_sparse_operations()
     for kind in [ExtentKind::Data, ExtentKind::Zero, ExtentKind::Hole] {
         for capabilities in [
             Capabilities::empty(),
-            Capabilities::WRITE_ZERO | Capabilities::DISCARD,
+            Capabilities::WRITE_ZERO | Capabilities::DISCARD | Capabilities::DISCARD_ZEROES,
         ] {
             let source = Disk::new(&[(kind, 65 * MIB)], Capabilities::empty());
             let destination = Disk::new(&[(kind, 65 * MIB)], capabilities);
@@ -251,7 +255,7 @@ fn advertised_sparse_operation_failure_is_not_retried_as_a_write() {
                 let source = Disk::new(&[(kind, 4096)], Capabilities::empty());
                 let mut destination = Disk::new(
                     &[(kind, 4096)],
-                    Capabilities::WRITE_ZERO | Capabilities::DISCARD,
+                    Capabilities::WRITE_ZERO | Capabilities::DISCARD | Capabilities::DISCARD_ZEROES,
                 );
                 destination.failure = Some((operation, 0, 4096));
                 let mover =
@@ -299,7 +303,7 @@ fn native_sparse_failure_keeps_the_same_no_retry_policy() {
     for (kind, operation) in [(ExtentKind::Zero, "zero"), (ExtentKind::Hole, "discard")] {
         let mut destination = Disk::new(
             &[(kind, 4096)],
-            Capabilities::WRITE_ZERO | Capabilities::DISCARD,
+            Capabilities::WRITE_ZERO | Capabilities::DISCARD | Capabilities::DISCARD_ZEROES,
         );
         destination.failure = Some((operation, 0, 4096));
         let plan = NativeExtentPlan::new(destination.extents.clone(), 4096).unwrap();

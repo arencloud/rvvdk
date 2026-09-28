@@ -192,6 +192,21 @@ Backends advertise support using:
 WRITE_ZERO
 ```
 
+### Logical Hole and discard guarantees (R2.1)
+
+Both Zero and Hole extents guarantee logical zero reads. Hole prefers discard
+only when the destination advertises **DISCARD and DISCARD_ZEROES**; ordinary
+discard alone is insufficient. Otherwise use WRITE_ZERO, then bounded zero writes.
+Layered disks must resolve parent contents before reporting logical Hole extents.
+
+Default MemoryBlockDevice provides the guarantee by filling the range with zero;
+explicit capability masks remain unchanged. RawDisk forwards capabilities. Local
+file hole punching remains R2.2. A successful discard must preserve surrounding
+bytes and disk size, but does not promise physical reclamation or durability.
+`bytes_discarded` counts logical operation bytes, not space released. Failures may
+have partial effects and are never retried via a different sparse operation.
+See the [contract and migration](adr/0026-logical-hole-guarantee.md).
+
 ## Extent-aware data movement
 
 The DataMover consumes the source `VirtualDisk` extent map rather than
@@ -653,8 +668,8 @@ This is configuration validation, not transactional execution. Backend failures,
 allocation failure, or ring creation failure can still occur after earlier
 extents have completed. Endpoint access, capacity, identity, and durability
 preflight are implemented in R0.5 below; direct-I/O alignment/tail compatibility
-and logical discard semantics remain R2 work. The allocation layout check does not impose an
-aggregate memory budget or guarantee enough available memory. DataMover adds
+remains R2 work. Logical discard guarantees are implemented by R2.1. The
+allocation layout check does not impose an aggregate memory budget or guarantee enough available memory. DataMover adds
 the separate R1.6 payload budget described below; low-level native functions
 retain the original allocation contract.
 
@@ -782,7 +797,7 @@ NativeExtentPlan
         |
         +-- Hole
               |
-              +-- DISCARD
+              +-- DISCARD + DISCARD_ZEROES
               |
               +-- WRITE_ZERO
               |
@@ -928,14 +943,15 @@ and destination-aware native execution:
 | Data | Any | Read source and write destination |
 | Zero | WRITE_ZERO | Backend zero operation |
 | Zero | Otherwise | Write zero-filled buffers |
-| Hole | DISCARD | Backend discard operation |
-| Hole | WRITE_ZERO, without DISCARD | Backend zero operation |
-| Hole | Neither | Write zero-filled buffers |
+| Hole | DISCARD and DISCARD_ZEROES | Backend discard operation |
+| Hole | WRITE_ZERO, without both discard flags | Backend zero operation |
+| Hole | Otherwise | Write zero-filled buffers |
 
 Capabilities are queried when selecting a sparse operation, once per extent for
 sequential/native paths and once per work item for workers. Data selection does
 not query them. A selected operation's failure propagates; it is not retried as a
-fallback write. The existing DISCARD contract remains unchanged pending R2.
+fallback write. R2.1 requires an explicit zero-read guarantee before selecting
+discard; see [ADR-0026](adr/0026-logical-hole-guarantee.md).
 
 Direct copying and observed/unobserved sequential plan execution share one loop,
 including buffer allocation, block/tail handling, statistics, and destination

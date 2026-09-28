@@ -74,12 +74,20 @@ pub trait VirtualDisk: Send + Sync {
         Ok(())
     }
 
+    /// On success, the complete requested logical range reads zero. Preserve
+    /// bytes outside the range and disk size; durability requires flush.
     fn write_zero_at(&self, offset: u64, length: u64) -> Result<()>;
 
+    /// Request discard without assuming its read-back contents. With both
+    /// DISCARD and DISCARD_ZEROES advertised, success must make the entire
+    /// requested logical range read zero and preserve surrounding bytes/size.
+    /// A failed call may have partial effects; callers must not assume rollback.
     fn discard(&self, offset: u64, length: u64) -> Result<()>;
 
     fn flush(&self) -> Result<()>;
 
+    /// Describe logical contents. Zero and Hole both guarantee zero reads;
+    /// physical unallocation that exposes parent data must not be reported as Hole.
     fn extents(&self, offset: u64, length: u64) -> Result<Vec<Extent>>;
 
     fn size(&self) -> u64 {

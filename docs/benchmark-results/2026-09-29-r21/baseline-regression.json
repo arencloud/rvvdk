@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "rvvdk-datamover",
+    "--test",
+    "hole_guarantee",
+    "--target-dir",
+    "/tmp/rvvdk-r21-77agnfx3/regression-target"
+  ],
+  "exit_code": 101,
+  "expected_failures": [
+    "every_capability_combination_preserves_mixed_logical_bytes_across_portable_paths",
+    "native_sparse_dispatch_requires_the_same_zero_read_guarantee"
+  ]
+}

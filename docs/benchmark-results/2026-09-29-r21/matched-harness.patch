@@ -1,0 +1,66 @@
+diff --git a/crates/rvvdk-datamover/benches/scheduler.rs b/crates/rvvdk-datamover/benches/scheduler.rs
+index d9e2e2e..219db96 100644
+--- a/crates/rvvdk-datamover/benches/scheduler.rs
++++ b/crates/rvvdk-datamover/benches/scheduler.rs
+@@ -16,6 +16,8 @@ use support::{
+     incompressible_buffer, remove_file,
+ };
+ 
++// Bit 8 is DISCARD_ZEROES. Use its literal value so this identical harness
++// can also benchmark the pre-R2.1 baseline without changing its core API.
+ const SIZE: usize = 16 * MIB;
+ const BLOCK: usize = 64 * 1024;
+ 
+@@ -125,7 +127,11 @@ impl VirtualDisk for FaultDisk {
+         DiskGeometry::new(SIZE as u64, 512, 4096).unwrap()
+     }
+     fn capabilities(&self) -> Capabilities {
+-        Capabilities::READ | Capabilities::WRITE | Capabilities::WRITE_ZERO | Capabilities::DISCARD
++        Capabilities::READ
++            | Capabilities::WRITE
++            | Capabilities::WRITE_ZERO
++            | Capabilities::DISCARD
++            | Capabilities::from_bits_retain(1 << 8)
+     }
+     fn read_at(&self, _: u64, buffer: &mut [u8]) -> Result<usize> {
+         self.check(Operation::Read)?;
+diff --git a/crates/rvvdk-datamover/benches/semantic_policy.rs b/crates/rvvdk-datamover/benches/semantic_policy.rs
+index dc2f233..74c0a2f 100644
+--- a/crates/rvvdk-datamover/benches/semantic_policy.rs
++++ b/crates/rvvdk-datamover/benches/semantic_policy.rs
+@@ -6,6 +6,8 @@ use rvvdk_core::{
+ };
+ use rvvdk_datamover::{CopyOptions, DataMover, NoopProgressObserver};
+ 
++// Bit 8 is DISCARD_ZEROES. Use its literal value so this identical harness
++// can also benchmark the pre-R2.1 baseline without changing its core API.
+ const SIZE: usize = 1024 * 1024;
+ const BLOCK: usize = 64 * 1024;
+ 
+@@ -76,7 +78,10 @@ fn semantic_policy(criterion: &mut Criterion) {
+             MemoryBlockDevice::with_capabilities(
+                 SIZE,
+                 if accelerated {
+-                    capabilities | Capabilities::WRITE_ZERO | Capabilities::DISCARD
++                    capabilities
++                        | Capabilities::WRITE_ZERO
++                        | Capabilities::DISCARD
++                        | Capabilities::from_bits_retain(1 << 8)
+                 } else {
+                     capabilities
+                 },
+@@ -112,6 +117,14 @@ fn semantic_policy(criterion: &mut Criterion) {
+                         elapsed += start.elapsed();
+                         let stats = report.stats();
+                         assert_eq!(stats.bytes_read(), data_bytes);
++                        assert_eq!(
++                            stats.bytes_discarded(),
++                            if accelerated { (SIZE / 4) as u64 } else { 0 }
++                        );
++                        assert_eq!(
++                            stats.bytes_zeroed(),
++                            if accelerated { (SIZE / 4) as u64 } else { 0 }
++                        );
+                         assert_eq!(
+                             stats.bytes_written() + stats.bytes_zeroed() + stats.bytes_discarded(),
+                             SIZE as u64
