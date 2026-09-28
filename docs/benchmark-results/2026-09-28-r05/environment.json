@@ -1,0 +1,226 @@
+{
+  "baseline_commit": "eb10da1b1cc1acdfb9978e4de6c7a44597e97683",
+  "baseline_harness": "Baseline plus candidate datamover Cargo.toml, benches/preflight.rs and benches/native_validation.rs (regular source replaces unused /dev/null source for Zero fallback). Runtime unchanged.",
+  "candidate_patch_sha256": "ff7529fdfbca43b354a1bdcc55a668dcd4efd1a9c355b4e617f872d337a5654a",
+  "harness_sha256": {
+    "crates/rvvdk-datamover/Cargo.toml": "06dd98a19afd410a2e6a5fe103fc925ed329dba475e9122c79747f3708bdf86d",
+    "crates/rvvdk-datamover/benches/preflight.rs": "d8cc37a53205a98a126a2d3dd5d44466877c283120e76875907a8698ee51ef89",
+    "crates/rvvdk-datamover/benches/native_validation.rs": "7253f1df4f43976a3a77a7f4e96457ba94ab4a7c73fc42796645fbe2a16cc549",
+    "crates/rvvdk-datamover/benches/native_lifetime.rs": "440a48c7563666500fdb7d12265ccf401c704ca1d149a9b058acfc6482367e69"
+  },
+  "binaries_sha256": {
+    "baseline": {
+      "preflight": "31b63e688e7ba862ea06275218607c65112c5044133f2a8ceb396feb19c06f5a",
+      "native_validation": "23ea60a5df5832325ddb4a955989b56b1aeb994fb1aef1947c2ffe148da84974",
+      "native_lifetime": "d6827dee19bbace522d938ada839e2e0492e56adaf1be7bc76b673e36442a9f9"
+    },
+    "candidate": {
+      "native_validation": "b3d1b2dd49fcfed39dd746e09c1370e39244779e792b2cd68acd336a9a4d6933",
+      "preflight": "f91733dae5bca256e8aed32adce73eaef76e835f3ce53a82b13368cfc6e15a18",
+      "native_lifetime": "b601839015926f97f16aad408e090c8c697727135162ea01bee32820d621bc29"
+    }
+  },
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)\nbinary: rustc\ncommit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860\ncommit-date: 2026-04-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.95.0\nLLVM version: 22.1.2",
+  "kernel": "Linux 7.2.5-200.fc44.x86_64 x86_64 GNU/Linux",
+  "cpu": {
+    "lscpu": [
+      {
+        "field": "Architecture:",
+        "data": "x86_64"
+      },
+      {
+        "field": "CPU op-mode(s):",
+        "data": "32-bit, 64-bit"
+      },
+      {
+        "field": "Address sizes:",
+        "data": "39 bits physical, 48 bits virtual"
+      },
+      {
+        "field": "Byte Order:",
+        "data": "Little Endian"
+      },
+      {
+        "field": "CPU(s):",
+        "data": "16"
+      },
+      {
+        "field": "On-line CPU(s) list:",
+        "data": "0-15"
+      },
+      {
+        "field": "Vendor ID:",
+        "data": "GenuineIntel"
+      },
+      {
+        "field": "Model name:",
+        "data": "11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz"
+      },
+      {
+        "field": "CPU family:",
+        "data": "6"
+      },
+      {
+        "field": "Model:",
+        "data": "141"
+      },
+      {
+        "field": "Thread(s) per core:",
+        "data": "2"
+      },
+      {
+        "field": "Core(s) per socket:",
+        "data": "8"
+      },
+      {
+        "field": "Socket(s):",
+        "data": "1"
+      },
+      {
+        "field": "Stepping:",
+        "data": "1"
+      },
+      {
+        "field": "CPU(s) scaling MHz:",
+        "data": "48%"
+      },
+      {
+        "field": "CPU max MHz:",
+        "data": "4800.0000"
+      },
+      {
+        "field": "CPU min MHz:",
+        "data": "800.0000"
+      },
+      {
+        "field": "BogoMIPS:",
+        "data": "4992.00"
+      },
+      {
+        "field": "Flags:",
+        "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb cat_l2 cdp_l2 ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb intel_pt avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves split_lock_detect user_shstk dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid movdiri movdir64b fsrm avx512_vp2intersect md_clear ibt flush_l1d arch_capabilities"
+      },
+      {
+        "field": "Virtualization:",
+        "data": "VT-x"
+      },
+      {
+        "field": "L1d cache:",
+        "data": "384 KiB (8 instances)"
+      },
+      {
+        "field": "L1i cache:",
+        "data": "256 KiB (8 instances)"
+      },
+      {
+        "field": "L2 cache:",
+        "data": "10 MiB (8 instances)"
+      },
+      {
+        "field": "L3 cache:",
+        "data": "24 MiB (1 instance)"
+      },
+      {
+        "field": "NUMA node(s):",
+        "data": "1"
+      },
+      {
+        "field": "NUMA node0 CPU(s):",
+        "data": "0-15"
+      },
+      {
+        "field": "Vulnerability Gather data sampling:",
+        "data": "Mitigation; Microcode"
+      },
+      {
+        "field": "Vulnerability Ghostwrite:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Indirect target selection:",
+        "data": "Mitigation; Aligned branch/return thunks"
+      },
+      {
+        "field": "Vulnerability Itlb multihit:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability L1tf:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Meltdown:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mmio stale data:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Old microcode:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Reg file data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Retbleed:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec rstack overflow:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec store bypass:",
+        "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+      },
+      {
+        "field": "Vulnerability Spectre v1:",
+        "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+      },
+      {
+        "field": "Vulnerability Spectre v2:",
+        "data": "Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW loop"
+      },
+      {
+        "field": "Vulnerability Srbds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsa:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsx async abort:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Vmscape:",
+        "data": "Not affected"
+      }
+    ]
+  },
+  "memory": "Native QD8 uses8 buffers=512KiB. Zero fallback one64KiB buffer. No aggregate memory budget. GNU time whole-process stats include harness and adaptive unequal iterations, not per-copy CPU/RSS.",
+  "storage": "NAME    MODEL                        SIZE ROTA\nzram0                                  8G    0\nnvme0n1 SAMSUNG MZVL21T0HCLR-00BL7 953.9G    0",
+  "filesystem": "btrfs rw,relatime,seclabel,compress=zstd:1,ssd,discard=async,space_cache=v2,subvolid=256,subvol=/home",
+  "governor": "powersave",
+  "profile": "Optimized cargo bench; independent target/r05-{baseline,candidate}-build directories.",
+  "sampling": "All sequential, taskset -c 2-6. Three pairs B/C, C/B, B/C. 30 flat samples for preflight and native_validation, 20 for native_lifetime; 300ms warmup, 2s measurement target.",
+  "workloads": "Planning: 1MiB buffered regular file, 64KiB blocks, Threaded/IoUring QD8 read-window4. Zero fallback and Data plans: 1MiB/16extents/64KiB blocks, QD8. Dense:16MiB buffered/direct QD8/64KiB native versus4-worker threaded64KiB. Both executors changed in R0.5; threaded is a comparator, not an unchanged control.",
+  "timing": "Planning timer includes validation/metadata/extents/plan construction. Copy timer includes preflight/setup/execution/cleanup/flush; reset/flush and full verification outside. All copies verify output; dense copies verify FD counts.",
+  "limits": "Shared development laptop, powersave, uncontrolled background work; warm buffered files and default Btrfs compression; no cold-device or sustained-throughput claim.",
+  "followup": "Direct QD8/64KiB only: three pairs in C/B, B/C, C/B order, 30 flat samples, 500ms warmup, 3s target, same2-6 affinity. Investigates pair-to-pair storage drift.",
+  "initial_candidate_patch_sha256": "39a2e18f8f6ba2bd936124833c4705daa83af6c61e099ff8085004da3baca93d",
+  "final_candidate_binaries_sha256": {
+    "native_validation": "fc0361fed637656e2275c89e53cb91443360c581eeb357f8cd25c51293685622",
+    "preflight": "093aabc3cfd8f2f5860ae2778f7b95cc3be8966ffb44e529d1c2a282eeab1290",
+    "native_lifetime": "71d72cedeb8851c1a6bd56eafc6894b29a2758716a96520bba26a624bc1de911"
+  },
+  "final_refinement": "Reject all access modes except named O_RDONLY/O_WRONLY/O_RDWR; add ioctl-only mode regression. Full final measurements repeated with unchanged baseline binaries and harness."
+}

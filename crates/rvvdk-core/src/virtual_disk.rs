@@ -5,6 +5,15 @@ pub trait VirtualDisk: Send + Sync {
 
     fn capabilities(&self) -> Capabilities;
 
+    /// Return current access, capacity, and known backing identity for preflight.
+    fn copy_endpoint(&self) -> Result<crate::CopyEndpoint> {
+        Ok(crate::CopyEndpoint {
+            size: self.size(),
+            capabilities: self.capabilities(),
+            identity: None,
+        })
+    }
+
     fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize>;
 
     fn read_exact_at(&self, mut offset: u64, mut buffer: &mut [u8]) -> Result<()> {

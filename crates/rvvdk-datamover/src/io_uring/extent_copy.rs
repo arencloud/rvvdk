@@ -4,8 +4,9 @@ use rvvdk_core::{Capabilities, Error, Extent, ExtentKind, Result, VirtualDisk};
 
 use crate::IoUringExecutionOptions;
 
+use super::copy::copy_file_range_preflighted;
 use super::validation::{validate_copy_configuration, validate_file_range};
-use super::{IoUringCopyStats, NativeExtentPlan, copy_file_range_with_options};
+use super::{IoUringCopyStats, NativeExtentPlan};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct IoUringExtentCopyStats {
@@ -152,9 +153,14 @@ pub fn copy_extent_plan(
         });
     }
 
+    if plan.is_empty() {
+        return Ok(IoUringExtentCopyStats::default());
+    }
+    crate::preflight::files(source_fd, destination_fd, 0, plan.disk_size())?;
+
     let mut aggregate = IoUringExtentCopyStats::default();
     for extent in plan.extents() {
-        let stats = copy_file_range_with_options(
+        let stats = copy_file_range_preflighted(
             source_fd,
             destination_fd,
             extent.offset(),
@@ -171,7 +177,9 @@ pub fn copy_extent_plan(
 
 /// Copy Data/Zero/Hole extents using destination capabilities. Configuration and
 /// range validation precede all backend calls, including for empty plans. Backend
-/// access, capacity, identity, and direct-I/O compatibility are separate preflight.
+/// access, capacity, and known identity are checked before execution. Data plans
+/// require the destination backend to identify the supplied native descriptor.
+/// Direct-I/O alignment/tail compatibility remains a separate requirement.
 pub fn copy_extent_plan_with_destination<D>(
     source_fd: BorrowedFd<'_>,
     destination_fd: BorrowedFd<'_>,
@@ -187,12 +195,43 @@ where
     validate_copy_configuration(block_size, alignment)?;
     validate_file_range(0, plan.disk_size())?;
 
+    if plan.is_empty() {
+        return Ok(IoUringExtentCopyStats::default());
+    }
+    let source_info = crate::preflight::file(source_fd, "source")?;
+    let destination_info = destination
+        .copy_endpoint()
+        .map_err(|e| crate::preflight::context("destination", e))?;
+    crate::preflight::pair(source_info, destination_info, 0, plan.disk_size(), false)?;
+    if plan
+        .extents()
+        .iter()
+        .any(|extent| extent.kind() == ExtentKind::Data)
+    {
+        let fd_info = crate::preflight::file(destination_fd, "destination descriptor")?;
+        crate::preflight::pair(source_info, fd_info, 0, plan.disk_size(), false)?;
+        if destination_info.identity.is_none() {
+            return Err(crate::preflight::context(
+                "destination",
+                Error::InvalidEndpoint {
+                    reason: "native Data execution requires known backing identity",
+                },
+            ));
+        }
+        if destination_info.identity != fd_info.identity {
+            return Err(crate::preflight::context(
+                "destination",
+                Error::EndpointMismatch,
+            ));
+        }
+    }
+
     let mut aggregate = IoUringExtentCopyStats::default();
 
     for extent in plan.extents() {
         match extent.kind() {
             ExtentKind::Data => {
-                let stats = copy_file_range_with_options(
+                let stats = copy_file_range_preflighted(
                     source_fd,
                     destination_fd,
                     extent.offset(),

@@ -38,7 +38,7 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 | R0.2 | Complete | Worker failure termination and first-recorded-error preservation; 11 regressions; ADR-0008 shutdown contract; committed with this record | [Comparison and failure latency](benchmark-results/2026-09-28-r02/README.md) accepted for this fix; initial memory increases investigated with affinity repeat; broader PERF.0 qualification remains open |
 | R0.3 | Complete | Owned-only engine, retained descriptors, verified completion/shutdown rules; 18 lifetime/error regressions; ADR-0013 safety argument and API migration; committed with this record | [Native comparison and resource evidence](benchmark-results/2026-09-28-r03/README.md) recorded; mandatory safety fix accepted; performance qualification provisional because native/control timings drifted |
 | R0.4 | Complete | Native configuration/range validation and supported-plan precheck | Accepted correctness cost: ~1–2 ns empty-call overhead; copy aggregates below 5%; shared-host qualification provisional |
-| R0.5 | Planned | Access/durability preflight and endpoint identity checks | Pending — preflight overhead |
+| R0.5 | Complete | Endpoint capabilities/live capacity, known aliases, native binding, and contextual preflight errors | Required correctness cost accepted: planning +2.08–2.15 µs; final copy aggregates −1.93% to +2.37%; general qualification provisional |
 | V0 | Planned | Independent VMware access feasibility; licensed/evaluation host needed for representative API workflows | Pending — first transport baseline follows functional proof |
 
 R1–R9 remain planned in the roadmap. Add their individual work packages here as
@@ -294,10 +294,72 @@ kernel queue size, endpoint access, durability, identity, or direct-I/O alignmen
 Runtime failure can still leave completed extents written. R0.5 covers basic
 endpoint preflight; R2 covers native tail compatibility and sparse semantics.
 
+## R0.5 — Endpoint access, capacity, durability, and alias preflight
+
+Baseline: `eb10da1`, clean worktree. Scope: validate endpoint requirements before
+copying or notifying observers. F04/F10 are partially covered; runtime io_uring
+compatibility, sparse semantics, and snapshot/plan identity remain later work.
+
+Implementation sequence:
+
+1. Audited all copy, planning, and observed execution paths. Portable execution
+   could discover missing flush support after writing; native FD execution could
+   bypass logical access checks, extend short destinations, or overwrite aliases.
+2. Added the core `CopyEndpoint` contract with optional live backing identity.
+   RAW forwards it; memory identifies the borrowed object; local Linux files
+   refresh metadata/access from their open FDs. Platform inspection retains
+   OS errors and retries interrupted metadata/flag queries.
+3. Added shared access, size, alias, and durability preflight. Full-copy APIs
+   require READ/WRITE/FLUSH and unchanged current source size. Native file APIs
+   require regular files, explicit-offset-compatible access, and enough existing
+   capacity; their caller remains responsible for flushing.
+4. Bound native Data execution to known backend/descriptor identities and checked
+   local direct/buffered handles at construction. A review caught the binding
+   check occurring after initial observation; moved it into shared planning and
+   execution preflight and added adversarial source/destination backend coverage.
+5. Ran fourteen integration regressions on the original baseline: thirteen failed
+   and the valid partial-range copy passed. The candidate adds nineteen tests
+   total, including live size changes, hard links, append/read-only access,
+   missing flush, no-callback rejection, errno preservation, and paired handles.
+6. Updated existing fixtures/contracts deliberately: the worker-error backend
+   advertises FLUSH so the intended worker error remains reachable; the two
+   public native cleanup tests now assert contextual rejection without leaked
+   descriptors because their special/short-file inputs are rejected before
+   submission. Owned-engine fault-injection cleanup tests remain unchanged.
+7. Added planning benchmarks, reused fragmented/zero/dense copy cases, and built
+   isolated baseline/candidate variants. The Zero fallback benchmark now uses
+   a regular source file in both variants to match the explicit native contract.
+   Preflight runs once per native extent plan, not once per Data extent.
+8. A final flag audit found that excluding only the opposite access mode would
+   incorrectly advertise access for Linux's ioctl-only mode. Tightened the
+   predicate to accept only named read/write modes and added a real-FD regression.
+   Preserved initial results and repeated the full comparison for the final code.
+
+Validation: 258 workspace tests passed; formatting and strict all-target Clippy
+passed. Performance evidence and disposition are recorded in the
+[R0.5 report](benchmark-results/2026-09-28-r05/README.md).
+
+Performance disposition: accept the required checks and explicit planning cost.
+Initial planning added 1.58–1.65 µs; final planning added 2.08–2.15 µs (+181–185%).
+Eight new metadata/flag queries per RAW plan account for logical and descriptor
+inspection; R1 should investigate sharing the descriptor snapshot safely. Final
+copy aggregates were −1.93% to +2.37%. A longer direct-only initial repeat was
+−1.09%, but final individual pairs still drifted; general PERF.0 qualification
+remains provisional. Every output/FD-count check passed. No defaults were tuned.
+Both source states, all initial/follow-up/final samples, and resource logs are
+saved. The source patch was checked and the temporary baseline worktree removed.
+
+Limits: checks are point-in-time; callers must stabilize contents, sizes, flags,
+and mappings. Unknown generic identities cannot prove that endpoints are distinct;
+custom native RAW backends must forward known identity. Plans remain structural,
+not persisted snapshot identities. Runtime failures can still leave partial
+writes. Low-level empty native calls remain no-ops after configuration validation.
+See the [endpoint contract](architecture.md#copy-endpoint-preflight-r05).
+
 ## Next session
 
-Implement R0.5: check endpoint access/durability requirements, destination size,
-and unsupported endpoint aliasing before execution, with contextual errors.
-Continue PERF.0 qualification on controlled storage, including observer,
-scheduler, native-lifetime, and validation results. ESXi is still unnecessary
-for these local steps; request the trial only when V0 is ready.
+Start R1 with portable destination-aware planning and plan/execute/observer APIs
+for arbitrary VirtualDisk implementations, including a translated logical disk
+that cannot enter the RAW FD path. Centralize extent validation and semantic
+policy in bounded follow-up steps. Continue PERF.0 qualification on a controlled
+runner. ESXi is still unnecessary; request the trial only when V0 is ready.

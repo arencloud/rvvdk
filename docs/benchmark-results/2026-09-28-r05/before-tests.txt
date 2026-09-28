@@ -1,0 +1,166 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.47
+   Compiling serde_core v1.0.229
+   Compiling libc v0.2.189
+   Compiling crossbeam-utils v0.8.23
+   Compiling crossbeam-epoch v0.9.21
+   Compiling cfg-if v1.0.4
+   Compiling zerocopy v0.8.57
+   Compiling find-msvc-tools v0.1.12
+   Compiling serde v1.0.229
+   Compiling zmij v1.0.23
+   Compiling thiserror v2.0.20
+   Compiling shlex v2.0.1
+   Compiling crossbeam-deque v0.8.8
+   Compiling autocfg v1.5.1
+   Compiling serde_json v1.0.151
+   Compiling bitflags v2.13.2
+   Compiling cc v1.4.6
+   Compiling rayon-core v1.13.0
+   Compiling either v1.18.0
+   Compiling clap_lex v1.1.1
+   Compiling regex-syntax v0.8.11
+   Compiling io-uring v0.7.15
+   Compiling itoa v1.0.18
+   Compiling anstyle v1.0.14
+   Compiling plotters-backend v0.3.7
+   Compiling memchr v2.8.3
+   Compiling ciborium-io v0.2.2
+   Compiling cast v0.3.0
+   Compiling num-traits v0.2.19
+   Compiling itertools v0.13.0
+   Compiling same-file v1.0.6
+   Compiling rvvdk-platform v0.1.0 (/tmp/rvvdk-r05-_j893rmq/baseline/crates/rvvdk-platform)
+   Compiling anes v0.1.6
+   Compiling clap_builder v4.6.7
+   Compiling plotters-svg v0.3.7
+   Compiling walkdir v2.5.0
+   Compiling oorandom v11.1.5
+   Compiling syn v3.0.5
+   Compiling syn v2.0.119
+   Compiling plotters v0.3.7
+   Compiling alloca v0.4.0
+   Compiling rayon v1.12.0
+   Compiling page_size v0.6.0
+   Compiling regex-automata v0.4.18
+   Compiling criterion-plot v0.8.2
+   Compiling clap v4.6.7
+   Compiling regex v1.13.1
+   Compiling thiserror-impl v2.0.20
+   Compiling serde_derive v1.0.229
+   Compiling zerocopy-derive v0.8.57
+   Compiling rvvdk-core v0.1.0 (/tmp/rvvdk-r05-_j893rmq/baseline/crates/rvvdk-core)
+   Compiling rvvdk-local v0.1.0 (/tmp/rvvdk-r05-_j893rmq/baseline/crates/rvvdk-local)
+   Compiling rvvdk-datamover v0.1.0 (/tmp/rvvdk-r05-_j893rmq/baseline/crates/rvvdk-datamover)
+   Compiling tinytemplate v1.2.1
+   Compiling half v2.7.1
+   Compiling ciborium-ll v0.2.2
+   Compiling ciborium v0.2.2
+   Compiling criterion v0.8.2
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.23s
+     Running tests/preflight.rs (target/debug/deps/preflight-fe537babc5371958)
+
+running 14 tests
+test aliases_rejected_for_memory_and_hard_linked_files ... FAILED
+test append_descriptor_cannot_redirect_explicit_writes ... FAILED
+test changed_file_sizes_rejected_before_observer_notification ... FAILED
+test execution_rechecks_aliasing_instead_of_trusting_planning ... FAILED
+test missing_flush_rejected_before_portable_writes ... FAILED
+test native_alias_rejected_before_zeroing_source ... FAILED
+test native_backend_descriptor_mismatch_precedes_zero_writes ... FAILED
+test native_readonly_descriptor_rejected_before_zero_extent ... FAILED
+test nonregular_native_endpoint_is_rejected ... FAILED
+test portable_access_requirements_are_explicit ... FAILED
+test readonly_replacement_rejected_before_observer_notification ... FAILED
+test source_write_only_rejected_before_zero_extent ... FAILED
+test undersized_native_destination_is_not_extended ... FAILED
+test valid_native_range_preserves_prefix_and_tail ... ok
+
+failures:
+
+---- aliases_rejected_for_memory_and_hard_linked_files stdout ----
+
+thread 'aliases_rejected_for_memory_and_hard_linked_files' (3839289) panicked at crates/rvvdk-datamover/tests/preflight.rs:141:14:
+called `Result::unwrap_err()` on an `Ok` value: CopyStats { bytes_read: 8192, bytes_written: 8192, bytes_zeroed: 0, bytes_discarded: 0, blocks_copied: 2, extents_processed: 1, elapsed: 24.582µs }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- append_descriptor_cannot_redirect_explicit_writes stdout ----
+
+thread 'append_descriptor_cannot_redirect_explicit_writes' (3839290) panicked at crates/rvvdk-datamover/tests/preflight.rs:267:6:
+called `Result::unwrap_err()` on an `Ok` value: IoUringCopyStats { bytes_read: 8192, bytes_written: 8192, blocks_completed: 2, peak_in_flight: 1, peak_reads_in_flight: 1, peak_writes_in_flight: 1, mixed_in_flight_observed: false }
+
+---- changed_file_sizes_rejected_before_observer_notification stdout ----
+
+thread 'changed_file_sizes_rejected_before_observer_notification' (3839292) panicked at crates/rvvdk-datamover/tests/preflight.rs:321:13:
+Threaded: source_grow
+
+---- execution_rechecks_aliasing_instead_of_trusting_planning stdout ----
+
+thread 'execution_rechecks_aliasing_instead_of_trusting_planning' (3839293) panicked at crates/rvvdk-datamover/tests/preflight.rs:346:18:
+called `Result::unwrap_err()` on an `Ok` value: CopyReport { backend: Threaded, stats: CopyStats { bytes_read: 8192, bytes_written: 8192, bytes_zeroed: 0, bytes_discarded: 0, blocks_copied: 2, extents_processed: 1, elapsed: 12.031µs } }
+
+---- missing_flush_rejected_before_portable_writes stdout ----
+
+thread 'missing_flush_rejected_before_portable_writes' (3839294) panicked at crates/rvvdk-datamover/tests/preflight.rs:97:9:
+operation is not supported
+
+---- native_alias_rejected_before_zeroing_source stdout ----
+
+thread 'native_alias_rejected_before_zeroing_source' (3839295) panicked at crates/rvvdk-datamover/tests/preflight.rs:188:14:
+called `Result::unwrap_err()` on an `Ok` value: IoUringExtentCopyStats { bytes_read: 0, bytes_written: 8192, bytes_zeroed: 0, bytes_discarded: 0, blocks_completed: 2, extents_processed: 1 }
+
+---- native_backend_descriptor_mismatch_precedes_zero_writes stdout ----
+
+thread 'native_backend_descriptor_mismatch_precedes_zero_writes' (3839296) panicked at crates/rvvdk-datamover/tests/preflight.rs:370:6:
+called `Result::unwrap_err()` on an `Ok` value: IoUringExtentCopyStats { bytes_read: 4096, bytes_written: 8192, bytes_zeroed: 0, bytes_discarded: 0, blocks_completed: 2, extents_processed: 2 }
+
+---- native_readonly_descriptor_rejected_before_zero_extent stdout ----
+
+thread 'native_readonly_descriptor_rejected_before_zero_extent' (3839298) panicked at crates/rvvdk-datamover/tests/preflight.rs:243:5:
+I/O error: Bad file descriptor (os error 9)
+
+---- nonregular_native_endpoint_is_rejected stdout ----
+
+thread 'nonregular_native_endpoint_is_rejected' (3839300) panicked at crates/rvvdk-datamover/tests/preflight.rs:435:6:
+called `Result::unwrap_err()` on an `Ok` value: IoUringCopyStats { bytes_read: 8192, bytes_written: 8192, blocks_completed: 2, peak_in_flight: 1, peak_reads_in_flight: 1, peak_writes_in_flight: 1, mixed_in_flight_observed: false }
+
+---- portable_access_requirements_are_explicit stdout ----
+
+thread 'portable_access_requirements_are_explicit' (3839302) panicked at crates/rvvdk-datamover/tests/preflight.rs:128:9:
+operation is not supported
+
+---- readonly_replacement_rejected_before_observer_notification stdout ----
+
+thread 'readonly_replacement_rejected_before_observer_notification' (3839303) panicked at crates/rvvdk-datamover/tests/preflight.rs:412:9:
+operation is not supported
+
+---- source_write_only_rejected_before_zero_extent stdout ----
+
+thread 'source_write_only_rejected_before_zero_extent' (3839304) panicked at crates/rvvdk-datamover/tests/preflight.rs:223:5:
+I/O error: Bad file descriptor (os error 9)
+
+---- undersized_native_destination_is_not_extended stdout ----
+
+thread 'undersized_native_destination_is_not_extended' (3839305) panicked at crates/rvvdk-datamover/tests/preflight.rs:287:6:
+called `Result::unwrap_err()` on an `Ok` value: IoUringCopyStats { bytes_read: 8192, bytes_written: 8192, blocks_completed: 2, peak_in_flight: 1, peak_reads_in_flight: 1, peak_writes_in_flight: 1, mixed_in_flight_observed: false }
+
+
+failures:
+    aliases_rejected_for_memory_and_hard_linked_files
+    append_descriptor_cannot_redirect_explicit_writes
+    changed_file_sizes_rejected_before_observer_notification
+    execution_rechecks_aliasing_instead_of_trusting_planning
+    missing_flush_rejected_before_portable_writes
+    native_alias_rejected_before_zeroing_source
+    native_backend_descriptor_mismatch_precedes_zero_writes
+    native_readonly_descriptor_rejected_before_zero_extent
+    nonregular_native_endpoint_is_rejected
+    portable_access_requirements_are_explicit
+    readonly_replacement_rejected_before_observer_notification
+    source_write_only_rejected_before_zero_extent
+    undersized_native_destination_is_not_extended
+
+test result: FAILED. 1 passed; 13 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p rvvdk-datamover --test preflight`

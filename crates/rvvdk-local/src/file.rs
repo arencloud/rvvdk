@@ -134,6 +134,16 @@ impl LocalFileBlockDevice {
             return Err(Error::Unsupported);
         }
 
+        if let Some(buffered) = &buffered_file {
+            use std::os::unix::fs::MetadataExt;
+            let buffered_metadata = buffered.metadata()?;
+            if (metadata.dev(), metadata.ino())
+                != (buffered_metadata.dev(), buffered_metadata.ino())
+            {
+                return Err(Error::EndpointMismatch);
+            }
+        }
+
         let geometry = DiskGeometry::new(metadata.len(), 512, 4096)?;
 
         let direct_io_alignment = if direct_io {
@@ -160,6 +170,36 @@ impl BlockDevice for LocalFileBlockDevice {
 
     fn capabilities(&self) -> Capabilities {
         self.capabilities
+    }
+
+    #[cfg(target_os = "linux")]
+    fn copy_endpoint(&self) -> Result<rvvdk_core::CopyEndpoint> {
+        let state = rvvdk_platform::inspect_file(self.file.as_fd())?;
+        if !state.regular {
+            return Err(Error::InvalidEndpoint {
+                reason: "a regular file is required",
+            });
+        }
+        if state.append {
+            return Err(Error::InvalidEndpoint {
+                reason: "append mode cannot preserve copy offsets",
+            });
+        }
+        let mut capabilities = self.capabilities;
+        if !state.readable {
+            capabilities.remove(Capabilities::READ);
+        }
+        if !state.writable {
+            capabilities.remove(Capabilities::WRITE | Capabilities::FLUSH);
+        }
+        Ok(rvvdk_core::CopyEndpoint {
+            size: state.size,
+            capabilities,
+            identity: Some(rvvdk_core::EndpointIdentity::LocalFile {
+                device: state.device,
+                inode: state.inode,
+            }),
+        })
     }
 
     fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
@@ -331,5 +371,59 @@ impl LinuxFdBackend for LocalFileBlockDevice {
 
             None => LinuxFdCapabilities::new(false, 1, 1),
         }
+    }
+}
+
+#[cfg(test)]
+mod preflight_tests {
+    use super::*;
+
+    #[test]
+    fn rejects_mismatched_direct_and_buffered_handles() {
+        let directory = std::env::temp_dir();
+        let first = directory.join(format!("rvvdk-r05-pair-{}-a", std::process::id()));
+        let second = directory.join(format!("rvvdk-r05-pair-{}-b", std::process::id()));
+        let a = File::options()
+            .read(true)
+            .write(true)
+            .create_new(true)
+            .open(&first)
+            .unwrap();
+        let b = File::options()
+            .read(true)
+            .write(true)
+            .create_new(true)
+            .open(&second)
+            .unwrap();
+        std::fs::remove_file(first).unwrap();
+        std::fs::remove_file(second).unwrap();
+        a.set_len(4096).unwrap();
+        b.set_len(4096).unwrap();
+        assert!(matches!(
+            LocalFileBlockDevice::from_file(a, Some(b), Capabilities::READ, true),
+            Err(Error::EndpointMismatch)
+        ));
+    }
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn refreshes_append_flags_before_portable_copy() {
+        let path = std::env::temp_dir().join(format!("rvvdk-r05-flags-{}", std::process::id()));
+        std::fs::write(&path, [0xff; 4096]).unwrap();
+        let device = LocalFileBlockDevice::open_read_write(&path).unwrap();
+        std::fs::remove_file(path).unwrap();
+        // SAFETY: F_GETFL/F_SETFL operate on this live, uniquely used test FD.
+        unsafe {
+            let flags = libc::fcntl(device.as_raw_fd(), libc::F_GETFL);
+            assert!(flags >= 0);
+            assert_eq!(
+                libc::fcntl(device.as_raw_fd(), libc::F_SETFL, flags | libc::O_APPEND),
+                0
+            );
+        }
+        assert!(matches!(
+            device.copy_endpoint(),
+            Err(Error::InvalidEndpoint { .. })
+        ));
     }
 }

@@ -652,9 +652,65 @@ to the pool and leave a healthy engine available for subsequent valid requests.
 This is configuration validation, not transactional execution. Backend failures,
 allocation failure, or ring creation failure can still occur after earlier
 extents have completed. Endpoint access, capacity, identity, and durability
-preflight are R0.5; direct-I/O alignment/tail compatibility and logical discard
-semantics remain R2 work. The allocation layout check does not impose an
+preflight are implemented in R0.5 below; direct-I/O alignment/tail compatibility
+and logical discard semantics remain R2 work. The allocation layout check does not impose an
 aggregate memory budget or guarantee enough available memory.
+
+## Copy endpoint preflight (R0.5)
+
+`BlockDevice::copy_endpoint` and `VirtualDisk::copy_endpoint` return current
+capacity, capabilities, and optional backing identity. `RawDisk` forwards this
+contract; memory devices identify the currently borrowed object, and Linux local
+files refresh size/access using the open FD. File identity is `(device, inode)`,
+so separately opened handles, hard links, and path aliases are detected without
+reopening a path. Local direct/buffered handles must match at construction.
+Memory addresses are process-local, borrow-scoped identities; never serialize
+these values or treat them as content/snapshot identities.
+
+Portable full copies require source READ, destination WRITE and FLUSH, enough
+destination capacity, and unchanged current source size. Known aliases and the
+same nonzero-sized backend object are rejected. Destination-aware RAW planning
+and both plan executors additionally inspect the actual FDs, repeating preflight
+at execution because state may change after planning. These checks precede extent
+execution and observer notifications. Native Data plans must identify both RAW
+backends and bind their identities to the supplied descriptors before selection
+or dispatch. A custom RAW backend must override/forward `copy_endpoint` to enable
+this native path; unknown identity is not accepted as a matching descriptor.
+
+Nonempty low-level native range/extent copies require regular file sources,
+readable source FDs, writable non-append destination FDs, sufficient current
+capacity for the complete requested range, and distinct backing objects. Native
+copy does not extend a short destination. Destination-aware native extent copies
+validate the virtual destination's WRITE/capacity/identity before Zero/Hole calls;
+Data-containing plans additionally require its known identity to match the native
+destination FD. With no Data extents that destination FD is unused. A validated
+private range dispatcher avoids re-querying FDs for every Data extent.
+
+`copy_native`/`copy_native_with_report` are FD range APIs: they enforce actual
+FD permissions and bounds. The RAW plan APIs additionally enforce the logical
+BlockDevice capabilities and backend-to-FD binding.
+
+Low-level native copies still do **not** flush. Their caller owns durability;
+they do not require FLUSH from a virtual destination. Valid empty low-level
+ranges/plans retain R0.4's no-op behavior after configuration validation, without
+endpoint inspection. Full DataMover copies retain their final flush and require
+FLUSH in preflight, including empty jobs. Success means that flush returned
+successfully; capability claims cannot prove physical hardware behavior.
+
+`EndpointPreflight` preserves source/destination role and its underlying error
+chain. Missing capabilities, invalid endpoint modes, descriptor mismatches, and
+aliasing have explicit errors. Existing cached-geometry bounds checks still
+return their original `OutOfBounds` errors; live descriptor/backend failures have
+endpoint context. Runtime I/O errors retain the existing error contracts.
+
+This is a point-in-time check, not rollback, a snapshot, or a lock. Callers must
+keep contents, capacity, open-file flags, and endpoint mappings stable throughout
+the copy. Unknown custom-backend identities cannot prove absence of aliases;
+wrappers must forward the identity of their backing object. Plans are still
+structural and are not bound to a persisted source identity. R1/R2 retain portable
+planning, complete error/progress context, runtime ring availability, direct-I/O
+tail policy, and safe sparse semantics. Device nodes/pipes are unsupported by the
+native file-copy APIs; the owned engine remains a lower-level request interface.
 
 ## Native Zero extent execution
 

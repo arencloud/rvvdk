@@ -99,7 +99,7 @@ Deliver small, separate changes rather than a wholesale rewrite:
 - [x] **R0.2: worker shutdown** — coordinator receiver released; first-recorded error retained; cooperative worker stop, producer wakeup, and scoped joining verified. Eleven regressions include full-queue read/write/zero/discard failures. Covers F01. [Evidence and performance disposition](benchmark-results/2026-09-28-r02/README.md); synchronous backend calls must return for shutdown to complete.
 - [x] **R0.3: io_uring lifetime repair** — removed borrowed engine I/O; operations retain buffers and owned descriptors before publication. Explicit shutdown confirms completions or reports permanent resource retention. Eighteen lifetime/error regressions and [ADR-0013 safety argument](adr/0013-io-uring-buffer-ownership.md) cover F02 and FD reuse. [Performance evidence](benchmark-results/2026-09-28-r03/README.md) is provisional; cancellation deadlines and resource reclamation after unconfirmed shutdown remain limitations.
 - [x] **R0.4: entry-point validation** — native configuration and file ranges are validated before allocation or I/O, including empty and Zero/Hole-only plans. Data-only plans reject unsupported later extents before writes; owned requests reject invalid offsets before SQE publication. Eight regression tests cover F08 and mutation ordering. [Benchmark evidence and disposition](benchmark-results/2026-09-28-r04/README.md).
-- [ ] **R0.5: basic preflight** — check access/durability requirements, destination size, and unsupported endpoint aliasing before execution; preserve contextual error information. Covers parts of F04/F10.
+- [x] **R0.5: basic preflight** — shared endpoint contract; live local capacity/access checks; known aliases and native descriptor mismatches rejected before execution/observation; direct/buffered handle identity verified. Contextual errors preserve causes. Covers parts of F04/F10. [Evidence and performance disposition](benchmark-results/2026-09-28-r05/README.md).
 
 Acceptance:
 
@@ -114,6 +114,7 @@ Acceptance:
 - [ ] Add destination-aware portable planning and execution for arbitrary `VirtualDisk` implementations, including trait objects where useful (`?Sized` or deliberate forwarding implementations).
 - [ ] Keep one canonical extent validator and one policy for Copy/Zero/zero-guaranteed deallocation/fallback operations.
 - [ ] Separate logical intent from executor preparation. Suggested internal concepts: `LogicalCopyPlan`, `PreparedExecution`, and `ExecutionSelection { requested, selected, reason }`; these are design names, not required public types.
+- [ ] Consolidate endpoint preparation so one descriptor snapshot can serve current capacity/access/identity checks without weakening logical capability checks; measure planning latency against R0.5.
 - [ ] Treat existing `CopyPlan` as an in-memory structural plan. Avoid promising stable serialization until identity/versioning rules are settled.
 - [ ] Define contextual copy errors with operation, range, backend, cause, and partial progress. Separate invalid configuration/stale plan from corrupt source metadata.
 - [ ] Define a memory budget covering buffers, queue entries, and extent metadata. Keep the initial Vec extent API, but do not claim total memory is independent of fragmentation.
@@ -126,10 +127,11 @@ Acceptance: memory, local RAW, and a synthetic translated logical disk all use t
 - [ ] Introduce the zero-read guarantee required by F05 and update ADR-0003/0022 through a superseding ADR.
 - [ ] Implement local zeroing and hole punching, with range checks, read-only checks, partial filesystem block handling, and fallbacks on unsupported filesystems.
 - [ ] Add dense extent fallback when sparse discovery is unavailable; never invent Hole extents from unknown allocation state.
-- [ ] Verify direct/buffered descriptors refer to the same underlying file and define how concurrent buffered/direct ranges are handled.
+- [x] Verify direct/buffered descriptors refer to the same underlying file (R0.5).
+- [ ] Define how concurrent buffered/direct ranges are handled.
 - [ ] Integrate runtime io_uring initialization and request compatibility into preparation. Make Auto fallback reasons observable and explicit IoUring errors precise.
 - [ ] Handle unaligned native requests through an intentional policy: initially choose threaded execution for the entire plan before mutation; add aligned native bulk plus safe tails only if measured value justifies it.
-- [ ] Validate source READ and destination operations even when native FD access would bypass backend methods.
+- [x] Validate source READ and destination WRITE/FLUSH requirements even when native FD access bypasses backend methods (R0.5). Operation-specific sparse guarantees remain below the R2 acceptance criteria.
 - [ ] Reuse a ring and bounded buffer pool per prepared job instead of recreating them per Data extent, once correctness tests pass.
 
 Acceptance: byte equality on nonzero-prefilled destinations; demonstrable hole preservation on a supporting filesystem; safe behavior on a filesystem without sparse operations; tests for mixed direct/buffered endpoints, tiny/odd disk sizes, unaligned extent boundaries, and io_uring unavailability. Verify actual storage behavior separately from tmpfs.
@@ -286,7 +288,7 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 
 ## First implementation session — R0.1 completed
 
-The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.4 are complete, with performance dispositions and remaining qualification work documented. Continue with R0.5 next.
+The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. Continue with R1 next.
 
 R0.1 was the bounded change directly related to the observer work:
 
@@ -301,7 +303,7 @@ R0.1 was the bounded change directly related to the observer work:
    tradeoff in the implementation log. Update this checklist and ADR-0025 with
    the implemented behavior and remaining limitations.
 
-R0.2–R0.4 are also complete. Finish **R0.5** before expanding native or remote functionality. The shared validation, worker shutdown, and lifetime fixes did not require a full executor refactor.
+R0 is complete. Start **R1** with portable destination-aware planning and execution. The shared validation, worker shutdown, and lifetime fixes did not require a full executor refactor.
 
 ## Decisions to record before their milestone
 

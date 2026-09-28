@@ -143,6 +143,29 @@ pub fn copy_file_range_with_options(
         return Ok(IoUringCopyStats::default());
     }
 
+    crate::preflight::files(source_fd, destination_fd, offset, length)?;
+    copy_file_range_preflighted(
+        source_fd,
+        destination_fd,
+        offset,
+        length,
+        block_size,
+        alignment,
+        options,
+    )
+}
+
+// The caller validated configuration and the entire endpoint range. Extent
+// executors use this to avoid repeating fstat/fcntl for every Data extent.
+pub(super) fn copy_file_range_preflighted(
+    source_fd: BorrowedFd<'_>,
+    destination_fd: BorrowedFd<'_>,
+    offset: u64,
+    length: u64,
+    block_size: usize,
+    alignment: usize,
+    options: crate::IoUringExecutionOptions,
+) -> Result<IoUringCopyStats> {
     let queue_depth = options.queue_depth();
 
     let pool = BufferPool::new(queue_depth as usize, block_size, alignment)?;

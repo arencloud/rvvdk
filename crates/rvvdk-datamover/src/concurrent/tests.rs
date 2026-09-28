@@ -100,7 +100,11 @@ impl VirtualDisk for FaultDisk<'_> {
         DiskGeometry::new((1024 * BLOCK) as u64, 512, BLOCK as u32).unwrap()
     }
     fn capabilities(&self) -> Capabilities {
-        Capabilities::READ | Capabilities::WRITE | Capabilities::WRITE_ZERO | Capabilities::DISCARD
+        Capabilities::READ
+            | Capabilities::WRITE
+            | Capabilities::WRITE_ZERO
+            | Capabilities::DISCARD
+            | Capabilities::FLUSH
     }
     fn read_at(&self, _: u64, buffer: &mut [u8]) -> Result<usize> {
         self.check(Fault::Read)?;

@@ -46,11 +46,14 @@ VMware disk access and migration, extensible to other platforms.
 | **Memory management** | Aligned allocations and reusable buffer pools |
 | **Direct I/O** | Local `O_DIRECT`, runtime alignment discovery, buffered fallback for unaligned backend requests |
 | **Copy planning** | Structural plans, extent summaries, validation, and execution reports |
+| **Copy preflight** | Access, flush support, live local capacity, known alias and native descriptor checks |
 | **Progress reporting** | In development; intermediate updates on the single-worker threaded path |
 | **Sparse destination allocation** | Planned; local holes currently use zero-write fallback |
 | **VMDK and VMware access** | Planned; no VMware VDDK dependency in the current workspace |
 
-Native execution still needs complete compatibility checks. Its direct-FD path
+The [endpoint contract](docs/architecture.md#copy-endpoint-preflight-r05) describes
+preflight guarantees and custom-backend requirements. Native execution still
+needs complete compatibility checks. Its direct-FD path
 does not inherit the local backend's buffered fallback for unaligned requests.
 See the [review findings](docs/project-review-2026-09-28.md#findings-requiring-action).
 

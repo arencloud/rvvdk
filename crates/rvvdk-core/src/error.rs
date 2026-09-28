@@ -4,6 +4,25 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error("{endpoint} preflight failed: {source}")]
+    EndpointPreflight {
+        endpoint: &'static str,
+        #[source]
+        source: Box<Error>,
+    },
+
+    #[error("endpoint lacks required {capability} capability")]
+    MissingCapability { capability: &'static str },
+
+    #[error("unsupported copy endpoint: {reason}")]
+    InvalidEndpoint { reason: &'static str },
+
+    #[error("source and destination refer to the same backing object")]
+    AliasedEndpoints,
+
+    #[error("backend and native descriptor refer to different backing objects")]
+    EndpointMismatch,
+
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
 

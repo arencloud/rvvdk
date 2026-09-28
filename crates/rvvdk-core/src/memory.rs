@@ -49,6 +49,16 @@ impl BlockDevice for MemoryBlockDevice {
         self.capabilities
     }
 
+    fn copy_endpoint(&self) -> Result<crate::CopyEndpoint> {
+        Ok(crate::CopyEndpoint {
+            size: self.size(),
+            capabilities: self.capabilities,
+            identity: Some(crate::EndpointIdentity::Memory {
+                address: std::ptr::from_ref(self).addr(),
+            }),
+        })
+    }
+
     fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
         if !self.capabilities.contains(Capabilities::READ) {
             return Err(Error::Unsupported);

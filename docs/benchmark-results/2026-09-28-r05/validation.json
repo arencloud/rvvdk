@@ -1,0 +1,26 @@
+{
+  "before": {
+    "command": "cargo test -p rvvdk-datamover --test preflight -- --test-threads=1",
+    "baseline": "eb10da1",
+    "exit_code": 101,
+    "passed": 1,
+    "failed": 13,
+    "timeout_seconds": 60,
+    "evidence": "before-tests.txt"
+  },
+  "after": {
+    "workspace_command": "cargo test --workspace",
+    "workspace_exit_code": 0,
+    "workspace_tests": 258,
+    "new_tests": 19,
+    "format_command": "cargo fmt --all -- --check",
+    "format_exit_code": 0,
+    "lint_command": "cargo clippy --workspace --all-targets -- -D warnings",
+    "lint_exit_code": 0
+  },
+  "notes": [
+    "Five additional tests require the new endpoint contract or exercise local paired handles and actual FD flag inspection; these ran on the candidate.",
+    "Two public lifetime tests now expect preflight rejection. Existing owned-engine fault-injection cleanup coverage remains unchanged.",
+    "The bounded baseline regression run completed normally; no timeout was hit."
+  ]
+}

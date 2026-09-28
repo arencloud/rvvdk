@@ -115,6 +115,14 @@ contents after every copy; setup and verification stay outside the timer and
 destination flush stays inside. Empty-call microbenchmarks report absolute
 nanoseconds as well as percentage changes because their baseline is very small.
 
+### R0.5 preflight measurements
+
+The [R0.5 report](benchmark-results/2026-09-28-r05/README.md) measures current
+endpoint inspection during planning and the full copy boundary for memory Zero
+fallback, fragmented native Data, and buffered/direct dense copies. Both threaded
+and native execution gained preflight; the threaded measurements are comparators,
+not unchanged controls. Planning latency is reported separately from copy time.
+
 ### Result storage convention
 
 Use `docs/benchmark-results/<run-id>/` for concise tracked summaries, environment

@@ -38,6 +38,10 @@ where
         self.device.capabilities()
     }
 
+    fn copy_endpoint(&self) -> Result<crate::CopyEndpoint> {
+        self.device.copy_endpoint()
+    }
+
     fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
         self.device.read_at(offset, buffer)
     }

@@ -39,9 +39,9 @@ fn fd_count() -> usize {
 }
 
 #[test]
-fn eof_cleanup_preserves_original_error_and_releases_descriptors() {
+fn short_source_preflight_preserves_context_without_leaking_descriptors() {
     bounded(
-        "eof_cleanup_preserves_original_error_and_releases_descriptors",
+        "short_source_preflight_preserves_context_without_leaking_descriptors",
         || {
             let path = std::env::temp_dir().join(format!("rvvdk-r03-eof-{}", std::process::id()));
             let source = OpenOptions::new()
@@ -51,7 +51,7 @@ fn eof_cleanup_preserves_original_error_and_releases_descriptors() {
                 .open(&path)
                 .unwrap();
             std::fs::remove_file(&path).unwrap();
-            let destination = OpenOptions::new().write(true).open("/dev/null").unwrap();
+            let destination = regular_file("destination", true);
             let before = fd_count();
             for _ in 0..16 {
                 let error = copy_file_range(
@@ -64,7 +64,9 @@ fn eof_cleanup_preserves_original_error_and_releases_descriptors() {
                     4096,
                 )
                 .unwrap_err();
-                assert!(matches!(error, Error::UnexpectedEof { .. }));
+                assert!(
+                    matches!(error, Error::EndpointPreflight { endpoint: "source", source } if matches!(*source, Error::OutOfBounds { .. }))
+                );
                 assert_eq!(fd_count(), before);
             }
         },
@@ -72,12 +74,12 @@ fn eof_cleanup_preserves_original_error_and_releases_descriptors() {
 }
 
 #[test]
-fn write_error_cleanup_preserves_errno_and_releases_descriptors() {
+fn readonly_preflight_preserves_context_without_leaking_descriptors() {
     bounded(
-        "write_error_cleanup_preserves_errno_and_releases_descriptors",
+        "readonly_preflight_preserves_context_without_leaking_descriptors",
         || {
-            let source = File::open("/dev/zero").unwrap();
-            let destination = File::open("/dev/null").unwrap();
+            let source = regular_file("source", true);
+            let destination = regular_file("destination", false);
             let before = fd_count();
             for _ in 0..16 {
                 let error = copy_file_range(
@@ -90,9 +92,29 @@ fn write_error_cleanup_preserves_errno_and_releases_descriptors() {
                     4096,
                 )
                 .unwrap_err();
-                assert!(matches!(error, Error::Io(ref cause) if cause.raw_os_error() == Some(9)));
+                assert!(
+                    matches!(error, Error::EndpointPreflight { endpoint: "destination", source } if matches!(*source, Error::MissingCapability { capability: "write" }))
+                );
                 assert_eq!(fd_count(), before);
             }
         },
     );
+}
+
+fn regular_file(name: &str, writable: bool) -> File {
+    let path =
+        std::env::temp_dir().join(format!("rvvdk-r05-lifetime-{}-{name}", std::process::id()));
+    let created = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&path)
+        .unwrap();
+    created.set_len(64 * 1024).unwrap();
+    let file = OpenOptions::new()
+        .read(true)
+        .write(writable)
+        .open(&path)
+        .unwrap();
+    std::fs::remove_file(path).unwrap();
+    file
 }

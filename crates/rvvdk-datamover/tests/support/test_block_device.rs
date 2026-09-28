@@ -127,6 +127,19 @@ impl BlockDevice for TestExtentBlockDevice {
         self.capabilities
     }
 
+    fn copy_endpoint(&self) -> Result<rvvdk_core::CopyEndpoint> {
+        use std::os::unix::fs::MetadataExt;
+        let metadata = self.file.metadata()?;
+        Ok(rvvdk_core::CopyEndpoint {
+            size: metadata.len(),
+            capabilities: self.capabilities,
+            identity: Some(rvvdk_core::EndpointIdentity::LocalFile {
+                device: metadata.dev(),
+                inode: metadata.ino(),
+            }),
+        })
+    }
+
     fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
         self.validate_range(offset, buffer.len())?;
 

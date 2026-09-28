@@ -18,6 +18,19 @@ fn native_validation(criterion: &mut Criterion) {
     let fd = File::open("/dev/null").unwrap();
     let options = IoUringExecutionOptions::new(8).unwrap();
     let empty = NativeExtentPlan::new(vec![], 0).unwrap();
+    support::ensure_benchmark_directory();
+    let source_path = support::benchmark_path("validation-source");
+    let destination_path = support::benchmark_path("validation-destination");
+    support::create_incompressible_file(&source_path, MIB, 0x0052_5604);
+    let expected = support::incompressible_buffer(MIB, 0x0052_5604);
+    let reset = support::incompressible_buffer(MIB, 0x0052_5605);
+    std::fs::write(&destination_path, &reset).unwrap();
+    let source = File::open(&source_path).unwrap();
+    let destination = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(&destination_path)
+        .unwrap();
     let mut group = criterion.benchmark_group("native_validation");
     group.sampling_mode(SamplingMode::Flat);
     group.bench_function("empty_range", |b| {
@@ -95,7 +108,7 @@ fn native_validation(criterion: &mut Criterion) {
                 disk.write_all_at(0, &reset).unwrap();
                 let start = Instant::now();
                 let stats = copy_extent_plan_with_destination(
-                    fd.as_fd(),
+                    source.as_fd(),
                     fd.as_fd(),
                     &disk,
                     &plan,
@@ -114,19 +127,6 @@ fn native_validation(criterion: &mut Criterion) {
             elapsed
         })
     });
-    support::ensure_benchmark_directory();
-    let source_path = support::benchmark_path("validation-source");
-    let destination_path = support::benchmark_path("validation-destination");
-    support::create_incompressible_file(&source_path, MIB, 0x0052_5604);
-    let expected = support::incompressible_buffer(MIB, 0x0052_5604);
-    let reset = support::incompressible_buffer(MIB, 0x0052_5605);
-    std::fs::write(&destination_path, &reset).unwrap();
-    let source = File::open(&source_path).unwrap();
-    let destination = std::fs::OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open(&destination_path)
-        .unwrap();
     let plan = NativeExtentPlan::new(
         (0..16)
             .map(|i| Extent::new(i * 65536, 65536, ExtentKind::Data).unwrap())

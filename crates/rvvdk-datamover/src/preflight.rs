@@ -1,0 +1,236 @@
+use rvvdk_core::{Capabilities, CopyEndpoint, Error, Result, VirtualDisk};
+
+pub(crate) fn context(endpoint: &'static str, source: Error) -> Error {
+    Error::EndpointPreflight {
+        endpoint,
+        source: Box::new(source),
+    }
+}
+
+fn require(info: CopyEndpoint, flag: Capabilities, capability: &'static str) -> Result<()> {
+    if !info.capabilities.contains(flag) {
+        return Err(Error::MissingCapability { capability });
+    }
+    Ok(())
+}
+
+fn bounds(info: CopyEndpoint, offset: u64, length: u64) -> Result<()> {
+    let end = offset
+        .checked_add(length)
+        .ok_or(Error::RangeOverflow { offset, length })?;
+    if end > info.size {
+        return Err(Error::OutOfBounds {
+            offset,
+            length,
+            size: info.size,
+        });
+    }
+    Ok(())
+}
+
+pub(crate) fn pair(
+    source: CopyEndpoint,
+    destination: CopyEndpoint,
+    offset: u64,
+    length: u64,
+    flush: bool,
+) -> Result<()> {
+    (|| {
+        require(source, Capabilities::READ, "read")?;
+        bounds(source, offset, length)
+    })()
+    .map_err(|error| context("source", error))?;
+    (|| {
+        require(destination, Capabilities::WRITE, "write")?;
+        if flush {
+            require(destination, Capabilities::FLUSH, "flush")?;
+        }
+        bounds(destination, offset, length)
+    })()
+    .map_err(|error| context("destination", error))?;
+    if source.identity.is_some() && source.identity == destination.identity {
+        return Err(Error::AliasedEndpoints);
+    }
+    Ok(())
+}
+
+pub(crate) fn virtual_pair<S: VirtualDisk, D: VirtualDisk>(
+    source: &S,
+    destination: &D,
+    length: u64,
+) -> Result<(CopyEndpoint, CopyEndpoint)> {
+    // Also detect the same non-ZST object when a custom backend has no identity.
+    if std::mem::size_of_val(source) != 0
+        && std::mem::size_of_val(destination) != 0
+        && std::ptr::from_ref(source).cast::<()>() == std::ptr::from_ref(destination).cast::<()>()
+    {
+        return Err(Error::AliasedEndpoints);
+    }
+    let source_info = source.copy_endpoint().map_err(|e| context("source", e))?;
+    if source_info.size != length {
+        return Err(context(
+            "source",
+            Error::CorruptMetadata(format!(
+                "source size changed: expected={length}, current={}",
+                source_info.size
+            )),
+        ));
+    }
+    let destination_info = destination
+        .copy_endpoint()
+        .map_err(|e| context("destination", e))?;
+    pair(source_info, destination_info, 0, length, true)?;
+    Ok((source_info, destination_info))
+}
+
+#[cfg(target_os = "linux")]
+pub(crate) fn file(fd: std::os::fd::BorrowedFd<'_>, role: &'static str) -> Result<CopyEndpoint> {
+    (|| {
+        let state = rvvdk_platform::inspect_file(fd)?;
+        if !state.regular {
+            return Err(Error::InvalidEndpoint {
+                reason: "native copy requires a regular file",
+            });
+        }
+        if state.append {
+            return Err(Error::InvalidEndpoint {
+                reason: "append mode cannot preserve copy offsets",
+            });
+        }
+        let mut capabilities = Capabilities::empty();
+        if state.readable {
+            capabilities |= Capabilities::READ;
+        }
+        if state.writable {
+            capabilities |= Capabilities::WRITE | Capabilities::FLUSH;
+        }
+        Ok(CopyEndpoint {
+            size: state.size,
+            capabilities,
+            identity: Some(rvvdk_core::EndpointIdentity::LocalFile {
+                device: state.device,
+                inode: state.inode,
+            }),
+        })
+    })()
+    .map_err(|e| context(role, e))
+}
+
+#[cfg(target_os = "linux")]
+pub(crate) fn files(
+    source: std::os::fd::BorrowedFd<'_>,
+    destination: std::os::fd::BorrowedFd<'_>,
+    offset: u64,
+    length: u64,
+) -> Result<()> {
+    pair(
+        file(source, "source")?,
+        file(destination, "destination")?,
+        offset,
+        length,
+        false,
+    )
+}
+
+#[cfg(target_os = "linux")]
+pub(crate) struct RawEndpoints {
+    source: CopyEndpoint,
+    destination: CopyEndpoint,
+    source_fd: CopyEndpoint,
+    destination_fd: CopyEndpoint,
+}
+
+#[cfg(target_os = "linux")]
+impl RawEndpoints {
+    pub(crate) fn validate_native_binding(&self) -> Result<()> {
+        for (role, backend, descriptor) in [
+            ("source", self.source, self.source_fd),
+            ("destination", self.destination, self.destination_fd),
+        ] {
+            if backend.identity.is_none() {
+                return Err(context(
+                    role,
+                    Error::InvalidEndpoint {
+                        reason: "native Data execution requires known backing identity",
+                    },
+                ));
+            }
+            if backend.identity != descriptor.identity {
+                return Err(context(role, Error::EndpointMismatch));
+            }
+        }
+        Ok(())
+    }
+}
+
+#[cfg(target_os = "linux")]
+pub(crate) fn raw_pair<S, D>(
+    source: &rvvdk_core::RawDisk<S>,
+    destination: &rvvdk_core::RawDisk<D>,
+    length: u64,
+) -> Result<RawEndpoints>
+where
+    S: rvvdk_core::BlockDevice + rvvdk_platform::LinuxFdBackend,
+    D: rvvdk_core::BlockDevice + rvvdk_platform::LinuxFdBackend,
+{
+    let (source_info, destination_info) = virtual_pair(source, destination, length)?;
+    let source_fd = file(source.device().as_fd(), "source")?;
+    let destination_fd = file(destination.device().as_fd(), "destination")?;
+    pair(source_fd, destination_fd, 0, length, false)?;
+    Ok(RawEndpoints {
+        source: source_info,
+        destination: destination_info,
+        source_fd,
+        destination_fd,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rvvdk_core::{DiskGeometry, Extent, MemoryBlockDevice, RawDisk};
+
+    struct FailedMetadata;
+    impl VirtualDisk for FailedMetadata {
+        fn geometry(&self) -> DiskGeometry {
+            DiskGeometry::new(4096, 512, 4096).unwrap()
+        }
+        fn capabilities(&self) -> Capabilities {
+            Capabilities::READ
+        }
+        fn copy_endpoint(&self) -> Result<CopyEndpoint> {
+            Err(Error::Io(std::io::Error::from_raw_os_error(13)))
+        }
+        fn read_at(&self, _: u64, _: &mut [u8]) -> Result<usize> {
+            panic!("preflight must reject before reading")
+        }
+        fn write_at(&self, _: u64, _: &[u8]) -> Result<usize> {
+            unreachable!()
+        }
+        fn write_zero_at(&self, _: u64, _: u64) -> Result<()> {
+            unreachable!()
+        }
+        fn discard(&self, _: u64, _: u64) -> Result<()> {
+            unreachable!()
+        }
+        fn flush(&self) -> Result<()> {
+            unreachable!()
+        }
+        fn extents(&self, _: u64, _: u64) -> Result<Vec<Extent>> {
+            panic!("preflight must precede extent query")
+        }
+    }
+
+    #[test]
+    fn copy_preserves_metadata_error_context_and_errno() {
+        use std::error::Error as _;
+        let destination = RawDisk::new(MemoryBlockDevice::new(4096).unwrap());
+        let error = crate::DataMover::new(crate::CopyOptions::default())
+            .copy(&FailedMetadata, &destination)
+            .unwrap_err();
+        assert!(error.source().unwrap().source().is_some());
+        assert!(
+            matches!(error, Error::EndpointPreflight { endpoint: "source", source } if matches!(*source, Error::Io(ref cause) if cause.raw_os_error() == Some(13)))
+        );
+    }
+}

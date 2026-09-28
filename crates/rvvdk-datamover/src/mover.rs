@@ -111,6 +111,8 @@ impl DataMover {
             });
         }
 
+        let endpoints = crate::preflight::raw_pair(source, destination, source_size)?;
+
         let extents = source.extents(0, source_size)?;
 
         crate::extent_validation::validate_extents(&extents, source_size)?;
@@ -152,6 +154,14 @@ impl DataMover {
                 }
             }
         };
+
+        if backend == ExecutionBackend::IoUring
+            && extents
+                .iter()
+                .any(|extent| extent.kind() == ExtentKind::Data)
+        {
+            endpoints.validate_native_binding()?;
+        }
 
         CopyPlan::new(
             source_size,
@@ -239,6 +249,8 @@ impl DataMover {
                 size: destination_size,
             });
         }
+
+        crate::preflight::virtual_pair(source, destination, source_size)?;
 
         let started = Instant::now();
 
@@ -338,6 +350,16 @@ impl DataMover {
                 length: plan.logical_bytes(),
                 size: destination_size,
             });
+        }
+
+        let endpoints = crate::preflight::raw_pair(source, destination, plan.logical_bytes())?;
+        if plan.backend() == ExecutionBackend::IoUring
+            && plan
+                .extents()
+                .iter()
+                .any(|extent| extent.kind() == ExtentKind::Data)
+        {
+            endpoints.validate_native_binding()?;
         }
 
         /*

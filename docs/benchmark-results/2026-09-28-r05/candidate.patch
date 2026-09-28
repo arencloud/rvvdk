@@ -1,0 +1,1626 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index b5ab02a..068f856 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -455,6 +455,9 @@ dependencies = [
+ [[package]]
+ name = "rvvdk-platform"
+ version = "0.1.0"
++dependencies = [
++ "libc",
++]
+ 
+ [[package]]
+ name = "same-file"
+diff --git a/crates/rvvdk-core/src/block_device.rs b/crates/rvvdk-core/src/block_device.rs
+index 7947d1d..1cb21af 100644
+--- a/crates/rvvdk-core/src/block_device.rs
++++ b/crates/rvvdk-core/src/block_device.rs
+@@ -5,6 +5,15 @@ pub trait BlockDevice: Send + Sync {
+ 
+     fn capabilities(&self) -> Capabilities;
+ 
++    /// Return current access, capacity, and known backing identity for preflight.
++    fn copy_endpoint(&self) -> Result<crate::CopyEndpoint> {
++        Ok(crate::CopyEndpoint {
++            size: self.size(),
++            capabilities: self.capabilities(),
++            identity: None,
++        })
++    }
++
+     fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize>;
+ 
+     fn read_exact_at(&self, mut offset: u64, mut buffer: &mut [u8]) -> Result<()> {
+diff --git a/crates/rvvdk-core/src/error.rs b/crates/rvvdk-core/src/error.rs
+index 89a4800..b552c94 100644
+--- a/crates/rvvdk-core/src/error.rs
++++ b/crates/rvvdk-core/src/error.rs
+@@ -4,6 +4,25 @@ pub type Result<T> = std::result::Result<T, Error>;
+ 
+ #[derive(Debug, Error)]
+ pub enum Error {
++    #[error("{endpoint} preflight failed: {source}")]
++    EndpointPreflight {
++        endpoint: &'static str,
++        #[source]
++        source: Box<Error>,
++    },
++
++    #[error("endpoint lacks required {capability} capability")]
++    MissingCapability { capability: &'static str },
++
++    #[error("unsupported copy endpoint: {reason}")]
++    InvalidEndpoint { reason: &'static str },
++
++    #[error("source and destination refer to the same backing object")]
++    AliasedEndpoints,
++
++    #[error("backend and native descriptor refer to different backing objects")]
++    EndpointMismatch,
++
+     #[error("I/O error: {0}")]
+     Io(#[from] std::io::Error),
+ 
+diff --git a/crates/rvvdk-core/src/lib.rs b/crates/rvvdk-core/src/lib.rs
+index be0b050..f0a87a4 100644
+--- a/crates/rvvdk-core/src/lib.rs
++++ b/crates/rvvdk-core/src/lib.rs
+@@ -2,6 +2,7 @@ pub mod block_device;
+ pub mod buffer;
+ pub mod buffer_pool;
+ pub mod capabilities;
++pub mod endpoint;
+ pub mod error;
+ pub mod extent;
+ pub mod geometry;
+@@ -14,6 +15,7 @@ pub use block_device::BlockDevice;
+ pub use buffer::AlignedBuffer;
+ pub use buffer_pool::{BufferGuard, BufferPool};
+ pub use capabilities::Capabilities;
++pub use endpoint::{CopyEndpoint, EndpointIdentity};
+ pub use error::{Error, Result};
+ pub use extent::{Extent, ExtentKind};
+ pub use geometry::DiskGeometry;
+diff --git a/crates/rvvdk-core/src/memory.rs b/crates/rvvdk-core/src/memory.rs
+index e580378..1e18c00 100644
+--- a/crates/rvvdk-core/src/memory.rs
++++ b/crates/rvvdk-core/src/memory.rs
+@@ -49,6 +49,16 @@ impl BlockDevice for MemoryBlockDevice {
+         self.capabilities
+     }
+ 
++    fn copy_endpoint(&self) -> Result<crate::CopyEndpoint> {
++        Ok(crate::CopyEndpoint {
++            size: self.size(),
++            capabilities: self.capabilities,
++            identity: Some(crate::EndpointIdentity::Memory {
++                address: std::ptr::from_ref(self).addr(),
++            }),
++        })
++    }
++
+     fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
+         if !self.capabilities.contains(Capabilities::READ) {
+             return Err(Error::Unsupported);
+diff --git a/crates/rvvdk-core/src/raw.rs b/crates/rvvdk-core/src/raw.rs
+index 2ff02b1..8307f02 100644
+--- a/crates/rvvdk-core/src/raw.rs
++++ b/crates/rvvdk-core/src/raw.rs
+@@ -38,6 +38,10 @@ where
+         self.device.capabilities()
+     }
+ 
++    fn copy_endpoint(&self) -> Result<crate::CopyEndpoint> {
++        self.device.copy_endpoint()
++    }
++
+     fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
+         self.device.read_at(offset, buffer)
+     }
+diff --git a/crates/rvvdk-core/src/virtual_disk.rs b/crates/rvvdk-core/src/virtual_disk.rs
+index 9f09923..11f02f1 100644
+--- a/crates/rvvdk-core/src/virtual_disk.rs
++++ b/crates/rvvdk-core/src/virtual_disk.rs
+@@ -5,6 +5,15 @@ pub trait VirtualDisk: Send + Sync {
+ 
+     fn capabilities(&self) -> Capabilities;
+ 
++    /// Return current access, capacity, and known backing identity for preflight.
++    fn copy_endpoint(&self) -> Result<crate::CopyEndpoint> {
++        Ok(crate::CopyEndpoint {
++            size: self.size(),
++            capabilities: self.capabilities(),
++            identity: None,
++        })
++    }
++
+     fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize>;
+ 
+     fn read_exact_at(&self, mut offset: u64, mut buffer: &mut [u8]) -> Result<()> {
+diff --git a/crates/rvvdk-datamover/Cargo.toml b/crates/rvvdk-datamover/Cargo.toml
+index 514f7fd..8076e9b 100644
+--- a/crates/rvvdk-datamover/Cargo.toml
++++ b/crates/rvvdk-datamover/Cargo.toml
+@@ -54,3 +54,7 @@ harness = false
+ [[bench]]
+ name = "native_validation"
+ harness = false
++
++[[bench]]
++name = "preflight"
++harness = false
+diff --git a/crates/rvvdk-datamover/benches/native_validation.rs b/crates/rvvdk-datamover/benches/native_validation.rs
+index 9ef53cb..c2634e5 100644
+--- a/crates/rvvdk-datamover/benches/native_validation.rs
++++ b/crates/rvvdk-datamover/benches/native_validation.rs
+@@ -18,6 +18,19 @@ fn native_validation(criterion: &mut Criterion) {
+     let fd = File::open("/dev/null").unwrap();
+     let options = IoUringExecutionOptions::new(8).unwrap();
+     let empty = NativeExtentPlan::new(vec![], 0).unwrap();
++    support::ensure_benchmark_directory();
++    let source_path = support::benchmark_path("validation-source");
++    let destination_path = support::benchmark_path("validation-destination");
++    support::create_incompressible_file(&source_path, MIB, 0x0052_5604);
++    let expected = support::incompressible_buffer(MIB, 0x0052_5604);
++    let reset = support::incompressible_buffer(MIB, 0x0052_5605);
++    std::fs::write(&destination_path, &reset).unwrap();
++    let source = File::open(&source_path).unwrap();
++    let destination = std::fs::OpenOptions::new()
++        .read(true)
++        .write(true)
++        .open(&destination_path)
++        .unwrap();
+     let mut group = criterion.benchmark_group("native_validation");
+     group.sampling_mode(SamplingMode::Flat);
+     group.bench_function("empty_range", |b| {
+@@ -95,7 +108,7 @@ fn native_validation(criterion: &mut Criterion) {
+                 disk.write_all_at(0, &reset).unwrap();
+                 let start = Instant::now();
+                 let stats = copy_extent_plan_with_destination(
+-                    fd.as_fd(),
++                    source.as_fd(),
+                     fd.as_fd(),
+                     &disk,
+                     &plan,
+@@ -114,19 +127,6 @@ fn native_validation(criterion: &mut Criterion) {
+             elapsed
+         })
+     });
+-    support::ensure_benchmark_directory();
+-    let source_path = support::benchmark_path("validation-source");
+-    let destination_path = support::benchmark_path("validation-destination");
+-    support::create_incompressible_file(&source_path, MIB, 0x0052_5604);
+-    let expected = support::incompressible_buffer(MIB, 0x0052_5604);
+-    let reset = support::incompressible_buffer(MIB, 0x0052_5605);
+-    std::fs::write(&destination_path, &reset).unwrap();
+-    let source = File::open(&source_path).unwrap();
+-    let destination = std::fs::OpenOptions::new()
+-        .read(true)
+-        .write(true)
+-        .open(&destination_path)
+-        .unwrap();
+     let plan = NativeExtentPlan::new(
+         (0..16)
+             .map(|i| Extent::new(i * 65536, 65536, ExtentKind::Data).unwrap())
+diff --git a/crates/rvvdk-datamover/src/concurrent/tests.rs b/crates/rvvdk-datamover/src/concurrent/tests.rs
+index 59d5540..e9f3d75 100644
+--- a/crates/rvvdk-datamover/src/concurrent/tests.rs
++++ b/crates/rvvdk-datamover/src/concurrent/tests.rs
+@@ -100,7 +100,11 @@ impl VirtualDisk for FaultDisk<'_> {
+         DiskGeometry::new((1024 * BLOCK) as u64, 512, BLOCK as u32).unwrap()
+     }
+     fn capabilities(&self) -> Capabilities {
+-        Capabilities::READ | Capabilities::WRITE | Capabilities::WRITE_ZERO | Capabilities::DISCARD
++        Capabilities::READ
++            | Capabilities::WRITE
++            | Capabilities::WRITE_ZERO
++            | Capabilities::DISCARD
++            | Capabilities::FLUSH
+     }
+     fn read_at(&self, _: u64, buffer: &mut [u8]) -> Result<usize> {
+         self.check(Fault::Read)?;
+diff --git a/crates/rvvdk-datamover/src/io_uring/copy.rs b/crates/rvvdk-datamover/src/io_uring/copy.rs
+index 4b3707f..0b67076 100644
+--- a/crates/rvvdk-datamover/src/io_uring/copy.rs
++++ b/crates/rvvdk-datamover/src/io_uring/copy.rs
+@@ -143,6 +143,29 @@ pub fn copy_file_range_with_options(
+         return Ok(IoUringCopyStats::default());
+     }
+ 
++    crate::preflight::files(source_fd, destination_fd, offset, length)?;
++    copy_file_range_preflighted(
++        source_fd,
++        destination_fd,
++        offset,
++        length,
++        block_size,
++        alignment,
++        options,
++    )
++}
++
++// The caller validated configuration and the entire endpoint range. Extent
++// executors use this to avoid repeating fstat/fcntl for every Data extent.
++pub(super) fn copy_file_range_preflighted(
++    source_fd: BorrowedFd<'_>,
++    destination_fd: BorrowedFd<'_>,
++    offset: u64,
++    length: u64,
++    block_size: usize,
++    alignment: usize,
++    options: crate::IoUringExecutionOptions,
++) -> Result<IoUringCopyStats> {
+     let queue_depth = options.queue_depth();
+ 
+     let pool = BufferPool::new(queue_depth as usize, block_size, alignment)?;
+diff --git a/crates/rvvdk-datamover/src/io_uring/extent_copy.rs b/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
+index 82f61c9..e4ecbcc 100644
+--- a/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
++++ b/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
+@@ -4,8 +4,9 @@ use rvvdk_core::{Capabilities, Error, Extent, ExtentKind, Result, VirtualDisk};
+ 
+ use crate::IoUringExecutionOptions;
+ 
++use super::copy::copy_file_range_preflighted;
+ use super::validation::{validate_copy_configuration, validate_file_range};
+-use super::{IoUringCopyStats, NativeExtentPlan, copy_file_range_with_options};
++use super::{IoUringCopyStats, NativeExtentPlan};
+ 
+ #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+ pub struct IoUringExtentCopyStats {
+@@ -152,9 +153,14 @@ pub fn copy_extent_plan(
+         });
+     }
+ 
++    if plan.is_empty() {
++        return Ok(IoUringExtentCopyStats::default());
++    }
++    crate::preflight::files(source_fd, destination_fd, 0, plan.disk_size())?;
++
+     let mut aggregate = IoUringExtentCopyStats::default();
+     for extent in plan.extents() {
+-        let stats = copy_file_range_with_options(
++        let stats = copy_file_range_preflighted(
+             source_fd,
+             destination_fd,
+             extent.offset(),
+@@ -171,7 +177,9 @@ pub fn copy_extent_plan(
+ 
+ /// Copy Data/Zero/Hole extents using destination capabilities. Configuration and
+ /// range validation precede all backend calls, including for empty plans. Backend
+-/// access, capacity, identity, and direct-I/O compatibility are separate preflight.
++/// access, capacity, and known identity are checked before execution. Data plans
++/// require the destination backend to identify the supplied native descriptor.
++/// Direct-I/O alignment/tail compatibility remains a separate requirement.
+ pub fn copy_extent_plan_with_destination<D>(
+     source_fd: BorrowedFd<'_>,
+     destination_fd: BorrowedFd<'_>,
+@@ -187,12 +195,43 @@ where
+     validate_copy_configuration(block_size, alignment)?;
+     validate_file_range(0, plan.disk_size())?;
+ 
++    if plan.is_empty() {
++        return Ok(IoUringExtentCopyStats::default());
++    }
++    let source_info = crate::preflight::file(source_fd, "source")?;
++    let destination_info = destination
++        .copy_endpoint()
++        .map_err(|e| crate::preflight::context("destination", e))?;
++    crate::preflight::pair(source_info, destination_info, 0, plan.disk_size(), false)?;
++    if plan
++        .extents()
++        .iter()
++        .any(|extent| extent.kind() == ExtentKind::Data)
++    {
++        let fd_info = crate::preflight::file(destination_fd, "destination descriptor")?;
++        crate::preflight::pair(source_info, fd_info, 0, plan.disk_size(), false)?;
++        if destination_info.identity.is_none() {
++            return Err(crate::preflight::context(
++                "destination",
++                Error::InvalidEndpoint {
++                    reason: "native Data execution requires known backing identity",
++                },
++            ));
++        }
++        if destination_info.identity != fd_info.identity {
++            return Err(crate::preflight::context(
++                "destination",
++                Error::EndpointMismatch,
++            ));
++        }
++    }
++
+     let mut aggregate = IoUringExtentCopyStats::default();
+ 
+     for extent in plan.extents() {
+         match extent.kind() {
+             ExtentKind::Data => {
+-                let stats = copy_file_range_with_options(
++                let stats = copy_file_range_preflighted(
+                     source_fd,
+                     destination_fd,
+                     extent.offset(),
+diff --git a/crates/rvvdk-datamover/src/lib.rs b/crates/rvvdk-datamover/src/lib.rs
+index 56e81ff..3dd5a87 100644
+--- a/crates/rvvdk-datamover/src/lib.rs
++++ b/crates/rvvdk-datamover/src/lib.rs
+@@ -9,6 +9,7 @@ mod observer;
+ mod options;
+ mod plan;
+ mod planner;
++mod preflight;
+ mod progress;
+ mod stats;
+ mod work;
+diff --git a/crates/rvvdk-datamover/src/mover.rs b/crates/rvvdk-datamover/src/mover.rs
+index 19c90e0..6cb7c7d 100644
+--- a/crates/rvvdk-datamover/src/mover.rs
++++ b/crates/rvvdk-datamover/src/mover.rs
+@@ -111,6 +111,8 @@ impl DataMover {
+             });
+         }
+ 
++        let endpoints = crate::preflight::raw_pair(source, destination, source_size)?;
++
+         let extents = source.extents(0, source_size)?;
+ 
+         crate::extent_validation::validate_extents(&extents, source_size)?;
+@@ -153,6 +155,14 @@ impl DataMover {
+             }
+         };
+ 
++        if backend == ExecutionBackend::IoUring
++            && extents
++                .iter()
++                .any(|extent| extent.kind() == ExtentKind::Data)
++        {
++            endpoints.validate_native_binding()?;
++        }
++
+         CopyPlan::new(
+             source_size,
+             extents,
+@@ -240,6 +250,8 @@ impl DataMover {
+             });
+         }
+ 
++        crate::preflight::virtual_pair(source, destination, source_size)?;
++
+         let started = Instant::now();
+ 
+         let extents = source.extents(0, source_size)?;
+@@ -340,6 +352,16 @@ impl DataMover {
+             });
+         }
+ 
++        let endpoints = crate::preflight::raw_pair(source, destination, plan.logical_bytes())?;
++        if plan.backend() == ExecutionBackend::IoUring
++            && plan
++                .extents()
++                .iter()
++                .any(|extent| extent.kind() == ExtentKind::Data)
++        {
++            endpoints.validate_native_binding()?;
++        }
++
+         /*
+          * The DataMover configuration used for execution must match the
+          * block size captured during planning.
+diff --git a/crates/rvvdk-datamover/tests/io_uring_lifetime.rs b/crates/rvvdk-datamover/tests/io_uring_lifetime.rs
+index e2d215c..7376eac 100644
+--- a/crates/rvvdk-datamover/tests/io_uring_lifetime.rs
++++ b/crates/rvvdk-datamover/tests/io_uring_lifetime.rs
+@@ -39,9 +39,9 @@ fn fd_count() -> usize {
+ }
+ 
+ #[test]
+-fn eof_cleanup_preserves_original_error_and_releases_descriptors() {
++fn short_source_preflight_preserves_context_without_leaking_descriptors() {
+     bounded(
+-        "eof_cleanup_preserves_original_error_and_releases_descriptors",
++        "short_source_preflight_preserves_context_without_leaking_descriptors",
+         || {
+             let path = std::env::temp_dir().join(format!("rvvdk-r03-eof-{}", std::process::id()));
+             let source = OpenOptions::new()
+@@ -51,7 +51,7 @@ fn eof_cleanup_preserves_original_error_and_releases_descriptors() {
+                 .open(&path)
+                 .unwrap();
+             std::fs::remove_file(&path).unwrap();
+-            let destination = OpenOptions::new().write(true).open("/dev/null").unwrap();
++            let destination = regular_file("destination", true);
+             let before = fd_count();
+             for _ in 0..16 {
+                 let error = copy_file_range(
+@@ -64,7 +64,9 @@ fn eof_cleanup_preserves_original_error_and_releases_descriptors() {
+                     4096,
+                 )
+                 .unwrap_err();
+-                assert!(matches!(error, Error::UnexpectedEof { .. }));
++                assert!(
++                    matches!(error, Error::EndpointPreflight { endpoint: "source", source } if matches!(*source, Error::OutOfBounds { .. }))
++                );
+                 assert_eq!(fd_count(), before);
+             }
+         },
+@@ -72,12 +74,12 @@ fn eof_cleanup_preserves_original_error_and_releases_descriptors() {
+ }
+ 
+ #[test]
+-fn write_error_cleanup_preserves_errno_and_releases_descriptors() {
++fn readonly_preflight_preserves_context_without_leaking_descriptors() {
+     bounded(
+-        "write_error_cleanup_preserves_errno_and_releases_descriptors",
++        "readonly_preflight_preserves_context_without_leaking_descriptors",
+         || {
+-            let source = File::open("/dev/zero").unwrap();
+-            let destination = File::open("/dev/null").unwrap();
++            let source = regular_file("source", true);
++            let destination = regular_file("destination", false);
+             let before = fd_count();
+             for _ in 0..16 {
+                 let error = copy_file_range(
+@@ -90,9 +92,29 @@ fn write_error_cleanup_preserves_errno_and_releases_descriptors() {
+                     4096,
+                 )
+                 .unwrap_err();
+-                assert!(matches!(error, Error::Io(ref cause) if cause.raw_os_error() == Some(9)));
++                assert!(
++                    matches!(error, Error::EndpointPreflight { endpoint: "destination", source } if matches!(*source, Error::MissingCapability { capability: "write" }))
++                );
+                 assert_eq!(fd_count(), before);
+             }
+         },
+     );
+ }
++
++fn regular_file(name: &str, writable: bool) -> File {
++    let path =
++        std::env::temp_dir().join(format!("rvvdk-r05-lifetime-{}-{name}", std::process::id()));
++    let created = OpenOptions::new()
++        .write(true)
++        .create_new(true)
++        .open(&path)
++        .unwrap();
++    created.set_len(64 * 1024).unwrap();
++    let file = OpenOptions::new()
++        .read(true)
++        .write(writable)
++        .open(&path)
++        .unwrap();
++    std::fs::remove_file(path).unwrap();
++    file
++}
+diff --git a/crates/rvvdk-datamover/tests/support/test_block_device.rs b/crates/rvvdk-datamover/tests/support/test_block_device.rs
+index 01dece0..2ac2ff7 100644
+--- a/crates/rvvdk-datamover/tests/support/test_block_device.rs
++++ b/crates/rvvdk-datamover/tests/support/test_block_device.rs
+@@ -127,6 +127,19 @@ impl BlockDevice for TestExtentBlockDevice {
+         self.capabilities
+     }
+ 
++    fn copy_endpoint(&self) -> Result<rvvdk_core::CopyEndpoint> {
++        use std::os::unix::fs::MetadataExt;
++        let metadata = self.file.metadata()?;
++        Ok(rvvdk_core::CopyEndpoint {
++            size: metadata.len(),
++            capabilities: self.capabilities,
++            identity: Some(rvvdk_core::EndpointIdentity::LocalFile {
++                device: metadata.dev(),
++                inode: metadata.ino(),
++            }),
++        })
++    }
++
+     fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
+         self.validate_range(offset, buffer.len())?;
+ 
+diff --git a/crates/rvvdk-local/src/file.rs b/crates/rvvdk-local/src/file.rs
+index bf79153..87d7728 100644
+--- a/crates/rvvdk-local/src/file.rs
++++ b/crates/rvvdk-local/src/file.rs
+@@ -134,6 +134,16 @@ impl LocalFileBlockDevice {
+             return Err(Error::Unsupported);
+         }
+ 
++        if let Some(buffered) = &buffered_file {
++            use std::os::unix::fs::MetadataExt;
++            let buffered_metadata = buffered.metadata()?;
++            if (metadata.dev(), metadata.ino())
++                != (buffered_metadata.dev(), buffered_metadata.ino())
++            {
++                return Err(Error::EndpointMismatch);
++            }
++        }
++
+         let geometry = DiskGeometry::new(metadata.len(), 512, 4096)?;
+ 
+         let direct_io_alignment = if direct_io {
+@@ -162,6 +172,36 @@ impl BlockDevice for LocalFileBlockDevice {
+         self.capabilities
+     }
+ 
++    #[cfg(target_os = "linux")]
++    fn copy_endpoint(&self) -> Result<rvvdk_core::CopyEndpoint> {
++        let state = rvvdk_platform::inspect_file(self.file.as_fd())?;
++        if !state.regular {
++            return Err(Error::InvalidEndpoint {
++                reason: "a regular file is required",
++            });
++        }
++        if state.append {
++            return Err(Error::InvalidEndpoint {
++                reason: "append mode cannot preserve copy offsets",
++            });
++        }
++        let mut capabilities = self.capabilities;
++        if !state.readable {
++            capabilities.remove(Capabilities::READ);
++        }
++        if !state.writable {
++            capabilities.remove(Capabilities::WRITE | Capabilities::FLUSH);
++        }
++        Ok(rvvdk_core::CopyEndpoint {
++            size: state.size,
++            capabilities,
++            identity: Some(rvvdk_core::EndpointIdentity::LocalFile {
++                device: state.device,
++                inode: state.inode,
++            }),
++        })
++    }
++
+     fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
+         if !self.capabilities.contains(Capabilities::READ) {
+             return Err(Error::Unsupported);
+@@ -333,3 +373,57 @@ impl LinuxFdBackend for LocalFileBlockDevice {
+         }
+     }
+ }
++
++#[cfg(test)]
++mod preflight_tests {
++    use super::*;
++
++    #[test]
++    fn rejects_mismatched_direct_and_buffered_handles() {
++        let directory = std::env::temp_dir();
++        let first = directory.join(format!("rvvdk-r05-pair-{}-a", std::process::id()));
++        let second = directory.join(format!("rvvdk-r05-pair-{}-b", std::process::id()));
++        let a = File::options()
++            .read(true)
++            .write(true)
++            .create_new(true)
++            .open(&first)
++            .unwrap();
++        let b = File::options()
++            .read(true)
++            .write(true)
++            .create_new(true)
++            .open(&second)
++            .unwrap();
++        std::fs::remove_file(first).unwrap();
++        std::fs::remove_file(second).unwrap();
++        a.set_len(4096).unwrap();
++        b.set_len(4096).unwrap();
++        assert!(matches!(
++            LocalFileBlockDevice::from_file(a, Some(b), Capabilities::READ, true),
++            Err(Error::EndpointMismatch)
++        ));
++    }
++
++    #[test]
++    #[cfg(target_os = "linux")]
++    fn refreshes_append_flags_before_portable_copy() {
++        let path = std::env::temp_dir().join(format!("rvvdk-r05-flags-{}", std::process::id()));
++        std::fs::write(&path, [0xff; 4096]).unwrap();
++        let device = LocalFileBlockDevice::open_read_write(&path).unwrap();
++        std::fs::remove_file(path).unwrap();
++        // SAFETY: F_GETFL/F_SETFL operate on this live, uniquely used test FD.
++        unsafe {
++            let flags = libc::fcntl(device.as_raw_fd(), libc::F_GETFL);
++            assert!(flags >= 0);
++            assert_eq!(
++                libc::fcntl(device.as_raw_fd(), libc::F_SETFL, flags | libc::O_APPEND),
++                0
++            );
++        }
++        assert!(matches!(
++            device.copy_endpoint(),
++            Err(Error::InvalidEndpoint { .. })
++        ));
++    }
++}
+diff --git a/crates/rvvdk-platform/Cargo.toml b/crates/rvvdk-platform/Cargo.toml
+index ea06056..9e70ef2 100644
+--- a/crates/rvvdk-platform/Cargo.toml
++++ b/crates/rvvdk-platform/Cargo.toml
+@@ -3,4 +3,6 @@ name = "rvvdk-platform"
+ version = "0.1.0"
+ edition = "2024"
+ 
+-[dependencies]
+\ No newline at end of file
++[dependencies]
++[target.'cfg(target_os = "linux")'.dependencies]
++libc = "0.2.189"
+diff --git a/crates/rvvdk-platform/src/lib.rs b/crates/rvvdk-platform/src/lib.rs
+index 1f1c56c..a83fe98 100644
+--- a/crates/rvvdk-platform/src/lib.rs
++++ b/crates/rvvdk-platform/src/lib.rs
+@@ -2,4 +2,4 @@
+ mod linux;
+ 
+ #[cfg(target_os = "linux")]
+-pub use linux::{LinuxFdBackend, LinuxFdCapabilities};
++pub use linux::{FileState, LinuxFdBackend, LinuxFdCapabilities, inspect_file};
+diff --git a/crates/rvvdk-platform/src/linux.rs b/crates/rvvdk-platform/src/linux.rs
+index fb46e3d..f82b846 100644
+--- a/crates/rvvdk-platform/src/linux.rs
++++ b/crates/rvvdk-platform/src/linux.rs
+@@ -52,3 +52,72 @@ mod tests {
+         assert_eq!(capabilities.offset_alignment(), 512,);
+     }
+ }
++
++/// Facts read from the open descriptor, never from a path or cached geometry.
++#[derive(Debug, Clone, Copy)]
++pub struct FileState {
++    pub regular: bool,
++    pub size: u64,
++    pub device: u64,
++    pub inode: u64,
++    pub readable: bool,
++    pub writable: bool,
++    pub append: bool,
++}
++
++pub fn inspect_file(fd: std::os::fd::BorrowedFd<'_>) -> std::io::Result<FileState> {
++    let mut stat = std::mem::MaybeUninit::<libc::stat>::uninit();
++    loop {
++        // SAFETY: the borrowed FD stays alive and stat points to writable storage.
++        if unsafe { libc::fstat(fd.as_raw_fd(), stat.as_mut_ptr()) } == 0 {
++            break;
++        }
++        let error = std::io::Error::last_os_error();
++        if error.kind() != std::io::ErrorKind::Interrupted {
++            return Err(error);
++        }
++    }
++    // SAFETY: successful fstat initialized the complete structure.
++    let stat = unsafe { stat.assume_init() };
++    let flags = loop {
++        // SAFETY: F_GETFL takes no third argument and does not modify the FD.
++        let flags = unsafe { libc::fcntl(fd.as_raw_fd(), libc::F_GETFL) };
++        if flags >= 0 {
++            break flags;
++        }
++        let error = std::io::Error::last_os_error();
++        if error.kind() != std::io::ErrorKind::Interrupted {
++            return Err(error);
++        }
++    };
++    let path_only = flags & libc::O_PATH != 0;
++    // stat field widths vary across Linux targets.
++    #[allow(clippy::unnecessary_cast)]
++    Ok(FileState {
++        regular: stat.st_mode & libc::S_IFMT == libc::S_IFREG,
++        size: stat.st_size.max(0) as u64,
++        device: stat.st_dev as u64,
++        inode: stat.st_ino as u64,
++        readable: !path_only && matches!(flags & libc::O_ACCMODE, libc::O_RDONLY | libc::O_RDWR),
++        writable: !path_only && matches!(flags & libc::O_ACCMODE, libc::O_WRONLY | libc::O_RDWR),
++        append: flags & libc::O_APPEND != 0,
++    })
++}
++
++#[cfg(test)]
++mod access_tests {
++    use super::*;
++    use std::os::fd::{FromRawFd, OwnedFd};
++
++    #[test]
++    fn non_read_write_access_mode_is_not_advertised_as_data_access() {
++        // SAFETY: the static path is NUL-terminated and O_CREAT is not requested.
++        let fd = unsafe { libc::open(c"/dev/null".as_ptr(), libc::O_ACCMODE | libc::O_CLOEXEC) };
++        assert!(fd >= 0, "{}", std::io::Error::last_os_error());
++        // SAFETY: open returned a new descriptor whose ownership transfers here.
++        let fd = unsafe { OwnedFd::from_raw_fd(fd) };
++        let state = inspect_file(fd.as_fd()).unwrap();
++        assert!(!state.readable);
++        assert!(!state.writable);
++    }
++}
+diff --git a/crates/rvvdk-core/src/endpoint.rs b/crates/rvvdk-core/src/endpoint.rs
+new file mode 100644
+index 0000000..ef8b592
+--- /dev/null
++++ b/crates/rvvdk-core/src/endpoint.rs
+@@ -0,0 +1,24 @@
++use crate::Capabilities;
++
++/// Identity of the current backing object, not a content/snapshot fingerprint.
++#[derive(Debug, Clone, Copy, PartialEq, Eq)]
++pub enum EndpointIdentity {
++    LocalFile {
++        device: u64,
++        inode: u64,
++    },
++    /// Process-local identity valid while the device is borrowed. Never persist it.
++    Memory {
++        address: usize,
++    },
++}
++
++/// Current endpoint facts used before a copy. Backends should refresh mutable
++/// size/access facts and forward identity through wrappers. `None` means unknown,
++/// not proof that endpoints are distinct. This is not a lease against mutation.
++#[derive(Debug, Clone, Copy)]
++pub struct CopyEndpoint {
++    pub size: u64,
++    pub capabilities: Capabilities,
++    pub identity: Option<EndpointIdentity>,
++}
+diff --git a/crates/rvvdk-datamover/src/preflight.rs b/crates/rvvdk-datamover/src/preflight.rs
+new file mode 100644
+index 0000000..7dcaf56
+--- /dev/null
++++ b/crates/rvvdk-datamover/src/preflight.rs
+@@ -0,0 +1,236 @@
++use rvvdk_core::{Capabilities, CopyEndpoint, Error, Result, VirtualDisk};
++
++pub(crate) fn context(endpoint: &'static str, source: Error) -> Error {
++    Error::EndpointPreflight {
++        endpoint,
++        source: Box::new(source),
++    }
++}
++
++fn require(info: CopyEndpoint, flag: Capabilities, capability: &'static str) -> Result<()> {
++    if !info.capabilities.contains(flag) {
++        return Err(Error::MissingCapability { capability });
++    }
++    Ok(())
++}
++
++fn bounds(info: CopyEndpoint, offset: u64, length: u64) -> Result<()> {
++    let end = offset
++        .checked_add(length)
++        .ok_or(Error::RangeOverflow { offset, length })?;
++    if end > info.size {
++        return Err(Error::OutOfBounds {
++            offset,
++            length,
++            size: info.size,
++        });
++    }
++    Ok(())
++}
++
++pub(crate) fn pair(
++    source: CopyEndpoint,
++    destination: CopyEndpoint,
++    offset: u64,
++    length: u64,
++    flush: bool,
++) -> Result<()> {
++    (|| {
++        require(source, Capabilities::READ, "read")?;
++        bounds(source, offset, length)
++    })()
++    .map_err(|error| context("source", error))?;
++    (|| {
++        require(destination, Capabilities::WRITE, "write")?;
++        if flush {
++            require(destination, Capabilities::FLUSH, "flush")?;
++        }
++        bounds(destination, offset, length)
++    })()
++    .map_err(|error| context("destination", error))?;
++    if source.identity.is_some() && source.identity == destination.identity {
++        return Err(Error::AliasedEndpoints);
++    }
++    Ok(())
++}
++
++pub(crate) fn virtual_pair<S: VirtualDisk, D: VirtualDisk>(
++    source: &S,
++    destination: &D,
++    length: u64,
++) -> Result<(CopyEndpoint, CopyEndpoint)> {
++    // Also detect the same non-ZST object when a custom backend has no identity.
++    if std::mem::size_of_val(source) != 0
++        && std::mem::size_of_val(destination) != 0
++        && std::ptr::from_ref(source).cast::<()>() == std::ptr::from_ref(destination).cast::<()>()
++    {
++        return Err(Error::AliasedEndpoints);
++    }
++    let source_info = source.copy_endpoint().map_err(|e| context("source", e))?;
++    if source_info.size != length {
++        return Err(context(
++            "source",
++            Error::CorruptMetadata(format!(
++                "source size changed: expected={length}, current={}",
++                source_info.size
++            )),
++        ));
++    }
++    let destination_info = destination
++        .copy_endpoint()
++        .map_err(|e| context("destination", e))?;
++    pair(source_info, destination_info, 0, length, true)?;
++    Ok((source_info, destination_info))
++}
++
++#[cfg(target_os = "linux")]
++pub(crate) fn file(fd: std::os::fd::BorrowedFd<'_>, role: &'static str) -> Result<CopyEndpoint> {
++    (|| {
++        let state = rvvdk_platform::inspect_file(fd)?;
++        if !state.regular {
++            return Err(Error::InvalidEndpoint {
++                reason: "native copy requires a regular file",
++            });
++        }
++        if state.append {
++            return Err(Error::InvalidEndpoint {
++                reason: "append mode cannot preserve copy offsets",
++            });
++        }
++        let mut capabilities = Capabilities::empty();
++        if state.readable {
++            capabilities |= Capabilities::READ;
++        }
++        if state.writable {
++            capabilities |= Capabilities::WRITE | Capabilities::FLUSH;
++        }
++        Ok(CopyEndpoint {
++            size: state.size,
++            capabilities,
++            identity: Some(rvvdk_core::EndpointIdentity::LocalFile {
++                device: state.device,
++                inode: state.inode,
++            }),
++        })
++    })()
++    .map_err(|e| context(role, e))
++}
++
++#[cfg(target_os = "linux")]
++pub(crate) fn files(
++    source: std::os::fd::BorrowedFd<'_>,
++    destination: std::os::fd::BorrowedFd<'_>,
++    offset: u64,
++    length: u64,
++) -> Result<()> {
++    pair(
++        file(source, "source")?,
++        file(destination, "destination")?,
++        offset,
++        length,
++        false,
++    )
++}
++
++#[cfg(target_os = "linux")]
++pub(crate) struct RawEndpoints {
++    source: CopyEndpoint,
++    destination: CopyEndpoint,
++    source_fd: CopyEndpoint,
++    destination_fd: CopyEndpoint,
++}
++
++#[cfg(target_os = "linux")]
++impl RawEndpoints {
++    pub(crate) fn validate_native_binding(&self) -> Result<()> {
++        for (role, backend, descriptor) in [
++            ("source", self.source, self.source_fd),
++            ("destination", self.destination, self.destination_fd),
++        ] {
++            if backend.identity.is_none() {
++                return Err(context(
++                    role,
++                    Error::InvalidEndpoint {
++                        reason: "native Data execution requires known backing identity",
++                    },
++                ));
++            }
++            if backend.identity != descriptor.identity {
++                return Err(context(role, Error::EndpointMismatch));
++            }
++        }
++        Ok(())
++    }
++}
++
++#[cfg(target_os = "linux")]
++pub(crate) fn raw_pair<S, D>(
++    source: &rvvdk_core::RawDisk<S>,
++    destination: &rvvdk_core::RawDisk<D>,
++    length: u64,
++) -> Result<RawEndpoints>
++where
++    S: rvvdk_core::BlockDevice + rvvdk_platform::LinuxFdBackend,
++    D: rvvdk_core::BlockDevice + rvvdk_platform::LinuxFdBackend,
++{
++    let (source_info, destination_info) = virtual_pair(source, destination, length)?;
++    let source_fd = file(source.device().as_fd(), "source")?;
++    let destination_fd = file(destination.device().as_fd(), "destination")?;
++    pair(source_fd, destination_fd, 0, length, false)?;
++    Ok(RawEndpoints {
++        source: source_info,
++        destination: destination_info,
++        source_fd,
++        destination_fd,
++    })
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use rvvdk_core::{DiskGeometry, Extent, MemoryBlockDevice, RawDisk};
++
++    struct FailedMetadata;
++    impl VirtualDisk for FailedMetadata {
++        fn geometry(&self) -> DiskGeometry {
++            DiskGeometry::new(4096, 512, 4096).unwrap()
++        }
++        fn capabilities(&self) -> Capabilities {
++            Capabilities::READ
++        }
++        fn copy_endpoint(&self) -> Result<CopyEndpoint> {
++            Err(Error::Io(std::io::Error::from_raw_os_error(13)))
++        }
++        fn read_at(&self, _: u64, _: &mut [u8]) -> Result<usize> {
++            panic!("preflight must reject before reading")
++        }
++        fn write_at(&self, _: u64, _: &[u8]) -> Result<usize> {
++            unreachable!()
++        }
++        fn write_zero_at(&self, _: u64, _: u64) -> Result<()> {
++            unreachable!()
++        }
++        fn discard(&self, _: u64, _: u64) -> Result<()> {
++            unreachable!()
++        }
++        fn flush(&self) -> Result<()> {
++            unreachable!()
++        }
++        fn extents(&self, _: u64, _: u64) -> Result<Vec<Extent>> {
++            panic!("preflight must precede extent query")
++        }
++    }
++
++    #[test]
++    fn copy_preserves_metadata_error_context_and_errno() {
++        use std::error::Error as _;
++        let destination = RawDisk::new(MemoryBlockDevice::new(4096).unwrap());
++        let error = crate::DataMover::new(crate::CopyOptions::default())
++            .copy(&FailedMetadata, &destination)
++            .unwrap_err();
++        assert!(error.source().unwrap().source().is_some());
++        assert!(
++            matches!(error, Error::EndpointPreflight { endpoint: "source", source } if matches!(*source, Error::Io(ref cause) if cause.raw_os_error() == Some(13)))
++        );
++    }
++}
+diff --git a/crates/rvvdk-datamover/tests/preflight.rs b/crates/rvvdk-datamover/tests/preflight.rs
+new file mode 100644
+index 0000000..aaeaec6
+--- /dev/null
++++ b/crates/rvvdk-datamover/tests/preflight.rs
+@@ -0,0 +1,439 @@
++#![cfg(target_os = "linux")]
++
++use rvvdk_core::{Capabilities, Extent, ExtentKind, MemoryBlockDevice, RawDisk, VirtualDisk};
++use rvvdk_datamover::io_uring::{
++    NativeExtentPlan, copy_extent_plan_with_destination, copy_file_range,
++};
++use rvvdk_datamover::{
++    CopyOptions, DataMover, ExecutionStrategy, IoUringExecutionOptions, ProgressObserver,
++    ProgressSnapshot,
++};
++use rvvdk_local::LocalFileBlockDevice;
++use std::fs::{self, File, OpenOptions};
++use std::os::fd::AsFd;
++use std::path::PathBuf;
++use std::sync::atomic::{AtomicUsize, Ordering};
++
++const SIZE: usize = 8192;
++static NEXT: AtomicUsize = AtomicUsize::new(0);
++struct Fixture {
++    source: PathBuf,
++    destination: PathBuf,
++    link: PathBuf,
++}
++impl Fixture {
++    fn new() -> Self {
++        let stem = std::env::temp_dir().join(format!(
++            "rvvdk-r05-{}-{}",
++            std::process::id(),
++            NEXT.fetch_add(1, Ordering::Relaxed)
++        ));
++        let this = Self {
++            source: stem.with_extension("source"),
++            destination: stem.with_extension("destination"),
++            link: stem.with_extension("link"),
++        };
++        fs::write(&this.source, [0x5a; SIZE]).unwrap();
++        fs::write(&this.destination, [0xff; SIZE]).unwrap();
++        this
++    }
++    fn destination(&self) -> RawDisk<LocalFileBlockDevice> {
++        RawDisk::new(LocalFileBlockDevice::open_read_write(&self.destination).unwrap())
++    }
++    fn unchanged(&self) {
++        assert_eq!(fs::read(&self.destination).unwrap(), [0xff; SIZE]);
++    }
++}
++impl Drop for Fixture {
++    fn drop(&mut self) {
++        for p in [&self.source, &self.destination, &self.link] {
++            let _ = fs::remove_file(p);
++        }
++    }
++}
++fn options() -> IoUringExecutionOptions {
++    IoUringExecutionOptions::new(2).unwrap()
++}
++fn strategies() -> [ExecutionStrategy; 3] {
++    [
++        ExecutionStrategy::Threaded,
++        ExecutionStrategy::IoUring(options()),
++        ExecutionStrategy::Auto(options()),
++    ]
++}
++fn mover(strategy: ExecutionStrategy) -> DataMover {
++    DataMover::with_execution_strategy(CopyOptions::new(4096).unwrap(), strategy)
++}
++fn mixed() -> NativeExtentPlan {
++    NativeExtentPlan::new(
++        vec![
++            Extent::new(0, 4096, ExtentKind::Zero).unwrap(),
++            Extent::new(4096, 4096, ExtentKind::Data).unwrap(),
++        ],
++        SIZE as u64,
++    )
++    .unwrap()
++}
++#[derive(Default)]
++struct Observer(AtomicUsize);
++impl ProgressObserver for Observer {
++    fn on_progress(&self, _: &ProgressSnapshot) {
++        self.0.fetch_add(1, Ordering::Relaxed);
++    }
++}
++
++#[test]
++fn missing_flush_rejected_before_portable_writes() {
++    for workers in [1, 4] {
++        let source = RawDisk::new(MemoryBlockDevice::new(SIZE).unwrap());
++        source.write_all_at(0, &[0x5a; SIZE]).unwrap();
++        let destination = RawDisk::new(
++            MemoryBlockDevice::with_capabilities(SIZE, Capabilities::READ | Capabilities::WRITE)
++                .unwrap(),
++        );
++        destination.write_all_at(0, &[0xff; SIZE]).unwrap();
++        let mover = DataMover::new(CopyOptions::with_concurrency(4096, 4096, workers).unwrap());
++        let error = mover.copy(&source, &destination).unwrap_err();
++        assert!(
++            error.to_string().contains("destination preflight"),
++            "{error}"
++        );
++        assert!(error.to_string().contains("flush"));
++        let mut actual = [0; SIZE];
++        destination.read_exact_at(0, &mut actual).unwrap();
++        assert_eq!(actual, [0xff; SIZE]);
++    }
++}
++
++#[test]
++fn portable_access_requirements_are_explicit() {
++    let unreadable =
++        RawDisk::new(MemoryBlockDevice::with_capabilities(SIZE, Capabilities::WRITE).unwrap());
++    let readable = RawDisk::new(MemoryBlockDevice::new(SIZE).unwrap());
++    let readonly = RawDisk::new(MemoryBlockDevice::read_only(SIZE).unwrap());
++    for (role, error) in [
++        (
++            "source",
++            mover(ExecutionStrategy::Threaded)
++                .copy(&unreadable, &readable)
++                .unwrap_err(),
++        ),
++        (
++            "destination",
++            mover(ExecutionStrategy::Threaded)
++                .copy(&readable, &readonly)
++                .unwrap_err(),
++        ),
++    ] {
++        assert!(
++            error.to_string().contains(&format!("{role} preflight")),
++            "{error}"
++        );
++    }
++}
++
++#[test]
++fn aliases_rejected_for_memory_and_hard_linked_files() {
++    let disk = RawDisk::new(MemoryBlockDevice::new(SIZE).unwrap());
++    assert!(
++        mover(ExecutionStrategy::Threaded)
++            .copy(&disk, &disk)
++            .unwrap_err()
++            .to_string()
++            .contains("same backing object")
++    );
++    let f = Fixture::new();
++    fs::hard_link(&f.source, &f.link).unwrap();
++    let source = RawDisk::new(LocalFileBlockDevice::open_read_only(&f.source).unwrap());
++    let destination = RawDisk::new(LocalFileBlockDevice::open_read_write(&f.link).unwrap());
++    assert!(
++        mover(ExecutionStrategy::Threaded)
++            .copy(&source, &destination)
++            .is_err()
++    );
++    for strategy in strategies() {
++        assert!(
++            mover(strategy)
++                .copy_with_report(&source, &destination)
++                .unwrap_err()
++                .to_string()
++                .contains("same backing object")
++        );
++    }
++    assert_eq!(fs::read(&f.source).unwrap(), [0x5a; SIZE]);
++}
++
++#[test]
++fn native_alias_rejected_before_zeroing_source() {
++    let f = Fixture::new();
++    fs::hard_link(&f.source, &f.link).unwrap();
++    let source = File::open(&f.source).unwrap();
++    let destination = RawDisk::new(LocalFileBlockDevice::open_read_write(&f.link).unwrap());
++    for kind in [ExtentKind::Zero, ExtentKind::Hole] {
++        let plan = NativeExtentPlan::new(
++            vec![Extent::new(0, SIZE as u64, kind).unwrap()],
++            SIZE as u64,
++        )
++        .unwrap();
++        assert!(
++            copy_extent_plan_with_destination(
++                source.as_fd(),
++                destination.device().as_fd(),
++                &destination,
++                &plan,
++                4096,
++                4096,
++                options()
++            )
++            .unwrap_err()
++            .to_string()
++            .contains("same backing object")
++        );
++        assert_eq!(fs::read(&f.source).unwrap(), [0x5a; SIZE]);
++    }
++    assert!(
++        copy_file_range(
++            source.as_fd(),
++            destination.device().as_fd(),
++            0,
++            SIZE as u64,
++            4096,
++            2,
++            4096
++        )
++        .is_err()
++    );
++}
++
++#[test]
++fn source_write_only_rejected_before_zero_extent() {
++    let f = Fixture::new();
++    let source = OpenOptions::new().write(true).open(&f.source).unwrap();
++    let destination = f.destination();
++    let error = copy_extent_plan_with_destination(
++        source.as_fd(),
++        destination.device().as_fd(),
++        &destination,
++        &mixed(),
++        4096,
++        4096,
++        options(),
++    )
++    .unwrap_err();
++    assert!(error.to_string().contains("source preflight"), "{error}");
++    f.unchanged();
++}
++
++#[test]
++fn native_readonly_descriptor_rejected_before_zero_extent() {
++    let f = Fixture::new();
++    let source = File::open(&f.source).unwrap();
++    let destination = f.destination();
++    let readonly = File::open(&f.destination).unwrap();
++    let error = copy_extent_plan_with_destination(
++        source.as_fd(),
++        readonly.as_fd(),
++        &destination,
++        &mixed(),
++        4096,
++        4096,
++        options(),
++    )
++    .unwrap_err();
++    assert!(
++        error.to_string().contains("destination preflight"),
++        "{error}"
++    );
++    f.unchanged();
++}
++
++#[test]
++fn append_descriptor_cannot_redirect_explicit_writes() {
++    let f = Fixture::new();
++    let source = File::open(&f.source).unwrap();
++    let destination = OpenOptions::new()
++        .append(true)
++        .open(&f.destination)
++        .unwrap();
++    let error = copy_file_range(
++        source.as_fd(),
++        destination.as_fd(),
++        0,
++        SIZE as u64,
++        4096,
++        2,
++        4096,
++    )
++    .unwrap_err();
++    assert!(error.to_string().contains("append mode"), "{error}");
++    f.unchanged();
++}
++
++#[test]
++fn undersized_native_destination_is_not_extended() {
++    let f = Fixture::new();
++    let source = File::open(&f.source).unwrap();
++    let destination = OpenOptions::new().write(true).open(&f.destination).unwrap();
++    destination.set_len(4096).unwrap();
++    let error = copy_file_range(
++        source.as_fd(),
++        destination.as_fd(),
++        0,
++        SIZE as u64,
++        4096,
++        2,
++        4096,
++    )
++    .unwrap_err();
++    assert!(
++        error.to_string().contains("destination preflight"),
++        "{error}"
++    );
++    assert_eq!(fs::read(&f.destination).unwrap(), [0xff; 4096]);
++}
++
++#[test]
++fn changed_file_sizes_rejected_before_observer_notification() {
++    for strategy in strategies() {
++        for change in ["source_shrink", "source_grow", "destination_shrink"] {
++            let f = Fixture::new();
++            let source = RawDisk::new(LocalFileBlockDevice::open_read_only(&f.source).unwrap());
++            let destination = f.destination();
++            let mover = mover(strategy);
++            let plan = mover.plan_with_destination(&source, &destination).unwrap();
++            let path = if change.starts_with("source") {
++                &f.source
++            } else {
++                &f.destination
++            };
++            OpenOptions::new()
++                .write(true)
++                .open(path)
++                .unwrap()
++                .set_len(if change == "source_grow" {
++                    2 * SIZE as u64
++                } else {
++                    4096
++                })
++                .unwrap();
++            let before = fs::read(&f.destination).unwrap();
++            let observer = Observer::default();
++            assert!(
++                mover
++                    .execute_plan_with_observer(&plan, &source, &destination, &observer)
++                    .is_err(),
++                "{strategy:?}: {change}"
++            );
++            assert_eq!(observer.0.load(Ordering::Relaxed), 0);
++            assert_eq!(fs::read(&f.destination).unwrap(), before);
++        }
++    }
++}
++
++#[test]
++fn execution_rechecks_aliasing_instead_of_trusting_planning() {
++    let f = Fixture::new();
++    let source = RawDisk::new(LocalFileBlockDevice::open_read_only(&f.source).unwrap());
++    let destination = f.destination();
++    for strategy in strategies() {
++        let mover = mover(strategy);
++        let plan = mover.plan_with_destination(&source, &destination).unwrap();
++        let alias = RawDisk::new(LocalFileBlockDevice::open_read_write(&f.source).unwrap());
++        let observer = Observer::default();
++        assert!(
++            mover
++                .execute_plan_with_observer(&plan, &source, &alias, &observer)
++                .unwrap_err()
++                .to_string()
++                .contains("same backing object")
++        );
++        assert_eq!(observer.0.load(Ordering::Relaxed), 0);
++    }
++}
++
++#[test]
++fn native_backend_descriptor_mismatch_precedes_zero_writes() {
++    let f = Fixture::new();
++    let source = File::open(&f.source).unwrap();
++    let destination = f.destination();
++    fs::write(&f.link, [0xaa; SIZE]).unwrap();
++    let other = OpenOptions::new().write(true).open(&f.link).unwrap();
++    let error = copy_extent_plan_with_destination(
++        source.as_fd(),
++        other.as_fd(),
++        &destination,
++        &mixed(),
++        4096,
++        4096,
++        options(),
++    )
++    .unwrap_err();
++    assert!(
++        error.to_string().contains("different backing objects"),
++        "{error}"
++    );
++    f.unchanged();
++    assert_eq!(fs::read(&f.link).unwrap(), [0xaa; SIZE]);
++}
++
++#[test]
++fn valid_native_range_preserves_prefix_and_tail() {
++    let f = Fixture::new();
++    let source = File::open(&f.source).unwrap();
++    let destination = OpenOptions::new().write(true).open(&f.destination).unwrap();
++    copy_file_range(
++        source.as_fd(),
++        destination.as_fd(),
++        1024,
++        4096,
++        4096,
++        2,
++        4096,
++    )
++    .unwrap();
++    let mut expected = [0xff; SIZE];
++    expected[1024..5120].fill(0x5a);
++    assert_eq!(fs::read(&f.destination).unwrap(), expected);
++}
++
++#[test]
++fn readonly_replacement_rejected_before_observer_notification() {
++    let f = Fixture::new();
++    let source = RawDisk::new(LocalFileBlockDevice::open_read_only(&f.source).unwrap());
++    let destination = f.destination();
++    let readonly = RawDisk::new(LocalFileBlockDevice::open_read_only(&f.destination).unwrap());
++    for strategy in strategies() {
++        let mover = mover(strategy);
++        let plan = mover.plan_with_destination(&source, &destination).unwrap();
++        let observer = Observer::default();
++        let error = mover
++            .execute_plan_with_observer(&plan, &source, &readonly, &observer)
++            .unwrap_err();
++        assert!(
++            error.to_string().contains("destination preflight"),
++            "{error}"
++        );
++        assert_eq!(observer.0.load(Ordering::Relaxed), 0);
++        f.unchanged();
++    }
++}
++
++#[test]
++fn nonregular_native_endpoint_is_rejected() {
++    let f = Fixture::new();
++    let source = File::open("/dev/zero").unwrap();
++    let destination = OpenOptions::new().write(true).open(&f.destination).unwrap();
++    let error = copy_file_range(
++        source.as_fd(),
++        destination.as_fd(),
++        0,
++        SIZE as u64,
++        4096,
++        2,
++        4096,
++    )
++    .unwrap_err();
++    assert!(error.to_string().contains("source preflight"));
++    assert!(error.to_string().contains("regular file"));
++    f.unchanged();
++}
+diff --git a/crates/rvvdk-datamover/tests/preflight_binding.rs b/crates/rvvdk-datamover/tests/preflight_binding.rs
+new file mode 100644
+index 0000000..97ac9e3
+--- /dev/null
++++ b/crates/rvvdk-datamover/tests/preflight_binding.rs
+@@ -0,0 +1,112 @@
++#![cfg(target_os = "linux")]
++
++use rvvdk_core::{BlockDevice, Capabilities, CopyEndpoint, DiskGeometry, Extent, RawDisk, Result};
++use rvvdk_datamover::{
++    CopyOptions, DataMover, ExecutionStrategy, IoUringExecutionOptions, ProgressObserver,
++    ProgressSnapshot,
++};
++use rvvdk_local::LocalFileBlockDevice;
++use rvvdk_platform::{LinuxFdBackend, LinuxFdCapabilities};
++use std::fs::{self, File};
++use std::os::fd::{AsFd, BorrowedFd};
++use std::sync::atomic::{AtomicUsize, Ordering};
++
++// A backend accidentally exposing another file's descriptor must not bypass
++// logical endpoint checks when the execution strategy selects native I/O.
++struct Mismatched {
++    logical: LocalFileBlockDevice,
++    exposed: File,
++}
++impl AsFd for Mismatched {
++    fn as_fd(&self) -> BorrowedFd<'_> {
++        self.exposed.as_fd()
++    }
++}
++impl LinuxFdBackend for Mismatched {
++    fn linux_fd_capabilities(&self) -> LinuxFdCapabilities {
++        LinuxFdCapabilities::new(false, 1, 1)
++    }
++}
++impl BlockDevice for Mismatched {
++    fn geometry(&self) -> DiskGeometry {
++        self.logical.geometry()
++    }
++    fn capabilities(&self) -> Capabilities {
++        self.logical.capabilities()
++    }
++    fn copy_endpoint(&self) -> Result<CopyEndpoint> {
++        self.logical.copy_endpoint()
++    }
++    fn read_at(&self, _: u64, _: &mut [u8]) -> Result<usize> {
++        panic!("preflight must reject before read")
++    }
++    fn write_at(&self, _: u64, _: &[u8]) -> Result<usize> {
++        panic!("preflight must reject before write")
++    }
++    fn flush(&self) -> Result<()> {
++        panic!("preflight must reject before flush")
++    }
++    fn extents(&self, offset: u64, length: u64) -> Result<Vec<Extent>> {
++        self.logical.extents(offset, length)
++    }
++}
++struct Observer(AtomicUsize);
++impl ProgressObserver for Observer {
++    fn on_progress(&self, _: &ProgressSnapshot) {
++        self.0.fetch_add(1, Ordering::Relaxed);
++    }
++}
++
++#[test]
++fn descriptor_binding_is_validated_before_planning_or_observation() {
++    let paths: Vec<_> = (0..3)
++        .map(|i| std::env::temp_dir().join(format!("rvvdk-r05-binding-{}-{i}", std::process::id())))
++        .collect();
++    for path in &paths {
++        fs::write(path, [0x5a; 8192]).unwrap();
++    }
++    let source = RawDisk::new(LocalFileBlockDevice::open_read_only(&paths[0]).unwrap());
++    let destination = RawDisk::new(LocalFileBlockDevice::open_read_write(&paths[1]).unwrap());
++    let mismatch_source = RawDisk::new(Mismatched {
++        logical: LocalFileBlockDevice::open_read_only(&paths[0]).unwrap(),
++        exposed: File::open(&paths[2]).unwrap(),
++    });
++    let mismatch_destination = RawDisk::new(Mismatched {
++        logical: LocalFileBlockDevice::open_read_write(&paths[1]).unwrap(),
++        exposed: File::options()
++            .read(true)
++            .write(true)
++            .open(&paths[2])
++            .unwrap(),
++    });
++    for path in &paths {
++        fs::remove_file(path).unwrap();
++    }
++    for strategy in [
++        ExecutionStrategy::IoUring(IoUringExecutionOptions::new(2).unwrap()),
++        ExecutionStrategy::Auto(IoUringExecutionOptions::new(2).unwrap()),
++    ] {
++        let mover = DataMover::with_execution_strategy(CopyOptions::new(4096).unwrap(), strategy);
++        let plan = mover.plan_with_destination(&source, &destination).unwrap();
++        assert!(
++            mover
++                .plan_with_destination(&mismatch_source, &destination)
++                .is_err()
++        );
++        assert!(
++            mover
++                .plan_with_destination(&source, &mismatch_destination)
++                .is_err()
++        );
++        let observer = Observer(AtomicUsize::new(0));
++        let error = mover
++            .execute_plan_with_observer(&plan, &mismatch_source, &destination, &observer)
++            .unwrap_err();
++        assert!(error.to_string().contains("source preflight"));
++        let error = mover
++            .execute_plan_with_observer(&plan, &source, &mismatch_destination, &observer)
++            .unwrap_err();
++        assert!(error.to_string().contains("destination preflight"));
++        assert_eq!(observer.0.load(Ordering::Relaxed), 0);
++    }
++}
+diff --git a/crates/rvvdk-datamover/benches/preflight.rs b/crates/rvvdk-datamover/benches/preflight.rs
+new file mode 100644
+index 0000000..0bf2898
+--- /dev/null
++++ b/crates/rvvdk-datamover/benches/preflight.rs
+@@ -0,0 +1,52 @@
++mod support;
++
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use rvvdk_core::RawDisk;
++use rvvdk_datamover::{CopyOptions, DataMover, ExecutionStrategy, IoUringExecutionOptions};
++use rvvdk_local::LocalFileBlockDevice;
++use std::hint::black_box;
++use std::time::Duration;
++
++fn preflight(criterion: &mut Criterion) {
++    support::ensure_benchmark_directory();
++    let source_path = support::benchmark_path("preflight-source");
++    let destination_path = support::benchmark_path("preflight-destination");
++    support::create_incompressible_file(&source_path, support::MIB, 0x0052_5605);
++    support::create_incompressible_file(&destination_path, support::MIB, 0x0052_5606);
++    let source = RawDisk::new(LocalFileBlockDevice::open_read_only(&source_path).unwrap());
++    let destination =
++        RawDisk::new(LocalFileBlockDevice::open_read_write(&destination_path).unwrap());
++    let before = std::fs::read(&destination_path).unwrap();
++    let mut group = criterion.benchmark_group("preflight");
++    group.sampling_mode(SamplingMode::Flat);
++    for (name, strategy) in [
++        ("plan_threaded", ExecutionStrategy::Threaded),
++        (
++            "plan_native",
++            ExecutionStrategy::IoUring(IoUringExecutionOptions::new(8).unwrap()),
++        ),
++    ] {
++        let mover = DataMover::with_execution_strategy(CopyOptions::new(65536).unwrap(), strategy);
++        group.bench_function(name, |b| {
++            b.iter(|| {
++                let plan = mover
++                    .plan_with_destination(black_box(&source), black_box(&destination))
++                    .unwrap();
++                assert_eq!(plan.logical_bytes(), support::MIB as u64);
++                black_box(plan);
++            })
++        });
++    }
++    group.finish();
++    assert_eq!(std::fs::read(&destination_path).unwrap(), before);
++    drop(source);
++    drop(destination);
++    support::remove_file(source_path);
++    support::remove_file(destination_path);
++}
++criterion_group! {
++    name = benches;
++    config = Criterion::default().sample_size(30).warm_up_time(Duration::from_millis(300)).measurement_time(Duration::from_secs(2));
++    targets = preflight
++}
++criterion_main!(benches);
