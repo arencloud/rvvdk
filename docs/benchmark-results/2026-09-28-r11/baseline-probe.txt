@@ -1,0 +1,59 @@
+exit_code=101
+error[E0308]: arguments to this method are incorrect
+  --> src/main.rs:11:22
+   |
+11 |     let plan = mover.plan_with_destination(source, destination)?;
+   |                      ^^^^^^^^^^^^^^^^^^^^^
+   |
+note: expected `&RawDisk<_>`, found `&dyn VirtualDisk`
+  --> src/main.rs:11:44
+   |
+11 |     let plan = mover.plan_with_destination(source, destination)?;
+   |                                            ^^^^^^
+   = note: expected reference `&RawDisk<_>`
+              found reference `&dyn VirtualDisk`
+   = help: `RawDisk<_>` implements `VirtualDisk` so you could change the expected type to `Box<dyn VirtualDisk>`
+note: expected `&RawDisk<_>`, found `&dyn VirtualDisk`
+  --> src/main.rs:11:52
+   |
+11 |     let plan = mover.plan_with_destination(source, destination)?;
+   |                                                    ^^^^^^^^^^^
+   = note: expected reference `&RawDisk<_>`
+              found reference `&dyn VirtualDisk`
+   = help: `RawDisk<_>` implements `VirtualDisk` so you could change the expected type to `Box<dyn VirtualDisk>`
+note: method defined here
+  --> /tmp/rvvdk-r11-zlqy/baseline/crates/rvvdk-datamover/src/mover.rs:93:12
+   |
+93 |     pub fn plan_with_destination<S, D>(
+   |            ^^^^^^^^^^^^^^^^^^^^^
+
+error[E0308]: arguments to this method are incorrect
+   --> src/main.rs:14:11
+    |
+ 14 |     mover.execute_plan_with_observer(&plan, source, destination, observer)?;
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+note: expected `&RawDisk<_>`, found `&dyn VirtualDisk`
+   --> src/main.rs:14:45
+    |
+ 14 |     mover.execute_plan_with_observer(&plan, source, destination, observer)?;
+    |                                             ^^^^^^
+    = note: expected reference `&RawDisk<_>`
+               found reference `&dyn VirtualDisk`
+    = help: `RawDisk<_>` implements `VirtualDisk` so you could change the expected type to `Box<dyn VirtualDisk>`
+note: expected `&RawDisk<_>`, found `&dyn VirtualDisk`
+   --> src/main.rs:14:53
+    |
+ 14 |     mover.execute_plan_with_observer(&plan, source, destination, observer)?;
+    |                                                     ^^^^^^^^^^^
+    = note: expected reference `&RawDisk<_>`
+               found reference `&dyn VirtualDisk`
+    = help: `RawDisk<_>` implements `VirtualDisk` so you could change the expected type to `Box<dyn VirtualDisk>`
+note: method defined here
+   --> /tmp/rvvdk-r11-zlqy/baseline/crates/rvvdk-datamover/src/mover.rs:443:12
+    |
+443 |     pub fn execute_plan_with_observer<S, D, O>(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `portable-api-probe` (bin "portable-api-probe") due to 2 previous errors

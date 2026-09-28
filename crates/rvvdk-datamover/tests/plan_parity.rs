@@ -80,7 +80,7 @@ fn run_parity(name: &str, mover: DataMover, expected_backend: ExecutionBackend) 
     let direct_destination = open_destination(&direct_path);
 
     let direct_report = mover
-        .copy_with_report(&direct_source, &direct_destination)
+        .copy_raw_with_report(&direct_source, &direct_destination)
         .unwrap();
 
     assert_eq!(direct_report.backend(), expected_backend,);
@@ -98,13 +98,13 @@ fn run_parity(name: &str, mover: DataMover, expected_backend: ExecutionBackend) 
     let planned_destination = open_destination(&planned_path);
 
     let plan = mover
-        .plan_with_destination(&planned_source, &planned_destination)
+        .plan_raw_with_destination(&planned_source, &planned_destination)
         .unwrap();
 
     assert_eq!(plan.backend(), expected_backend,);
 
     let planned_report = mover
-        .execute_plan(&plan, &planned_source, &planned_destination)
+        .execute_raw_plan(&plan, &planned_source, &planned_destination)
         .unwrap();
 
     assert_eq!(planned_report.backend(), expected_backend,);

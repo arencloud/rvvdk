@@ -76,11 +76,15 @@ fn threaded_plan_executes_successfully() {
 
     let mover = DataMover::new(CopyOptions::new(BLOCK_SIZE).unwrap());
 
-    let plan = mover.plan_with_destination(&source, &destination).unwrap();
+    let plan = mover
+        .plan_raw_with_destination(&source, &destination)
+        .unwrap();
 
     assert_eq!(plan.backend(), ExecutionBackend::Threaded,);
 
-    let report = mover.execute_plan(&plan, &source, &destination).unwrap();
+    let report = mover
+        .execute_raw_plan(&plan, &source, &destination)
+        .unwrap();
 
     assert_eq!(report.backend(), ExecutionBackend::Threaded,);
 
@@ -105,11 +109,15 @@ fn io_uring_plan_executes_successfully() {
         ExecutionStrategy::IoUring(IoUringExecutionOptions::new(8).unwrap()),
     );
 
-    let plan = mover.plan_with_destination(&source, &destination).unwrap();
+    let plan = mover
+        .plan_raw_with_destination(&source, &destination)
+        .unwrap();
 
     assert_eq!(plan.backend(), ExecutionBackend::IoUring,);
 
-    let report = mover.execute_plan(&plan, &source, &destination).unwrap();
+    let report = mover
+        .execute_raw_plan(&plan, &source, &destination)
+        .unwrap();
 
     assert_eq!(report.backend(), ExecutionBackend::IoUring,);
 
@@ -134,11 +142,15 @@ fn auto_plan_executes_selected_backend() {
         ExecutionStrategy::Auto(IoUringExecutionOptions::new(8).unwrap()),
     );
 
-    let plan = mover.plan_with_destination(&source, &destination).unwrap();
+    let plan = mover
+        .plan_raw_with_destination(&source, &destination)
+        .unwrap();
 
     assert_eq!(plan.backend(), ExecutionBackend::IoUring,);
 
-    let report = mover.execute_plan(&plan, &source, &destination).unwrap();
+    let report = mover
+        .execute_raw_plan(&plan, &source, &destination)
+        .unwrap();
 
     assert_eq!(report.backend(), plan.backend(),);
 
@@ -156,7 +168,9 @@ fn planned_execution_rejects_changed_source_size() {
 
     let mover = DataMover::new(CopyOptions::new(BLOCK_SIZE).unwrap());
 
-    let plan = mover.plan_with_destination(&source, &destination).unwrap();
+    let plan = mover
+        .plan_raw_with_destination(&source, &destination)
+        .unwrap();
 
     drop(source);
 
@@ -176,7 +190,7 @@ fn planned_execution_rejects_changed_source_size() {
 
     let changed_source = RawDisk::new(LocalFileBlockDevice::open_read_only(&source_path).unwrap());
 
-    let result = mover.execute_plan(&plan, &changed_source, &destination);
+    let result = mover.execute_raw_plan(&plan, &changed_source, &destination);
 
     assert!(result.is_err());
 
@@ -196,7 +210,7 @@ fn copy_with_report_uses_plan_execution_path() {
         ExecutionStrategy::Auto(IoUringExecutionOptions::new(8).unwrap()),
     );
 
-    let report = mover.copy_with_report(&source, &destination).unwrap();
+    let report = mover.copy_raw_with_report(&source, &destination).unwrap();
 
     assert_eq!(report.backend(), ExecutionBackend::IoUring,);
 

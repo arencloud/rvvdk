@@ -1,0 +1,8 @@
+cargo test --workspace: passed, 268 tests in unfiltered suites (subprocess fault-injection tests also passed)
+cargo fmt --all -- --check: passed
+cargo clippy --workspace --all-targets -- -D warnings: passed
+cargo check -p rvvdk-core -p rvvdk-datamover --lib --target wasm32-unknown-unknown: passed
+Portable external consumer: baseline compile rejected; candidate copy/readback passed
+Candidate patch: baseline apply --check and candidate reverse --check passed
+Benchmark executable/harness fingerprints: verified
+All 23 benchmark process resource logs report exit status 0

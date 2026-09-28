@@ -1,0 +1,326 @@
+{
+  "baseline_commit": "92f0350e5edcb7fdddfb45f73c7e6f71e4d65ac4",
+  "baseline_harness": "Unmodified baseline. progress and native_lifetime harnesses are byte-identical between variants. portable_plan is candidate-only.",
+  "candidate_patch_sha256": "fdc2b916490901f6164a694e8c678f411de8e8b7c04053efca0c7cc5f6f425a5",
+  "binaries": {
+    "baseline": {
+      "progress": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r11-baseline-build/release/deps/progress-183274463656dab1",
+        "sha256": "f18a650b5e30e57c6ab65bc1924d360c131d692fff806b980b72a3ff47c22f78"
+      },
+      "native_lifetime": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r11-baseline-build/release/deps/native_lifetime-196a59312edd098c",
+        "sha256": "71d72cedeb8851c1a6bd56eafc6894b29a2758716a96520bba26a624bc1de911"
+      }
+    },
+    "candidate": {
+      "portable_plan": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r11-candidate-build/release/deps/portable_plan-b3012df33588f166",
+        "sha256": "3ac256f997ef8f05e29336f18c03e554070a109e2fc0df8d5316de45278dfce0"
+      },
+      "progress": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r11-candidate-build/release/deps/progress-183274463656dab1",
+        "sha256": "ceeb1bd76247f23da2f09425bd2b7a45c46e93a5e3196c31e01d79baf23c1e26"
+      },
+      "native_lifetime": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r11-candidate-build/release/deps/native_lifetime-196a59312edd098c",
+        "sha256": "9a273f1c0e58de09b5d912213e67e64f5fd227c5bcfa6b25d7d9007e3148897b"
+      }
+    }
+  },
+  "harness_sha256": {
+    "crates/rvvdk-datamover/benches/progress.rs": "d0655f5471e0aca90d1ccc5b9ef2ef9aa2501a836f7053b565af8ea79d1775fa",
+    "crates/rvvdk-datamover/benches/native_lifetime.rs": "440a48c7563666500fdb7d12265ccf401c704ca1d149a9b058acfc6482367e69",
+    "crates/rvvdk-datamover/benches/portable_plan.rs": "6349df173a4b3666ec8fb6024210f919ec323da769dac637152d4c46c393d9e9"
+  },
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)\nbinary: rustc\ncommit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860\ncommit-date: 2026-04-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.95.0\nLLVM version: 22.1.2",
+  "kernel": "Linux 7.2.5-200.fc44.x86_64 x86_64 GNU/Linux",
+  "cpu": {
+    "lscpu": [
+      {
+        "field": "Architecture:",
+        "data": "x86_64"
+      },
+      {
+        "field": "CPU op-mode(s):",
+        "data": "32-bit, 64-bit"
+      },
+      {
+        "field": "Address sizes:",
+        "data": "39 bits physical, 48 bits virtual"
+      },
+      {
+        "field": "Byte Order:",
+        "data": "Little Endian"
+      },
+      {
+        "field": "CPU(s):",
+        "data": "16"
+      },
+      {
+        "field": "On-line CPU(s) list:",
+        "data": "0-15"
+      },
+      {
+        "field": "Vendor ID:",
+        "data": "GenuineIntel"
+      },
+      {
+        "field": "Model name:",
+        "data": "11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz"
+      },
+      {
+        "field": "CPU family:",
+        "data": "6"
+      },
+      {
+        "field": "Model:",
+        "data": "141"
+      },
+      {
+        "field": "Thread(s) per core:",
+        "data": "2"
+      },
+      {
+        "field": "Core(s) per socket:",
+        "data": "8"
+      },
+      {
+        "field": "Socket(s):",
+        "data": "1"
+      },
+      {
+        "field": "Stepping:",
+        "data": "1"
+      },
+      {
+        "field": "CPU(s) scaling MHz:",
+        "data": "64%"
+      },
+      {
+        "field": "CPU max MHz:",
+        "data": "4800.0000"
+      },
+      {
+        "field": "CPU min MHz:",
+        "data": "800.0000"
+      },
+      {
+        "field": "BogoMIPS:",
+        "data": "4992.00"
+      },
+      {
+        "field": "Flags:",
+        "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb cat_l2 cdp_l2 ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb intel_pt avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves split_lock_detect user_shstk dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid movdiri movdir64b fsrm avx512_vp2intersect md_clear ibt flush_l1d arch_capabilities"
+      },
+      {
+        "field": "Virtualization:",
+        "data": "VT-x"
+      },
+      {
+        "field": "L1d cache:",
+        "data": "384 KiB (8 instances)"
+      },
+      {
+        "field": "L1i cache:",
+        "data": "256 KiB (8 instances)"
+      },
+      {
+        "field": "L2 cache:",
+        "data": "10 MiB (8 instances)"
+      },
+      {
+        "field": "L3 cache:",
+        "data": "24 MiB (1 instance)"
+      },
+      {
+        "field": "NUMA node(s):",
+        "data": "1"
+      },
+      {
+        "field": "NUMA node0 CPU(s):",
+        "data": "0-15"
+      },
+      {
+        "field": "Vulnerability Gather data sampling:",
+        "data": "Mitigation; Microcode"
+      },
+      {
+        "field": "Vulnerability Ghostwrite:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Indirect target selection:",
+        "data": "Mitigation; Aligned branch/return thunks"
+      },
+      {
+        "field": "Vulnerability Itlb multihit:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability L1tf:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Meltdown:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mmio stale data:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Old microcode:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Reg file data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Retbleed:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec rstack overflow:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec store bypass:",
+        "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+      },
+      {
+        "field": "Vulnerability Spectre v1:",
+        "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+      },
+      {
+        "field": "Vulnerability Spectre v2:",
+        "data": "Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW loop"
+      },
+      {
+        "field": "Vulnerability Srbds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsa:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsx async abort:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Vmscape:",
+        "data": "Not affected"
+      }
+    ]
+  },
+  "mount": "TARGET SOURCE                                                       FSTYPE OPTIONS\n/home  /dev/mapper/luks-0c2054e2-163c-4593-bc54-1fbbbf0cff4b[/home] btrfs  rw,relatime,seclabel,compress=zstd:1,ssd,discard=async,space_cache=v2,subvolid=256,subvol=/home",
+  "affinity": "2-6",
+  "order": [
+    "baseline,candidate",
+    "candidate,baseline",
+    "baseline,candidate"
+  ],
+  "sampling": {
+    "samples": 20,
+    "warmup_seconds": 0.3,
+    "measurement_target_seconds": 2,
+    "mode": "flat"
+  },
+  "limitations": "Uncontrolled host background load, powersave policy. Warm 16 MiB sources; not cold storage qualification. CPU/RSS include reset/readback and adaptive iteration counts.",
+  "memory": "MemTotal:       65527436 kB",
+  "governors": {
+    "cpu11": "powersave",
+    "cpu9": "powersave",
+    "cpu7": "powersave",
+    "cpu5": "powersave",
+    "cpu3": "powersave",
+    "cpu14": "powersave",
+    "cpu1": "powersave",
+    "cpu12": "powersave",
+    "cpu10": "powersave",
+    "cpu8": "powersave",
+    "cpu6": "powersave",
+    "cpu4": "powersave",
+    "cpu15": "powersave",
+    "cpu2": "powersave",
+    "cpu13": "powersave",
+    "cpu0": "powersave"
+  },
+  "block_devices": {
+    "blockdevices": [
+      {
+        "name": "zram0",
+        "type": "disk",
+        "size": "8G",
+        "model": null,
+        "fstype": "swap"
+      },
+      {
+        "name": "nvme0n1",
+        "type": "disk",
+        "size": "953.9G",
+        "model": "SAMSUNG MZVL21T0HCLR-00BL7",
+        "fstype": null,
+        "children": [
+          {
+            "name": "nvme0n1p1",
+            "type": "part",
+            "size": "600M",
+            "model": null,
+            "fstype": "vfat"
+          },
+          {
+            "name": "nvme0n1p2",
+            "type": "part",
+            "size": "1G",
+            "model": null,
+            "fstype": "ext4"
+          },
+          {
+            "name": "nvme0n1p3",
+            "type": "part",
+            "size": "952.3G",
+            "model": null,
+            "fstype": "crypto_LUKS",
+            "children": [
+              {
+                "name": "luks-0c2054e2-163c-4593-bc54-1fbbbf0cff4b",
+                "type": "crypt",
+                "size": "952.3G",
+                "model": null,
+                "fstype": "btrfs"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "build": "cargo bench, default optimized bench profile, no RUSTFLAGS override; isolated absolute targets",
+  "workload": {
+    "progress": "16 MiB, 64 KiB blocks, 1 worker, 1 buffer, queue capacity 4, buffered, dense and alternating 64 KiB Data/Hole (50%); counts recorded in console",
+    "native_lifetime": "16 MiB dense, 64 KiB blocks, QD8, read window4, buffered and direct; flush timed; FD counts verified",
+    "portable_memory": "16 MiB dense, 64 KiB blocks, 4096 alignment, workers1/4, buffer count=workers, queue capacity=4; static/dyn; candidate-only"
+  },
+  "followup": {
+    "reason": "Individual pair3 exceeded 5%: fragmented counter +12.56%, buffered native +5.73%.",
+    "order": [
+      "candidate,baseline",
+      "baseline,candidate"
+    ],
+    "samples": 30,
+    "measurement_target_seconds": 4,
+    "warmup_seconds": 0.5
+  },
+  "rust_environment": {
+    "RUSTFLAGS": null,
+    "CARGO_ENCODED_RUSTFLAGS": null,
+    "CARGO_BUILD_RUSTFLAGS": null
+  }
+}

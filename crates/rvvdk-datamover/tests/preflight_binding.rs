@@ -87,24 +87,26 @@ fn descriptor_binding_is_validated_before_planning_or_observation() {
         ExecutionStrategy::Auto(IoUringExecutionOptions::new(2).unwrap()),
     ] {
         let mover = DataMover::with_execution_strategy(CopyOptions::new(4096).unwrap(), strategy);
-        let plan = mover.plan_with_destination(&source, &destination).unwrap();
+        let plan = mover
+            .plan_raw_with_destination(&source, &destination)
+            .unwrap();
         assert!(
             mover
-                .plan_with_destination(&mismatch_source, &destination)
+                .plan_raw_with_destination(&mismatch_source, &destination)
                 .is_err()
         );
         assert!(
             mover
-                .plan_with_destination(&source, &mismatch_destination)
+                .plan_raw_with_destination(&source, &mismatch_destination)
                 .is_err()
         );
         let observer = Observer(AtomicUsize::new(0));
         let error = mover
-            .execute_plan_with_observer(&plan, &mismatch_source, &destination, &observer)
+            .execute_raw_plan_with_observer(&plan, &mismatch_source, &destination, &observer)
             .unwrap_err();
         assert!(error.to_string().contains("source preflight"));
         let error = mover
-            .execute_plan_with_observer(&plan, &source, &mismatch_destination, &observer)
+            .execute_raw_plan_with_observer(&plan, &source, &mismatch_destination, &observer)
             .unwrap_err();
         assert!(error.to_string().contains("destination preflight"));
         assert_eq!(observer.0.load(Ordering::Relaxed), 0);

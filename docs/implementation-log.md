@@ -356,10 +356,68 @@ not persisted snapshot identities. Runtime failures can still leave partial
 writes. Low-level empty native calls remain no-ops after configuration validation.
 See the [endpoint contract](architecture.md#copy-endpoint-preflight-r05).
 
+## R1.1 — Portable planning, execution, and explicit RAW adapters
+
+Baseline: `92f0350`, clean worktree. Scope: the portable lifecycle acceptance of
+R1, canonical extent topology validation, and explicit separation of logical
+access from Linux RAW native execution. The rest of R1 remains open.
+
+Implementation sequence:
+
+1. Generalized destination-aware planning, plan execution, report copying, and
+   observers to `VirtualDisk + ?Sized`; widened worker/helper bounds so borrowed
+   trait objects also work with multiple workers. Portable methods are available
+   outside Linux and never consult physical descriptors.
+2. Made portable selection explicit: Auto uses Threaded; explicit IoUring and
+   native plans are rejected before payload I/O/notification. Renamed the old
+   RAW-bound methods to `plan_raw_with_destination`, `execute_raw_plan`,
+   `execute_raw_plan_with_observer`, and `copy_raw_with_report`. Updated native
+   tests/benchmarks and documented this pre-release API migration in ADR-0027.
+3. Shared endpoint/structural validation and initial/final observation across
+   portable and RAW execution. Preserved separate endpoint policies and native
+   descriptor binding. Reused the canonical validator in both plan constructors;
+   removed the duplicate native validator and redundant caller scans. The existing
+   malformed-map tests caught an accidentally removed direct-copy validation call
+   during implementation; restored it before final checks and measurements.
+4. Added nine integration tests covering memory/local/translated disks, trait
+   objects, one/four workers, sparse capability combinations, endpoint/configuration
+   rejection, empty plans, failed flush, and native rejection. The translated fixture
+   shifts physical offsets, preserves surrounding guard bytes, and panics if native
+   capabilities or descriptors are accessed. Added a constructor topology regression.
+5. Ran an identical external trait-object consumer against baseline/candidate:
+   baseline does not compile; candidate executes and verifies output. Checked
+   core/datamover libraries for `wasm32-unknown-unknown`; this checks platform
+   boundaries, not runtime/thread support. Removed Linux assumptions from unrelated
+   generic unit tests and gated a Linux-only report constructor.
+6. Compared the unchanged progress and native-lifetime harnesses using isolated
+   optimized builds and alternating baseline/candidate order. Added candidate-only
+   memory plan execution measurements for concrete versus trait-object calls.
+   Setup/reset/readback are untimed; execution includes flush. Every copy verifies
+   complete output, and native controls also check descriptor counts.
+
+Validation: 268 workspace tests passed (ten new), strict all-target Clippy,
+formatting, and non-Linux library compilation passed. Benchmark results and the
+performance disposition are recorded in the
+[R1.1 report](benchmark-results/2026-09-28-r11/README.md).
+
+Performance disposition: accept with qualification remaining provisional. Initial
+median paired copy changes were −3.51% to +2.22%. Longer repeats did not reproduce
+the two individual >5% slowdowns: fragmented observed copy was −1.50%/−1.48%,
+buffered native −6.53%/+0.01%. Portable planning avoids unnecessary RAW descriptor
+inspection; RAW snapshot deduplication remains open. Candidate-only dynamic memory
+execution includes a four-worker +26.64% outlier (other pairs +2.96%/+0.99%), so no
+tight dispatch overhead or tuning claim is made. All evidence is retained and no
+defaults changed. Patch application and source/executable fingerprints were checked.
+
+Limits: plans remain structural and require stable logical mappings/content.
+Canonical Data/Zero/Hole execution policy, contextual errors/partial progress,
+memory budgets, and descriptor snapshot reuse remain R1 follow-ups. Existing
+DISCARD guarantees and runtime native selection limitations remain R2 work.
+
 ## Next session
 
-Start R1 with portable destination-aware planning and plan/execute/observer APIs
-for arbitrary VirtualDisk implementations, including a translated logical disk
-that cannot enter the RAW FD path. Centralize extent validation and semantic
-policy in bounded follow-up steps. Continue PERF.0 qualification on a controlled
-runner. ESXi is still unnecessary; request the trial only when V0 is ready.
+Start **R1.2**: consolidate Data/Zero/Hole policy and duplicated sequential
+observed/unobserved loops. Preserve logical bytes, accounting, failure/flush
+boundaries, and observer cadence. Measure dense/fragmented and zero/hole fallback
+paths before and after. Continue PERF.0 qualification on a controlled runner.
+ESXi is still unnecessary; request the trial only when V0 is ready.

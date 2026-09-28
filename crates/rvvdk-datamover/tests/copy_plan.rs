@@ -92,7 +92,9 @@ fn explicit_io_uring_plan_reports_io_uring_backend() {
         ExecutionStrategy::IoUring(IoUringExecutionOptions::new(8).unwrap()),
     );
 
-    let plan = mover.plan_with_destination(&source, &destination).unwrap();
+    let plan = mover
+        .plan_raw_with_destination(&source, &destination)
+        .unwrap();
 
     assert_eq!(plan.backend(), ExecutionBackend::IoUring,);
 
@@ -123,7 +125,9 @@ fn auto_plan_selects_io_uring_for_compatible_linux_backends() {
         ExecutionStrategy::Auto(IoUringExecutionOptions::new(8).unwrap()),
     );
 
-    let plan = mover.plan_with_destination(&source, &destination).unwrap();
+    let plan = mover
+        .plan_raw_with_destination(&source, &destination)
+        .unwrap();
 
     assert_eq!(plan.backend(), ExecutionBackend::IoUring,);
 
@@ -155,7 +159,7 @@ fn destination_smaller_than_source_is_rejected_during_planning() {
         ExecutionStrategy::Auto(IoUringExecutionOptions::new(8).unwrap()),
     );
 
-    let result = mover.plan_with_destination(&source, &destination);
+    let result = mover.plan_raw_with_destination(&source, &destination);
 
     assert!(result.is_err());
 

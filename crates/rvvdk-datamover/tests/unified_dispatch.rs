@@ -110,7 +110,7 @@ fn threaded_strategy_reports_threaded_backend() {
 
     let mover = DataMover::new(CopyOptions::new(BLOCK_SIZE).unwrap());
 
-    let report = mover.copy_with_report(&source, &destination).unwrap();
+    let report = mover.copy_raw_with_report(&source, &destination).unwrap();
 
     assert_eq!(report.backend(), ExecutionBackend::Threaded,);
 
@@ -131,7 +131,7 @@ fn explicit_io_uring_reports_io_uring_backend() {
         ExecutionStrategy::IoUring(IoUringExecutionOptions::new(8).unwrap()),
     );
 
-    let report = mover.copy_with_report(&source, &destination).unwrap();
+    let report = mover.copy_raw_with_report(&source, &destination).unwrap();
 
     assert_eq!(report.backend(), ExecutionBackend::IoUring,);
 
@@ -158,7 +158,7 @@ fn auto_selects_io_uring_for_dense_linux_fd_backends() {
         ExecutionStrategy::Auto(IoUringExecutionOptions::new(8).unwrap()),
     );
 
-    let report = mover.copy_with_report(&source, &destination).unwrap();
+    let report = mover.copy_raw_with_report(&source, &destination).unwrap();
 
     assert_eq!(report.backend(), ExecutionBackend::IoUring,);
 
@@ -224,7 +224,7 @@ fn explicit_io_uring_handles_hole_extents() {
         ExecutionStrategy::IoUring(IoUringExecutionOptions::new(8).unwrap()),
     );
 
-    let report = mover.copy_with_report(&source, &destination).unwrap();
+    let report = mover.copy_raw_with_report(&source, &destination).unwrap();
 
     /*
      * Hole support must not force explicit io_uring execution onto
@@ -279,7 +279,7 @@ fn auto_uses_io_uring_for_hole_extents() {
         ExecutionStrategy::Auto(IoUringExecutionOptions::new(8).unwrap()),
     );
 
-    let report = mover.copy_with_report(&source, &destination).unwrap();
+    let report = mover.copy_raw_with_report(&source, &destination).unwrap();
 
     /*
      * M19D/M19E behavior:
@@ -336,7 +336,7 @@ fn destination_smaller_than_source_is_rejected() {
         ExecutionStrategy::Auto(IoUringExecutionOptions::new(8).unwrap()),
     );
 
-    let result = mover.copy_with_report(&source, &destination);
+    let result = mover.copy_raw_with_report(&source, &destination);
 
     assert!(matches!(
         result,

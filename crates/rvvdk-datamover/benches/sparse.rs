@@ -340,7 +340,7 @@ fn benchmark_profile(criterion: &mut Criterion, profile: SparseProfile) {
                      */
                     let started = Instant::now();
 
-                    let report = mover.copy_with_report(&source, &destination).unwrap();
+                    let report = mover.copy_raw_with_report(&source, &destination).unwrap();
 
                     measured += started.elapsed();
 

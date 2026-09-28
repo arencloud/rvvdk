@@ -78,7 +78,7 @@ fn assert_rejected_without_side_effects(
     let original_source = fixture.source(SIZE, planned_kind);
     let original_destination = fixture.destination(SIZE);
     let plan = planner
-        .plan_with_destination(&original_source, &original_destination)
+        .plan_raw_with_destination(&original_source, &original_destination)
         .unwrap();
     drop(original_destination);
 
@@ -88,7 +88,7 @@ fn assert_rejected_without_side_effects(
     let before = fs::read(fixture.0.join("destination")).unwrap();
 
     let ordinary_error = executor
-        .execute_plan(&plan, &source, &destination)
+        .execute_raw_plan(&plan, &source, &destination)
         .unwrap_err();
     assert!(ordinary_error.to_string().contains(expected_error));
     assert_eq!(fs::read(fixture.0.join("destination")).unwrap(), before);
@@ -96,7 +96,7 @@ fn assert_rejected_without_side_effects(
     let callbacks = Cell::new(0);
     let observer = |_: &ProgressSnapshot| callbacks.set(callbacks.get() + 1);
     let observed_error = executor
-        .execute_plan_with_observer(&plan, &source, &destination, &observer)
+        .execute_raw_plan_with_observer(&plan, &source, &destination, &observer)
         .unwrap_err();
 
     assert_eq!(observed_error.to_string(), ordinary_error.to_string());
@@ -185,7 +185,7 @@ fn native_observer_rejects_invalid_plan_before_emitting_progress() {
     let strategy = ExecutionStrategy::IoUring(IoUringExecutionOptions::new(2).unwrap());
     let planner = DataMover::with_execution_strategy(CopyOptions::new(BLOCK).unwrap(), strategy);
     let plan = planner
-        .plan_with_destination(&source, &destination)
+        .plan_raw_with_destination(&source, &destination)
         .unwrap();
     let executor =
         DataMover::with_execution_strategy(CopyOptions::new(BLOCK * 2).unwrap(), strategy);
@@ -193,10 +193,10 @@ fn native_observer_rejects_invalid_plan_before_emitting_progress() {
     let observer = |_: &ProgressSnapshot| callbacks.set(callbacks.get() + 1);
 
     let ordinary_error = executor
-        .execute_plan(&plan, &source, &destination)
+        .execute_raw_plan(&plan, &source, &destination)
         .unwrap_err();
     let observed_error = executor
-        .execute_plan_with_observer(&plan, &source, &destination, &observer)
+        .execute_raw_plan_with_observer(&plan, &source, &destination, &observer)
         .unwrap_err();
 
     assert!(ordinary_error.to_string().contains("block size mismatch"));

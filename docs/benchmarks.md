@@ -123,6 +123,16 @@ fallback, fragmented native Data, and buffered/direct dense copies. Both threade
 and native execution gained preflight; the threaded measurements are comparators,
 not unchanged controls. Planning latency is reported separately from copy time.
 
+### R1.1 portable API measurements
+
+The [R1.1 report](benchmark-results/2026-09-28-r11/README.md) compares dense and
+fragmented planning, unobserved/observed threaded copies, and buffered/direct
+native controls against R0.5. The unchanged progress harness exercises the old
+RAW-bound API and the new portable API with equivalent logical workloads.
+`portable_plan` adds candidate-only memory measurements for static versus dynamic
+dispatch with one/four workers. These are API overhead measurements, not storage
+qualification or a reason to change concurrency defaults.
+
 ### Result storage convention
 
 Use `docs/benchmark-results/<run-id>/` for concise tracked summaries, environment

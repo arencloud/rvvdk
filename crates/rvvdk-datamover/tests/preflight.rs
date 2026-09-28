@@ -154,7 +154,7 @@ fn aliases_rejected_for_memory_and_hard_linked_files() {
     for strategy in strategies() {
         assert!(
             mover(strategy)
-                .copy_with_report(&source, &destination)
+                .copy_raw_with_report(&source, &destination)
                 .unwrap_err()
                 .to_string()
                 .contains("same backing object")
@@ -300,7 +300,9 @@ fn changed_file_sizes_rejected_before_observer_notification() {
             let source = RawDisk::new(LocalFileBlockDevice::open_read_only(&f.source).unwrap());
             let destination = f.destination();
             let mover = mover(strategy);
-            let plan = mover.plan_with_destination(&source, &destination).unwrap();
+            let plan = mover
+                .plan_raw_with_destination(&source, &destination)
+                .unwrap();
             let path = if change.starts_with("source") {
                 &f.source
             } else {
@@ -320,7 +322,7 @@ fn changed_file_sizes_rejected_before_observer_notification() {
             let observer = Observer::default();
             assert!(
                 mover
-                    .execute_plan_with_observer(&plan, &source, &destination, &observer)
+                    .execute_raw_plan_with_observer(&plan, &source, &destination, &observer)
                     .is_err(),
                 "{strategy:?}: {change}"
             );
@@ -337,12 +339,14 @@ fn execution_rechecks_aliasing_instead_of_trusting_planning() {
     let destination = f.destination();
     for strategy in strategies() {
         let mover = mover(strategy);
-        let plan = mover.plan_with_destination(&source, &destination).unwrap();
+        let plan = mover
+            .plan_raw_with_destination(&source, &destination)
+            .unwrap();
         let alias = RawDisk::new(LocalFileBlockDevice::open_read_write(&f.source).unwrap());
         let observer = Observer::default();
         assert!(
             mover
-                .execute_plan_with_observer(&plan, &source, &alias, &observer)
+                .execute_raw_plan_with_observer(&plan, &source, &alias, &observer)
                 .unwrap_err()
                 .to_string()
                 .contains("same backing object")
@@ -404,10 +408,12 @@ fn readonly_replacement_rejected_before_observer_notification() {
     let readonly = RawDisk::new(LocalFileBlockDevice::open_read_only(&f.destination).unwrap());
     for strategy in strategies() {
         let mover = mover(strategy);
-        let plan = mover.plan_with_destination(&source, &destination).unwrap();
+        let plan = mover
+            .plan_raw_with_destination(&source, &destination)
+            .unwrap();
         let observer = Observer::default();
         let error = mover
-            .execute_plan_with_observer(&plan, &source, &readonly, &observer)
+            .execute_raw_plan_with_observer(&plan, &source, &readonly, &observer)
             .unwrap_err();
         assert!(
             error.to_string().contains("destination preflight"),

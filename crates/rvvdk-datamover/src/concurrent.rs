@@ -51,8 +51,8 @@ pub(crate) fn execute<S, D, P>(
     producer: P,
 ) -> Result<WorkerStats>
 where
-    S: VirtualDisk,
-    D: VirtualDisk,
+    S: VirtualDisk + ?Sized,
+    D: VirtualDisk + ?Sized,
     P: FnOnce(&SyncSender<WorkItem>) -> Result<()>,
 {
     let (sender, receiver) = sync_channel::<WorkItem>(queue_capacity);
@@ -130,8 +130,8 @@ fn run_worker<S, D>(
     failure: &Failure,
 ) -> Result<WorkerStats>
 where
-    S: VirtualDisk,
-    D: VirtualDisk,
+    S: VirtualDisk + ?Sized,
+    D: VirtualDisk + ?Sized,
 {
     let mut stats = WorkerStats::default();
 
@@ -169,8 +169,8 @@ fn process_work<S, D>(
     stats: &mut WorkerStats,
 ) -> Result<()>
 where
-    S: VirtualDisk,
-    D: VirtualDisk,
+    S: VirtualDisk + ?Sized,
+    D: VirtualDisk + ?Sized,
 {
     match work.kind() {
         WorkKind::Copy => {
@@ -208,7 +208,7 @@ fn zero_work<D>(
     stats: &mut WorkerStats,
 ) -> Result<()>
 where
-    D: VirtualDisk,
+    D: VirtualDisk + ?Sized,
 {
     let length = work.length() as u64;
 
@@ -233,7 +233,7 @@ fn discard_work<D>(
     stats: &mut WorkerStats,
 ) -> Result<()>
 where
-    D: VirtualDisk,
+    D: VirtualDisk + ?Sized,
 {
     let capabilities = destination.capabilities();
 
@@ -265,7 +265,7 @@ fn write_zero_fallback<D>(
     stats: &mut WorkerStats,
 ) -> Result<()>
 where
-    D: VirtualDisk,
+    D: VirtualDisk + ?Sized,
 {
     let mut buffer = pool.acquire();
 

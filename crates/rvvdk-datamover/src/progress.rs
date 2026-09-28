@@ -324,7 +324,7 @@ mod tests {
     #[test]
     fn completion_is_clamped_to_one() {
         let snapshot = ProgressSnapshot::new(
-            ExecutionBackend::IoUring,
+            ExecutionBackend::Threaded,
             ProgressTotals::new(1_000, 1_000, 0, 0, 1),
             ProgressCompleted::new(1_500, 1_500, 1_500, 0, 0, 1),
             Duration::from_secs(1),
@@ -336,7 +336,7 @@ mod tests {
     #[test]
     fn calculates_logical_throughput() {
         let snapshot = ProgressSnapshot::new(
-            ExecutionBackend::IoUring,
+            ExecutionBackend::Threaded,
             ProgressTotals::new(4_000, 4_000, 0, 0, 1),
             ProgressCompleted::new(2_000, 2_000, 2_000, 0, 0, 1),
             Duration::from_secs(2),

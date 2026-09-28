@@ -47,6 +47,7 @@ impl NativeCopyReport {
         &self.stats
     }
 
+    #[cfg(target_os = "linux")]
     pub(crate) const fn new(backend: ExecutionBackend, stats: NativeCopyStats) -> Self {
         Self { backend, stats }
     }

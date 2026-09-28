@@ -45,7 +45,7 @@ VMware disk access and migration, extensible to other platforms.
 | **Copy execution** | Sequential and bounded threaded execution; Linux io_uring path |
 | **Memory management** | Aligned allocations and reusable buffer pools |
 | **Direct I/O** | Local `O_DIRECT`, runtime alignment discovery, buffered fallback for unaligned backend requests |
-| **Copy planning** | Structural plans, extent summaries, validation, and execution reports |
+| **Copy planning** | Portable plan/execute/report APIs for logical disks and trait objects; explicit Linux RAW adapters |
 | **Copy preflight** | Access, flush support, live local capacity, known alias and native descriptor checks |
 | **Progress reporting** | In development; intermediate updates on the single-worker threaded path |
 | **Sparse destination allocation** | Planned; local holes currently use zero-write fallback |
@@ -86,14 +86,15 @@ fn main() -> Result<()> {
 
     source.write_all_at(0, b"hello, virtual disk")?;
 
-    let stats = DataMover::new(CopyOptions::default())
-        .copy(&source, &destination)?;
+    let mover = DataMover::new(CopyOptions::default());
+    let plan = mover.plan_with_destination(&source, &destination)?;
+    let report = mover.execute_plan(&plan, &source, &destination)?;
 
     let mut contents = [0_u8; 19];
     destination.read_exact_at(0, &mut contents)?;
     assert_eq!(&contents, b"hello, virtual disk");
 
-    println!("Copied {} bytes", stats.bytes_written());
+    println!("Copied {} bytes", report.stats().bytes_written());
     Ok(())
 }
 ```
@@ -101,6 +102,13 @@ fn main() -> Result<()> {
 For file-backed disks, wrap a `LocalFileBlockDevice` in `RawDisk`.
 The destination must already exist and be at least as large as the source.
 See the [local copy example in the integration tests](crates/rvvdk-datamover/tests/local_copy.rs).
+
+The same planning and execution methods accept `&dyn VirtualDisk`, including
+translated formats. Portable calls use logical disk methods: `Auto` selects
+threaded execution, and explicit `IoUring` is rejected. For Linux RAW native
+selection, use `plan_raw_with_destination`, `execute_raw_plan`,
+`execute_raw_plan_with_observer`, or `copy_raw_with_report`. See the
+[API migration and contract](docs/adr/0027-portable-planning.md).
 
 ## Architecture
 

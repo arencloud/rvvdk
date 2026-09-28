@@ -54,7 +54,7 @@ pub(crate) fn pair(
     Ok(())
 }
 
-pub(crate) fn virtual_pair<S: VirtualDisk, D: VirtualDisk>(
+pub(crate) fn virtual_pair<S: VirtualDisk + ?Sized, D: VirtualDisk + ?Sized>(
     source: &S,
     destination: &D,
     length: u64,

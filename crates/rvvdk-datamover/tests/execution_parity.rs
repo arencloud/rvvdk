@@ -277,7 +277,7 @@ fn run_parity_profile(profile: ParityProfile) {
     let threaded_mover = DataMover::new(CopyOptions::new(BLOCK_SIZE).unwrap());
 
     let threaded_report = threaded_mover
-        .copy_with_report(&threaded_source, &threaded_destination)
+        .copy_raw_with_report(&threaded_source, &threaded_destination)
         .unwrap();
 
     assert_eq!(
@@ -296,7 +296,7 @@ fn run_parity_profile(profile: ParityProfile) {
     );
 
     let native_report = native_mover
-        .copy_with_report(&native_source, &native_destination)
+        .copy_raw_with_report(&native_source, &native_destination)
         .unwrap();
 
     assert_eq!(

@@ -117,6 +117,7 @@ impl CopyPlan {
         block_size: usize,
         alignment: usize,
     ) -> Result<Self> {
+        crate::extent_validation::validate_extents(&extents, logical_bytes)?;
         let summary = CopyPlanSummary::from_extents(logical_bytes, &extents)?;
         let extent_fingerprint = extent_fingerprint(&extents);
 
@@ -226,6 +227,22 @@ mod tests {
     }
 
     #[test]
+    fn constructor_rejects_invalid_topology_even_when_byte_totals_match() {
+        for extents in [
+            vec![Extent::new(1, 4096, ExtentKind::Data).unwrap()],
+            vec![
+                Extent::new(0, 2048, ExtentKind::Data).unwrap(),
+                Extent::new(1024, 2048, ExtentKind::Data).unwrap(),
+            ],
+        ] {
+            assert!(matches!(
+                CopyPlan::new(4096, extents, ExecutionBackend::Threaded, 1024, 4096),
+                Err(Error::CorruptMetadata(_))
+            ));
+        }
+    }
+
+    #[test]
     fn summarizes_extents() {
         let extents = mixed_extents();
 
@@ -247,7 +264,7 @@ mod tests {
         let plan = CopyPlan::new(
             4 * MIB,
             extents.clone(),
-            ExecutionBackend::IoUring,
+            ExecutionBackend::Threaded,
             64 * 1024,
             4096,
         )
@@ -265,7 +282,7 @@ mod tests {
 
         assert_eq!(plan.extents(), extents.as_slice(),);
 
-        assert_eq!(plan.backend(), ExecutionBackend::IoUring,);
+        assert_eq!(plan.backend(), ExecutionBackend::Threaded,);
 
         assert_eq!(plan.block_size(), 64 * 1024,);
 

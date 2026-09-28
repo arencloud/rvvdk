@@ -549,7 +549,7 @@ NativeCopyReport
 
 ## Unified typed execution dispatch
 
-DataMover provides unified execution dispatch for raw disks whose
+The explicit Linux RAW adapters provide execution dispatch for raw disks whose
 underlying block devices expose Linux native execution capabilities.
 
 ```text
@@ -563,7 +563,7 @@ LinuxFdBackend                LinuxFdBackend
           +---------------------+
                     |
                     v
-        DataMover::copy_with_report
+        DataMover::copy_raw_with_report
                     |
                     v
             ExecutionStrategy
@@ -796,11 +796,29 @@ plan_with_destination()
 execute_plan()
 ```
 
-Both `execute_plan` and `execute_plan_with_observer` now share structural plan
-validation before copying or notifying observers. Private validated dispatch
-avoids repeating that scan for concurrent/native observed execution. Native
-compatibility checks remain inside the native executor. See
-[ADR-0025](adr/0025-shared-plan-validation.md).
+### Portable plan execution (R1.1)
+
+The primary planning, execution, report, and observer APIs accept arbitrary
+`VirtualDisk + ?Sized`. Memory, local RAW, and translated logical disks follow
+the same lifecycle, with all payload access through logical methods. `Auto`
+selects Threaded here; explicit IoUring or a native plan is rejected before
+payload I/O or observer notification. No physical descriptor is inspected by
+this path, even if a logical disk also implements native traits.
+
+Linux RAW callers use `plan_raw_with_destination`, `execute_raw_plan`,
+`execute_raw_plan_with_observer`, and `copy_raw_with_report` to opt into native
+selection. Their existing endpoint/descriptor binding checks remain in place.
+
+Portable and RAW execution share structural validation and observation boundaries.
+Both reject stale maps, mismatched configuration, invalid endpoints, or insufficient
+capacity before notification. Successful flush precedes the final snapshot. Native
+runtime preparation can still fail after initial notification. The canonical extent
+validator is shared by plan construction and execution trust boundaries.
+
+`CopyPlan` remains an in-memory structural record. Callers must stabilize source
+contents and mappings. Semantic loop consolidation, contextual errors, descriptor
+snapshot reuse, and complete native preparation remain future steps. See
+[ADR-0027](adr/0027-portable-planning.md) for migration and limits.
 
 ## Concurrent worker shutdown
 

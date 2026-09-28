@@ -55,7 +55,9 @@ fn sparse_threaded_execution_emits_intermediate_progress() {
         RawDisk::new(LocalFileBlockDevice::open_read_write(&destination_path).unwrap());
 
     let mover = DataMover::new(CopyOptions::new(BLOCK_SIZE).unwrap());
-    let plan = mover.plan_with_destination(&source, &destination).unwrap();
+    let plan = mover
+        .plan_raw_with_destination(&source, &destination)
+        .unwrap();
 
     assert!(
         plan.extent_count() > 1,
@@ -68,7 +70,7 @@ fn sparse_threaded_execution_emits_intermediate_progress() {
     };
 
     let report = mover
-        .execute_plan_with_observer(&plan, &source, &destination, &observer)
+        .execute_raw_plan_with_observer(&plan, &source, &destination, &observer)
         .unwrap();
 
     assert_eq!(report.backend(), ExecutionBackend::Threaded);

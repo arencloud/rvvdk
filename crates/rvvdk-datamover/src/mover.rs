@@ -1,18 +1,19 @@
 use std::time::Instant;
 
-use rvvdk_core::{
-    BlockDevice, BufferPool, Capabilities, Error, Extent, ExtentKind, RawDisk, Result, VirtualDisk,
-};
+use rvvdk_core::{BufferPool, Capabilities, Error, Extent, ExtentKind, Result, VirtualDisk};
 
 use crate::concurrent;
 use crate::planner::ExtentWorkIter;
 
 use crate::{
     CopyOptions, CopyPlan, CopyReport, CopyStats, ExecutionBackend, ExecutionStrategy,
-    NativeCopyReport, NativeCopyStats, ProgressCompleted, ProgressObserver, ProgressSnapshot,
-    ProgressState, ProgressTotals,
+    ProgressCompleted, ProgressObserver, ProgressSnapshot, ProgressState, ProgressTotals,
 };
 
+#[cfg(target_os = "linux")]
+use crate::{NativeCopyReport, NativeCopyStats};
+#[cfg(target_os = "linux")]
+use rvvdk_core::{BlockDevice, RawDisk};
 #[cfg(target_os = "linux")]
 use rvvdk_platform::LinuxFdBackend;
 
@@ -61,24 +62,16 @@ impl DataMover {
         self.execution_strategy
     }
 
-    /*
-     * M20B planning entry point.
-     *
-     * This stage deliberately models portable planning only.
-     *
-     * M20C will make backend selection destination-aware and will
-     * evaluate Threaded / IoUring / Auto using LinuxFdBackend
-     * compatibility.
-     */
+    /// Build a portable logical plan. Auto selects threaded execution here;
+    /// explicit io_uring requires the RAW entry points instead.
     pub fn plan<S>(&self, source: &S) -> Result<CopyPlan>
     where
-        S: VirtualDisk,
+        S: VirtualDisk + ?Sized,
     {
+        self.require_portable_execution()?;
         let source_size = source.size();
 
         let extents = source.extents(0, source_size)?;
-
-        crate::extent_validation::validate_extents(&extents, source_size)?;
 
         CopyPlan::new(
             source_size,
@@ -89,8 +82,120 @@ impl DataMover {
         )
     }
 
+    fn require_portable_execution(&self) -> Result<()> {
+        #[cfg(target_os = "linux")]
+        if matches!(self.execution_strategy, ExecutionStrategy::IoUring(_)) {
+            return Err(Error::NativeExecutionUnsupported);
+        }
+        Ok(())
+    }
+
+    /// Plan a logical copy through VirtualDisk methods, including trait objects.
+    /// Auto uses threaded execution; no native descriptor can bypass translation.
+    pub fn plan_with_destination<S, D>(&self, source: &S, destination: &D) -> Result<CopyPlan>
+    where
+        S: VirtualDisk + ?Sized,
+        D: VirtualDisk + ?Sized,
+    {
+        self.require_portable_execution()?;
+        crate::preflight::virtual_pair(source, destination, source.size())?;
+        self.plan(source)
+    }
+
+    /// Execute a portable plan after live endpoint and structural validation.
+    /// Native RAW plans are rejected before I/O or observer notification.
+    pub fn execute_plan<S, D>(
+        &self,
+        plan: &CopyPlan,
+        source: &S,
+        destination: &D,
+    ) -> Result<CopyReport>
+    where
+        S: VirtualDisk + ?Sized,
+        D: VirtualDisk + ?Sized,
+    {
+        self.validate_portable_plan(plan, source, destination)?;
+        self.execute_threaded_plan(plan, source, destination)
+    }
+
+    pub fn execute_plan_with_observer<S, D, O>(
+        &self,
+        plan: &CopyPlan,
+        source: &S,
+        destination: &D,
+        observer: &O,
+    ) -> Result<CopyReport>
+    where
+        S: VirtualDisk + ?Sized,
+        D: VirtualDisk + ?Sized,
+        O: ProgressObserver + ?Sized,
+    {
+        self.validate_portable_plan(plan, source, destination)?;
+        Self::observe_plan(plan, observer, || {
+            if self.options.concurrency() == 1 {
+                self.execute_threaded_plan_with_observer(plan, source, destination, observer)
+            } else {
+                self.execute_threaded_plan(plan, source, destination)
+            }
+        })
+    }
+
+    pub fn copy_with_report<S, D>(&self, source: &S, destination: &D) -> Result<CopyReport>
+    where
+        S: VirtualDisk + ?Sized,
+        D: VirtualDisk + ?Sized,
+    {
+        let plan = self.plan_with_destination(source, destination)?;
+        self.execute_plan(&plan, source, destination)
+    }
+
+    fn validate_portable_plan<S, D>(
+        &self,
+        plan: &CopyPlan,
+        source: &S,
+        destination: &D,
+    ) -> Result<()>
+    where
+        S: VirtualDisk + ?Sized,
+        D: VirtualDisk + ?Sized,
+    {
+        self.require_portable_execution()?;
+        if plan.backend() != ExecutionBackend::Threaded {
+            return Err(Error::NativeExecutionUnsupported);
+        }
+        self.validate_plan(plan, source, destination, || {
+            crate::preflight::virtual_pair(source, destination, plan.logical_bytes()).map(|_| ())
+        })
+    }
+
     #[cfg(target_os = "linux")]
-    pub fn plan_with_destination<S, D>(
+    fn validate_raw_plan<S, D>(
+        &self,
+        plan: &CopyPlan,
+        source: &RawDisk<S>,
+        destination: &RawDisk<D>,
+    ) -> Result<()>
+    where
+        S: BlockDevice + LinuxFdBackend,
+        D: BlockDevice + LinuxFdBackend,
+    {
+        self.validate_plan(plan, source, destination, || {
+            let endpoints = crate::preflight::raw_pair(source, destination, plan.logical_bytes())?;
+            if plan.backend() == ExecutionBackend::IoUring
+                && plan
+                    .extents()
+                    .iter()
+                    .any(|extent| extent.kind() == ExtentKind::Data)
+            {
+                endpoints.validate_native_binding()?;
+            }
+            Ok(())
+        })
+    }
+
+    /// Linux RAW adapter: permits FD execution only for explicitly exposed RAW backends.
+    #[cfg(target_os = "linux")]
+    pub fn plan_raw_with_destination<S, D>(
         &self,
         source: &RawDisk<S>,
         destination: &RawDisk<D>,
@@ -114,8 +219,6 @@ impl DataMover {
         let endpoints = crate::preflight::raw_pair(source, destination, source_size)?;
 
         let extents = source.extents(0, source_size)?;
-
-        crate::extent_validation::validate_extents(&extents, source_size)?;
 
         let source_backend = source.device();
 
@@ -235,9 +338,10 @@ impl DataMover {
 
     pub fn copy<S, D>(&self, source: &S, destination: &D) -> Result<CopyStats>
     where
-        S: VirtualDisk,
-        D: VirtualDisk,
+        S: VirtualDisk + ?Sized,
+        D: VirtualDisk + ?Sized,
     {
+        self.require_portable_execution()?;
         let source_size = source.size();
 
         let destination_size = destination.size();
@@ -255,7 +359,6 @@ impl DataMover {
         let started = Instant::now();
 
         let extents = source.extents(0, source_size)?;
-
         crate::extent_validation::validate_extents(&extents, source_size)?;
 
         if self.options.concurrency() > 1 {
@@ -298,7 +401,7 @@ impl DataMover {
     }
 
     #[cfg(target_os = "linux")]
-    pub fn execute_plan<S, D>(
+    pub fn execute_raw_plan<S, D>(
         &self,
         plan: &CopyPlan,
         source: &RawDisk<S>,
@@ -308,21 +411,21 @@ impl DataMover {
         S: BlockDevice + LinuxFdBackend,
         D: BlockDevice + LinuxFdBackend,
     {
-        self.validate_plan(plan, source, destination)?;
-        self.execute_validated_plan(plan, source, destination)
+        self.validate_raw_plan(plan, source, destination)?;
+        self.execute_validated_raw_plan(plan, source, destination)
     }
 
     /// Validate structural plan invariants before any execution or observation.
-    #[cfg(target_os = "linux")]
     fn validate_plan<S, D>(
         &self,
         plan: &CopyPlan,
-        source: &RawDisk<S>,
-        destination: &RawDisk<D>,
+        source: &S,
+        destination: &D,
+        preflight: impl FnOnce() -> Result<()>,
     ) -> Result<()>
     where
-        S: BlockDevice + LinuxFdBackend,
-        D: BlockDevice + LinuxFdBackend,
+        S: VirtualDisk + ?Sized,
+        D: VirtualDisk + ?Sized,
     {
         let source_size = source.size();
 
@@ -352,15 +455,7 @@ impl DataMover {
             });
         }
 
-        let endpoints = crate::preflight::raw_pair(source, destination, plan.logical_bytes())?;
-        if plan.backend() == ExecutionBackend::IoUring
-            && plan
-                .extents()
-                .iter()
-                .any(|extent| extent.kind() == ExtentKind::Data)
-        {
-            endpoints.validate_native_binding()?;
-        }
+        preflight()?;
 
         /*
          * The DataMover configuration used for execution must match the
@@ -422,7 +517,7 @@ impl DataMover {
 
     /// Dispatch only after the caller has validated the structural plan.
     #[cfg(target_os = "linux")]
-    fn execute_validated_plan<S, D>(
+    fn execute_validated_raw_plan<S, D>(
         &self,
         plan: &CopyPlan,
         source: &RawDisk<S>,
@@ -440,7 +535,7 @@ impl DataMover {
     }
 
     #[cfg(target_os = "linux")]
-    pub fn execute_plan_with_observer<S, D, O>(
+    pub fn execute_raw_plan_with_observer<S, D, O>(
         &self,
         plan: &CopyPlan,
         source: &RawDisk<S>,
@@ -452,16 +547,23 @@ impl DataMover {
         D: BlockDevice + LinuxFdBackend,
         O: ProgressObserver + ?Sized,
     {
-        self.validate_plan(plan, source, destination)?;
-        observer.on_progress(&ProgressSnapshot::initial(plan));
-
-        let report =
+        self.validate_raw_plan(plan, source, destination)?;
+        Self::observe_plan(plan, observer, || {
             if plan.backend() == ExecutionBackend::Threaded && self.options.concurrency() == 1 {
-                self.execute_threaded_plan_with_observer(plan, source, destination, observer)?
+                self.execute_threaded_plan_with_observer(plan, source, destination, observer)
             } else {
-                self.execute_validated_plan(plan, source, destination)?
-            };
+                self.execute_validated_raw_plan(plan, source, destination)
+            }
+        })
+    }
 
+    fn observe_plan<O: ProgressObserver + ?Sized>(
+        plan: &CopyPlan,
+        observer: &O,
+        execute: impl FnOnce() -> Result<CopyReport>,
+    ) -> Result<CopyReport> {
+        observer.on_progress(&ProgressSnapshot::initial(plan));
+        let report = execute()?;
         let stats = report.stats();
         let completed = ProgressCompleted::new(
             plan.logical_bytes(),
@@ -482,17 +584,16 @@ impl DataMover {
         Ok(report)
     }
 
-    #[cfg(target_os = "linux")]
     fn execute_threaded_plan_with_observer<S, D, O>(
         &self,
         plan: &CopyPlan,
-        source: &RawDisk<S>,
-        destination: &RawDisk<D>,
+        source: &S,
+        destination: &D,
         observer: &O,
     ) -> Result<CopyReport>
     where
-        S: BlockDevice + LinuxFdBackend,
-        D: BlockDevice + LinuxFdBackend,
+        S: VirtualDisk + ?Sized,
+        D: VirtualDisk + ?Sized,
         O: ProgressObserver + ?Sized,
     {
         let started = Instant::now();
@@ -657,7 +758,6 @@ impl DataMover {
         ))
     }
 
-    #[cfg(target_os = "linux")]
     fn emit_progress_if_needed<O>(
         progress: &ProgressState,
         observer: &O,
@@ -680,16 +780,15 @@ impl DataMover {
         *last_emitted = logical_completed;
     }
 
-    #[cfg(target_os = "linux")]
     fn execute_threaded_plan<S, D>(
         &self,
         plan: &CopyPlan,
-        source: &RawDisk<S>,
-        destination: &RawDisk<D>,
+        source: &S,
+        destination: &D,
     ) -> Result<CopyReport>
     where
-        S: BlockDevice + LinuxFdBackend,
-        D: BlockDevice + LinuxFdBackend,
+        S: VirtualDisk + ?Sized,
+        D: VirtualDisk + ?Sized,
     {
         let started = Instant::now();
 
@@ -802,7 +901,7 @@ impl DataMover {
     }
 
     #[cfg(target_os = "linux")]
-    pub fn copy_with_report<S, D>(
+    pub fn copy_raw_with_report<S, D>(
         &self,
         source: &RawDisk<S>,
         destination: &RawDisk<D>,
@@ -811,9 +910,9 @@ impl DataMover {
         S: BlockDevice + LinuxFdBackend,
         D: BlockDevice + LinuxFdBackend,
     {
-        let plan = self.plan_with_destination(source, destination)?;
+        let plan = self.plan_raw_with_destination(source, destination)?;
 
-        self.execute_plan(&plan, source, destination)
+        self.execute_raw_plan(&plan, source, destination)
     }
 
     fn process_extent<S, D>(
@@ -825,8 +924,8 @@ impl DataMover {
         stats: &mut MutableStats,
     ) -> Result<()>
     where
-        S: VirtualDisk,
-        D: VirtualDisk,
+        S: VirtualDisk + ?Sized,
+        D: VirtualDisk + ?Sized,
     {
         match extent.kind() {
             ExtentKind::Data => self.copy_data_extent(source, destination, extent, buffer, stats),
@@ -846,8 +945,8 @@ impl DataMover {
         stats: &mut MutableStats,
     ) -> Result<()>
     where
-        S: VirtualDisk,
-        D: VirtualDisk,
+        S: VirtualDisk + ?Sized,
+        D: VirtualDisk + ?Sized,
     {
         let mut offset = extent.offset();
 
@@ -895,7 +994,7 @@ impl DataMover {
         stats: &mut MutableStats,
     ) -> Result<()>
     where
-        D: VirtualDisk,
+        D: VirtualDisk + ?Sized,
     {
         if destination
             .capabilities()
@@ -919,7 +1018,7 @@ impl DataMover {
         stats: &mut MutableStats,
     ) -> Result<()>
     where
-        D: VirtualDisk,
+        D: VirtualDisk + ?Sized,
     {
         let capabilities = destination.capabilities();
 
@@ -950,7 +1049,7 @@ impl DataMover {
         stats: &mut MutableStats,
     ) -> Result<()>
     where
-        D: VirtualDisk,
+        D: VirtualDisk + ?Sized,
     {
         buffer.fill(0);
 
@@ -994,8 +1093,8 @@ impl DataMover {
         started: Instant,
     ) -> Result<CopyStats>
     where
-        S: VirtualDisk,
-        D: VirtualDisk,
+        S: VirtualDisk + ?Sized,
+        D: VirtualDisk + ?Sized,
     {
         let pool = BufferPool::new(
             self.options.buffer_count(),

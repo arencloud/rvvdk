@@ -30,7 +30,7 @@ fn preflight(criterion: &mut Criterion) {
         group.bench_function(name, |b| {
             b.iter(|| {
                 let plan = mover
-                    .plan_with_destination(black_box(&source), black_box(&destination))
+                    .plan_raw_with_destination(black_box(&source), black_box(&destination))
                     .unwrap();
                 assert_eq!(plan.logical_bytes(), support::MIB as u64);
                 black_box(plan);
