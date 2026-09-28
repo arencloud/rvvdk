@@ -7,7 +7,7 @@ use criterion::{
     BenchmarkId, Criterion, SamplingMode, Throughput, criterion_group, criterion_main,
 };
 
-use rvvdk_core::RawDisk;
+use rvvdk_core::{BlockDevice, RawDisk};
 
 use rvvdk_datamover::{CopyOptions, DataMover};
 
@@ -139,6 +139,9 @@ fn benchmark_io_uring_direct(criterion: &mut Criterion) {
                         ALIGNMENT,
                     )
                     .unwrap();
+
+                    // Match DataMover's durability boundary in the threaded benchmark.
+                    destination.flush().unwrap();
 
                     assert_eq!(stats.bytes_read(), DISK_SIZE as u64,);
 
