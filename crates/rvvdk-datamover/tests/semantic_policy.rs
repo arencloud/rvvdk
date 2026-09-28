@@ -270,7 +270,10 @@ fn advertised_sparse_operation_failure_is_not_retried_as_a_write() {
                         )
                         .map(|_| ()),
                 };
-                assert!(matches!(result, Err(Error::Unsupported)));
+                assert!(matches!(
+                    result.unwrap_err().copy_failure().unwrap().cause,
+                    Error::Unsupported
+                ));
                 assert_eq!(destination.events(), [(operation, 0, 4096)]);
                 assert!(source.events().is_empty());
                 assert_eq!(snapshots.borrow().len(), usize::from(mode == 2));
@@ -309,8 +312,12 @@ fn native_sparse_failure_keeps_the_same_no_retry_policy() {
                 4096,
                 4096,
                 IoUringExecutionOptions::new(2).unwrap()
-            ),
-            Err(Error::Unsupported)
+            )
+            .unwrap_err()
+            .copy_failure()
+            .unwrap()
+            .cause,
+            Error::Unsupported
         ));
         assert_eq!(destination.events(), [(operation, 0, 4096)]);
     }

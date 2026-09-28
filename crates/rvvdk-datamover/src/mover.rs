@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use rvvdk_core::{BufferPool, Error, Extent, Result, VirtualDisk};
+use rvvdk_core::{BufferPool, CopyOperation, CopyProgress, Error, Extent, Result, VirtualDisk};
 
 use crate::planner::ExtentWorkIter;
 #[cfg(target_os = "linux")]
@@ -462,7 +462,9 @@ impl DataMover {
             execution_options,
         )?;
 
-        destination.flush()?;
+        destination.flush().map_err(|e| {
+            crate::failure::execution("io_uring", CopyOperation::Flush, None, stats.progress(), e)
+        })?;
 
         Ok(CopyReport::new(
             ExecutionBackend::IoUring,
@@ -500,7 +502,16 @@ impl DataMover {
             self.options.buffer_count(),
             self.options.block_size(),
             self.options.buffer_alignment(),
-        )?;
+        )
+        .map_err(|e| {
+            crate::failure::execution(
+                "threaded",
+                CopyOperation::Allocate,
+                None,
+                CopyProgress::default(),
+                e,
+            )
+        })?;
 
         let stats = concurrent::execute(
             source,
@@ -521,7 +532,11 @@ impl DataMover {
             },
         )?;
 
-        destination.flush()?;
+        destination.flush().map_err(|e| {
+            let mut progress = stats.progress();
+            progress.extents_completed = Some(extents.len() as u64);
+            crate::failure::execution("threaded", CopyOperation::Flush, None, progress, e)
+        })?;
 
         Ok(CopyStats::new(
             stats.bytes_read,

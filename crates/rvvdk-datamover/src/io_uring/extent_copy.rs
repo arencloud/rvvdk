@@ -1,6 +1,6 @@
 use std::os::fd::BorrowedFd;
 
-use rvvdk_core::{Error, Extent, ExtentKind, Result, VirtualDisk};
+use rvvdk_core::{CopyOperation, CopyProgress, Error, Extent, ExtentKind, Result, VirtualDisk};
 
 use crate::IoUringExecutionOptions;
 use crate::policy::{self, Operation};
@@ -20,6 +20,31 @@ pub struct IoUringExtentCopyStats {
 }
 
 impl IoUringExtentCopyStats {
+    pub(crate) fn progress(&self) -> CopyProgress {
+        CopyProgress {
+            bytes_read: self.bytes_read,
+            bytes_written: self.bytes_written,
+            bytes_zeroed: self.bytes_zeroed,
+            bytes_discarded: self.bytes_discarded,
+            blocks_completed: self.blocks_completed,
+            extents_completed: Some(self.extents_processed),
+            unconfirmed_io: false,
+        }
+    }
+
+    #[cold]
+    fn failure(&self, operation: CopyOperation, offset: u64, length: u64, error: Error) -> Error {
+        let mut progress = self.progress();
+        progress.unconfirmed_io = true;
+        crate::failure::execution(
+            "io_uring",
+            operation,
+            Some((offset, length)),
+            progress,
+            error,
+        )
+    }
+
     pub const fn bytes_read(&self) -> u64 {
         self.bytes_read
     }
@@ -169,7 +194,8 @@ pub fn copy_extent_plan(
             block_size,
             alignment,
             options,
-        )?;
+        )
+        .map_err(|e| crate::failure::native_prior(e, aggregate.progress()))?;
         aggregate.add_data_extent(stats)?;
     }
 
@@ -240,17 +266,36 @@ where
                     block_size,
                     alignment,
                     options,
-                )?;
+                )
+                .map_err(|e| crate::failure::native_prior(e, aggregate.progress()))?;
 
                 aggregate.add_data_extent(stats)?;
             }
 
             Operation::Zero => {
-                destination.write_zero_at(extent.offset(), extent.length())?;
+                destination
+                    .write_zero_at(extent.offset(), extent.length())
+                    .map_err(|e| {
+                        aggregate.failure(
+                            CopyOperation::WriteZero,
+                            extent.offset(),
+                            extent.length(),
+                            e,
+                        )
+                    })?;
                 aggregate.add_zero_extent(extent.length())?;
             }
             Operation::Discard => {
-                destination.discard(extent.offset(), extent.length())?;
+                destination
+                    .discard(extent.offset(), extent.length())
+                    .map_err(|e| {
+                        aggregate.failure(
+                            CopyOperation::Discard,
+                            extent.offset(),
+                            extent.length(),
+                            e,
+                        )
+                    })?;
                 aggregate.add_discard_extent(extent.length())?;
             }
             Operation::WriteZero => {
@@ -287,7 +332,9 @@ where
                 length: request_length_u64,
             })?;
 
-        destination.write_all_at(offset, &buffer[..request_length])?;
+        destination
+            .write_all_at(offset, &buffer[..request_length])
+            .map_err(|e| stats.failure(CopyOperation::Write, offset, request_length_u64, e))?;
 
         offset = offset
             .checked_add(request_length_u64)

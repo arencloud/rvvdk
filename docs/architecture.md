@@ -718,15 +718,16 @@ successfully; capability claims cannot prove physical hardware behavior.
 chain. Missing capabilities, invalid endpoint modes, descriptor mismatches, and
 aliasing have explicit errors. Existing cached-geometry bounds checks still
 return their original `OutOfBounds` errors; live descriptor/backend failures have
-endpoint context. Runtime I/O errors retain the existing error contracts.
+endpoint context. R1.5 wraps execution errors with copy context and retains their
+original causes; see the [failure contract](copy-errors.md).
 
 This is a point-in-time check, not rollback, a snapshot, or a lock. Callers must
 keep contents, capacity, open-file flags, and endpoint mappings stable throughout
 the copy. Unknown custom-backend identities cannot prove absence of aliases;
 wrappers must forward the identity of their backing object. Plans are still
-structural and are not bound to a persisted source identity. R1/R2 retain portable
-planning, complete error/progress context, runtime ring availability, direct-I/O
-tail policy, and safe sparse semantics. Device nodes/pipes are unsupported by the
+structural and are not bound to a persisted source identity. R1 now provides
+portable planning and failure counters. R2 retains runtime ring availability,
+direct-I/O tail policy, and safe sparse semantics. Device nodes/pipes are unsupported by the
 native file-copy APIs; the owned engine remains a lower-level request interface.
 
 ## Native Zero extent execution
@@ -835,8 +836,8 @@ validator is shared by plan construction and execution trust boundaries.
 
 `CopyPlan` remains an in-memory structural record. Callers must stabilize source
 contents and mappings. R1.3 shares descriptor inspections; R1.4 separates logical
-intent and invocation preparation below. Contextual errors and complete native
-runtime preparation remain future steps. See
+intent and invocation preparation below. R1.5 adds contextual execution failures.
+Complete native runtime preparation remains a future step. See
 [ADR-0027](adr/0027-portable-planning.md) for migration and limits.
 
 ### Logical intent and execution preparation (R1.4)
@@ -879,10 +880,41 @@ mover's current native options, and a Threaded plan retains its chosen backend.
 Preparation is a checked dispatch boundary, not a resource reservation or lease.
 Native ring creation, buffer allocation, and remaining low-level request checks
 can still fail after initial observation. Callers must keep endpoints stable,
-including during observer callbacks. Snapshot consistency, contextual failures,
-partial progress, and terminal lifecycle events remain separate work. The direct
+including during observer callbacks. R1.5 adds contextual failures and confirmed
+partial counters below. Snapshot consistency and terminal lifecycle events
+remain separate work. The direct
 portable `copy` API retains its existing single-pass fast path.
 [ADR-0027](adr/0027-portable-planning.md) records the public contract and limits.
+
+### Copy failure context and progress (R1.5)
+
+Execution failures carry `Error::CopyExecution(Box<CopyFailure>)` with executor,
+attempted operation/range, original cause, and `CopyProgress`. These portable
+types live in core. Boxing occurs only on failure; successful report/stat APIs
+remain unchanged. `Error::copy_failure()` also follows native cleanup wrappers.
+
+Sequential counters include completed reads even if the corresponding write
+fails. Worker counters survive failing workers and aggregate only after every
+scoped worker joins; the first error is preserved. Native counters include
+observed positive CQE bytes, including short transfers, and earlier completed
+extents. Existing engine shutdown/ownership behavior is unchanged; work completed
+during cleanup can remain uncounted and is marked uncertain.
+
+Counters are lower bounds, not durable or contiguous progress. Opaque failed
+backend calls can partially mutate their attempted range; native I/O can finish
+during shutdown. Native completion errors without request identity retain a
+range-level context rather than inventing an exact read/write offset. Flush
+failure reports completed payload work but never successful copy durability.
+No final success snapshot follows an error.
+
+Configuration mismatches use InvalidCopyConfiguration, structural plan changes
+use StaleCopyPlan, and live source capacity changes use EndpointChanged with
+endpoint context. Malformed extent maps remain CorruptMetadata. Planning and
+preflight rejections retain their typed forms without a copy-progress report.
+
+See the [error contract](copy-errors.md) for counter definitions, source-chain
+inspection, migration, and limits, and the
+[R1.5 measurements](benchmark-results/2026-09-29-r15/README.md).
 
 ### Shared semantic execution (R1.2)
 
@@ -912,7 +944,7 @@ work-item sizes, and resource lifetimes while sharing policy selection.
 Successful Data/fallback writes count as written bytes and copied blocks. Backend
 zero/discard calls count only in their corresponding byte counters. Source payload
 is never read for Zero/Hole. A full report follows successful flush; errors may
-leave already-completed writes and still do not carry partial statistics.
+leave already-completed writes; R1.5 now carries confirmed partial statistics.
 
 Observer cadence is preserved: initial after validation, byte thresholds every
 64 MiB for Data/fallback writes, intermediate extent boundaries, and final after
@@ -931,6 +963,6 @@ sender destruction wakes idle workers. All scoped workers join before returning.
 Successful copies still drain queued work and flush the destination.
 
 Already-dispatched work can finish, and shutdown cannot interrupt a blocked
-synchronous backend call. Public cancellation and partial-result reporting remain
+synchronous backend call. R1.5 retains partial failure counters after joining workers. Public cancellation remains
 future work. The contract and tests are documented in
 [ADR-0008](adr/0008-streaming-work-scheduler.md#shutdown-contract--r02-2026-09-28).

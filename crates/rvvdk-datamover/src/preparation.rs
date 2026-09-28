@@ -97,7 +97,7 @@ impl DataMover {
                     .max(self.options.buffer_alignment());
 
                 if runtime_alignment != plan.alignment() {
-                    return Err(Error::CorruptMetadata(format!(
+                    return Err(Error::InvalidCopyConfiguration(format!(
                         "copy plan alignment mismatch: \
                      plan={}, runtime={runtime_alignment}",
                         plan.alignment(),
@@ -187,7 +187,7 @@ impl DataMover {
          * the plan.
          */
         if source_size != plan.logical_bytes() {
-            return Err(Error::CorruptMetadata(format!(
+            return Err(Error::StaleCopyPlan(format!(
                 "copy plan source size mismatch: \
                      plan={}, source={source_size}",
                 plan.logical_bytes(),
@@ -213,7 +213,7 @@ impl DataMover {
          * block size captured during planning.
          */
         if plan.block_size() != self.options.block_size() {
-            return Err(Error::CorruptMetadata(format!(
+            return Err(Error::InvalidCopyConfiguration(format!(
                 "copy plan block size mismatch: \
                      plan={}, mover={}",
                 plan.block_size(),
@@ -245,7 +245,7 @@ impl DataMover {
          *     ExtentKind
          */
         if current_fingerprint != plan.extent_fingerprint() {
-            return Err(Error::CorruptMetadata(format!(
+            return Err(Error::StaleCopyPlan(format!(
                 "copy plan extent map changed: \
                      planned={:#018x}, current={:#018x}",
                 plan.extent_fingerprint(),
@@ -256,7 +256,7 @@ impl DataMover {
         if plan.backend() == ExecutionBackend::Threaded
             && plan.alignment() != self.options.buffer_alignment()
         {
-            return Err(Error::CorruptMetadata(format!(
+            return Err(Error::InvalidCopyConfiguration(format!(
                 "copy plan alignment mismatch: plan={}, mover={}",
                 plan.alignment(),
                 self.options.buffer_alignment(),

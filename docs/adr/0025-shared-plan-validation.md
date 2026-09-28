@@ -63,3 +63,14 @@ Existing successful-copy and progress tests preserve output and callback behavio
 The `progress` benchmark compares planning and valid observed/unobserved copies
 with equivalent destination reset, flush, and read-back verification. Results are
 recorded with R0.1 in the implementation log.
+
+
+## R1.4/R1.5 follow-up
+
+R1.4 moved live validation and native strategy/alignment preparation ahead of
+initial observation. R1.5 distinguishes InvalidCopyConfiguration, StaleCopyPlan,
+and live EndpointChanged preflight errors from malformed CorruptMetadata.
+Configuration/capacity rejection still precedes payload I/O through the shared
+checks. Execution failures carry context and confirmed partial counters under
+the [copy error contract](../copy-errors.md). Full native runtime preparation,
+cancellation, and terminal lifecycle tags remain separate work.

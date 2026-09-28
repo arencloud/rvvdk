@@ -1,6 +1,7 @@
 mod concurrent;
 mod execution;
 mod extent_validation;
+mod failure;
 #[cfg(target_os = "linux")]
 pub mod io_uring;
 mod mover;

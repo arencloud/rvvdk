@@ -4,6 +4,18 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error("{0}")]
+    CopyExecution(#[source] Box<crate::CopyFailure>),
+
+    #[error("invalid copy configuration: {0}")]
+    InvalidCopyConfiguration(String),
+
+    #[error("copy endpoint changed: {0}")]
+    EndpointChanged(String),
+
+    #[error("stale copy plan: {0}")]
+    StaleCopyPlan(String),
+
     #[error("{endpoint} preflight failed: {source}")]
     EndpointPreflight {
         endpoint: &'static str,
@@ -131,4 +143,16 @@ pub enum Error {
 
     #[error("corrupt metadata: {0}")]
     CorruptMetadata(String),
+}
+
+impl Error {
+    /// Find copy execution context, including when native cleanup also failed.
+    pub fn copy_failure(&self) -> Option<&crate::CopyFailure> {
+        match self {
+            Self::CopyExecution(failure) => Some(failure),
+            Self::IoUringCleanup { original, .. } => original.copy_failure(),
+            Self::EndpointPreflight { source, .. } => source.copy_failure(),
+            _ => None,
+        }
+    }
 }

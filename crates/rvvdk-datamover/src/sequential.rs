@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use rvvdk_core::{BufferPool, Error, Extent, Result, VirtualDisk};
+use rvvdk_core::{BufferPool, CopyOperation, CopyProgress, Error, Extent, Result, VirtualDisk};
 
 use crate::policy::{self, Operation};
 use crate::{CopyOptions, CopyPlan, CopyStats, ExecutionBackend, ProgressObserver, ProgressState};
@@ -80,6 +80,31 @@ struct Stats {
     zeroed: u64,
     discarded: u64,
     blocks: u64,
+    extents: u64,
+}
+
+impl Stats {
+    #[cold]
+    fn failure(&self, operation: CopyOperation, range: Option<(u64, u64)>, error: Error) -> Error {
+        crate::failure::execution(
+            "threaded",
+            operation,
+            range,
+            CopyProgress {
+                bytes_read: self.read,
+                bytes_written: self.written,
+                bytes_zeroed: self.zeroed,
+                bytes_discarded: self.discarded,
+                blocks_completed: self.blocks,
+                extents_completed: Some(self.extents),
+                unconfirmed_io: !matches!(
+                    operation,
+                    CopyOperation::Allocate | CopyOperation::Flush
+                ),
+            },
+            error,
+        )
+    }
 }
 
 /// One sequential lifecycle for direct copy and observed/unobserved plans.
@@ -97,13 +122,14 @@ where
     D: VirtualDisk + ?Sized,
     P: Progress,
 {
+    let mut stats = Stats::default();
     let pool = BufferPool::new(
         options.buffer_count(),
         options.block_size(),
         options.buffer_alignment(),
-    )?;
+    )
+    .map_err(|e| stats.failure(CopyOperation::Allocate, None, e))?;
     let mut buffer = pool.acquire();
-    let mut stats = Stats::default();
     for extent in extents {
         match policy::select(extent.kind(), || destination.capabilities()) {
             Operation::Copy => transfer::<true, _, _, _>(
@@ -128,19 +154,38 @@ where
                 )?;
             }
             Operation::Zero => {
-                destination.write_zero_at(extent.offset(), extent.length())?;
+                destination
+                    .write_zero_at(extent.offset(), extent.length())
+                    .map_err(|e| {
+                        stats.failure(
+                            CopyOperation::WriteZero,
+                            Some((extent.offset(), extent.length())),
+                            e,
+                        )
+                    })?;
                 stats.zeroed += extent.length();
                 progress.completed(Operation::Zero, extent.length());
             }
             Operation::Discard => {
-                destination.discard(extent.offset(), extent.length())?;
+                destination
+                    .discard(extent.offset(), extent.length())
+                    .map_err(|e| {
+                        stats.failure(
+                            CopyOperation::Discard,
+                            Some((extent.offset(), extent.length())),
+                            e,
+                        )
+                    })?;
                 stats.discarded += extent.length();
                 progress.completed(Operation::Discard, extent.length());
             }
         }
+        stats.extents += 1;
         progress.extent_completed();
     }
-    destination.flush()?;
+    destination
+        .flush()
+        .map_err(|e| stats.failure(CopyOperation::Flush, None, e))?;
     Ok(CopyStats::new(
         stats.read,
         stats.written,
@@ -172,17 +217,19 @@ where
         let size = usize::try_from(length).map_err(|_| Error::RangeOverflow { offset, length })?;
         let bytes = &mut buffer[..size];
         if READ {
-            source.read_exact_at(offset, bytes)?;
+            source
+                .read_exact_at(offset, bytes)
+                .map_err(|e| stats.failure(CopyOperation::Read, Some((offset, length)), e))?;
+            stats.read += length;
         }
-        destination.write_all_at(offset, bytes)?;
+        destination
+            .write_all_at(offset, bytes)
+            .map_err(|e| stats.failure(CopyOperation::Write, Some((offset, length)), e))?;
         offset = offset
             .checked_add(length)
             .ok_or(Error::RangeOverflow { offset, length })?;
         stats.written += length;
         stats.blocks += 1;
-        if READ {
-            stats.read += length;
-        }
         progress.completed(
             if READ {
                 Operation::Copy

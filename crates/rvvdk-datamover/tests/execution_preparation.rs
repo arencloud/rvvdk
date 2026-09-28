@@ -9,11 +9,12 @@ use rvvdk_platform::{LinuxFdBackend, LinuxFdCapabilities};
 use std::cell::Cell;
 use std::fs;
 use std::os::fd::{AsFd, BorrowedFd};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 struct ChangingAlignment {
     inner: LocalFileBlockDevice,
     alignment: AtomicUsize,
+    fail_flush: AtomicBool,
 }
 impl AsFd for ChangingAlignment {
     fn as_fd(&self) -> BorrowedFd<'_> {
@@ -46,6 +47,9 @@ impl BlockDevice for ChangingAlignment {
         self.inner.write_at(offset, buffer)
     }
     fn flush(&self) -> Result<()> {
+        if self.fail_flush.load(Ordering::Relaxed) {
+            return Err(rvvdk_core::Error::Io(std::io::Error::from_raw_os_error(5)));
+        }
         self.inner.flush()
     }
 }
@@ -69,6 +73,7 @@ fn fixture() -> (RawDisk<ChangingAlignment>, RawDisk<ChangingAlignment>) {
         RawDisk::new(ChangingAlignment {
             inner,
             alignment: AtomicUsize::new(1),
+            fail_flush: AtomicBool::new(false),
         })
     };
     (wrap(source), wrap(destination))
@@ -162,4 +167,37 @@ fn native_preparation_refreshes_both_backend_alignments_on_every_execution() {
     let mut actual = [0; 16384];
     destination.device().read_exact_at(0, &mut actual).unwrap();
     assert_eq!(actual, [0x5a; 16384]);
+}
+
+#[test]
+fn native_flush_failure_keeps_completed_counts_and_suppresses_final_observation() {
+    let (source, destination) = fixture();
+    destination
+        .device()
+        .fail_flush
+        .store(true, Ordering::Relaxed);
+    let mover = native(CopyOptions::new(4096).unwrap());
+    let plan = mover
+        .plan_raw_with_destination(&source, &destination)
+        .unwrap();
+    let callbacks = Cell::new(0);
+    let error = mover
+        .execute_raw_plan_with_observer(&plan, &source, &destination, &|_: &ProgressSnapshot| {
+            callbacks.set(callbacks.get() + 1)
+        })
+        .unwrap_err();
+    let f = error.copy_failure().unwrap();
+    assert_eq!(f.backend, "io_uring");
+    assert_eq!(f.operation, rvvdk_core::CopyOperation::Flush);
+    assert_eq!(
+        (f.progress.bytes_read, f.progress.bytes_written),
+        (16384, 16384)
+    );
+    assert_eq!(
+        f.progress.extents_completed,
+        Some(plan.extent_count() as u64)
+    );
+    assert!(!f.progress.unconfirmed_io);
+    assert_eq!(callbacks.get(), 1);
+    assert!(matches!(&f.cause, rvvdk_core::Error::Io(e) if e.raw_os_error() == Some(5)));
 }

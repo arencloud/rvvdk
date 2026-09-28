@@ -596,13 +596,77 @@ execution uses the executing mover's current native options; plans retain their
 selected backend. Low-level native APIs and copy/flush contracts are unchanged.
 PERF.0 and R1.2/R1.3 controlled-runner follow-ups remain open.
 
+## R1.5 — Contextual failures and confirmed partial progress
+
+Date: 2026-09-29. Baseline: `8adfabd` (R1.4). Scope: typed failure context and
+conservative progress accounting for sequential, concurrent, and native copies.
+
+Implementation sequence:
+
+1. Added core CopyOperation, CopyProgress, CopyFailure, and boxed
+   Error::CopyExecution. Error::copy_failure finds context through native cleanup
+   wrappers; the standard source chain retains the underlying core/OS cause.
+2. Separated InvalidCopyConfiguration, StaleCopyPlan, and live EndpointChanged
+   preflight errors from CorruptMetadata. Invalid extent topology remains corrupt
+   metadata; numeric/capacity/preflight variants retain their existing forms.
+3. Sequential execution captures the attempted block/sparse operation and completed
+   counters. A fully read block counts as read even when its write fails. Failed
+   opaque backend calls are marked as possibly having additional uncounted I/O.
+4. Workers retain their counters on failure and aggregate after all workers join.
+   Preserve the first recorded cause and uncertainty from later worker failures.
+   No per-block counter atomics were added; the existing cancellation/shutdown
+   behavior and buffer return guarantees remain.
+5. Native range copying retains observed CQE progress before leaving the pipeline.
+   Positive short transfers count confirmed bytes without falsely completing a
+   block. Sparse/extent execution adds prior completed extents. Shutdown preserves
+   the original failure and unconfirmed-operation diagnostic. Engine ownership
+   implementation is unchanged; cleanup I/O can remain outside the lower bounds.
+6. Added flush context for all executors. Failure retains complete payload
+   counters and suppresses final success observation; counters never imply
+   durability, rollback, or a contiguous resume point.
+7. Added ten tests covering errno/source chains, partial writes, sequential
+   operation/range/counters, worker aggregation after joining, later uncertainty,
+   native short I/O/buffer return, native sparse/fallback errors, cleanup chains,
+   typed plan rejection, and threaded/native flush failures.
+8. Updated existing error-shape assertions to inspect the original cause inside
+   copy context while preserving worker shutdown and no-retry guarantees.
+   Measured ten unchanged success-path harness profiles with isolated builds,
+   retained all pairs, and repeated a variable four-worker sparse profile.
+
+Validation: **294 workspace tests passed** (ten new), formatting, strict
+all-target Clippy, and core/datamover library compilation for
+`wasm32-unknown-unknown`. The portability result is a compile check, not runtime
+qualification. Exact commands, samples, and performance disposition are in the
+[R1.5 report](benchmark-results/2026-09-29-r15/README.md).
+
+Performance disposition: complete RAW copy medians are +0.14%/+0.28%, and all
+main aggregate changes stay within −3.05% to +2.18%. Four-worker mixed sparse
+copying remains variable: +19.60% in one main pair and +16.44% in one longer
+repeat, despite aggregates +0.10%/−2.93%. A same-baseline-binary control is tighter
+(−2.59%/−0.02%/−0.53%). Accept functionality provisionally; retain this as a PERF.0
+investigation, including possible code/scheduling effects. Do not dismiss it as
+host noise or declare qualification complete.
+
+Limits and migration: payload errors now carry a CopyExecution wrapper; callers
+matching raw Io/Unsupported errors must inspect the cause/source chain. Error
+counters are confirmed lower bounds. Failed backend calls and native shutdown
+can perform additional I/O; worker errors do not identify fully completed
+extents. Unknown native completion identity is reported at the attempted range
+level. Panics, cancellation, terminal lifecycle tags, durable checkpoints, and
+full native runtime preparation are outside this step.
+[The error contract](copy-errors.md) records these boundaries. PERF.0 and prior
+controlled-runner performance follow-ups remain open.
+
 ## Next session
 
-Start **R1.5**: define contextual copy failures with operation, range, backend,
-underlying cause, and partial progress. Distinguish invalid configuration and
-stale plans from corrupt source metadata. Preserve rejection-before-observation,
-existing success semantics, and performance measurement at public call boundaries.
-Then complete the total memory-budget contract before R2 native/sparse work.
+Start **R1.6**: define and enforce a total copy memory budget covering buffer
+pools, worker/native queue entries, and extent metadata. Account for the logical
+plan, live extent revalidation, concurrent scheduling, and native plan copies;
+keep the Vec extent API without claiming fragmentation-independent total memory.
+Document what is budgeted versus external backend/kernel memory.
 
-Continue tracking benchmark evidence and committing each completed step.
-ESXi is still unnecessary; request the 60-day trial only when V0 is ready.
+Carry the R1.5 four-worker mixed sparse variability and prior PERF.0 issues into
+controlled-runner qualification. Preserve failure progress, rejection-before-observation where currently
+guaranteed, and measured success-path performance. Continue tracking benchmark
+evidence and committing each completed step. ESXi is still unnecessary; request
+the 60-day trial only when V0 is ready.

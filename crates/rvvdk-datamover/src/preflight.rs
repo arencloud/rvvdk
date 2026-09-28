@@ -79,7 +79,7 @@ fn source_size(source_info: CopyEndpoint, length: u64) -> Result<()> {
     if source_info.size != length {
         return Err(context(
             "source",
-            Error::CorruptMetadata(format!(
+            Error::EndpointChanged(format!(
                 "source size changed: expected={length}, current={}",
                 source_info.size
             )),

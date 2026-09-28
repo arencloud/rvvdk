@@ -2,8 +2,8 @@
 
 ## Status
 
-Accepted for R1.1 and extended through R1.4, 2026-09-28. Full native runtime
-preparation and contextual errors remain follow-up work. Supersedes the Linux RAW bounds of ADR-0019/0024; preserves the
+Accepted for R1.1, extended through R1.5 on 2026-09-29. Full native runtime
+preparation remains follow-up work. Supersedes the Linux RAW bounds of ADR-0019/0024; preserves the
 validation contract of ADR-0025.
 
 ## Context
@@ -64,9 +64,9 @@ Plans remain in-memory structural records, not serialized snapshot identities.
   ADR-0026. R1.2 consolidates policy and sequential loops as recorded below.
 - Initial progress follows endpoint and structural checks. Final progress follows
   successful flush. Concurrent/native execution still emits only initial/final
-  progress; partial-error reporting and cancellation remain future work.
-- R1.3 shares local descriptor inspections. Total memory budgets and contextual
-  errors remain open. Point-in-time preflight cannot stabilize mappings or contents.
+  progress. R1.5 adds partial-error counters; cancellation remains future work.
+- R1.3 shares local descriptor inspections and R1.5 adds contextual errors. Total
+  memory budgets remain open. Point-in-time preflight cannot stabilize mappings or contents.
 
 ## Validation
 
@@ -152,3 +152,18 @@ Seven new tests cover selection/provenance and preparation boundaries. Three
 behavioral regressions fail on the baseline solely because it emits one callback
 before rejection, and pass on the candidate. See the
 [R1.4 evidence](../benchmark-results/2026-09-28-r14/README.md).
+
+
+## R1.5 — Execution failures, 2026-09-29
+
+Accept boxed CopyFailure in the existing core Error/Result contract, rather than
+introducing a parallel set of copy entry points. It preserves executor,
+operation/range, original cause, and confirmed lower-bound counters. Aggregate
+worker progress only after joining; retain the first error. Native cleanup may
+leave additional uncounted I/O and retains its existing ownership guarantees.
+
+Success signatures remain unchanged; callers matching raw payload errors must
+inspect the underlying cause inside execution context. Validation errors now
+separate stale/configuration/endpoint changes from malformed metadata.
+The [error contract](../copy-errors.md) defines the accepted scope. Failure
+counters do not imply durability, cancellation, resumability, or atomic rollback.

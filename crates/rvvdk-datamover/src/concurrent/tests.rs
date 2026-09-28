@@ -46,6 +46,7 @@ enum Fault {
     Read,
     Write,
     FirstWrite,
+    SecondWrite,
     Zero,
     Discard,
     Panic,
@@ -112,6 +113,14 @@ impl VirtualDisk for FaultDisk<'_> {
         Ok(buffer.len())
     }
     fn write_at(&self, offset: u64, buffer: &[u8]) -> Result<usize> {
+        if self.fault == Fault::SecondWrite {
+            self.gate.unwrap().wait();
+            return if offset == 0 {
+                Ok(buffer.len())
+            } else {
+                Err(Error::Io(std::io::Error::from_raw_os_error(13)))
+            };
+        }
         if self.fault == Fault::FirstWrite {
             if offset == 0 {
                 return FaultDisk {
@@ -146,7 +155,9 @@ impl VirtualDisk for FaultDisk<'_> {
 }
 
 fn assert_backend_error<T: std::fmt::Debug>(result: Result<T>) {
-    match result.unwrap_err() {
+    let error = result.unwrap_err();
+    let cause = &error.copy_failure().expect("copy failure context").cause;
+    match cause {
         Error::Io(error) => {
             assert_eq!(error.kind(), std::io::ErrorKind::PermissionDenied);
             assert_eq!(error.to_string(), "injected backend failure");
@@ -272,7 +283,10 @@ fn producer_error_wakes_idle_workers() {
         };
         let pool = BufferPool::new(2, BLOCK, BLOCK).unwrap();
         let result = execute(&disk, &disk, 2, 1, &pool, |_| Err(Error::Unsupported));
-        assert!(matches!(result, Err(Error::Unsupported)));
+        assert!(matches!(
+            result.unwrap_err().copy_failure().unwrap().cause,
+            Error::Unsupported
+        ));
         assert_eq!(pool.available(), 2);
     });
 }
@@ -379,4 +393,79 @@ fn successful_producer_drains_queued_work() {
         assert_eq!(stats.bytes_written, 1000 * BLOCK as u64);
         assert_eq!(pool.available(), 2);
     });
+}
+
+#[test]
+fn failed_copy_aggregates_healthy_and_failing_workers_after_join() {
+    bounded(
+        "failed_copy_aggregates_healthy_and_failing_workers_after_join",
+        || {
+            let (entered, waiting) = mpsc::channel();
+            let gate = Gate {
+                entered,
+                released: Mutex::new(false),
+                ready: Condvar::new(),
+            };
+            let source = FaultDisk {
+                fault: Fault::None,
+                gate: None,
+            };
+            let destination = FaultDisk {
+                fault: Fault::SecondWrite,
+                gate: Some(&gate),
+            };
+            let pool = BufferPool::new(2, BLOCK, BLOCK).unwrap();
+            let error = execute(&source, &destination, 2, 2, &pool, |sender| {
+                sender
+                    .send(WorkItem::new(0, BLOCK, WorkKind::Copy))
+                    .unwrap();
+                sender
+                    .send(WorkItem::new(BLOCK as u64, BLOCK, WorkKind::Copy))
+                    .unwrap();
+                waiting.recv().unwrap();
+                waiting.recv().unwrap();
+                gate.release();
+                Ok(())
+            })
+            .unwrap_err();
+            let f = error.copy_failure().unwrap();
+            assert_eq!(f.operation, CopyOperation::Write);
+            assert_eq!(f.range.unwrap().offset(), BLOCK as u64);
+            assert_eq!(
+                (
+                    f.progress.bytes_read,
+                    f.progress.bytes_written,
+                    f.progress.blocks_completed
+                ),
+                (8192, 4096, 1)
+            );
+            assert_eq!(f.progress.extents_completed, None);
+            assert!(f.progress.unconfirmed_io);
+            assert_eq!(pool.available(), 2);
+        },
+    );
+}
+
+#[test]
+fn first_producer_error_keeps_uncertainty_from_a_later_worker_failure() {
+    let failure = Failure::default();
+    failure.record(Error::Unsupported);
+    failure.record(work_failure(
+        CopyOperation::Write,
+        WorkItem::new(4096, BLOCK, WorkKind::Copy),
+        Error::WriteZero {
+            offset: 4096,
+            remaining: BLOCK,
+        },
+    ));
+    let progress = CopyProgress {
+        unconfirmed_io: failure.unconfirmed_io.load(Ordering::Relaxed),
+        ..CopyProgress::default()
+    };
+    let error =
+        crate::failure::worker_total(failure.first.into_inner().unwrap().unwrap(), progress);
+    let f = error.copy_failure().unwrap();
+    assert_eq!(f.operation, CopyOperation::Schedule);
+    assert!(matches!(f.cause, Error::Unsupported));
+    assert!(f.progress.unconfirmed_io);
 }

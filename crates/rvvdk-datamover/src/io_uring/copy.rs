@@ -1,6 +1,6 @@
 use std::os::fd::BorrowedFd;
 
-use rvvdk_core::{BufferPool, Error, Result};
+use rvvdk_core::{BufferPool, CopyOperation, CopyProgress, Error, Result};
 
 use super::validation::{validate_copy_configuration, validate_file_range};
 use super::{CompletedOperation, IoUringEngine, IoUringFile, IoUringOperationKind};
@@ -17,6 +17,26 @@ pub struct IoUringCopyStats {
 }
 
 impl IoUringCopyStats {
+    pub(crate) fn progress(&self) -> CopyProgress {
+        CopyProgress {
+            bytes_read: self.bytes_read,
+            bytes_written: self.bytes_written,
+            blocks_completed: self.blocks_completed,
+            extents_completed: Some(0),
+            ..CopyProgress::default()
+        }
+    }
+
+    #[cold]
+    fn failure(&self, operation: CopyOperation, range: Option<(u64, u64)>, error: Error) -> Error {
+        if error.copy_failure().is_some() {
+            return error;
+        }
+        let mut progress = self.progress();
+        progress.unconfirmed_io = true;
+        crate::failure::execution("io_uring", operation, range, progress, error)
+    }
+
     pub const fn bytes_read(&self) -> u64 {
         self.bytes_read
     }
@@ -168,13 +188,28 @@ pub(super) fn copy_file_range_preflighted(
 ) -> Result<IoUringCopyStats> {
     let queue_depth = options.queue_depth();
 
-    let pool = BufferPool::new(queue_depth as usize, block_size, alignment)?;
+    let setup = |operation, error| {
+        crate::failure::execution(
+            "io_uring",
+            operation,
+            Some((offset, length)),
+            CopyProgress {
+                extents_completed: Some(0),
+                ..CopyProgress::default()
+            },
+            error,
+        )
+    };
+    let pool = BufferPool::new(queue_depth as usize, block_size, alignment)
+        .map_err(|e| setup(CopyOperation::Allocate, e))?;
 
-    let mut engine = IoUringEngine::new(queue_depth)?;
+    let mut engine =
+        IoUringEngine::new(queue_depth).map_err(|e| setup(CopyOperation::NativeSetup, e))?;
 
     let context = CopyContext {
-        source_fd: IoUringFile::new(source_fd)?,
-        destination_fd: IoUringFile::new(destination_fd)?,
+        source_fd: IoUringFile::new(source_fd).map_err(|e| setup(CopyOperation::NativeSetup, e))?,
+        destination_fd: IoUringFile::new(destination_fd)
+            .map_err(|e| setup(CopyOperation::NativeSetup, e))?,
         start_offset: offset,
         length,
         block_size,
@@ -191,7 +226,10 @@ pub(super) fn copy_file_range_preflighted(
                 operations,
             })
         }
-        (Err(error), _) | (Ok(_), Err(error)) => Err(error),
+        (Err(error), _) => Err(error),
+        (Ok(stats), Err(error)) => {
+            Err(stats.failure(CopyOperation::NativeShutdown, Some((offset, length)), error))
+        }
         (Ok(stats), Ok(())) => Ok(stats),
     }
 }
@@ -213,56 +251,70 @@ fn copy_with_engine(
 
     let mut stats = IoUringCopyStats::default();
 
-    /*
-     * Fill the initial io_uring queue with reads.
-     *
-     * Each submitted read owns one BufferGuard from the pool.
-     */
-    let mut state = PipelineState::default();
+    let result = (|| {
+        /*
+         * Fill the initial io_uring queue with reads.
+         *
+         * Each submitted read owns one BufferGuard from the pool.
+         */
+        let mut state = PipelineState::default();
 
-    refill_reads(
-        engine,
-        pool,
-        context,
-        &mut state,
-        &mut stats,
-        &mut next_offset,
-        end,
-    )?;
-
-    engine.submit()?;
-
-    while state.total_in_flight() > 0 {
-        let completed = engine.wait_owned_completion()?;
-
-        match completed.kind() {
-            IoUringOperationKind::Read => {
-                process_read_completion(engine, context, &mut state, &mut stats, completed)?;
-            }
-
-            IoUringOperationKind::Write => {
-                process_write_completion(&mut state, &mut stats, completed)?;
-
-                /*
-                 * The completed write has now dropped its BufferGuard,
-                 * so one or more buffers may be available for new reads.
-                 */
-                refill_reads(
-                    engine,
-                    pool,
-                    context,
-                    &mut state,
-                    &mut stats,
-                    &mut next_offset,
-                    end,
-                )?;
-            }
-        }
-        debug_assert_eq!(state.total_in_flight(), engine.in_flight(),);
+        refill_reads(
+            engine,
+            pool,
+            context,
+            &mut state,
+            &mut stats,
+            &mut next_offset,
+            end,
+        )?;
 
         engine.submit()?;
-    }
 
+        while state.total_in_flight() > 0 {
+            let completed = engine.wait_owned_completion()?;
+
+            match completed.kind() {
+                IoUringOperationKind::Read => {
+                    let range = Some((completed.offset(), completed.length() as u64));
+                    process_read_completion(engine, context, &mut state, &mut stats, completed)
+                        .map_err(|e| stats.failure(CopyOperation::Read, range, e))?;
+                }
+
+                IoUringOperationKind::Write => {
+                    let range = Some((completed.offset(), completed.length() as u64));
+                    process_write_completion(&mut state, &mut stats, completed)
+                        .map_err(|e| stats.failure(CopyOperation::Write, range, e))?;
+
+                    /*
+                     * The completed write has now dropped its BufferGuard,
+                     * so one or more buffers may be available for new reads.
+                     */
+                    refill_reads(
+                        engine,
+                        pool,
+                        context,
+                        &mut state,
+                        &mut stats,
+                        &mut next_offset,
+                        end,
+                    )?;
+                }
+            }
+            debug_assert_eq!(state.total_in_flight(), engine.in_flight(),);
+
+            engine.submit()?;
+        }
+
+        Ok(())
+    })();
+    result.map_err(|e| {
+        stats.failure(
+            CopyOperation::NativeCompletion,
+            Some((context.start_offset, context.length)),
+            e,
+        )
+    })?;
     Ok(stats)
 }
 
@@ -279,6 +331,14 @@ fn process_read_completion(
     let expected = completed.length();
 
     let actual = completed.bytes_transferred();
+
+    stats.bytes_read = stats
+        .bytes_read
+        .checked_add(actual as u64)
+        .ok_or(Error::RangeOverflow {
+            offset: stats.bytes_read,
+            length: actual as u64,
+        })?;
 
     if actual != expected {
         let remaining = expected.checked_sub(actual).ok_or(Error::CorruptMetadata(
@@ -298,14 +358,6 @@ fn process_read_completion(
         });
     }
 
-    stats.bytes_read = stats
-        .bytes_read
-        .checked_add(actual as u64)
-        .ok_or(Error::RangeOverflow {
-            offset: stats.bytes_read,
-            length: actual as u64,
-        })?;
-
     /*
      * Transfer ownership of the exact same BufferGuard from the
      * completed source read into the destination write.
@@ -314,7 +366,9 @@ fn process_read_completion(
      */
     let buffer = completed.into_buffer();
 
-    engine.submit_owned_write(&context.destination_fd, offset, actual, buffer)?;
+    engine
+        .submit_owned_write(&context.destination_fd, offset, actual, buffer)
+        .map_err(|e| stats.failure(CopyOperation::Write, Some((offset, actual as u64)), e))?;
 
     state.write_submitted();
 
@@ -335,14 +389,6 @@ fn process_write_completion(
 
     let actual = completed.bytes_transferred();
 
-    if actual != expected {
-        return Err(Error::ShortWrite {
-            offset,
-            expected,
-            actual,
-        });
-    }
-
     stats.bytes_written =
         stats
             .bytes_written
@@ -351,6 +397,14 @@ fn process_write_completion(
                 offset: stats.bytes_written,
                 length: actual as u64,
             })?;
+
+    if actual != expected {
+        return Err(Error::ShortWrite {
+            offset,
+            expected,
+            actual,
+        });
+    }
 
     stats.blocks_completed = stats
         .blocks_completed
@@ -380,7 +434,9 @@ fn submit_read(
 ) -> Result<()> {
     let buffer = pool.acquire();
 
-    engine.submit_owned_read(source_fd, offset, length, buffer)?;
+    engine
+        .submit_owned_read(source_fd, offset, length, buffer)
+        .map_err(|e| stats.failure(CopyOperation::Read, Some((offset, length as u64)), e))?;
 
     state.read_submitted();
 
@@ -448,6 +504,90 @@ fn refill_reads(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pipeline_error_preserves_confirmed_blocks_and_short_reads() {
+        use std::os::fd::AsFd;
+        use std::os::unix::fs::FileExt;
+        for source_size in [1024, 4096] {
+            let path = std::env::temp_dir().join(format!(
+                "rvvdk-r15-native-{}-{source_size}",
+                std::process::id()
+            ));
+            std::fs::write(&path, vec![0x5a; source_size]).unwrap();
+            let source = std::fs::File::open(&path).unwrap();
+            std::fs::remove_file(&path).unwrap();
+            std::fs::write(&path, [0xa5; 8192]).unwrap();
+            let destination = std::fs::File::options()
+                .read(true)
+                .write(true)
+                .open(&path)
+                .unwrap();
+            std::fs::remove_file(path).unwrap();
+            let pool = BufferPool::new(1, 4096, 4096).unwrap();
+            let mut engine = IoUringEngine::new(1).unwrap();
+            let context = CopyContext {
+                source_fd: IoUringFile::new(source.as_fd()).unwrap(),
+                destination_fd: IoUringFile::new(destination.as_fd()).unwrap(),
+                start_offset: 0,
+                length: 8192,
+                block_size: 4096,
+                queue_depth: 1,
+                read_window: 1,
+            };
+            // Deliberately bypass public capacity preflight to exercise a runtime EOF.
+            let error = copy_with_engine(&mut engine, &pool, &context).unwrap_err();
+            engine.shutdown().unwrap();
+            assert_eq!(pool.available(), 1);
+            let f = error.copy_failure().unwrap();
+            assert_eq!(f.operation, CopyOperation::Read);
+            assert_eq!(f.progress.bytes_read, source_size as u64);
+            assert_eq!(
+                f.progress.bytes_written,
+                if source_size == 4096 { 4096 } else { 0 }
+            );
+            assert_eq!(f.progress.blocks_completed, u64::from(source_size == 4096));
+            assert!(f.progress.unconfirmed_io);
+            assert!(matches!(f.cause, Error::UnexpectedEof { .. }));
+            let mut tail = [0; 4096];
+            destination.read_exact_at(&mut tail, 4096).unwrap();
+            assert_eq!(tail, [0xa5; 4096]);
+        }
+    }
+
+    #[test]
+    fn short_write_cqe_counts_confirmed_bytes_without_counting_a_complete_block() {
+        use super::super::operation::InFlightOperation;
+        use std::os::fd::AsFd;
+        let file = std::fs::File::open("/dev/null").unwrap();
+        let file = IoUringFile::new(file.as_fd()).unwrap();
+        let pool = BufferPool::new(1, 4096, 4096).unwrap();
+        let completed = InFlightOperation::new(
+            file,
+            1,
+            IoUringOperationKind::Write,
+            4096,
+            4096,
+            pool.acquire(),
+        )
+        .complete(256);
+        let mut state = PipelineState {
+            writes_in_flight: 1,
+            ..PipelineState::default()
+        };
+        let mut stats = IoUringCopyStats {
+            bytes_written: 4096,
+            blocks_completed: 1,
+            ..IoUringCopyStats::default()
+        };
+        assert!(matches!(
+            process_write_completion(&mut state, &mut stats, completed),
+            Err(Error::ShortWrite { actual: 256, .. })
+        ));
+        assert_eq!(stats.bytes_written, 4352);
+        assert_eq!(stats.blocks_completed, 1);
+        assert_eq!(pool.available(), 1);
+    }
 
     #[test]
     fn request_length_returns_full_block() {

@@ -1,0 +1,1655 @@
+diff --git a/crates/rvvdk-core/src/error.rs b/crates/rvvdk-core/src/error.rs
+index b552c94..1b75c5a 100644
+--- a/crates/rvvdk-core/src/error.rs
++++ b/crates/rvvdk-core/src/error.rs
+@@ -4,6 +4,18 @@ pub type Result<T> = std::result::Result<T, Error>;
+ 
+ #[derive(Debug, Error)]
+ pub enum Error {
++    #[error("{0}")]
++    CopyExecution(#[source] Box<crate::CopyFailure>),
++
++    #[error("invalid copy configuration: {0}")]
++    InvalidCopyConfiguration(String),
++
++    #[error("copy endpoint changed: {0}")]
++    EndpointChanged(String),
++
++    #[error("stale copy plan: {0}")]
++    StaleCopyPlan(String),
++
+     #[error("{endpoint} preflight failed: {source}")]
+     EndpointPreflight {
+         endpoint: &'static str,
+@@ -132,3 +144,15 @@ pub enum Error {
+     #[error("corrupt metadata: {0}")]
+     CorruptMetadata(String),
+ }
++
++impl Error {
++    /// Find copy execution context, including when native cleanup also failed.
++    pub fn copy_failure(&self) -> Option<&crate::CopyFailure> {
++        match self {
++            Self::CopyExecution(failure) => Some(failure),
++            Self::IoUringCleanup { original, .. } => original.copy_failure(),
++            Self::EndpointPreflight { source, .. } => source.copy_failure(),
++            _ => None,
++        }
++    }
++}
+diff --git a/crates/rvvdk-core/src/lib.rs b/crates/rvvdk-core/src/lib.rs
+index f0a87a4..f3e9ada 100644
+--- a/crates/rvvdk-core/src/lib.rs
++++ b/crates/rvvdk-core/src/lib.rs
+@@ -2,6 +2,7 @@ pub mod block_device;
+ pub mod buffer;
+ pub mod buffer_pool;
+ pub mod capabilities;
++pub mod copy_failure;
+ pub mod endpoint;
+ pub mod error;
+ pub mod extent;
+@@ -15,6 +16,7 @@ pub use block_device::BlockDevice;
+ pub use buffer::AlignedBuffer;
+ pub use buffer_pool::{BufferGuard, BufferPool};
+ pub use capabilities::Capabilities;
++pub use copy_failure::{CopyFailure, CopyOperation, CopyProgress};
+ pub use endpoint::{CopyEndpoint, EndpointIdentity};
+ pub use error::{Error, Result};
+ pub use extent::{Extent, ExtentKind};
+diff --git a/crates/rvvdk-datamover/src/concurrent.rs b/crates/rvvdk-datamover/src/concurrent.rs
+index f50a107..c5dfb21 100644
+--- a/crates/rvvdk-datamover/src/concurrent.rs
++++ b/crates/rvvdk-datamover/src/concurrent.rs
+@@ -4,7 +4,7 @@ use std::sync::{
+     mpsc::{Receiver, SyncSender, sync_channel},
+ };
+ 
+-use rvvdk_core::{BufferPool, Error, ExtentKind, Result, VirtualDisk};
++use rvvdk_core::{BufferPool, CopyOperation, CopyProgress, Error, ExtentKind, Result, VirtualDisk};
+ 
+ use crate::policy::{self, Operation};
+ use crate::work::{WorkItem, WorkKind};
+@@ -15,11 +15,18 @@ mod tests;
+ #[derive(Default)]
+ struct Failure {
+     stopped: AtomicBool,
++    unconfirmed_io: AtomicBool,
+     first: Mutex<Option<Error>>,
+ }
+ 
+ impl Failure {
+     fn record(&self, error: Error) {
++        if error
++            .copy_failure()
++            .is_some_and(|f| f.progress.unconfirmed_io)
++        {
++            self.unconfirmed_io.store(true, Ordering::Relaxed);
++        }
+         let mut first = self.first.lock().unwrap_or_else(|p| p.into_inner());
+         if first.is_none() {
+             *first = Some(error);
+@@ -43,6 +50,34 @@ pub(crate) struct WorkerStats {
+     pub(crate) blocks_copied: u64,
+ }
+ 
++impl WorkerStats {
++    pub(crate) fn progress(&self) -> CopyProgress {
++        CopyProgress {
++            bytes_read: self.bytes_read,
++            bytes_written: self.bytes_written,
++            bytes_zeroed: self.bytes_zeroed,
++            bytes_discarded: self.bytes_discarded,
++            blocks_completed: self.blocks_copied,
++            extents_completed: None,
++            unconfirmed_io: false,
++        }
++    }
++}
++
++#[cold]
++fn work_failure(operation: CopyOperation, work: WorkItem, error: Error) -> Error {
++    crate::failure::execution(
++        "threaded",
++        operation,
++        Some((work.offset(), work.length() as u64)),
++        CopyProgress {
++            unconfirmed_io: true,
++            ..CopyProgress::default()
++        },
++        error,
++    )
++}
++
+ pub(crate) fn execute<S, D, P>(
+     source: &S,
+     destination: &D,
+@@ -70,15 +105,13 @@ where
+             let results = &results;
+             let failure = &failure;
+ 
+-            scope.spawn(
+-                move || match run_worker(source, destination, &receiver, pool, failure) {
+-                    Ok(stats) => results
+-                        .lock()
+-                        .unwrap_or_else(|poisoned| poisoned.into_inner())
+-                        .push(stats),
+-                    Err(error) => failure.record(error),
+-                },
+-            );
++            scope.spawn(move || {
++                let stats = run_worker(source, destination, &receiver, pool, failure);
++                results
++                    .lock()
++                    .unwrap_or_else(|p| p.into_inner())
++                    .push(stats);
++            });
+         }
+ 
+         // Only workers retain receivers. Their exit disconnects the channel and
+@@ -94,14 +127,6 @@ where
+         drop(sender);
+     });
+ 
+-    if let Some(error) = failure
+-        .first
+-        .into_inner()
+-        .unwrap_or_else(|p| p.into_inner())
+-    {
+-        return Err(error);
+-    }
+-
+     let results = results
+         .into_inner()
+         .unwrap_or_else(|poisoned| poisoned.into_inner());
+@@ -120,6 +145,15 @@ where
+         total.blocks_copied += stats.blocks_copied;
+     }
+ 
++    let mut progress = total.progress();
++    progress.unconfirmed_io = failure.unconfirmed_io.load(Ordering::Relaxed);
++    if let Some(error) = failure
++        .first
++        .into_inner()
++        .unwrap_or_else(|p| p.into_inner())
++    {
++        return Err(crate::failure::worker_total(error, progress));
++    }
+     Ok(total)
+ }
+ 
+@@ -129,7 +163,7 @@ fn run_worker<S, D>(
+     receiver: &Arc<Mutex<Receiver<WorkItem>>>,
+     pool: &BufferPool,
+     failure: &Failure,
+-) -> Result<WorkerStats>
++) -> WorkerStats
+ where
+     S: VirtualDisk + ?Sized,
+     D: VirtualDisk + ?Sized,
+@@ -156,10 +190,13 @@ where
+         if failure.is_stopped() {
+             break;
+         }
+-        process_work(source, destination, work, pool, &mut stats)?;
++        if let Err(error) = process_work(source, destination, work, pool, &mut stats) {
++            failure.record(error);
++            break;
++        }
+     }
+ 
+-    Ok(stats)
++    stats
+ }
+ 
+ fn process_work<S, D>(
+@@ -184,23 +221,31 @@ where
+ 
+             let buffer = &mut buffer.as_mut_slice()[..work.length()];
+ 
+-            source.read_exact_at(work.offset(), buffer)?;
++            source
++                .read_exact_at(work.offset(), buffer)
++                .map_err(|e| work_failure(CopyOperation::Read, work, e))?;
++            stats.bytes_read += work.length() as u64;
+ 
+-            destination.write_all_at(work.offset(), buffer)?;
++            destination
++                .write_all_at(work.offset(), buffer)
++                .map_err(|e| work_failure(CopyOperation::Write, work, e))?;
+ 
+             let length = work.length() as u64;
+ 
+-            stats.bytes_read += length;
+             stats.bytes_written += length;
+             stats.blocks_copied += 1;
+         }
+ 
+         Operation::Zero => {
+-            destination.write_zero_at(work.offset(), work.length() as u64)?;
++            destination
++                .write_zero_at(work.offset(), work.length() as u64)
++                .map_err(|e| work_failure(CopyOperation::WriteZero, work, e))?;
+             stats.bytes_zeroed += work.length() as u64;
+         }
+         Operation::Discard => {
+-            destination.discard(work.offset(), work.length() as u64)?;
++            destination
++                .discard(work.offset(), work.length() as u64)
++                .map_err(|e| work_failure(CopyOperation::Discard, work, e))?;
+             stats.bytes_discarded += work.length() as u64;
+         }
+         Operation::WriteZero => write_zero_fallback(destination, work, pool, stats)?,
+@@ -223,7 +268,9 @@ where
+ 
+     buffer.fill(0);
+ 
+-    destination.write_all_at(work.offset(), buffer)?;
++    destination
++        .write_all_at(work.offset(), buffer)
++        .map_err(|e| work_failure(CopyOperation::Write, work, e))?;
+ 
+     stats.bytes_written += work.length() as u64;
+ 
+diff --git a/crates/rvvdk-datamover/src/concurrent/tests.rs b/crates/rvvdk-datamover/src/concurrent/tests.rs
+index 156aa82..dca1102 100644
+--- a/crates/rvvdk-datamover/src/concurrent/tests.rs
++++ b/crates/rvvdk-datamover/src/concurrent/tests.rs
+@@ -46,6 +46,7 @@ enum Fault {
+     Read,
+     Write,
+     FirstWrite,
++    SecondWrite,
+     Zero,
+     Discard,
+     Panic,
+@@ -112,6 +113,14 @@ impl VirtualDisk for FaultDisk<'_> {
+         Ok(buffer.len())
+     }
+     fn write_at(&self, offset: u64, buffer: &[u8]) -> Result<usize> {
++        if self.fault == Fault::SecondWrite {
++            self.gate.unwrap().wait();
++            return if offset == 0 {
++                Ok(buffer.len())
++            } else {
++                Err(Error::Io(std::io::Error::from_raw_os_error(13)))
++            };
++        }
+         if self.fault == Fault::FirstWrite {
+             if offset == 0 {
+                 return FaultDisk {
+@@ -146,7 +155,9 @@ impl VirtualDisk for FaultDisk<'_> {
+ }
+ 
+ fn assert_backend_error<T: std::fmt::Debug>(result: Result<T>) {
+-    match result.unwrap_err() {
++    let error = result.unwrap_err();
++    let cause = &error.copy_failure().expect("copy failure context").cause;
++    match cause {
+         Error::Io(error) => {
+             assert_eq!(error.kind(), std::io::ErrorKind::PermissionDenied);
+             assert_eq!(error.to_string(), "injected backend failure");
+@@ -272,7 +283,10 @@ fn producer_error_wakes_idle_workers() {
+         };
+         let pool = BufferPool::new(2, BLOCK, BLOCK).unwrap();
+         let result = execute(&disk, &disk, 2, 1, &pool, |_| Err(Error::Unsupported));
+-        assert!(matches!(result, Err(Error::Unsupported)));
++        assert!(matches!(
++            result.unwrap_err().copy_failure().unwrap().cause,
++            Error::Unsupported
++        ));
+         assert_eq!(pool.available(), 2);
+     });
+ }
+@@ -380,3 +394,78 @@ fn successful_producer_drains_queued_work() {
+         assert_eq!(pool.available(), 2);
+     });
+ }
++
++#[test]
++fn failed_copy_aggregates_healthy_and_failing_workers_after_join() {
++    bounded(
++        "failed_copy_aggregates_healthy_and_failing_workers_after_join",
++        || {
++            let (entered, waiting) = mpsc::channel();
++            let gate = Gate {
++                entered,
++                released: Mutex::new(false),
++                ready: Condvar::new(),
++            };
++            let source = FaultDisk {
++                fault: Fault::None,
++                gate: None,
++            };
++            let destination = FaultDisk {
++                fault: Fault::SecondWrite,
++                gate: Some(&gate),
++            };
++            let pool = BufferPool::new(2, BLOCK, BLOCK).unwrap();
++            let error = execute(&source, &destination, 2, 2, &pool, |sender| {
++                sender
++                    .send(WorkItem::new(0, BLOCK, WorkKind::Copy))
++                    .unwrap();
++                sender
++                    .send(WorkItem::new(BLOCK as u64, BLOCK, WorkKind::Copy))
++                    .unwrap();
++                waiting.recv().unwrap();
++                waiting.recv().unwrap();
++                gate.release();
++                Ok(())
++            })
++            .unwrap_err();
++            let f = error.copy_failure().unwrap();
++            assert_eq!(f.operation, CopyOperation::Write);
++            assert_eq!(f.range.unwrap().offset(), BLOCK as u64);
++            assert_eq!(
++                (
++                    f.progress.bytes_read,
++                    f.progress.bytes_written,
++                    f.progress.blocks_completed
++                ),
++                (8192, 4096, 1)
++            );
++            assert_eq!(f.progress.extents_completed, None);
++            assert!(f.progress.unconfirmed_io);
++            assert_eq!(pool.available(), 2);
++        },
++    );
++}
++
++#[test]
++fn first_producer_error_keeps_uncertainty_from_a_later_worker_failure() {
++    let failure = Failure::default();
++    failure.record(Error::Unsupported);
++    failure.record(work_failure(
++        CopyOperation::Write,
++        WorkItem::new(4096, BLOCK, WorkKind::Copy),
++        Error::WriteZero {
++            offset: 4096,
++            remaining: BLOCK,
++        },
++    ));
++    let progress = CopyProgress {
++        unconfirmed_io: failure.unconfirmed_io.load(Ordering::Relaxed),
++        ..CopyProgress::default()
++    };
++    let error =
++        crate::failure::worker_total(failure.first.into_inner().unwrap().unwrap(), progress);
++    let f = error.copy_failure().unwrap();
++    assert_eq!(f.operation, CopyOperation::Schedule);
++    assert!(matches!(f.cause, Error::Unsupported));
++    assert!(f.progress.unconfirmed_io);
++}
+diff --git a/crates/rvvdk-datamover/src/io_uring/copy.rs b/crates/rvvdk-datamover/src/io_uring/copy.rs
+index 0b67076..bd109f9 100644
+--- a/crates/rvvdk-datamover/src/io_uring/copy.rs
++++ b/crates/rvvdk-datamover/src/io_uring/copy.rs
+@@ -1,6 +1,6 @@
+ use std::os::fd::BorrowedFd;
+ 
+-use rvvdk_core::{BufferPool, Error, Result};
++use rvvdk_core::{BufferPool, CopyOperation, CopyProgress, Error, Result};
+ 
+ use super::validation::{validate_copy_configuration, validate_file_range};
+ use super::{CompletedOperation, IoUringEngine, IoUringFile, IoUringOperationKind};
+@@ -17,6 +17,26 @@ pub struct IoUringCopyStats {
+ }
+ 
+ impl IoUringCopyStats {
++    pub(crate) fn progress(&self) -> CopyProgress {
++        CopyProgress {
++            bytes_read: self.bytes_read,
++            bytes_written: self.bytes_written,
++            blocks_completed: self.blocks_completed,
++            extents_completed: Some(0),
++            ..CopyProgress::default()
++        }
++    }
++
++    #[cold]
++    fn failure(&self, operation: CopyOperation, range: Option<(u64, u64)>, error: Error) -> Error {
++        if error.copy_failure().is_some() {
++            return error;
++        }
++        let mut progress = self.progress();
++        progress.unconfirmed_io = true;
++        crate::failure::execution("io_uring", operation, range, progress, error)
++    }
++
+     pub const fn bytes_read(&self) -> u64 {
+         self.bytes_read
+     }
+@@ -168,13 +188,28 @@ pub(super) fn copy_file_range_preflighted(
+ ) -> Result<IoUringCopyStats> {
+     let queue_depth = options.queue_depth();
+ 
+-    let pool = BufferPool::new(queue_depth as usize, block_size, alignment)?;
++    let setup = |operation, error| {
++        crate::failure::execution(
++            "io_uring",
++            operation,
++            Some((offset, length)),
++            CopyProgress {
++                extents_completed: Some(0),
++                ..CopyProgress::default()
++            },
++            error,
++        )
++    };
++    let pool = BufferPool::new(queue_depth as usize, block_size, alignment)
++        .map_err(|e| setup(CopyOperation::Allocate, e))?;
+ 
+-    let mut engine = IoUringEngine::new(queue_depth)?;
++    let mut engine =
++        IoUringEngine::new(queue_depth).map_err(|e| setup(CopyOperation::NativeSetup, e))?;
+ 
+     let context = CopyContext {
+-        source_fd: IoUringFile::new(source_fd)?,
+-        destination_fd: IoUringFile::new(destination_fd)?,
++        source_fd: IoUringFile::new(source_fd).map_err(|e| setup(CopyOperation::NativeSetup, e))?,
++        destination_fd: IoUringFile::new(destination_fd)
++            .map_err(|e| setup(CopyOperation::NativeSetup, e))?,
+         start_offset: offset,
+         length,
+         block_size,
+@@ -191,7 +226,10 @@ pub(super) fn copy_file_range_preflighted(
+                 operations,
+             })
+         }
+-        (Err(error), _) | (Ok(_), Err(error)) => Err(error),
++        (Err(error), _) => Err(error),
++        (Ok(stats), Err(error)) => {
++            Err(stats.failure(CopyOperation::NativeShutdown, Some((offset, length)), error))
++        }
+         (Ok(stats), Ok(())) => Ok(stats),
+     }
+ }
+@@ -213,56 +251,70 @@ fn copy_with_engine(
+ 
+     let mut stats = IoUringCopyStats::default();
+ 
+-    /*
+-     * Fill the initial io_uring queue with reads.
+-     *
+-     * Each submitted read owns one BufferGuard from the pool.
+-     */
+-    let mut state = PipelineState::default();
+-
+-    refill_reads(
+-        engine,
+-        pool,
+-        context,
+-        &mut state,
+-        &mut stats,
+-        &mut next_offset,
+-        end,
+-    )?;
+-
+-    engine.submit()?;
+-
+-    while state.total_in_flight() > 0 {
+-        let completed = engine.wait_owned_completion()?;
+-
+-        match completed.kind() {
+-            IoUringOperationKind::Read => {
+-                process_read_completion(engine, context, &mut state, &mut stats, completed)?;
+-            }
++    let result = (|| {
++        /*
++         * Fill the initial io_uring queue with reads.
++         *
++         * Each submitted read owns one BufferGuard from the pool.
++         */
++        let mut state = PipelineState::default();
+ 
+-            IoUringOperationKind::Write => {
+-                process_write_completion(&mut state, &mut stats, completed)?;
+-
+-                /*
+-                 * The completed write has now dropped its BufferGuard,
+-                 * so one or more buffers may be available for new reads.
+-                 */
+-                refill_reads(
+-                    engine,
+-                    pool,
+-                    context,
+-                    &mut state,
+-                    &mut stats,
+-                    &mut next_offset,
+-                    end,
+-                )?;
+-            }
+-        }
+-        debug_assert_eq!(state.total_in_flight(), engine.in_flight(),);
++        refill_reads(
++            engine,
++            pool,
++            context,
++            &mut state,
++            &mut stats,
++            &mut next_offset,
++            end,
++        )?;
+ 
+         engine.submit()?;
+-    }
+ 
++        while state.total_in_flight() > 0 {
++            let completed = engine.wait_owned_completion()?;
++
++            match completed.kind() {
++                IoUringOperationKind::Read => {
++                    let range = Some((completed.offset(), completed.length() as u64));
++                    process_read_completion(engine, context, &mut state, &mut stats, completed)
++                        .map_err(|e| stats.failure(CopyOperation::Read, range, e))?;
++                }
++
++                IoUringOperationKind::Write => {
++                    let range = Some((completed.offset(), completed.length() as u64));
++                    process_write_completion(&mut state, &mut stats, completed)
++                        .map_err(|e| stats.failure(CopyOperation::Write, range, e))?;
++
++                    /*
++                     * The completed write has now dropped its BufferGuard,
++                     * so one or more buffers may be available for new reads.
++                     */
++                    refill_reads(
++                        engine,
++                        pool,
++                        context,
++                        &mut state,
++                        &mut stats,
++                        &mut next_offset,
++                        end,
++                    )?;
++                }
++            }
++            debug_assert_eq!(state.total_in_flight(), engine.in_flight(),);
++
++            engine.submit()?;
++        }
++
++        Ok(())
++    })();
++    result.map_err(|e| {
++        stats.failure(
++            CopyOperation::NativeCompletion,
++            Some((context.start_offset, context.length)),
++            e,
++        )
++    })?;
+     Ok(stats)
+ }
+ 
+@@ -280,6 +332,14 @@ fn process_read_completion(
+ 
+     let actual = completed.bytes_transferred();
+ 
++    stats.bytes_read = stats
++        .bytes_read
++        .checked_add(actual as u64)
++        .ok_or(Error::RangeOverflow {
++            offset: stats.bytes_read,
++            length: actual as u64,
++        })?;
++
+     if actual != expected {
+         let remaining = expected.checked_sub(actual).ok_or(Error::CorruptMetadata(
+             "io_uring read completion exceeded requested length".into(),
+@@ -298,14 +358,6 @@ fn process_read_completion(
+         });
+     }
+ 
+-    stats.bytes_read = stats
+-        .bytes_read
+-        .checked_add(actual as u64)
+-        .ok_or(Error::RangeOverflow {
+-            offset: stats.bytes_read,
+-            length: actual as u64,
+-        })?;
+-
+     /*
+      * Transfer ownership of the exact same BufferGuard from the
+      * completed source read into the destination write.
+@@ -314,7 +366,9 @@ fn process_read_completion(
+      */
+     let buffer = completed.into_buffer();
+ 
+-    engine.submit_owned_write(&context.destination_fd, offset, actual, buffer)?;
++    engine
++        .submit_owned_write(&context.destination_fd, offset, actual, buffer)
++        .map_err(|e| stats.failure(CopyOperation::Write, Some((offset, actual as u64)), e))?;
+ 
+     state.write_submitted();
+ 
+@@ -335,14 +389,6 @@ fn process_write_completion(
+ 
+     let actual = completed.bytes_transferred();
+ 
+-    if actual != expected {
+-        return Err(Error::ShortWrite {
+-            offset,
+-            expected,
+-            actual,
+-        });
+-    }
+-
+     stats.bytes_written =
+         stats
+             .bytes_written
+@@ -352,6 +398,14 @@ fn process_write_completion(
+                 length: actual as u64,
+             })?;
+ 
++    if actual != expected {
++        return Err(Error::ShortWrite {
++            offset,
++            expected,
++            actual,
++        });
++    }
++
+     stats.blocks_completed = stats
+         .blocks_completed
+         .checked_add(1)
+@@ -380,7 +434,9 @@ fn submit_read(
+ ) -> Result<()> {
+     let buffer = pool.acquire();
+ 
+-    engine.submit_owned_read(source_fd, offset, length, buffer)?;
++    engine
++        .submit_owned_read(source_fd, offset, length, buffer)
++        .map_err(|e| stats.failure(CopyOperation::Read, Some((offset, length as u64)), e))?;
+ 
+     state.read_submitted();
+ 
+@@ -449,6 +505,90 @@ fn refill_reads(
+ mod tests {
+     use super::*;
+ 
++    #[test]
++    fn pipeline_error_preserves_confirmed_blocks_and_short_reads() {
++        use std::os::fd::AsFd;
++        use std::os::unix::fs::FileExt;
++        for source_size in [1024, 4096] {
++            let path = std::env::temp_dir().join(format!(
++                "rvvdk-r15-native-{}-{source_size}",
++                std::process::id()
++            ));
++            std::fs::write(&path, vec![0x5a; source_size]).unwrap();
++            let source = std::fs::File::open(&path).unwrap();
++            std::fs::remove_file(&path).unwrap();
++            std::fs::write(&path, [0xa5; 8192]).unwrap();
++            let destination = std::fs::File::options()
++                .read(true)
++                .write(true)
++                .open(&path)
++                .unwrap();
++            std::fs::remove_file(path).unwrap();
++            let pool = BufferPool::new(1, 4096, 4096).unwrap();
++            let mut engine = IoUringEngine::new(1).unwrap();
++            let context = CopyContext {
++                source_fd: IoUringFile::new(source.as_fd()).unwrap(),
++                destination_fd: IoUringFile::new(destination.as_fd()).unwrap(),
++                start_offset: 0,
++                length: 8192,
++                block_size: 4096,
++                queue_depth: 1,
++                read_window: 1,
++            };
++            // Deliberately bypass public capacity preflight to exercise a runtime EOF.
++            let error = copy_with_engine(&mut engine, &pool, &context).unwrap_err();
++            engine.shutdown().unwrap();
++            assert_eq!(pool.available(), 1);
++            let f = error.copy_failure().unwrap();
++            assert_eq!(f.operation, CopyOperation::Read);
++            assert_eq!(f.progress.bytes_read, source_size as u64);
++            assert_eq!(
++                f.progress.bytes_written,
++                if source_size == 4096 { 4096 } else { 0 }
++            );
++            assert_eq!(f.progress.blocks_completed, u64::from(source_size == 4096));
++            assert!(f.progress.unconfirmed_io);
++            assert!(matches!(f.cause, Error::UnexpectedEof { .. }));
++            let mut tail = [0; 4096];
++            destination.read_exact_at(&mut tail, 4096).unwrap();
++            assert_eq!(tail, [0xa5; 4096]);
++        }
++    }
++
++    #[test]
++    fn short_write_cqe_counts_confirmed_bytes_without_counting_a_complete_block() {
++        use super::super::operation::InFlightOperation;
++        use std::os::fd::AsFd;
++        let file = std::fs::File::open("/dev/null").unwrap();
++        let file = IoUringFile::new(file.as_fd()).unwrap();
++        let pool = BufferPool::new(1, 4096, 4096).unwrap();
++        let completed = InFlightOperation::new(
++            file,
++            1,
++            IoUringOperationKind::Write,
++            4096,
++            4096,
++            pool.acquire(),
++        )
++        .complete(256);
++        let mut state = PipelineState {
++            writes_in_flight: 1,
++            ..PipelineState::default()
++        };
++        let mut stats = IoUringCopyStats {
++            bytes_written: 4096,
++            blocks_completed: 1,
++            ..IoUringCopyStats::default()
++        };
++        assert!(matches!(
++            process_write_completion(&mut state, &mut stats, completed),
++            Err(Error::ShortWrite { actual: 256, .. })
++        ));
++        assert_eq!(stats.bytes_written, 4352);
++        assert_eq!(stats.blocks_completed, 1);
++        assert_eq!(pool.available(), 1);
++    }
++
+     #[test]
+     fn request_length_returns_full_block() {
+         let length = request_length(0, 1024 * 1024, 64 * 1024).unwrap();
+diff --git a/crates/rvvdk-datamover/src/io_uring/extent_copy.rs b/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
+index 01c677b..b03c839 100644
+--- a/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
++++ b/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
+@@ -1,6 +1,6 @@
+ use std::os::fd::BorrowedFd;
+ 
+-use rvvdk_core::{Error, Extent, ExtentKind, Result, VirtualDisk};
++use rvvdk_core::{CopyOperation, CopyProgress, Error, Extent, ExtentKind, Result, VirtualDisk};
+ 
+ use crate::IoUringExecutionOptions;
+ use crate::policy::{self, Operation};
+@@ -20,6 +20,31 @@ pub struct IoUringExtentCopyStats {
+ }
+ 
+ impl IoUringExtentCopyStats {
++    pub(crate) fn progress(&self) -> CopyProgress {
++        CopyProgress {
++            bytes_read: self.bytes_read,
++            bytes_written: self.bytes_written,
++            bytes_zeroed: self.bytes_zeroed,
++            bytes_discarded: self.bytes_discarded,
++            blocks_completed: self.blocks_completed,
++            extents_completed: Some(self.extents_processed),
++            unconfirmed_io: false,
++        }
++    }
++
++    #[cold]
++    fn failure(&self, operation: CopyOperation, offset: u64, length: u64, error: Error) -> Error {
++        let mut progress = self.progress();
++        progress.unconfirmed_io = true;
++        crate::failure::execution(
++            "io_uring",
++            operation,
++            Some((offset, length)),
++            progress,
++            error,
++        )
++    }
++
+     pub const fn bytes_read(&self) -> u64 {
+         self.bytes_read
+     }
+@@ -169,7 +194,8 @@ pub fn copy_extent_plan(
+             block_size,
+             alignment,
+             options,
+-        )?;
++        )
++        .map_err(|e| crate::failure::native_prior(e, aggregate.progress()))?;
+         aggregate.add_data_extent(stats)?;
+     }
+ 
+@@ -240,17 +266,36 @@ where
+                     block_size,
+                     alignment,
+                     options,
+-                )?;
++                )
++                .map_err(|e| crate::failure::native_prior(e, aggregate.progress()))?;
+ 
+                 aggregate.add_data_extent(stats)?;
+             }
+ 
+             Operation::Zero => {
+-                destination.write_zero_at(extent.offset(), extent.length())?;
++                destination
++                    .write_zero_at(extent.offset(), extent.length())
++                    .map_err(|e| {
++                        aggregate.failure(
++                            CopyOperation::WriteZero,
++                            extent.offset(),
++                            extent.length(),
++                            e,
++                        )
++                    })?;
+                 aggregate.add_zero_extent(extent.length())?;
+             }
+             Operation::Discard => {
+-                destination.discard(extent.offset(), extent.length())?;
++                destination
++                    .discard(extent.offset(), extent.length())
++                    .map_err(|e| {
++                        aggregate.failure(
++                            CopyOperation::Discard,
++                            extent.offset(),
++                            extent.length(),
++                            e,
++                        )
++                    })?;
+                 aggregate.add_discard_extent(extent.length())?;
+             }
+             Operation::WriteZero => {
+@@ -287,7 +332,9 @@ where
+                 length: request_length_u64,
+             })?;
+ 
+-        destination.write_all_at(offset, &buffer[..request_length])?;
++        destination
++            .write_all_at(offset, &buffer[..request_length])
++            .map_err(|e| stats.failure(CopyOperation::Write, offset, request_length_u64, e))?;
+ 
+         offset = offset
+             .checked_add(request_length_u64)
+diff --git a/crates/rvvdk-datamover/src/lib.rs b/crates/rvvdk-datamover/src/lib.rs
+index bfb94cb..25dcf73 100644
+--- a/crates/rvvdk-datamover/src/lib.rs
++++ b/crates/rvvdk-datamover/src/lib.rs
+@@ -1,6 +1,7 @@
+ mod concurrent;
+ mod execution;
+ mod extent_validation;
++mod failure;
+ #[cfg(target_os = "linux")]
+ pub mod io_uring;
+ mod mover;
+diff --git a/crates/rvvdk-datamover/src/mover.rs b/crates/rvvdk-datamover/src/mover.rs
+index 9e13535..281a330 100644
+--- a/crates/rvvdk-datamover/src/mover.rs
++++ b/crates/rvvdk-datamover/src/mover.rs
+@@ -1,6 +1,6 @@
+ use std::time::Instant;
+ 
+-use rvvdk_core::{BufferPool, Error, Extent, Result, VirtualDisk};
++use rvvdk_core::{BufferPool, CopyOperation, CopyProgress, Error, Extent, Result, VirtualDisk};
+ 
+ use crate::planner::ExtentWorkIter;
+ #[cfg(target_os = "linux")]
+@@ -462,7 +462,9 @@ impl DataMover {
+             execution_options,
+         )?;
+ 
+-        destination.flush()?;
++        destination.flush().map_err(|e| {
++            crate::failure::execution("io_uring", CopyOperation::Flush, None, stats.progress(), e)
++        })?;
+ 
+         Ok(CopyReport::new(
+             ExecutionBackend::IoUring,
+@@ -500,7 +502,16 @@ impl DataMover {
+             self.options.buffer_count(),
+             self.options.block_size(),
+             self.options.buffer_alignment(),
+-        )?;
++        )
++        .map_err(|e| {
++            crate::failure::execution(
++                "threaded",
++                CopyOperation::Allocate,
++                None,
++                CopyProgress::default(),
++                e,
++            )
++        })?;
+ 
+         let stats = concurrent::execute(
+             source,
+@@ -521,7 +532,11 @@ impl DataMover {
+             },
+         )?;
+ 
+-        destination.flush()?;
++        destination.flush().map_err(|e| {
++            let mut progress = stats.progress();
++            progress.extents_completed = Some(extents.len() as u64);
++            crate::failure::execution("threaded", CopyOperation::Flush, None, progress, e)
++        })?;
+ 
+         Ok(CopyStats::new(
+             stats.bytes_read,
+diff --git a/crates/rvvdk-datamover/src/preflight.rs b/crates/rvvdk-datamover/src/preflight.rs
+index 40521b6..8fb62c7 100644
+--- a/crates/rvvdk-datamover/src/preflight.rs
++++ b/crates/rvvdk-datamover/src/preflight.rs
+@@ -79,7 +79,7 @@ fn source_size(source_info: CopyEndpoint, length: u64) -> Result<()> {
+     if source_info.size != length {
+         return Err(context(
+             "source",
+-            Error::CorruptMetadata(format!(
++            Error::EndpointChanged(format!(
+                 "source size changed: expected={length}, current={}",
+                 source_info.size
+             )),
+diff --git a/crates/rvvdk-datamover/src/preparation.rs b/crates/rvvdk-datamover/src/preparation.rs
+index 5286d2a..4be1e46 100644
+--- a/crates/rvvdk-datamover/src/preparation.rs
++++ b/crates/rvvdk-datamover/src/preparation.rs
+@@ -97,7 +97,7 @@ impl DataMover {
+                     .max(self.options.buffer_alignment());
+ 
+                 if runtime_alignment != plan.alignment() {
+-                    return Err(Error::CorruptMetadata(format!(
++                    return Err(Error::InvalidCopyConfiguration(format!(
+                         "copy plan alignment mismatch: \
+                      plan={}, runtime={runtime_alignment}",
+                         plan.alignment(),
+@@ -187,7 +187,7 @@ impl DataMover {
+          * the plan.
+          */
+         if source_size != plan.logical_bytes() {
+-            return Err(Error::CorruptMetadata(format!(
++            return Err(Error::StaleCopyPlan(format!(
+                 "copy plan source size mismatch: \
+                      plan={}, source={source_size}",
+                 plan.logical_bytes(),
+@@ -213,7 +213,7 @@ impl DataMover {
+          * block size captured during planning.
+          */
+         if plan.block_size() != self.options.block_size() {
+-            return Err(Error::CorruptMetadata(format!(
++            return Err(Error::InvalidCopyConfiguration(format!(
+                 "copy plan block size mismatch: \
+                      plan={}, mover={}",
+                 plan.block_size(),
+@@ -245,7 +245,7 @@ impl DataMover {
+          *     ExtentKind
+          */
+         if current_fingerprint != plan.extent_fingerprint() {
+-            return Err(Error::CorruptMetadata(format!(
++            return Err(Error::StaleCopyPlan(format!(
+                 "copy plan extent map changed: \
+                      planned={:#018x}, current={:#018x}",
+                 plan.extent_fingerprint(),
+@@ -256,7 +256,7 @@ impl DataMover {
+         if plan.backend() == ExecutionBackend::Threaded
+             && plan.alignment() != self.options.buffer_alignment()
+         {
+-            return Err(Error::CorruptMetadata(format!(
++            return Err(Error::InvalidCopyConfiguration(format!(
+                 "copy plan alignment mismatch: plan={}, mover={}",
+                 plan.alignment(),
+                 self.options.buffer_alignment(),
+diff --git a/crates/rvvdk-datamover/src/sequential.rs b/crates/rvvdk-datamover/src/sequential.rs
+index da53f07..8f7d51f 100644
+--- a/crates/rvvdk-datamover/src/sequential.rs
++++ b/crates/rvvdk-datamover/src/sequential.rs
+@@ -1,6 +1,6 @@
+ use std::time::Instant;
+ 
+-use rvvdk_core::{BufferPool, Error, Extent, Result, VirtualDisk};
++use rvvdk_core::{BufferPool, CopyOperation, CopyProgress, Error, Extent, Result, VirtualDisk};
+ 
+ use crate::policy::{self, Operation};
+ use crate::{CopyOptions, CopyPlan, CopyStats, ExecutionBackend, ProgressObserver, ProgressState};
+@@ -80,6 +80,31 @@ struct Stats {
+     zeroed: u64,
+     discarded: u64,
+     blocks: u64,
++    extents: u64,
++}
++
++impl Stats {
++    #[cold]
++    fn failure(&self, operation: CopyOperation, range: Option<(u64, u64)>, error: Error) -> Error {
++        crate::failure::execution(
++            "threaded",
++            operation,
++            range,
++            CopyProgress {
++                bytes_read: self.read,
++                bytes_written: self.written,
++                bytes_zeroed: self.zeroed,
++                bytes_discarded: self.discarded,
++                blocks_completed: self.blocks,
++                extents_completed: Some(self.extents),
++                unconfirmed_io: !matches!(
++                    operation,
++                    CopyOperation::Allocate | CopyOperation::Flush
++                ),
++            },
++            error,
++        )
++    }
+ }
+ 
+ /// One sequential lifecycle for direct copy and observed/unobserved plans.
+@@ -97,13 +122,14 @@ where
+     D: VirtualDisk + ?Sized,
+     P: Progress,
+ {
++    let mut stats = Stats::default();
+     let pool = BufferPool::new(
+         options.buffer_count(),
+         options.block_size(),
+         options.buffer_alignment(),
+-    )?;
++    )
++    .map_err(|e| stats.failure(CopyOperation::Allocate, None, e))?;
+     let mut buffer = pool.acquire();
+-    let mut stats = Stats::default();
+     for extent in extents {
+         match policy::select(extent.kind(), || destination.capabilities()) {
+             Operation::Copy => transfer::<true, _, _, _>(
+@@ -128,19 +154,38 @@ where
+                 )?;
+             }
+             Operation::Zero => {
+-                destination.write_zero_at(extent.offset(), extent.length())?;
++                destination
++                    .write_zero_at(extent.offset(), extent.length())
++                    .map_err(|e| {
++                        stats.failure(
++                            CopyOperation::WriteZero,
++                            Some((extent.offset(), extent.length())),
++                            e,
++                        )
++                    })?;
+                 stats.zeroed += extent.length();
+                 progress.completed(Operation::Zero, extent.length());
+             }
+             Operation::Discard => {
+-                destination.discard(extent.offset(), extent.length())?;
++                destination
++                    .discard(extent.offset(), extent.length())
++                    .map_err(|e| {
++                        stats.failure(
++                            CopyOperation::Discard,
++                            Some((extent.offset(), extent.length())),
++                            e,
++                        )
++                    })?;
+                 stats.discarded += extent.length();
+                 progress.completed(Operation::Discard, extent.length());
+             }
+         }
++        stats.extents += 1;
+         progress.extent_completed();
+     }
+-    destination.flush()?;
++    destination
++        .flush()
++        .map_err(|e| stats.failure(CopyOperation::Flush, None, e))?;
+     Ok(CopyStats::new(
+         stats.read,
+         stats.written,
+@@ -172,17 +217,19 @@ where
+         let size = usize::try_from(length).map_err(|_| Error::RangeOverflow { offset, length })?;
+         let bytes = &mut buffer[..size];
+         if READ {
+-            source.read_exact_at(offset, bytes)?;
++            source
++                .read_exact_at(offset, bytes)
++                .map_err(|e| stats.failure(CopyOperation::Read, Some((offset, length)), e))?;
++            stats.read += length;
+         }
+-        destination.write_all_at(offset, bytes)?;
++        destination
++            .write_all_at(offset, bytes)
++            .map_err(|e| stats.failure(CopyOperation::Write, Some((offset, length)), e))?;
+         offset = offset
+             .checked_add(length)
+             .ok_or(Error::RangeOverflow { offset, length })?;
+         stats.written += length;
+         stats.blocks += 1;
+-        if READ {
+-            stats.read += length;
+-        }
+         progress.completed(
+             if READ {
+                 Operation::Copy
+diff --git a/crates/rvvdk-datamover/tests/execution_preparation.rs b/crates/rvvdk-datamover/tests/execution_preparation.rs
+index 1832af8..84c3e70 100644
+--- a/crates/rvvdk-datamover/tests/execution_preparation.rs
++++ b/crates/rvvdk-datamover/tests/execution_preparation.rs
+@@ -9,11 +9,12 @@ use rvvdk_platform::{LinuxFdBackend, LinuxFdCapabilities};
+ use std::cell::Cell;
+ use std::fs;
+ use std::os::fd::{AsFd, BorrowedFd};
+-use std::sync::atomic::{AtomicUsize, Ordering};
++use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+ 
+ struct ChangingAlignment {
+     inner: LocalFileBlockDevice,
+     alignment: AtomicUsize,
++    fail_flush: AtomicBool,
+ }
+ impl AsFd for ChangingAlignment {
+     fn as_fd(&self) -> BorrowedFd<'_> {
+@@ -46,6 +47,9 @@ impl BlockDevice for ChangingAlignment {
+         self.inner.write_at(offset, buffer)
+     }
+     fn flush(&self) -> Result<()> {
++        if self.fail_flush.load(Ordering::Relaxed) {
++            return Err(rvvdk_core::Error::Io(std::io::Error::from_raw_os_error(5)));
++        }
+         self.inner.flush()
+     }
+ }
+@@ -69,6 +73,7 @@ fn fixture() -> (RawDisk<ChangingAlignment>, RawDisk<ChangingAlignment>) {
+         RawDisk::new(ChangingAlignment {
+             inner,
+             alignment: AtomicUsize::new(1),
++            fail_flush: AtomicBool::new(false),
+         })
+     };
+     (wrap(source), wrap(destination))
+@@ -163,3 +168,36 @@ fn native_preparation_refreshes_both_backend_alignments_on_every_execution() {
+     destination.device().read_exact_at(0, &mut actual).unwrap();
+     assert_eq!(actual, [0x5a; 16384]);
+ }
++
++#[test]
++fn native_flush_failure_keeps_completed_counts_and_suppresses_final_observation() {
++    let (source, destination) = fixture();
++    destination
++        .device()
++        .fail_flush
++        .store(true, Ordering::Relaxed);
++    let mover = native(CopyOptions::new(4096).unwrap());
++    let plan = mover
++        .plan_raw_with_destination(&source, &destination)
++        .unwrap();
++    let callbacks = Cell::new(0);
++    let error = mover
++        .execute_raw_plan_with_observer(&plan, &source, &destination, &|_: &ProgressSnapshot| {
++            callbacks.set(callbacks.get() + 1)
++        })
++        .unwrap_err();
++    let f = error.copy_failure().unwrap();
++    assert_eq!(f.backend, "io_uring");
++    assert_eq!(f.operation, rvvdk_core::CopyOperation::Flush);
++    assert_eq!(
++        (f.progress.bytes_read, f.progress.bytes_written),
++        (16384, 16384)
++    );
++    assert_eq!(
++        f.progress.extents_completed,
++        Some(plan.extent_count() as u64)
++    );
++    assert!(!f.progress.unconfirmed_io);
++    assert_eq!(callbacks.get(), 1);
++    assert!(matches!(&f.cause, rvvdk_core::Error::Io(e) if e.raw_os_error() == Some(5)));
++}
+diff --git a/crates/rvvdk-datamover/tests/semantic_policy.rs b/crates/rvvdk-datamover/tests/semantic_policy.rs
+index 70c8689..be85493 100644
+--- a/crates/rvvdk-datamover/tests/semantic_policy.rs
++++ b/crates/rvvdk-datamover/tests/semantic_policy.rs
+@@ -270,7 +270,10 @@ fn advertised_sparse_operation_failure_is_not_retried_as_a_write() {
+                         )
+                         .map(|_| ()),
+                 };
+-                assert!(matches!(result, Err(Error::Unsupported)));
++                assert!(matches!(
++                    result.unwrap_err().copy_failure().unwrap().cause,
++                    Error::Unsupported
++                ));
+                 assert_eq!(destination.events(), [(operation, 0, 4096)]);
+                 assert!(source.events().is_empty());
+                 assert_eq!(snapshots.borrow().len(), usize::from(mode == 2));
+@@ -309,8 +312,12 @@ fn native_sparse_failure_keeps_the_same_no_retry_policy() {
+                 4096,
+                 4096,
+                 IoUringExecutionOptions::new(2).unwrap()
+-            ),
+-            Err(Error::Unsupported)
++            )
++            .unwrap_err()
++            .copy_failure()
++            .unwrap()
++            .cause,
++            Error::Unsupported
+         ));
+         assert_eq!(destination.events(), [(operation, 0, 4096)]);
+     }
+diff --git a/crates/rvvdk-core/src/copy_failure.rs b/crates/rvvdk-core/src/copy_failure.rs
+new file mode 100644
+index 0000000..7b21481
+--- /dev/null
++++ b/crates/rvvdk-core/src/copy_failure.rs
+@@ -0,0 +1,47 @@
++use crate::{DiskRange, Error};
++
++/// Operation attempted when a copy failed. Backend method failures may be partial.
++#[derive(Debug, Clone, Copy, PartialEq, Eq)]
++#[non_exhaustive]
++pub enum CopyOperation {
++    Allocate,
++    Read,
++    Write,
++    WriteZero,
++    Discard,
++    Flush,
++    Schedule,
++    NativeSetup,
++    NativeCompletion,
++    NativeShutdown,
++}
++
++/// Confirmed lower bounds at failure, never a durable or contiguous resume point.
++/// Failed backend calls and native cleanup may have performed additional I/O.
++#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
++pub struct CopyProgress {
++    pub bytes_read: u64,
++    pub bytes_written: u64,
++    pub bytes_zeroed: u64,
++    pub bytes_discarded: u64,
++    pub blocks_completed: u64,
++    /// None when a concurrent executor cannot attribute work to whole extents.
++    pub extents_completed: Option<u64>,
++    /// Additional I/O may have occurred outside the confirmed counters.
++    pub unconfirmed_io: bool,
++}
++
++/// Execution failure with the original error retained in the source chain.
++/// Backend labels currently used by the mover are "threaded" and "io_uring".
++#[derive(Debug, thiserror::Error)]
++#[error("{backend} {operation:?} failed in {range:?}: {cause}")]
++pub struct CopyFailure {
++    pub backend: &'static str,
++    pub operation: CopyOperation,
++    /// Attempted range, not necessarily the precise failing byte.
++    /// None for whole-job setup, scheduling, flush, or unidentified operations.
++    pub range: Option<DiskRange>,
++    pub progress: CopyProgress,
++    #[source]
++    pub cause: Error,
++}
+diff --git a/crates/rvvdk-datamover/src/failure.rs b/crates/rvvdk-datamover/src/failure.rs
+new file mode 100644
+index 0000000..768b688
+--- /dev/null
++++ b/crates/rvvdk-datamover/src/failure.rs
+@@ -0,0 +1,104 @@
++use rvvdk_core::{CopyFailure, CopyOperation, CopyProgress, DiskRange, Error};
++
++#[cold]
++pub(crate) fn execution(
++    backend: &'static str,
++    operation: CopyOperation,
++    range: Option<(u64, u64)>,
++    progress: CopyProgress,
++    cause: Error,
++) -> Error {
++    Error::CopyExecution(Box::new(CopyFailure {
++        backend,
++        operation,
++        range: range.and_then(|(offset, length)| DiskRange::new(offset, length).ok()),
++        progress,
++        cause,
++    }))
++}
++
++/// Replace local worker counters after every scoped worker has joined.
++#[cold]
++pub(crate) fn worker_total(error: Error, mut total: CopyProgress) -> Error {
++    match error {
++        Error::CopyExecution(mut failure) => {
++            total.unconfirmed_io |= failure.progress.unconfirmed_io;
++            failure.progress = total;
++            Error::CopyExecution(failure)
++        }
++        error => execution("threaded", CopyOperation::Schedule, None, total, error),
++    }
++}
++
++/// Add already completed extents to the failing native range's lower bounds.
++#[cfg(target_os = "linux")]
++#[cold]
++pub(crate) fn native_prior(error: Error, prior: CopyProgress) -> Error {
++    match error {
++        Error::CopyExecution(mut failure) => {
++            failure.progress.bytes_read += prior.bytes_read;
++            failure.progress.bytes_written += prior.bytes_written;
++            failure.progress.bytes_zeroed += prior.bytes_zeroed;
++            failure.progress.bytes_discarded += prior.bytes_discarded;
++            failure.progress.blocks_completed += prior.blocks_completed;
++            failure.progress.extents_completed = prior.extents_completed;
++            Error::CopyExecution(failure)
++        }
++        Error::IoUringCleanup {
++            original,
++            operations,
++        } => Error::IoUringCleanup {
++            original: Box::new(native_prior(*original, prior)),
++            operations,
++        },
++        error => execution("io_uring", CopyOperation::NativeSetup, None, prior, error),
++    }
++}
++
++#[cfg(all(test, target_os = "linux"))]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn native_cleanup_keeps_original_cause_and_prior_extent_progress() {
++        let original = execution(
++            "io_uring",
++            CopyOperation::Write,
++            Some((4096, 4096)),
++            CopyProgress {
++                bytes_read: 4096,
++                bytes_written: 256,
++                unconfirmed_io: true,
++                ..CopyProgress::default()
++            },
++            Error::Io(std::io::Error::from_raw_os_error(5)),
++        );
++        let error = native_prior(
++            Error::IoUringCleanup {
++                original: Box::new(original),
++                operations: 2,
++            },
++            CopyProgress {
++                bytes_read: 4096,
++                bytes_written: 4096,
++                bytes_zeroed: 1024,
++                extents_completed: Some(2),
++                ..CopyProgress::default()
++            },
++        );
++        assert!(matches!(error, Error::IoUringCleanup { operations: 2, .. }));
++        let f = error.copy_failure().unwrap();
++        assert_eq!(
++            (
++                f.progress.bytes_read,
++                f.progress.bytes_written,
++                f.progress.bytes_zeroed
++            ),
++            (8192, 4352, 1024)
++        );
++        assert_eq!(f.progress.extents_completed, Some(2));
++        assert!(f.progress.unconfirmed_io);
++        assert_eq!(f.range.unwrap().offset(), 4096);
++        assert!(matches!(&f.cause, Error::Io(e) if e.raw_os_error() == Some(5)));
++    }
++}
+diff --git a/crates/rvvdk-datamover/tests/copy_failures.rs b/crates/rvvdk-datamover/tests/copy_failures.rs
+new file mode 100644
+index 0000000..9a3cc54
+--- /dev/null
++++ b/crates/rvvdk-datamover/tests/copy_failures.rs
+@@ -0,0 +1,265 @@
++use rvvdk_core::{
++    Capabilities, CopyOperation, DiskGeometry, Error, Extent, ExtentKind, Result, VirtualDisk,
++};
++use rvvdk_datamover::{CopyOptions, DataMover, ProgressSnapshot};
++use std::sync::Mutex;
++
++const BLOCK: usize = 4096;
++struct Disk {
++    bytes: Mutex<Vec<u8>>,
++    kind: ExtentKind,
++    fail: Option<CopyOperation>,
++}
++impl Disk {
++    fn new(kind: ExtentKind, fail: Option<CopyOperation>, fill: u8) -> Self {
++        Self {
++            bytes: Mutex::new(vec![fill; 2 * BLOCK]),
++            kind,
++            fail,
++        }
++    }
++    fn denied() -> Error {
++        Error::Io(std::io::Error::from_raw_os_error(13))
++    }
++}
++impl VirtualDisk for Disk {
++    fn geometry(&self) -> DiskGeometry {
++        DiskGeometry::new((2 * BLOCK) as u64, 512, BLOCK as u32).unwrap()
++    }
++    fn capabilities(&self) -> Capabilities {
++        let base =
++            Capabilities::READ | Capabilities::WRITE | Capabilities::FLUSH | Capabilities::EXTENTS;
++        if self.fail == Some(CopyOperation::Write) {
++            base
++        } else {
++            base | Capabilities::WRITE_ZERO | Capabilities::DISCARD
++        }
++    }
++    fn extents(&self, _: u64, _: u64) -> Result<Vec<Extent>> {
++        Ok(vec![
++            Extent::new(0, BLOCK as u64, self.kind)?,
++            Extent::new(BLOCK as u64, BLOCK as u64, self.kind)?,
++        ])
++    }
++    fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
++        if self.fail == Some(CopyOperation::Read) && offset >= BLOCK as u64 {
++            return Err(Self::denied());
++        }
++        buffer.copy_from_slice(
++            &self.bytes.lock().unwrap()[offset as usize..offset as usize + buffer.len()],
++        );
++        Ok(buffer.len())
++    }
++    fn write_at(&self, offset: u64, buffer: &[u8]) -> Result<usize> {
++        if self.fail == Some(CopyOperation::Write) && offset > BLOCK as u64 {
++            return Err(Self::denied());
++        }
++        let n = if self.fail == Some(CopyOperation::Write) && offset == BLOCK as u64 {
++            256.min(buffer.len())
++        } else {
++            buffer.len()
++        };
++        self.bytes.lock().unwrap()[offset as usize..offset as usize + n]
++            .copy_from_slice(&buffer[..n]);
++        Ok(n)
++    }
++    fn write_zero_at(&self, offset: u64, length: u64) -> Result<()> {
++        if self.fail == Some(CopyOperation::WriteZero) && offset >= BLOCK as u64 {
++            return Err(Self::denied());
++        }
++        self.bytes.lock().unwrap()[offset as usize..(offset + length) as usize].fill(0);
++        Ok(())
++    }
++    fn discard(&self, offset: u64, length: u64) -> Result<()> {
++        if self.fail == Some(CopyOperation::Discard) && offset >= BLOCK as u64 {
++            return Err(Self::denied());
++        }
++        self.bytes.lock().unwrap()[offset as usize..(offset + length) as usize].fill(0);
++        Ok(())
++    }
++    fn flush(&self) -> Result<()> {
++        if self.fail == Some(CopyOperation::Flush) {
++            Err(Self::denied())
++        } else {
++            Ok(())
++        }
++    }
++}
++
++#[test]
++fn sequential_failures_report_attempted_operation_and_confirmed_lower_bounds() {
++    for operation in [
++        CopyOperation::Read,
++        CopyOperation::Write,
++        CopyOperation::WriteZero,
++        CopyOperation::Discard,
++    ] {
++        for observed in [false, true] {
++            let kind = match operation {
++                CopyOperation::WriteZero => ExtentKind::Zero,
++                CopyOperation::Discard => ExtentKind::Hole,
++                _ => ExtentKind::Data,
++            };
++            let source = Disk::new(
++                kind,
++                (operation == CopyOperation::Read).then_some(operation),
++                0x5a,
++            );
++            let destination = Disk::new(
++                ExtentKind::Data,
++                (operation != CopyOperation::Read).then_some(operation),
++                0xa5,
++            );
++            let mover = DataMover::new(CopyOptions::new(BLOCK).unwrap());
++            let plan = mover.plan_with_destination(&source, &destination).unwrap();
++            let snapshots = Mutex::new(Vec::new());
++            let error = if observed {
++                mover.execute_plan_with_observer(
++                    &plan,
++                    &source,
++                    &destination,
++                    &|p: &ProgressSnapshot| snapshots.lock().unwrap().push(*p),
++                )
++            } else {
++                mover.execute_plan(&plan, &source, &destination)
++            }
++            .unwrap_err();
++            let failure = error.copy_failure().unwrap();
++            assert_eq!(failure.backend, "threaded");
++            assert_eq!(failure.operation, operation);
++            assert_eq!(failure.range.unwrap().offset(), BLOCK as u64);
++            assert_eq!(failure.range.unwrap().length(), BLOCK as u64);
++            assert_eq!(failure.progress.extents_completed, Some(1));
++            assert!(failure.progress.unconfirmed_io);
++            match &failure.cause {
++                Error::Io(io) => assert_eq!(io.raw_os_error(), Some(13)),
++                e => panic!("{e}"),
++            }
++            let p = failure.progress;
++            match operation {
++                CopyOperation::Read => assert_eq!(
++                    (p.bytes_read, p.bytes_written, p.blocks_completed),
++                    (4096, 4096, 1)
++                ),
++                CopyOperation::Write => {
++                    assert_eq!(
++                        (p.bytes_read, p.bytes_written, p.blocks_completed),
++                        (8192, 4096, 1)
++                    );
++                    // The failed write changed bytes beyond the confirmed lower bound.
++                    assert_eq!(&destination.bytes.lock().unwrap()[4096..4352], &[0x5a; 256]);
++                }
++                CopyOperation::WriteZero => {
++                    assert_eq!((p.bytes_zeroed, p.bytes_written), (4096, 0))
++                }
++                CopyOperation::Discard => {
++                    assert_eq!((p.bytes_discarded, p.bytes_written), (4096, 0))
++                }
++                _ => unreachable!(),
++            }
++            // Initial + first completed extent, with no final-success snapshot.
++            assert_eq!(
++                snapshots.lock().unwrap().len(),
++                if observed { 2 } else { 0 }
++            );
++            let mut cause: &dyn std::error::Error = &error;
++            while let Some(next) = cause.source() {
++                cause = next;
++            }
++            assert_eq!(
++                cause
++                    .downcast_ref::<std::io::Error>()
++                    .unwrap()
++                    .raw_os_error(),
++                Some(13)
++            );
++        }
++    }
++}
++
++#[test]
++fn flush_failure_keeps_full_completed_counters_without_claiming_durability() {
++    for workers in [1, 4] {
++        let source = Disk::new(ExtentKind::Data, None, 0x5a);
++        let destination = Disk::new(ExtentKind::Data, Some(CopyOperation::Flush), 0xa5);
++        let mover = DataMover::new(CopyOptions::with_concurrency(BLOCK, BLOCK, workers).unwrap());
++        let error = mover.copy(&source, &destination).unwrap_err();
++        let failure = error.copy_failure().unwrap();
++        assert_eq!(failure.operation, CopyOperation::Flush);
++        assert_eq!(failure.range, None);
++        assert_eq!(
++            (failure.progress.bytes_read, failure.progress.bytes_written),
++            (8192, 8192)
++        );
++        assert_eq!(failure.progress.extents_completed, Some(2));
++        assert!(!failure.progress.unconfirmed_io);
++        assert_eq!(*destination.bytes.lock().unwrap(), vec![0x5a; 8192]);
++    }
++}
++
++#[test]
++fn preparation_rejections_are_typed_and_do_not_claim_execution_progress() {
++    let source = Disk::new(ExtentKind::Data, None, 0x5a);
++    let destination = Disk::new(ExtentKind::Data, None, 0xa5);
++    let plan = DataMover::new(CopyOptions::new(BLOCK).unwrap())
++        .plan(&source)
++        .unwrap();
++    let error = DataMover::new(CopyOptions::new(BLOCK / 2).unwrap())
++        .execute_plan(&plan, &source, &destination)
++        .unwrap_err();
++    assert!(matches!(error, Error::InvalidCopyConfiguration(_)));
++    assert!(error.copy_failure().is_none());
++    let changed = Disk::new(ExtentKind::Zero, None, 0x5a);
++    let error = DataMover::new(CopyOptions::new(BLOCK).unwrap())
++        .execute_plan(&plan, &changed, &destination)
++        .unwrap_err();
++    assert!(matches!(error, Error::StaleCopyPlan(_)));
++    assert!(error.copy_failure().is_none());
++}
++
++#[cfg(target_os = "linux")]
++#[test]
++fn native_sparse_failures_keep_prior_extents_and_fallback_write_context() {
++    use rvvdk_datamover::IoUringExecutionOptions;
++    use rvvdk_datamover::io_uring::{NativeExtentPlan, copy_extent_plan_with_destination};
++    use std::os::fd::AsFd;
++    let path = std::env::temp_dir().join(format!("rvvdk-r15-sparse-{}", std::process::id()));
++    std::fs::write(&path, [0x5a; 8192]).unwrap();
++    let source = std::fs::File::open(&path).unwrap();
++    std::fs::remove_file(path).unwrap();
++    for (kind, operation) in [
++        (ExtentKind::Zero, CopyOperation::WriteZero),
++        (ExtentKind::Hole, CopyOperation::Discard),
++        (ExtentKind::Zero, CopyOperation::Write),
++        (ExtentKind::Hole, CopyOperation::Write),
++    ] {
++        let destination = Disk::new(kind, Some(operation), 0xa5);
++        let plan = NativeExtentPlan::new(destination.extents(0, 8192).unwrap(), 8192).unwrap();
++        let error = copy_extent_plan_with_destination(
++            source.as_fd(),
++            source.as_fd(),
++            &destination,
++            &plan,
++            BLOCK,
++            BLOCK,
++            IoUringExecutionOptions::new(2).unwrap(),
++        )
++        .unwrap_err();
++        let f = error.copy_failure().unwrap();
++        assert_eq!(f.backend, "io_uring");
++        assert_eq!(f.operation, operation);
++        assert_eq!(f.progress.extents_completed, Some(1));
++        assert_eq!(f.range.unwrap().offset(), 4096);
++        assert!(f.progress.unconfirmed_io);
++        match operation {
++            CopyOperation::WriteZero => assert_eq!(f.progress.bytes_zeroed, 4096),
++            CopyOperation::Discard => assert_eq!(f.progress.bytes_discarded, 4096),
++            CopyOperation::Write => {
++                assert_eq!(f.progress.bytes_written, 4096);
++                assert_eq!(f.progress.bytes_read, 0);
++                assert_eq!(f.progress.blocks_completed, 1);
++            }
++            _ => unreachable!(),
++        }
++    }
++}
