@@ -1,0 +1,11 @@
+Final source = baseline b7162fc plus final-candidate.patch
+cargo test --workspace: passed, 273 tests in unfiltered suites; subprocess fault-injection tests also passed
+cargo clippy --workspace --all-targets -- -D warnings: passed
+cargo check -p rvvdk-core -p rvvdk-datamover --lib --target wasm32-unknown-unknown: passed
+Five new semantic contract tests also pass on baseline
+166 benchmark processes completed with exit status 0; every copy verified
+Performance qualification remains open for the profiles documented in README.md
+cargo fmt --all -- --check: passed
+All three source patches: git apply --check on clean baseline passed
+Final source patch: git apply --reverse --check passed
+Final executable/source fingerprints verified

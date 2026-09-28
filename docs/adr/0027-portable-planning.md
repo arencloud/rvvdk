@@ -61,7 +61,7 @@ Plans remain in-memory structural records, not serialized snapshot identities.
   and complete native runtime preparation are still pending.
 - Logical Data/Zero/Hole semantics and counters are preserved. Existing DISCARD
   semantics are not strengthened here; the zero-read contract belongs to R2 and
-  ADR-0026. Separate semantic loops remain for R1.2 consolidation.
+  ADR-0026. R1.2 consolidates policy and sequential loops as recorded below.
 - Initial progress follows endpoint and structural checks. Final progress follows
   successful flush. Concurrent/native execution still emits only initial/final
   progress; partial-error reporting and cancellation remain future work.
@@ -80,3 +80,18 @@ The same external trait-object consumer fails to compile on R0.5 and executes on
 R1.1. Core/datamover library compilation also passes for `wasm32-unknown-unknown`;
 this is a compilation check, not a claim of WebAssembly runtime/thread support.
 Performance evidence is in the [R1.1 report](../benchmark-results/2026-09-28-r11/README.md).
+
+## R1.2 implementation follow-up — 2026-09-28
+
+The private `policy::select` operation now serves sequential, worker, and
+native destination-aware execution. It preserves capability precedence and
+propagates operation errors without retry. Separate observed/unobserved sequential
+loops were replaced by `sequential::execute` with statically dispatched progress
+hooks. Native payload execution and worker scheduling remain separate mechanisms.
+
+The existing progress cadence, whole-extent versus work-item operation granularity,
+statistics, and flush ownership remain unchanged. Contract tests run on baseline
+and candidate preserve these behaviors, including the pre-flush 100% byte-threshold
+snapshot limitation. The [architecture contract](../architecture.md#shared-semantic-execution-r12)
+and [benchmark record](../benchmark-results/2026-09-28-r12/README.md) describe scope
+and remaining limits. R1.3 will address endpoint preparation/descriptor snapshots.

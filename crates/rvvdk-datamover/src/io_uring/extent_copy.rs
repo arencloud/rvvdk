@@ -1,8 +1,9 @@
 use std::os::fd::BorrowedFd;
 
-use rvvdk_core::{Capabilities, Error, Extent, ExtentKind, Result, VirtualDisk};
+use rvvdk_core::{Error, Extent, ExtentKind, Result, VirtualDisk};
 
 use crate::IoUringExecutionOptions;
+use crate::policy::{self, Operation};
 
 use super::copy::copy_file_range_preflighted;
 use super::validation::{validate_copy_configuration, validate_file_range};
@@ -229,8 +230,8 @@ where
     let mut aggregate = IoUringExtentCopyStats::default();
 
     for extent in plan.extents() {
-        match extent.kind() {
-            ExtentKind::Data => {
+        match policy::select(extent.kind(), || destination.capabilities()) {
+            Operation::Copy => {
                 let stats = copy_file_range_preflighted(
                     source_fd,
                     destination_fd,
@@ -244,70 +245,20 @@ where
                 aggregate.add_data_extent(stats)?;
             }
 
-            ExtentKind::Zero => {
-                process_zero_extent(destination, *extent, block_size, &mut aggregate)?;
+            Operation::Zero => {
+                destination.write_zero_at(extent.offset(), extent.length())?;
+                aggregate.add_zero_extent(extent.length())?;
             }
-
-            ExtentKind::Hole => {
-                process_hole_extent(destination, *extent, block_size, &mut aggregate)?;
+            Operation::Discard => {
+                destination.discard(extent.offset(), extent.length())?;
+                aggregate.add_discard_extent(extent.length())?;
+            }
+            Operation::WriteZero => {
+                write_zero_fallback(destination, *extent, block_size, &mut aggregate)?
             }
         }
     }
-
     Ok(aggregate)
-}
-
-fn process_zero_extent<D>(
-    destination: &D,
-    extent: Extent,
-    block_size: usize,
-    stats: &mut IoUringExtentCopyStats,
-) -> Result<()>
-where
-    D: VirtualDisk,
-{
-    if destination
-        .capabilities()
-        .contains(Capabilities::WRITE_ZERO)
-    {
-        destination.write_zero_at(extent.offset(), extent.length())?;
-
-        stats.add_zero_extent(extent.length())?;
-
-        return Ok(());
-    }
-
-    write_zero_fallback(destination, extent, block_size, stats)
-}
-
-fn process_hole_extent<D>(
-    destination: &D,
-    extent: Extent,
-    block_size: usize,
-    stats: &mut IoUringExtentCopyStats,
-) -> Result<()>
-where
-    D: VirtualDisk,
-{
-    let capabilities = destination.capabilities();
-
-    if capabilities.contains(Capabilities::DISCARD) {
-        destination.discard(extent.offset(), extent.length())?;
-
-        stats.add_discard_extent(extent.length())?;
-
-        return Ok(());
-    }
-
-    if capabilities.contains(Capabilities::WRITE_ZERO) {
-        destination.write_zero_at(extent.offset(), extent.length())?;
-
-        stats.add_zero_extent(extent.length())?;
-
-        return Ok(());
-    }
-
-    write_zero_fallback(destination, extent, block_size, stats)
 }
 
 fn write_zero_fallback<D>(

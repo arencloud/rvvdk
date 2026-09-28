@@ -1,0 +1,523 @@
+{
+  "baseline_commit": "b7162fcf1e899e7b12ac11e4f4aa5658996aa150",
+  "baseline_harness": "Baseline runtime unchanged; added candidate semantic_policy bench and tests plus Cargo.toml bench registration. All four measured harnesses identical across variants.",
+  "candidate_patch_sha256": "c7ec736094c88dae3284e3c2a857382967bdc1c893f816e88db3b2028990a239",
+  "harness_sha256": {
+    "crates/rvvdk-datamover/benches/native_validation.rs": "7253f1df4f43976a3a77a7f4e96457ba94ab4a7c73fc42796645fbe2a16cc549",
+    "crates/rvvdk-datamover/benches/progress.rs": "d0655f5471e0aca90d1ccc5b9ef2ef9aa2501a836f7053b565af8ea79d1775fa",
+    "crates/rvvdk-datamover/benches/portable_plan.rs": "6349df173a4b3666ec8fb6024210f919ec323da769dac637152d4c46c393d9e9",
+    "crates/rvvdk-datamover/benches/semantic_policy.rs": "0d5fcf9ddc4d458e99c61fec9ab0730abeac3fc4fa78f095d00eb79115466e4d"
+  },
+  "binaries": {
+    "baseline": {
+      "portable_plan": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r12-baseline-build/release/deps/portable_plan-b3012df33588f166",
+        "sha256": "3ac256f997ef8f05e29336f18c03e554070a109e2fc0df8d5316de45278dfce0"
+      },
+      "native_validation": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r12-baseline-build/release/deps/native_validation-862f1f0376c9d54f",
+        "sha256": "a5576c5edde0a06b97b65fa946df5d603f51f9cc24e8febb4fe74bb01bdd932a"
+      },
+      "progress": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r12-baseline-build/release/deps/progress-183274463656dab1",
+        "sha256": "ceeb1bd76247f23da2f09425bd2b7a45c46e93a5e3196c31e01d79baf23c1e26"
+      },
+      "semantic_policy": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r12-baseline-build/release/deps/semantic_policy-aad2ecb0714288ab",
+        "sha256": "2b2ec6d5f393344d5f8ae8817e3cbb2a5cf6a701d3f3fe33c804732a613ad728"
+      }
+    },
+    "candidate": {
+      "native_validation": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r12-candidate-build/release/deps/native_validation-862f1f0376c9d54f",
+        "sha256": "e54e9a8172c58392057ddc1a04d2d3333286a344ee16c1ef337e4a6975c61530"
+      },
+      "progress": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r12-candidate-build/release/deps/progress-183274463656dab1",
+        "sha256": "ce6a1a9e1b44300625d9ea25dd35109c72ed5bbcb9c37b0326639dac12244235"
+      },
+      "portable_plan": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r12-candidate-build/release/deps/portable_plan-b3012df33588f166",
+        "sha256": "cca6d2c0725e97a6c01f55e8096abe39720fe035c91056a012769d83f2f2837b"
+      },
+      "semantic_policy": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r12-candidate-build/release/deps/semantic_policy-aad2ecb0714288ab",
+        "sha256": "952e88c220f331485e9ebd3fedd6a7aa0d13a6610e5f6dbc3d08e35738508c9c"
+      }
+    }
+  },
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)\nbinary: rustc\ncommit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860\ncommit-date: 2026-04-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.95.0\nLLVM version: 22.1.2",
+  "kernel": "Linux 7.2.5-200.fc44.x86_64 x86_64 GNU/Linux",
+  "cpu": {
+    "lscpu": [
+      {
+        "field": "Architecture:",
+        "data": "x86_64"
+      },
+      {
+        "field": "CPU op-mode(s):",
+        "data": "32-bit, 64-bit"
+      },
+      {
+        "field": "Address sizes:",
+        "data": "39 bits physical, 48 bits virtual"
+      },
+      {
+        "field": "Byte Order:",
+        "data": "Little Endian"
+      },
+      {
+        "field": "CPU(s):",
+        "data": "16"
+      },
+      {
+        "field": "On-line CPU(s) list:",
+        "data": "0-15"
+      },
+      {
+        "field": "Vendor ID:",
+        "data": "GenuineIntel"
+      },
+      {
+        "field": "Model name:",
+        "data": "11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz"
+      },
+      {
+        "field": "CPU family:",
+        "data": "6"
+      },
+      {
+        "field": "Model:",
+        "data": "141"
+      },
+      {
+        "field": "Thread(s) per core:",
+        "data": "2"
+      },
+      {
+        "field": "Core(s) per socket:",
+        "data": "8"
+      },
+      {
+        "field": "Socket(s):",
+        "data": "1"
+      },
+      {
+        "field": "Stepping:",
+        "data": "1"
+      },
+      {
+        "field": "CPU(s) scaling MHz:",
+        "data": "47%"
+      },
+      {
+        "field": "CPU max MHz:",
+        "data": "4800.0000"
+      },
+      {
+        "field": "CPU min MHz:",
+        "data": "800.0000"
+      },
+      {
+        "field": "BogoMIPS:",
+        "data": "4992.00"
+      },
+      {
+        "field": "Flags:",
+        "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb cat_l2 cdp_l2 ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb intel_pt avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves split_lock_detect user_shstk dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid movdiri movdir64b fsrm avx512_vp2intersect md_clear ibt flush_l1d arch_capabilities"
+      },
+      {
+        "field": "Virtualization:",
+        "data": "VT-x"
+      },
+      {
+        "field": "L1d cache:",
+        "data": "384 KiB (8 instances)"
+      },
+      {
+        "field": "L1i cache:",
+        "data": "256 KiB (8 instances)"
+      },
+      {
+        "field": "L2 cache:",
+        "data": "10 MiB (8 instances)"
+      },
+      {
+        "field": "L3 cache:",
+        "data": "24 MiB (1 instance)"
+      },
+      {
+        "field": "NUMA node(s):",
+        "data": "1"
+      },
+      {
+        "field": "NUMA node0 CPU(s):",
+        "data": "0-15"
+      },
+      {
+        "field": "Vulnerability Gather data sampling:",
+        "data": "Mitigation; Microcode"
+      },
+      {
+        "field": "Vulnerability Ghostwrite:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Indirect target selection:",
+        "data": "Mitigation; Aligned branch/return thunks"
+      },
+      {
+        "field": "Vulnerability Itlb multihit:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability L1tf:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Meltdown:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mmio stale data:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Old microcode:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Reg file data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Retbleed:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec rstack overflow:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec store bypass:",
+        "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+      },
+      {
+        "field": "Vulnerability Spectre v1:",
+        "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+      },
+      {
+        "field": "Vulnerability Spectre v2:",
+        "data": "Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW loop"
+      },
+      {
+        "field": "Vulnerability Srbds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsa:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsx async abort:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Vmscape:",
+        "data": "Not affected"
+      }
+    ]
+  },
+  "memory": "MemTotal:       65527436 kB",
+  "governors": {
+    "cpu11": "powersave",
+    "cpu9": "powersave",
+    "cpu7": "powersave",
+    "cpu5": "powersave",
+    "cpu3": "powersave",
+    "cpu14": "powersave",
+    "cpu1": "powersave",
+    "cpu12": "powersave",
+    "cpu10": "powersave",
+    "cpu8": "powersave",
+    "cpu6": "powersave",
+    "cpu4": "powersave",
+    "cpu15": "powersave",
+    "cpu2": "powersave",
+    "cpu13": "powersave",
+    "cpu0": "powersave"
+  },
+  "mount": "TARGET SOURCE                                                       FSTYPE OPTIONS\n/home  /dev/mapper/luks-0c2054e2-163c-4593-bc54-1fbbbf0cff4b[/home] btrfs  rw,relatime,seclabel,compress=zstd:1,ssd,discard=async,space_cache=v2,subvolid=256,subvol=/home",
+  "devices": {
+    "blockdevices": [
+      {
+        "name": "zram0",
+        "type": "disk",
+        "size": "8G",
+        "model": null,
+        "fstype": "swap"
+      },
+      {
+        "name": "nvme0n1",
+        "type": "disk",
+        "size": "953.9G",
+        "model": "SAMSUNG MZVL21T0HCLR-00BL7",
+        "fstype": null,
+        "children": [
+          {
+            "name": "nvme0n1p1",
+            "type": "part",
+            "size": "600M",
+            "model": null,
+            "fstype": "vfat"
+          },
+          {
+            "name": "nvme0n1p2",
+            "type": "part",
+            "size": "1G",
+            "model": null,
+            "fstype": "ext4"
+          },
+          {
+            "name": "nvme0n1p3",
+            "type": "part",
+            "size": "952.3G",
+            "model": null,
+            "fstype": "crypto_LUKS",
+            "children": [
+              {
+                "name": "luks-0c2054e2-163c-4593-bc54-1fbbbf0cff4b",
+                "type": "crypt",
+                "size": "952.3G",
+                "model": null,
+                "fstype": "btrfs"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "rust_environment": {
+    "RUSTFLAGS": null,
+    "CARGO_ENCODED_RUSTFLAGS": null
+  },
+  "affinity": "2-6",
+  "order": [
+    "baseline,candidate",
+    "candidate,baseline",
+    "baseline,candidate"
+  ],
+  "sampling": {
+    "samples": 20,
+    "warmup_seconds": 0.3,
+    "measurement_target_seconds": 2,
+    "mode": "flat"
+  },
+  "limitations": "Warm small workloads, powersave policy and uncontrolled background load; provisional performance evidence only. CPU/RSS include reset/readback and adaptive iteration counts.",
+  "followup": {
+    "reason": "Investigate repeated dynamic memory slowdown and any initial median >5%. Case-by-case alternating variants reduces the time between comparable runs.",
+    "cases": [
+      [
+        "portable_plan",
+        "portable_memory/workers1/dyn$"
+      ],
+      [
+        "portable_plan",
+        "portable_memory/workers4/dyn$"
+      ],
+      [
+        "portable_plan",
+        "portable_memory/workers4/static$"
+      ],
+      [
+        "semantic_policy",
+        "semantic_policy/hole_fallback/workers1$"
+      ],
+      [
+        "semantic_policy",
+        "semantic_policy/hole_fallback/workers4$"
+      ],
+      [
+        "semantic_policy",
+        "semantic_policy/mixed_accelerated/workers4$"
+      ],
+      [
+        "semantic_policy",
+        "semantic_policy/zero_fallback/workers4$"
+      ]
+    ],
+    "samples": 30,
+    "measurement_target_seconds": 4,
+    "warmup_seconds": 0.5,
+    "order": [
+      "candidate,baseline",
+      "baseline,candidate",
+      "candidate,baseline"
+    ]
+  },
+  "same_binary_control": {
+    "purpose": "Measure noise floor for residual mixed-accelerated worker regression. Both labels run the exact baseline executable, not different source states.",
+    "case": "semantic_policy/mixed_accelerated/workers4$",
+    "pairs": 3,
+    "samples": 30,
+    "warmup_seconds": 0.5,
+    "measurement_target_seconds": 4
+  },
+  "tuned": {
+    "patch_sha256": "f1c1ac38d4f001b2874576414e8ba49a74ab38e553083c7182d173977f3485a5",
+    "change": "Select by extent kind explicitly; Zero goes directly to zero/fallback choice, Hole adds discard precedence. Preserve capability query count and operation semantics.",
+    "binaries": {
+      "native_validation": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r12-candidate-build/release/deps/native_validation-862f1f0376c9d54f",
+        "sha256": "a85af8a60d18d4a3e6fa519fc1f7241dc6a56ae087448dfcb886b534e425ec29"
+      },
+      "portable_plan": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r12-candidate-build/release/deps/portable_plan-b3012df33588f166",
+        "sha256": "31579b29d44662198430aba542b2aa33082491479a7d12d0542b7c41b9c7fa56"
+      },
+      "semantic_policy": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r12-candidate-build/release/deps/semantic_policy-aad2ecb0714288ab",
+        "sha256": "d3e74a7d38c94fe3abfc09df5305dd25c1bf4fabe98fafbf39ef647363c3c309"
+      },
+      "progress": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r12-candidate-build/release/deps/progress-183274463656dab1",
+        "sha256": "e9764fd2f8b8e615c57eabe02d17e6e3b16b53432d034a52e2426cb3bb5edc7b"
+      }
+    },
+    "sampling": {
+      "samples": 30,
+      "warmup_seconds": 0.5,
+      "measurement_target_seconds": 4
+    },
+    "order": [
+      "candidate,baseline",
+      "baseline,candidate",
+      "candidate,baseline"
+    ]
+  },
+  "final_matrix": {
+    "order": [
+      "baseline,candidate",
+      "candidate,baseline"
+    ],
+    "samples": 20,
+    "warmup_seconds": 0.3,
+    "measurement_target_seconds": 2,
+    "purpose": "Repeat entire matched workload matrix after the dispatch refinement; initial results apply to the first source state only."
+  },
+  "block": {
+    "patch_sha256": "30eebc21fbbf1a5d2a2e72a74299e670cc5d99ebd32ec2a9f5f9ecdffc86f743",
+    "change": "Preserve configured block-size transfer bound in shared sequential helper instead of using buffer length; same actual allocation/ranges.",
+    "binaries": {
+      "portable_plan": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r12-candidate-build/release/deps/portable_plan-b3012df33588f166",
+        "sha256": "a506aa566b32a023f596dffe4362eb3feb16892bfea0eeeada4b65db64e8c858"
+      },
+      "native_validation": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r12-candidate-build/release/deps/native_validation-862f1f0376c9d54f",
+        "sha256": "a85af8a60d18d4a3e6fa519fc1f7241dc6a56ae087448dfcb886b534e425ec29"
+      },
+      "semantic_policy": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r12-candidate-build/release/deps/semantic_policy-aad2ecb0714288ab",
+        "sha256": "eb66cdcbf57aa318a225587923ed57dd9d5f5fb1276f6203f43b6c2e7f0bb157"
+      },
+      "progress": {
+        "path": "/home/egevorky/RustroverProjects/rvvdk/target/r12-candidate-build/release/deps/progress-183274463656dab1",
+        "sha256": "4ded539fc7b712560cef0357ca2bddf9adc1412a5aa3c469c839bd8b0a9e2909"
+      }
+    },
+    "sampling": {
+      "samples": 30,
+      "warmup_seconds": 0.5,
+      "measurement_target_seconds": 4
+    },
+    "order": [
+      "candidate,baseline",
+      "baseline,candidate",
+      "candidate,baseline"
+    ]
+  },
+  "review": {
+    "cases": [
+      [
+        "progress",
+        "progress_copy/dense/unobserved$"
+      ],
+      [
+        "progress",
+        "progress_copy/dense/noop$"
+      ],
+      [
+        "progress",
+        "progress_copy/dense/counter$"
+      ],
+      [
+        "progress",
+        "progress_copy/fragmented50/unobserved$"
+      ],
+      [
+        "progress",
+        "progress_copy/fragmented50/noop$"
+      ],
+      [
+        "progress",
+        "progress_copy/fragmented50/counter$"
+      ],
+      [
+        "portable_plan",
+        "portable_memory/workers1/dyn$"
+      ],
+      [
+        "portable_plan",
+        "portable_memory/workers4/dyn$"
+      ],
+      [
+        "semantic_policy",
+        "semantic_policy/zero_fallback/workers1$"
+      ],
+      [
+        "semantic_policy",
+        "semantic_policy/zero_fallback/workers4$"
+      ],
+      [
+        "semantic_policy",
+        "semantic_policy/hole_fallback/workers1$"
+      ],
+      [
+        "semantic_policy",
+        "semantic_policy/hole_fallback/workers4$"
+      ],
+      [
+        "semantic_policy",
+        "semantic_policy/mixed_accelerated/workers1$"
+      ],
+      [
+        "semantic_policy",
+        "semantic_policy/mixed_accelerated/workers4$"
+      ],
+      [
+        "native_validation",
+        "zero_fallback_1mib_16extents$"
+      ]
+    ],
+    "order": [
+      "candidate,baseline",
+      "baseline,candidate"
+    ],
+    "samples": 20,
+    "warmup_seconds": 0.3,
+    "measurement_target_seconds": 2,
+    "method": "Full matrix paired per case, shortening the gap between corresponding runs. Final committed source = final-candidate.patch."
+  },
+  "source_states": {
+    "pair_and_followup": "candidate.patch",
+    "control": "unmodified baseline runtime",
+    "tuned_and_final": "tuned-candidate.patch",
+    "block_and_review": "final-candidate.patch"
+  }
+}

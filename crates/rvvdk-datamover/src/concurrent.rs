@@ -4,8 +4,9 @@ use std::sync::{
     mpsc::{Receiver, SyncSender, sync_channel},
 };
 
-use rvvdk_core::{BufferPool, Capabilities, Error, Result, VirtualDisk};
+use rvvdk_core::{BufferPool, Error, ExtentKind, Result, VirtualDisk};
 
+use crate::policy::{self, Operation};
 use crate::work::{WorkItem, WorkKind};
 
 #[cfg(test)]
@@ -172,8 +173,13 @@ where
     S: VirtualDisk + ?Sized,
     D: VirtualDisk + ?Sized,
 {
-    match work.kind() {
-        WorkKind::Copy => {
+    let kind = match work.kind() {
+        WorkKind::Copy => ExtentKind::Data,
+        WorkKind::Zero => ExtentKind::Zero,
+        WorkKind::Discard => ExtentKind::Hole,
+    };
+    match policy::select(kind, || destination.capabilities()) {
+        Operation::Copy => {
             let mut buffer = pool.acquire();
 
             let buffer = &mut buffer.as_mut_slice()[..work.length()];
@@ -189,73 +195,17 @@ where
             stats.blocks_copied += 1;
         }
 
-        WorkKind::Zero => {
-            zero_work(destination, work, pool, stats)?;
+        Operation::Zero => {
+            destination.write_zero_at(work.offset(), work.length() as u64)?;
+            stats.bytes_zeroed += work.length() as u64;
         }
-
-        WorkKind::Discard => {
-            discard_work(destination, work, pool, stats)?;
+        Operation::Discard => {
+            destination.discard(work.offset(), work.length() as u64)?;
+            stats.bytes_discarded += work.length() as u64;
         }
+        Operation::WriteZero => write_zero_fallback(destination, work, pool, stats)?,
     }
-
     Ok(())
-}
-
-fn zero_work<D>(
-    destination: &D,
-    work: WorkItem,
-    pool: &BufferPool,
-    stats: &mut WorkerStats,
-) -> Result<()>
-where
-    D: VirtualDisk + ?Sized,
-{
-    let length = work.length() as u64;
-
-    if destination
-        .capabilities()
-        .contains(Capabilities::WRITE_ZERO)
-    {
-        destination.write_zero_at(work.offset(), length)?;
-
-        stats.bytes_zeroed += length;
-
-        return Ok(());
-    }
-
-    write_zero_fallback(destination, work, pool, stats)
-}
-
-fn discard_work<D>(
-    destination: &D,
-    work: WorkItem,
-    pool: &BufferPool,
-    stats: &mut WorkerStats,
-) -> Result<()>
-where
-    D: VirtualDisk + ?Sized,
-{
-    let capabilities = destination.capabilities();
-
-    let length = work.length() as u64;
-
-    if capabilities.contains(Capabilities::DISCARD) {
-        destination.discard(work.offset(), length)?;
-
-        stats.bytes_discarded += length;
-
-        return Ok(());
-    }
-
-    if capabilities.contains(Capabilities::WRITE_ZERO) {
-        destination.write_zero_at(work.offset(), length)?;
-
-        stats.bytes_zeroed += length;
-
-        return Ok(());
-    }
-
-    write_zero_fallback(destination, work, pool, stats)
 }
 
 fn write_zero_fallback<D>(

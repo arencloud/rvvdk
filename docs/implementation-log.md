@@ -414,10 +414,88 @@ Canonical Data/Zero/Hole execution policy, contextual errors/partial progress,
 memory budgets, and descriptor snapshot reuse remain R1 follow-ups. Existing
 DISCARD guarantees and runtime native selection limitations remain R2 work.
 
+## R1.2 — Shared semantic policy and sequential execution
+
+Baseline: `b7162fc`, clean worktree. Scope: one Data/Zero/Hole operation policy
+across portable/native execution, plus one sequential lifecycle for direct,
+planned, and observed copies. No public API changes or stronger sparse guarantees.
+
+Implementation sequence:
+
+1. Audited the duplicated decisions in unobserved sequential, observed sequential,
+   worker, and destination-aware native execution. Recorded existing precedence:
+   Zero uses WRITE_ZERO or ordinary writes; Hole uses DISCARD, then WRITE_ZERO,
+   then ordinary writes. Failure of an advertised operation is propagated.
+2. Added private `policy::select` and routed all those execution paths through it.
+   Retained whole-extent operations for sequential/native copies and bounded work
+   items for workers. Data selection avoids querying sparse capabilities.
+3. Replaced the duplicated sequential loops with `sequential::execute`. It owns
+   allocation, block/tail transfers, statistics, and flush. Compile-time progress
+   hooks preserve the observer cadence without adding observer state to ordinary
+   copies; a const-generic transfer helper shares copy/fallback mechanics.
+4. Added five contract tests for exact operation traces, odd tails, all sparse
+   capability combinations, advertised-operation failure without retries,
+   64 MiB progress thresholds, and flush failure. All five also pass on baseline,
+   confirming behavior preservation. Existing translated-disk and native parity
+   tests continue to cover byte equality and logical/native separation.
+5. Explicitly recorded a pre-existing progress limit: an exact byte threshold can
+   emit 100% before the final extent is counted/flushed. Flush failure suppresses
+   the outer final snapshot, but snapshots have no terminal lifecycle tag. Do not
+   interpret percentage alone as durable completion; check the execution result.
+6. Added a matched memory sparse-policy harness and compared isolated optimized
+   baseline/candidate builds. Reused the progress, dynamic memory, and native Zero
+   fallback harnesses. All timed copies include their flush boundary; reset and
+   full readback remain untimed. No executor defaults or buffer budgets changed.
+
+7. Initial repeats left accelerated mixed four-worker copies above the 5%
+   threshold (+10.23% median). A same-baseline-binary control varied by only
+   −0.16%/−3.45%/−0.75%, so the slowdown was not dismissed as host noise. Reviewed
+   worker code generation and changed the central selector to branch directly by
+   extent kind, with a shared zero/fallback helper. Zero selection no longer goes
+   through Hole's discard condition. The same capabilities are still queried once.
+8. Retained both patches/hashes and all initial, follow-up, and same-binary control
+   results. Rebuilt the candidate and repeated the targeted mixed workload:
+   −0.62%/−2.85%/−15.10%. Repeated all tests and the full matched benchmark matrix
+   for that intermediate source state; no initial timings are presented as later-code data.
+
+9. The second full matrix still showed sequential memory/Zero fallback costs.
+   Preserved that result instead of calling it final qualification. Restored the
+   original configured block-size bound in the shared transfer helper, rather than
+   deriving the bound from the buffer's runtime length. Allocations and actual
+   ranges are identical. Three targeted pairs gave +1.92%/+6.22%/−2.79% for dynamic
+   one-worker memory and −2.81%/+0.09%/−17.31% for observed Zero fallback. Re-ran
+   the tests/checks and paired the entire final matrix case by case, reducing the
+   gap between corresponding baseline/candidate timings. All three source patches
+   and experiment results remain recorded.
+
+Validation: 273 workspace tests passed (five new). Strict all-target Clippy,
+formatting, and core/datamover library compilation for `wasm32-unknown-unknown`
+passed. The latter is a portability compile check, not a runtime qualification.
+Benchmark evidence and performance disposition are in the
+[R1.2 report](benchmark-results/2026-09-28-r12/README.md).
+
+Performance disposition: accept the implementation/refinements; PERF.0 remains
+open, not a clean performance pass. Final dense median changes were −2.11% to
++0.83%; dynamic memory −0.40%/+0.26%; accelerated mixed −2.87%/+1.30%. Three final
+profiles remain above 5% by median: fragmented no-op observer +7.66%, one-worker
+Hole fallback +8.29%, and one-worker Zero fallback +14.12%. Sparse individual pairs
+conflict and longer final-source Zero repeats do not reproduce that median cost.
+Keep all three as controlled-runner follow-ups, including the possibility of real
+callback/fallback overhead. No defaults changed and no universal speedup is claimed.
+All source states, raw samples, outliers, and process resource logs are retained.
+
+Limits: DISCARD still relies on the existing backend contract; R2 must introduce
+an explicit zero-read guarantee. Native and worker payload mechanisms remain
+separate and retain their existing lifetime/shutdown behavior. Contextual errors,
+partial statistics, terminal events, memory budgets, and prepared endpoint
+snapshots remain future work.
+
 ## Next session
 
-Start **R1.2**: consolidate Data/Zero/Hole policy and duplicated sequential
-observed/unobserved loops. Preserve logical bytes, accounting, failure/flush
-boundaries, and observer cadence. Measure dense/fragmented and zero/hole fallback
-paths before and after. Continue PERF.0 qualification on a controlled runner.
-ESXi is still unnecessary; request the trial only when V0 is ready.
+Start **R1.3**: consolidate endpoint preparation and safely reuse descriptor
+snapshots for RAW capacity/access/identity checks. Carry the R1.2 fragmented
+no-op observer and sequential Hole/Zero performance qualification forward in
+PERF.0; do not declare those profiles qualified. Preserve logical capability
+checks and pre-observation rejection. Measure RAW planning latency and retain
+point-in-time/unknown-identity limitations. Continue PERF.0 qualification on a
+controlled runner. ESXi is still unnecessary; request the trial only when V0 is ready.

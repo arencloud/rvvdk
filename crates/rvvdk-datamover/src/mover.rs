@@ -1,19 +1,19 @@
 use std::time::Instant;
 
-use rvvdk_core::{BufferPool, Capabilities, Error, Extent, ExtentKind, Result, VirtualDisk};
+use rvvdk_core::{BufferPool, Error, Extent, Result, VirtualDisk};
 
-use crate::concurrent;
 use crate::planner::ExtentWorkIter;
+use crate::{concurrent, sequential};
 
 use crate::{
     CopyOptions, CopyPlan, CopyReport, CopyStats, ExecutionBackend, ExecutionStrategy,
-    ProgressCompleted, ProgressObserver, ProgressSnapshot, ProgressState, ProgressTotals,
+    ProgressCompleted, ProgressObserver, ProgressSnapshot, ProgressTotals,
 };
 
 #[cfg(target_os = "linux")]
 use crate::{NativeCopyReport, NativeCopyStats};
 #[cfg(target_os = "linux")]
-use rvvdk_core::{BlockDevice, RawDisk};
+use rvvdk_core::{BlockDevice, ExtentKind, RawDisk};
 #[cfg(target_os = "linux")]
 use rvvdk_platform::LinuxFdBackend;
 
@@ -23,21 +23,9 @@ use crate::io_uring::{
     evaluate_compatibility,
 };
 
-const DEFAULT_PROGRESS_INTERVAL_BYTES: u64 = 64 * 1024 * 1024;
-
 pub struct DataMover {
     options: CopyOptions,
     execution_strategy: ExecutionStrategy,
-}
-
-#[derive(Debug, Default)]
-struct MutableStats {
-    bytes_read: u64,
-    bytes_written: u64,
-    bytes_zeroed: u64,
-    bytes_discarded: u64,
-    blocks_copied: u64,
-    extents_processed: u64,
 }
 
 impl DataMover {
@@ -365,39 +353,14 @@ impl DataMover {
             return self.copy_concurrent(source, destination, extents, started);
         }
 
-        let pool = BufferPool::new(
-            self.options.buffer_count(),
-            self.options.block_size(),
-            self.options.buffer_alignment(),
-        )?;
-
-        let mut buffer = pool.acquire();
-
-        let mut stats = MutableStats::default();
-
-        for extent in extents {
-            self.process_extent(
-                source,
-                destination,
-                extent,
-                buffer.as_mut_slice(),
-                &mut stats,
-            )?;
-
-            stats.extents_processed += 1;
-        }
-
-        destination.flush()?;
-
-        Ok(CopyStats::new(
-            stats.bytes_read,
-            stats.bytes_written,
-            stats.bytes_zeroed,
-            stats.bytes_discarded,
-            stats.blocks_copied,
-            stats.extents_processed,
-            started.elapsed(),
-        ))
+        sequential::execute(
+            source,
+            destination,
+            &extents,
+            self.options,
+            started,
+            &mut (),
+        )
     }
 
     #[cfg(target_os = "linux")]
@@ -597,187 +560,16 @@ impl DataMover {
         O: ProgressObserver + ?Sized,
     {
         let started = Instant::now();
-        let pool = BufferPool::new(
-            self.options.buffer_count(),
-            plan.block_size(),
-            plan.alignment(),
+        let mut progress = sequential::Observed::new(plan, observer, started);
+        let stats = sequential::execute(
+            source,
+            destination,
+            plan.extents(),
+            self.options,
+            started,
+            &mut progress,
         )?;
-        let mut buffer = pool.acquire();
-        let mut stats = MutableStats::default();
-        let mut progress = ProgressState::from_plan(plan);
-        let mut last_emitted = 0_u64;
-
-        for extent in plan.extents() {
-            match extent.kind() {
-                ExtentKind::Data => {
-                    let mut offset = extent.offset();
-                    let end = extent.end();
-
-                    while offset < end {
-                        let remaining = end - offset;
-                        let length = remaining.min(self.options.block_size() as u64);
-                        let request_size = usize::try_from(length)
-                            .map_err(|_| Error::RangeOverflow { offset, length })?;
-                        let current_buffer = &mut buffer.as_mut_slice()[..request_size];
-
-                        source.read_exact_at(offset, current_buffer)?;
-                        destination.write_all_at(offset, current_buffer)?;
-
-                        offset = offset
-                            .checked_add(length)
-                            .ok_or(Error::RangeOverflow { offset, length })?;
-
-                        stats.bytes_read += length;
-                        stats.bytes_written += length;
-                        stats.blocks_copied += 1;
-                        progress.complete_data(length);
-
-                        Self::emit_progress_if_needed(
-                            &progress,
-                            observer,
-                            started,
-                            &mut last_emitted,
-                            false,
-                        );
-                    }
-                }
-
-                ExtentKind::Zero => {
-                    if destination
-                        .capabilities()
-                        .contains(Capabilities::WRITE_ZERO)
-                    {
-                        destination.write_zero_at(extent.offset(), extent.length())?;
-                        stats.bytes_zeroed += extent.length();
-                        progress.complete_zero(extent.length());
-                    } else {
-                        buffer.as_mut_slice().fill(0);
-                        let mut offset = extent.offset();
-                        let end = extent.end();
-
-                        while offset < end {
-                            let remaining = end - offset;
-                            let length = remaining.min(self.options.block_size() as u64);
-                            let request_size = usize::try_from(length)
-                                .map_err(|_| Error::RangeOverflow { offset, length })?;
-
-                            destination
-                                .write_all_at(offset, &buffer.as_mut_slice()[..request_size])?;
-
-                            offset = offset
-                                .checked_add(length)
-                                .ok_or(Error::RangeOverflow { offset, length })?;
-
-                            stats.bytes_written += length;
-                            stats.blocks_copied += 1;
-                            progress.complete_fallback_write(length);
-
-                            Self::emit_progress_if_needed(
-                                &progress,
-                                observer,
-                                started,
-                                &mut last_emitted,
-                                false,
-                            );
-                        }
-                    }
-                }
-
-                ExtentKind::Hole => {
-                    let capabilities = destination.capabilities();
-
-                    if capabilities.contains(Capabilities::DISCARD) {
-                        destination.discard(extent.offset(), extent.length())?;
-                        stats.bytes_discarded += extent.length();
-                        progress.complete_discard(extent.length());
-                    } else if capabilities.contains(Capabilities::WRITE_ZERO) {
-                        destination.write_zero_at(extent.offset(), extent.length())?;
-                        stats.bytes_zeroed += extent.length();
-                        progress.complete_zero(extent.length());
-                    } else {
-                        buffer.as_mut_slice().fill(0);
-                        let mut offset = extent.offset();
-                        let end = extent.end();
-
-                        while offset < end {
-                            let remaining = end - offset;
-                            let length = remaining.min(self.options.block_size() as u64);
-                            let request_size = usize::try_from(length)
-                                .map_err(|_| Error::RangeOverflow { offset, length })?;
-
-                            destination
-                                .write_all_at(offset, &buffer.as_mut_slice()[..request_size])?;
-
-                            offset = offset
-                                .checked_add(length)
-                                .ok_or(Error::RangeOverflow { offset, length })?;
-
-                            stats.bytes_written += length;
-                            stats.blocks_copied += 1;
-                            progress.complete_fallback_write(length);
-
-                            Self::emit_progress_if_needed(
-                                &progress,
-                                observer,
-                                started,
-                                &mut last_emitted,
-                                false,
-                            );
-                        }
-                    }
-                }
-            }
-
-            stats.extents_processed += 1;
-            progress.complete_extent();
-
-            if progress.completed().logical_bytes_completed() < progress.totals().logical_bytes() {
-                Self::emit_progress_if_needed(
-                    &progress,
-                    observer,
-                    started,
-                    &mut last_emitted,
-                    true,
-                );
-            }
-        }
-
-        destination.flush()?;
-
-        Ok(CopyReport::new(
-            ExecutionBackend::Threaded,
-            CopyStats::new(
-                stats.bytes_read,
-                stats.bytes_written,
-                stats.bytes_zeroed,
-                stats.bytes_discarded,
-                stats.blocks_copied,
-                stats.extents_processed,
-                started.elapsed(),
-            ),
-        ))
-    }
-
-    fn emit_progress_if_needed<O>(
-        progress: &ProgressState,
-        observer: &O,
-        started: Instant,
-        last_emitted: &mut u64,
-        force: bool,
-    ) where
-        O: ProgressObserver + ?Sized,
-    {
-        let logical_completed = progress.completed().logical_bytes_completed();
-        let interval_reached =
-            logical_completed.saturating_sub(*last_emitted) >= DEFAULT_PROGRESS_INTERVAL_BYTES;
-
-        if logical_completed == *last_emitted || (!force && !interval_reached) {
-            return;
-        }
-
-        observer.on_progress(&progress.snapshot(ExecutionBackend::Threaded, started.elapsed()));
-
-        *last_emitted = logical_completed;
+        Ok(CopyReport::new(ExecutionBackend::Threaded, stats))
     }
 
     fn execute_threaded_plan<S, D>(
@@ -799,42 +591,15 @@ impl DataMover {
             return Ok(CopyReport::new(ExecutionBackend::Threaded, stats));
         }
 
-        let pool = BufferPool::new(
-            self.options.buffer_count(),
-            plan.block_size(),
-            plan.alignment(),
+        let stats = sequential::execute(
+            source,
+            destination,
+            plan.extents(),
+            self.options,
+            started,
+            &mut (),
         )?;
-
-        let mut buffer = pool.acquire();
-
-        let mut stats = MutableStats::default();
-
-        for extent in plan.extents() {
-            self.process_extent(
-                source,
-                destination,
-                *extent,
-                buffer.as_mut_slice(),
-                &mut stats,
-            )?;
-
-            stats.extents_processed += 1;
-        }
-
-        destination.flush()?;
-
-        Ok(CopyReport::new(
-            ExecutionBackend::Threaded,
-            CopyStats::new(
-                stats.bytes_read,
-                stats.bytes_written,
-                stats.bytes_zeroed,
-                stats.bytes_discarded,
-                stats.blocks_copied,
-                stats.extents_processed,
-                started.elapsed(),
-            ),
-        ))
+        Ok(CopyReport::new(ExecutionBackend::Threaded, stats))
     }
 
     #[cfg(target_os = "linux")]
@@ -913,176 +678,6 @@ impl DataMover {
         let plan = self.plan_raw_with_destination(source, destination)?;
 
         self.execute_raw_plan(&plan, source, destination)
-    }
-
-    fn process_extent<S, D>(
-        &self,
-        source: &S,
-        destination: &D,
-        extent: Extent,
-        buffer: &mut [u8],
-        stats: &mut MutableStats,
-    ) -> Result<()>
-    where
-        S: VirtualDisk + ?Sized,
-        D: VirtualDisk + ?Sized,
-    {
-        match extent.kind() {
-            ExtentKind::Data => self.copy_data_extent(source, destination, extent, buffer, stats),
-
-            ExtentKind::Zero => self.zero_extent(destination, extent, buffer, stats),
-
-            ExtentKind::Hole => self.hole_extent(destination, extent, buffer, stats),
-        }
-    }
-
-    fn copy_data_extent<S, D>(
-        &self,
-        source: &S,
-        destination: &D,
-        extent: Extent,
-        buffer: &mut [u8],
-        stats: &mut MutableStats,
-    ) -> Result<()>
-    where
-        S: VirtualDisk + ?Sized,
-        D: VirtualDisk + ?Sized,
-    {
-        let mut offset = extent.offset();
-
-        let end = extent.end();
-
-        while offset < end {
-            let remaining = end - offset;
-
-            let request_size_u64 = remaining.min(self.options.block_size() as u64);
-
-            let request_size =
-                usize::try_from(request_size_u64).map_err(|_| Error::RangeOverflow {
-                    offset,
-                    length: request_size_u64,
-                })?;
-
-            let current_buffer = &mut buffer[..request_size];
-
-            source.read_exact_at(offset, current_buffer)?;
-
-            destination.write_all_at(offset, current_buffer)?;
-
-            offset = offset
-                .checked_add(request_size_u64)
-                .ok_or(Error::RangeOverflow {
-                    offset,
-                    length: request_size_u64,
-                })?;
-
-            stats.bytes_read += request_size_u64;
-
-            stats.bytes_written += request_size_u64;
-
-            stats.blocks_copied += 1;
-        }
-
-        Ok(())
-    }
-
-    fn zero_extent<D>(
-        &self,
-        destination: &D,
-        extent: Extent,
-        buffer: &mut [u8],
-        stats: &mut MutableStats,
-    ) -> Result<()>
-    where
-        D: VirtualDisk + ?Sized,
-    {
-        if destination
-            .capabilities()
-            .contains(Capabilities::WRITE_ZERO)
-        {
-            destination.write_zero_at(extent.offset(), extent.length())?;
-
-            stats.bytes_zeroed += extent.length();
-
-            return Ok(());
-        }
-
-        self.write_zero_fallback(destination, extent, buffer, stats)
-    }
-
-    fn hole_extent<D>(
-        &self,
-        destination: &D,
-        extent: Extent,
-        buffer: &mut [u8],
-        stats: &mut MutableStats,
-    ) -> Result<()>
-    where
-        D: VirtualDisk + ?Sized,
-    {
-        let capabilities = destination.capabilities();
-
-        if capabilities.contains(Capabilities::DISCARD) {
-            destination.discard(extent.offset(), extent.length())?;
-
-            stats.bytes_discarded += extent.length();
-
-            return Ok(());
-        }
-
-        if capabilities.contains(Capabilities::WRITE_ZERO) {
-            destination.write_zero_at(extent.offset(), extent.length())?;
-
-            stats.bytes_zeroed += extent.length();
-
-            return Ok(());
-        }
-
-        self.write_zero_fallback(destination, extent, buffer, stats)
-    }
-
-    fn write_zero_fallback<D>(
-        &self,
-        destination: &D,
-        extent: Extent,
-        buffer: &mut [u8],
-        stats: &mut MutableStats,
-    ) -> Result<()>
-    where
-        D: VirtualDisk + ?Sized,
-    {
-        buffer.fill(0);
-
-        let mut offset = extent.offset();
-
-        let end = extent.end();
-
-        while offset < end {
-            let remaining = end - offset;
-
-            let request_size_u64 = remaining.min(self.options.block_size() as u64);
-
-            let request_size =
-                usize::try_from(request_size_u64).map_err(|_| Error::RangeOverflow {
-                    offset,
-                    length: request_size_u64,
-                })?;
-
-            destination.write_all_at(offset, &buffer[..request_size])?;
-
-            offset = offset
-                .checked_add(request_size_u64)
-                .ok_or(Error::RangeOverflow {
-                    offset,
-                    length: request_size_u64,
-                })?;
-
-            stats.bytes_written += request_size_u64;
-
-            stats.blocks_copied += 1;
-        }
-
-        Ok(())
     }
 
     fn copy_concurrent<S, D>(

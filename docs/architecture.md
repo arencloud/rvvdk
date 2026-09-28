@@ -816,9 +816,47 @@ runtime preparation can still fail after initial notification. The canonical ext
 validator is shared by plan construction and execution trust boundaries.
 
 `CopyPlan` remains an in-memory structural record. Callers must stabilize source
-contents and mappings. Semantic loop consolidation, contextual errors, descriptor
-snapshot reuse, and complete native preparation remain future steps. See
+contents and mappings. Contextual errors, descriptor snapshot reuse, and complete
+native preparation remain future steps. See
 [ADR-0027](adr/0027-portable-planning.md) for migration and limits.
+
+### Shared semantic execution (R1.2)
+
+A private operation policy now selects the same action for sequential, worker,
+and destination-aware native execution:
+
+| Logical extent | Destination capability | Selected action |
+|---|---|---|
+| Data | Any | Read source and write destination |
+| Zero | WRITE_ZERO | Backend zero operation |
+| Zero | Otherwise | Write zero-filled buffers |
+| Hole | DISCARD | Backend discard operation |
+| Hole | WRITE_ZERO, without DISCARD | Backend zero operation |
+| Hole | Neither | Write zero-filled buffers |
+
+Capabilities are queried when selecting a sparse operation, once per extent for
+sequential/native paths and once per work item for workers. Data selection does
+not query them. A selected operation's failure propagates; it is not retried as a
+fallback write. The existing DISCARD contract remains unchanged pending R2.
+
+Direct copying and observed/unobserved sequential plan execution share one loop,
+including buffer allocation, block/tail handling, statistics, and destination
+flush. Compile-time progress hooks keep observer state out of unobserved copies.
+Worker scheduling and native payload pipelines retain their own I/O mechanisms,
+work-item sizes, and resource lifetimes while sharing policy selection.
+
+Successful Data/fallback writes count as written bytes and copied blocks. Backend
+zero/discard calls count only in their corresponding byte counters. Source payload
+is never read for Zero/Hole. A full report follows successful flush; errors may
+leave already-completed writes and still do not carry partial statistics.
+
+Observer cadence is preserved: initial after validation, byte thresholds every
+64 MiB for Data/fallback writes, intermediate extent boundaries, and final after
+successful flush. An exact byte threshold can emit 100% byte progress before the
+last extent is counted or flushed. Progress snapshots have no lifecycle tag, so
+100% is not a durability/completion event; callers must check the execution result.
+Explicit terminal events remain future work. See the new contract tests and
+[R1.2 benchmark report](benchmark-results/2026-09-28-r12/README.md).
 
 ## Concurrent worker shutdown
 

@@ -2,7 +2,7 @@ use std::process::Command;
 use std::sync::{Condvar, mpsc};
 use std::time::{Duration, Instant};
 
-use rvvdk_core::{DiskGeometry, Error, Extent};
+use rvvdk_core::{Capabilities, DiskGeometry, Error, Extent};
 
 use super::*;
 

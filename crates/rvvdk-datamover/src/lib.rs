@@ -9,8 +9,10 @@ mod observer;
 mod options;
 mod plan;
 mod planner;
+mod policy;
 mod preflight;
 mod progress;
+mod sequential;
 mod stats;
 mod work;
 

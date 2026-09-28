@@ -133,6 +133,18 @@ RAW-bound API and the new portable API with equivalent logical workloads.
 dispatch with one/four workers. These are API overhead measurements, not storage
 qualification or a reason to change concurrency defaults.
 
+### R1.2 semantic execution measurements
+
+The [R1.2 report](benchmark-results/2026-09-28-r12/README.md) compares observed,
+no-op-observer, and unobserved dense/fragmented file copies, dynamic memory copies,
+portable Zero/Hole fallback and accelerated mixed operations, and native Zero
+fallback. The new `semantic_policy` harness runs unchanged against both runtimes,
+with reset/readback untimed and flush included. It separates one-worker observed
+execution from four-worker execution; these are not equivalent parallelism costs.
+Final fragmented no-op observation and sequential Hole/Zero fallback qualification
+remain open; the report preserves conflicting runs and does not claim a clean
+performance pass.
+
 ### Result storage convention
 
 Use `docs/benchmark-results/<run-id>/` for concise tracked summaries, environment

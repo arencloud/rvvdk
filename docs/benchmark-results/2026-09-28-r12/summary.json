@@ -1,0 +1,1270 @@
+{
+  "block": {
+    "portable_memory_workers1/dyn": {
+      "candidate": {
+        "runs_ns": {
+          "block1": 1872573.1047619053,
+          "block2": 1938542.9424242422,
+          "block3": 1798270.880952381
+        },
+        "median_ns": 1872573.1047619053
+      },
+      "baseline": {
+        "runs_ns": {
+          "block1": 1837319.9695652176,
+          "block2": 1824977.5607843138,
+          "block3": 1849883.0555555555
+        },
+        "median_ns": 1837319.9695652176
+      },
+      "paired_change_percent": {
+        "block1": 1.9187259584964922,
+        "block2": 6.222837150453597,
+        "block3": -2.7900236422066294
+      },
+      "median_paired_change_percent": 1.9187259584964922
+    },
+    "semantic_policy_zero_fallback/workers1": {
+      "candidate": {
+        "runs_ns": {
+          "block1": 42435.98669482577,
+          "block2": 44292.22994467497,
+          "block3": 43582.204437669374
+        },
+        "median_ns": 43582.204437669374
+      },
+      "baseline": {
+        "runs_ns": {
+          "block1": 43663.58052434458,
+          "block2": 44252.36876721762,
+          "block3": 52702.590369616824
+        },
+        "median_ns": 44252.36876721762
+      },
+      "paired_change_percent": {
+        "block1": -2.811482280603095,
+        "block2": 0.09007693501568159,
+        "block3": -17.305384551278856
+      },
+      "median_paired_change_percent": -2.811482280603095
+    }
+  },
+  "control": {
+    "semantic_policy_mixed_accelerated/workers4": {
+      "a": {
+        "runs_ns": {
+          "control1": 102399.9256642512,
+          "control2": 107841.8124695864,
+          "control3": 105372.22605294826
+        },
+        "median_ns": 105372.22605294826
+      },
+      "b": {
+        "runs_ns": {
+          "control1": 102235.63214072751,
+          "control2": 104124.10714285713,
+          "control3": 104580.9779827798
+        },
+        "median_ns": 104124.10714285713
+      },
+      "same_binary_change_percent": {
+        "control1": -0.16044301053731447,
+        "control2": -3.447369106280307,
+        "control3": -0.750907615609131
+      },
+      "median_same_binary_change_percent": -0.750907615609131
+    }
+  },
+  "final": {
+    "native_validation/zero_fallback_1mib_16extents": {
+      "baseline": {
+        "runs_ns": {
+          "final1": 49897.95574324324,
+          "final2": 44345.831089743595
+        },
+        "median_ns": 47121.89341649342
+      },
+      "candidate": {
+        "runs_ns": {
+          "final1": 48925.65633333332,
+          "final2": 45119.42389937107
+        },
+        "median_ns": 47022.54011635219
+      },
+      "paired_change_percent": {
+        "final1": -1.9485756388759157,
+        "final2": 1.7444544179630705
+      },
+      "median_paired_change_percent": -0.10206061045642256
+    },
+    "portable_memory_workers1/dyn": {
+      "baseline": {
+        "runs_ns": {
+          "final1": 1863396.628125,
+          "final2": 2055943.6766666663
+        },
+        "median_ns": 1959670.1523958333
+      },
+      "candidate": {
+        "runs_ns": {
+          "final1": 2038522.9766666666,
+          "final2": 2373587.465384615
+        },
+        "median_ns": 2206055.221025641
+      },
+      "paired_change_percent": {
+        "final1": 9.39823255545349,
+        "final2": 15.450023866069596
+      },
+      "median_paired_change_percent": 12.424128210761543
+    },
+    "portable_memory_workers4/dyn": {
+      "baseline": {
+        "runs_ns": {
+          "final1": 1178461.4176470586,
+          "final2": 1238681.77
+        },
+        "median_ns": 1208571.5938235293
+      },
+      "candidate": {
+        "runs_ns": {
+          "final1": 1276495.9441176471,
+          "final2": 1239700.5294117648
+        },
+        "median_ns": 1258098.236764706
+      },
+      "paired_change_percent": {
+        "final1": 8.318857537680469,
+        "final2": 0.08224545128849847
+      },
+      "median_paired_change_percent": 4.2005514944844835
+    },
+    "progress_copy_dense/counter": {
+      "baseline": {
+        "runs_ns": {
+          "final1": 13384722.3125,
+          "final2": 13504975.175
+        },
+        "median_ns": 13444848.74375
+      },
+      "candidate": {
+        "runs_ns": {
+          "final1": 13681905.6375,
+          "final2": 13417695.95
+        },
+        "median_ns": 13549800.79375
+      },
+      "paired_change_percent": {
+        "final1": 2.220317448965381,
+        "final2": -0.6462746052400714
+      },
+      "median_paired_change_percent": 0.7870214218626548
+    },
+    "progress_copy_dense/noop": {
+      "baseline": {
+        "runs_ns": {
+          "final1": 13729330.3125,
+          "final2": 13860526.175
+        },
+        "median_ns": 13794928.24375
+      },
+      "candidate": {
+        "runs_ns": {
+          "final1": 13606175.9125,
+          "final2": 13465093.4
+        },
+        "median_ns": 13535634.65625
+      },
+      "paired_change_percent": {
+        "final1": -0.8970168041471993,
+        "final2": -2.852942016827875
+      },
+      "median_paired_change_percent": -1.8749794104875372
+    },
+    "progress_copy_dense/unobserved": {
+      "baseline": {
+        "runs_ns": {
+          "final1": 13135478.5375,
+          "final2": 13422504.4
+        },
+        "median_ns": 13278991.46875
+      },
+      "candidate": {
+        "runs_ns": {
+          "final1": 13810702.775,
+          "final2": 13561188.5625
+        },
+        "median_ns": 13685945.66875
+      },
+      "paired_change_percent": {
+        "final1": 5.140461655601869,
+        "final2": 1.0332212109388506
+      },
+      "median_paired_change_percent": 3.0868414332703598
+    },
+    "progress_copy_fragmented50/counter": {
+      "baseline": {
+        "runs_ns": {
+          "final1": 12280483.275,
+          "final2": 13297822.45
+        },
+        "median_ns": 12789152.8625
+      },
+      "candidate": {
+        "runs_ns": {
+          "final1": 12999807.3125,
+          "final2": 13253828.8375
+        },
+        "median_ns": 13126818.075
+      },
+      "paired_change_percent": {
+        "final1": 5.857457083666762,
+        "final2": -0.3308332072067821
+      },
+      "median_paired_change_percent": 2.7633119382299896
+    },
+    "progress_copy_fragmented50/noop": {
+      "baseline": {
+        "runs_ns": {
+          "final1": 12190319.7375,
+          "final2": 13324569.525
+        },
+        "median_ns": 12757444.631250001
+      },
+      "candidate": {
+        "runs_ns": {
+          "final1": 13170888.4375,
+          "final2": 13381616.2875
+        },
+        "median_ns": 13276252.3625
+      },
+      "paired_change_percent": {
+        "final1": 8.043830851979727,
+        "final2": 0.4281321238405855
+      },
+      "median_paired_change_percent": 4.2359814879101565
+    },
+    "progress_copy_fragmented50/unobserved": {
+      "baseline": {
+        "runs_ns": {
+          "final1": 12426370.075,
+          "final2": 14839566.05
+        },
+        "median_ns": 13632968.0625
+      },
+      "candidate": {
+        "runs_ns": {
+          "final1": 13123612.9,
+          "final2": 13224909.0625
+        },
+        "median_ns": 13174260.98125
+      },
+      "paired_change_percent": {
+        "final1": 5.610993562816469,
+        "final2": -10.880756095290266
+      },
+      "median_paired_change_percent": -2.634881266236899
+    },
+    "semantic_policy_hole_fallback/workers1": {
+      "baseline": {
+        "runs_ns": {
+          "final1": 43522.525709779184,
+          "final2": 48294.247838345866
+        },
+        "median_ns": 45908.38677406253
+      },
+      "candidate": {
+        "runs_ns": {
+          "final1": 49976.895547945205,
+          "final2": 50103.271910112366
+        },
+        "median_ns": 50040.08372902879
+      },
+      "paired_change_percent": {
+        "final1": 14.829952381912825,
+        "final2": 3.7458375536188138
+      },
+      "median_paired_change_percent": 9.28789496776582
+    },
+    "semantic_policy_hole_fallback/workers4": {
+      "baseline": {
+        "runs_ns": {
+          "final1": 116202.2580357143,
+          "final2": 144847.34088145898
+        },
+        "median_ns": 130524.79945858664
+      },
+      "candidate": {
+        "runs_ns": {
+          "final1": 139059.1053571428,
+          "final2": 137910.56764705884
+        },
+        "median_ns": 138484.8365021008
+      },
+      "paired_change_percent": {
+        "final1": 19.66988224480417,
+        "final2": -4.78902352793421
+      },
+      "median_paired_change_percent": 7.44042935843498
+    },
+    "semantic_policy_mixed_accelerated/workers1": {
+      "baseline": {
+        "runs_ns": {
+          "final1": 46982.841529605255,
+          "final2": 47218.78171428571
+        },
+        "median_ns": 47100.81162194548
+      },
+      "candidate": {
+        "runs_ns": {
+          "final1": 48130.98346080306,
+          "final2": 47498.764003759396
+        },
+        "median_ns": 47814.87373228122
+      },
+      "paired_change_percent": {
+        "final1": 2.443747320975298,
+        "final2": 0.5929468726402654
+      },
+      "median_paired_change_percent": 1.5183470968077817
+    },
+    "semantic_policy_mixed_accelerated/workers4": {
+      "baseline": {
+        "runs_ns": {
+          "final1": 160808.55333333334,
+          "final2": 130833.7060869565
+        },
+        "median_ns": 145821.12971014492
+      },
+      "candidate": {
+        "runs_ns": {
+          "final1": 124979.83441926345,
+          "final2": 125240.4348082596
+        },
+        "median_ns": 125110.13461376153
+      },
+      "paired_change_percent": {
+        "final1": -22.280356468229666,
+        "final2": -4.2750996253056
+      },
+      "median_paired_change_percent": -13.277728046767633
+    },
+    "semantic_policy_zero_fallback/workers1": {
+      "baseline": {
+        "runs_ns": {
+          "final1": 43981.63780991735,
+          "final2": 48005.598202614376
+        },
+        "median_ns": 45993.61800626587
+      },
+      "candidate": {
+        "runs_ns": {
+          "final1": 49660.461842105266,
+          "final2": 51194.86524288107
+        },
+        "median_ns": 50427.66354249317
+      },
+      "paired_change_percent": {
+        "final1": 12.911806642424306,
+        "final2": 6.643531503984068
+      },
+      "median_paired_change_percent": 9.777669073204187
+    },
+    "semantic_policy_zero_fallback/workers4": {
+      "baseline": {
+        "runs_ns": {
+          "final1": 114755.67297619046,
+          "final2": 142499.22067039105
+        },
+        "median_ns": 128627.44682329075
+      },
+      "candidate": {
+        "runs_ns": {
+          "final1": 159206.03342465754,
+          "final2": 143417.06347305386
+        },
+        "median_ns": 151311.5484488557
+      },
+      "paired_change_percent": {
+        "final1": 38.73478259997627,
+        "final2": 0.6441037349852241
+      },
+      "median_paired_change_percent": 19.689443167480746
+    }
+  },
+  "followup": {
+    "portable_memory_workers1/dyn": {
+      "candidate": {
+        "runs_ns": {
+          "followup1": 1488524.825,
+          "followup2": 1445708.085555555,
+          "followup3": 1556307.1782051283
+        },
+        "median_ns": 1488524.825
+      },
+      "baseline": {
+        "runs_ns": {
+          "followup1": 1463531.1477777779,
+          "followup2": 1479679.627160494,
+          "followup3": 1541612.9523809524
+        },
+        "median_ns": 1479679.627160494
+      },
+      "paired_change_percent": {
+        "followup1": 1.7077653085943778,
+        "followup2": -2.2958714157692572,
+        "followup3": 0.9531721825170925
+      },
+      "median_paired_change_percent": 0.9531721825170925
+    },
+    "portable_memory_workers4/dyn": {
+      "candidate": {
+        "runs_ns": {
+          "followup1": 1012818.6602150537,
+          "followup2": 1077318.719047619,
+          "followup3": 1100677.3766666665
+        },
+        "median_ns": 1077318.719047619
+      },
+      "baseline": {
+        "runs_ns": {
+          "followup1": 1014023.6731182795,
+          "followup2": 1136644.7928571433,
+          "followup3": 1089628.5103448278
+        },
+        "median_ns": 1089628.5103448278
+      },
+      "paired_change_percent": {
+        "followup1": -0.11883479007154252,
+        "followup2": -5.219403122447641,
+        "followup3": 1.0140030493825947
+      },
+      "median_paired_change_percent": -0.11883479007154252
+    },
+    "portable_memory_workers4/static": {
+      "candidate": {
+        "runs_ns": {
+          "followup1": 1002441.7526881722,
+          "followup2": 1207013.764367816,
+          "followup3": 1168774.3217948717
+        },
+        "median_ns": 1168774.3217948717
+      },
+      "baseline": {
+        "runs_ns": {
+          "followup1": 1011104.1548387097,
+          "followup2": 1083391.6896551724,
+          "followup3": 1140539.0999999999
+        },
+        "median_ns": 1083391.6896551724
+      },
+      "paired_change_percent": {
+        "followup1": -0.8567269859472981,
+        "followup2": 11.41065377305881,
+        "followup3": 2.475603141959093
+      },
+      "median_paired_change_percent": 2.475603141959093
+    },
+    "semantic_policy_hole_fallback/workers1": {
+      "candidate": {
+        "runs_ns": {
+          "followup1": 42697.05756666667,
+          "followup2": 41434.345348058894,
+          "followup3": 47619.85383647798
+        },
+        "median_ns": 42697.05756666667
+      },
+      "baseline": {
+        "runs_ns": {
+          "followup1": 41648.19581256231,
+          "followup2": 42557.8141609719,
+          "followup3": 46520.55869391026
+        },
+        "median_ns": 42557.8141609719
+      },
+      "paired_change_percent": {
+        "followup1": 2.518384611003932,
+        "followup2": -2.6398649344714142,
+        "followup3": 2.363030826436807
+      },
+      "median_paired_change_percent": 2.363030826436807
+    },
+    "semantic_policy_hole_fallback/workers4": {
+      "candidate": {
+        "runs_ns": {
+          "followup1": 116458.86004415009,
+          "followup2": 120671.56141051231,
+          "followup3": 135998.63642092
+        },
+        "median_ns": 120671.56141051231
+      },
+      "baseline": {
+        "runs_ns": {
+          "followup1": 124474.32454728372,
+          "followup2": 124129.73443708607,
+          "followup3": 136252.61123429416
+        },
+        "median_ns": 124474.32454728372
+      },
+      "paired_change_percent": {
+        "followup1": -6.439452097680443,
+        "followup2": -2.785934443714211,
+        "followup3": -0.18639996039228057
+      },
+      "median_paired_change_percent": -2.785934443714211
+    },
+    "semantic_policy_mixed_accelerated/workers4": {
+      "candidate": {
+        "runs_ns": {
+          "followup1": 110097.41663097792,
+          "followup2": 124261.74375000001,
+          "followup3": 143061.0931372549
+        },
+        "median_ns": 124261.74375000001
+      },
+      "baseline": {
+        "runs_ns": {
+          "followup1": 115538.44005544003,
+          "followup2": 108487.78263750828,
+          "followup3": 129784.91890881912
+        },
+        "median_ns": 115538.44005544003
+      },
+      "paired_change_percent": {
+        "followup1": -4.709275477366049,
+        "followup2": 14.539850229216578,
+        "followup3": 10.229365892475538
+      },
+      "median_paired_change_percent": 10.229365892475538
+    },
+    "semantic_policy_zero_fallback/workers4": {
+      "candidate": {
+        "runs_ns": {
+          "followup1": 192068.3023809524,
+          "followup2": 175971.77676991146,
+          "followup3": 198737.33502222225
+        },
+        "median_ns": 192068.3023809524
+      },
+      "baseline": {
+        "runs_ns": {
+          "followup1": 175585.67665758403,
+          "followup2": 172586.0823272091,
+          "followup3": 202399.76023875122
+        },
+        "median_ns": 175585.67665758403
+      },
+      "paired_change_percent": {
+        "followup1": 9.387226815494598,
+        "followup2": 1.961742451678905,
+        "followup3": -1.8095007682858766
+      },
+      "median_paired_change_percent": 1.961742451678905
+    }
+  },
+  "initial": {
+    "native_validation/zero_fallback_1mib_16extents": {
+      "baseline": {
+        "runs_ns": {
+          "pair1": 43842.481550802135,
+          "pair2": 40789.95874316939,
+          "pair3": 51735.23908045977
+        },
+        "median_ns": 43842.481550802135
+      },
+      "candidate": {
+        "runs_ns": {
+          "pair1": 51004.807692307695,
+          "pair2": 41447.863823529406,
+          "pair3": 40739.3956284153
+        },
+        "median_ns": 41447.863823529406
+      },
+      "paired_change_percent": {
+        "pair1": 16.336498045180846,
+        "pair2": 1.6129094037639513,
+        "pair3": -21.25406907841576
+      },
+      "median_paired_change_percent": 1.6129094037639513
+    },
+    "portable_memory_workers1/dyn": {
+      "baseline": {
+        "runs_ns": {
+          "pair1": 1843933.628125,
+          "pair2": 1543989.8105263158,
+          "pair3": 1616282.2947368422
+        },
+        "median_ns": 1616282.2947368422
+      },
+      "candidate": {
+        "runs_ns": {
+          "pair1": 2041796.8233333335,
+          "pair2": 1792427.5078947372,
+          "pair3": 1578609.8000000003
+        },
+        "median_ns": 1792427.5078947372
+      },
+      "paired_change_percent": {
+        "pair1": 10.730494427260396,
+        "pair2": 16.090630629468585,
+        "pair3": -2.3308115704488097
+      },
+      "median_paired_change_percent": 10.730494427260396
+    },
+    "portable_memory_workers4/dyn": {
+      "baseline": {
+        "runs_ns": {
+          "pair1": 1152155.5805555559,
+          "pair2": 1017596.5695652172,
+          "pair3": 1001852.1181818182
+        },
+        "median_ns": 1017596.5695652172
+      },
+      "candidate": {
+        "runs_ns": {
+          "pair1": 1263747.2794117648,
+          "pair2": 1158941.0805555556,
+          "pair3": 1077689.0021739132
+        },
+        "median_ns": 1158941.0805555556
+      },
+      "paired_change_percent": {
+        "pair1": 9.685471366844457,
+        "pair2": 13.890034146904595,
+        "pair3": 7.569668478589975
+      },
+      "median_paired_change_percent": 9.685471366844457
+    },
+    "progress_copy_dense/counter": {
+      "baseline": {
+        "runs_ns": {
+          "pair1": 13177429.725,
+          "pair2": 12585067.975,
+          "pair3": 13057919.05
+        },
+        "median_ns": 13057919.05
+      },
+      "candidate": {
+        "runs_ns": {
+          "pair1": 13920499.5625,
+          "pair2": 12747194.225,
+          "pair3": 12584518.1
+        },
+        "median_ns": 12747194.225
+      },
+      "paired_change_percent": {
+        "pair1": 5.6389588334534,
+        "pair2": 1.288242942525697,
+        "pair3": -3.625393511686692
+      },
+      "median_paired_change_percent": 1.288242942525697
+    },
+    "progress_copy_dense/noop": {
+      "baseline": {
+        "runs_ns": {
+          "pair1": 14188205.2875,
+          "pair2": 13208216.475,
+          "pair3": 12942819.625
+        },
+        "median_ns": 13208216.475
+      },
+      "candidate": {
+        "runs_ns": {
+          "pair1": 13707547.575,
+          "pair2": 13117910.025,
+          "pair3": 12632784.4625
+        },
+        "median_ns": 13117910.025
+      },
+      "paired_change_percent": {
+        "pair1": -3.387727360580739,
+        "pair2": -0.6837141878385133,
+        "pair3": -2.3954221064870884
+      },
+      "median_paired_change_percent": -2.3954221064870884
+    },
+    "progress_copy_dense/unobserved": {
+      "baseline": {
+        "runs_ns": {
+          "pair1": 13163974.9125,
+          "pair2": 12905637.2,
+          "pair3": 12661869.075
+        },
+        "median_ns": 12905637.2
+      },
+      "candidate": {
+        "runs_ns": {
+          "pair1": 13975008.6625,
+          "pair2": 12989408.2,
+          "pair3": 13018809.8375
+        },
+        "median_ns": 13018809.8375
+      },
+      "paired_change_percent": {
+        "pair1": 6.1610095384629915,
+        "pair2": 0.6491039435077228,
+        "pair3": 2.8190211128051867
+      },
+      "median_paired_change_percent": 2.8190211128051867
+    },
+    "progress_copy_fragmented50/counter": {
+      "baseline": {
+        "runs_ns": {
+          "pair1": 12283105.975,
+          "pair2": 11796764.2,
+          "pair3": 11721306.625
+        },
+        "median_ns": 11796764.2
+      },
+      "candidate": {
+        "runs_ns": {
+          "pair1": 13619804.025,
+          "pair2": 12006101.5125,
+          "pair3": 11875156.9125
+        },
+        "median_ns": 12006101.5125
+      },
+      "paired_change_percent": {
+        "pair1": 10.882410790239883,
+        "pair2": 1.7745316338526163,
+        "pair3": 1.312569429519539
+      },
+      "median_paired_change_percent": 1.7745316338526163
+    },
+    "progress_copy_fragmented50/noop": {
+      "baseline": {
+        "runs_ns": {
+          "pair1": 12425491.8125,
+          "pair2": 12797425.5,
+          "pair3": 11534923.675
+        },
+        "median_ns": 12425491.8125
+      },
+      "candidate": {
+        "runs_ns": {
+          "pair1": 13687310.55,
+          "pair2": 11936549.275,
+          "pair3": 11590459.6125
+        },
+        "median_ns": 11936549.275
+      },
+      "paired_change_percent": {
+        "pair1": 10.155080833344687,
+        "pair2": -6.726948517887443,
+        "pair3": 0.4814590808291497
+      },
+      "median_paired_change_percent": 0.4814590808291497
+    },
+    "progress_copy_fragmented50/unobserved": {
+      "baseline": {
+        "runs_ns": {
+          "pair1": 12211753.5875,
+          "pair2": 11721162.3875,
+          "pair3": 11679514.5625
+        },
+        "median_ns": 11721162.3875
+      },
+      "candidate": {
+        "runs_ns": {
+          "pair1": 12923012.625,
+          "pair2": 11750360.45,
+          "pair3": 11559995.1125
+        },
+        "median_ns": 11750360.45
+      },
+      "paired_change_percent": {
+        "pair1": 5.8243808508226635,
+        "pair2": 0.2491055198683867,
+        "pair3": -1.0233254931994007
+      },
+      "median_paired_change_percent": 0.2491055198683867
+    },
+    "semantic_policy_hole_fallback/workers1": {
+      "baseline": {
+        "runs_ns": {
+          "pair1": 43942.15145867099,
+          "pair2": 47391.8810469314,
+          "pair3": 42111.1716609589
+        },
+        "median_ns": 43942.15145867099
+      },
+      "candidate": {
+        "runs_ns": {
+          "pair1": 50944.91158256882,
+          "pair2": 42735.62588967972,
+          "pair3": 44776.09711191336
+        },
+        "median_ns": 44776.09711191336
+      },
+      "paired_change_percent": {
+        "pair1": 15.936316023315689,
+        "pair2": -9.825006001852222,
+        "pair3": 6.328309913602115
+      },
+      "median_paired_change_percent": 6.328309913602115
+    },
+    "semantic_policy_hole_fallback/workers4": {
+      "baseline": {
+        "runs_ns": {
+          "pair1": 112590.78203517586,
+          "pair2": 135197.16884057972,
+          "pair3": 121375.87591145832
+        },
+        "median_ns": 121375.87591145832
+      },
+      "candidate": {
+        "runs_ns": {
+          "pair1": 136814.7344410876,
+          "pair2": 122176.2786135693,
+          "pair3": 157338.3905236908
+        },
+        "median_ns": 136814.7344410876
+      },
+      "paired_change_percent": {
+        "pair1": 21.515040545986853,
+        "pair2": -9.631037645739637,
+        "pair3": 29.629046416494266
+      },
+      "median_paired_change_percent": 21.515040545986853
+    },
+    "semantic_policy_mixed_accelerated/workers1": {
+      "baseline": {
+        "runs_ns": {
+          "pair1": 43333.69395866454,
+          "pair2": 42735.80241935483,
+          "pair3": 42874.448545454536
+        },
+        "median_ns": 42874.448545454536
+      },
+      "candidate": {
+        "runs_ns": {
+          "pair1": 47061.0825095057,
+          "pair2": 41106.456065857885,
+          "pair3": 43165.55547445254
+        },
+        "median_ns": 43165.55547445254
+      },
+      "paired_change_percent": {
+        "pair1": 8.601594303030513,
+        "pair2": -3.81260269202065,
+        "pair3": 0.678975331168119
+      },
+      "median_paired_change_percent": 0.678975331168119
+    },
+    "semantic_policy_mixed_accelerated/workers4": {
+      "baseline": {
+        "runs_ns": {
+          "pair1": 114793.47765700484,
+          "pair2": 109485.77953964195,
+          "pair3": 109557.79816901409
+        },
+        "median_ns": 109557.79816901409
+      },
+      "candidate": {
+        "runs_ns": {
+          "pair1": 123465.77471590906,
+          "pair2": 113484.02107142858,
+          "pair3": 115180.83743961353
+        },
+        "median_ns": 115180.83743961353
+      },
+      "paired_change_percent": {
+        "pair1": 7.554694949495699,
+        "pair2": 3.6518363833167644,
+        "pair3": 5.1324865637814465
+      },
+      "median_paired_change_percent": 5.1324865637814465
+    },
+    "semantic_policy_zero_fallback/workers1": {
+      "baseline": {
+        "runs_ns": {
+          "pair1": 43569.8126062323,
+          "pair2": 48753.161520376176,
+          "pair3": 46146.57949101796
+        },
+        "median_ns": 46146.57949101796
+      },
+      "candidate": {
+        "runs_ns": {
+          "pair1": 50687.973344651946,
+          "pair2": 43059.657357357355,
+          "pair3": 43351.07307098765
+        },
+        "median_ns": 43351.07307098765
+      },
+      "paired_change_percent": {
+        "pair1": 16.33736826630614,
+        "pair2": -11.678225545720245,
+        "pair3": -6.057884356465538
+      },
+      "median_paired_change_percent": -6.057884356465538
+    },
+    "semantic_policy_zero_fallback/workers4": {
+      "baseline": {
+        "runs_ns": {
+          "pair1": 113770.68333333332,
+          "pair2": 125015.29833759589,
+          "pair3": 121174.09408983451
+        },
+        "median_ns": 121174.09408983451
+      },
+      "candidate": {
+        "runs_ns": {
+          "pair1": 163287.04556786706,
+          "pair2": 120546.16370023419,
+          "pair3": 133472.2359913793
+        },
+        "median_ns": 133472.2359913793
+      },
+      "paired_change_percent": {
+        "pair1": 43.52295405439135,
+        "pair2": -3.5748701933207228,
+        "pair3": 10.14915109860639
+      },
+      "median_paired_change_percent": 10.14915109860639
+    }
+  },
+  "review": {
+    "native_validation/zero_fallback_1mib_16extents": {
+      "candidate": {
+        "runs_ns": {
+          "review1": 46311.21806451613,
+          "review2": 44641.80569948187
+        },
+        "median_ns": 45476.511881999
+      },
+      "baseline": {
+        "runs_ns": {
+          "review1": 56599.93490566036,
+          "review2": 45323.7201923077
+        },
+        "median_ns": 50961.82754898403
+      },
+      "paired_change_percent": {
+        "review1": -18.177965855072554,
+        "review2": -1.5045421910039214
+      },
+      "median_paired_change_percent": -9.841254023038237
+    },
+    "portable_memory_workers1/dyn": {
+      "candidate": {
+        "runs_ns": {
+          "review1": 1851388.99375,
+          "review2": 2134981.1821428575
+        },
+        "median_ns": 1993185.0879464287
+      },
+      "baseline": {
+        "runs_ns": {
+          "review1": 1873102.915625,
+          "review2": 2127234.2035714285
+        },
+        "median_ns": 2000168.5595982142
+      },
+      "paired_change_percent": {
+        "review1": -1.1592487360874482,
+        "review2": 0.36418080145677045
+      },
+      "median_paired_change_percent": -0.39753396731533885
+    },
+    "portable_memory_workers4/dyn": {
+      "candidate": {
+        "runs_ns": {
+          "review1": 1280817.6235294116,
+          "review2": 1300356.89375
+        },
+        "median_ns": 1290587.2586397058
+      },
+      "baseline": {
+        "runs_ns": {
+          "review1": 1248534.644117647,
+          "review2": 1327709.165625
+        },
+        "median_ns": 1288121.9048713236
+      },
+      "paired_change_percent": {
+        "review1": 2.585669493743148,
+        "review2": -2.0601101945488365
+      },
+      "median_paired_change_percent": 0.2627796495971557
+    },
+    "progress_copy_dense/counter": {
+      "candidate": {
+        "runs_ns": {
+          "review1": 13130114.7375,
+          "review2": 13573031.5875
+        },
+        "median_ns": 13351573.162500001
+      },
+      "baseline": {
+        "runs_ns": {
+          "review1": 13500928.6375,
+          "review2": 13774914.0625
+        },
+        "median_ns": 13637921.35
+      },
+      "paired_change_percent": {
+        "review1": -2.7465806979382945,
+        "review2": -1.4655806496070456
+      },
+      "median_paired_change_percent": -2.10608067377267
+    },
+    "progress_copy_dense/noop": {
+      "candidate": {
+        "runs_ns": {
+          "review1": 13415486.25,
+          "review2": 13406706.675
+        },
+        "median_ns": 13411096.4625
+      },
+      "baseline": {
+        "runs_ns": {
+          "review1": 13517943.925,
+          "review2": 13757096.6625
+        },
+        "median_ns": 13637520.29375
+      },
+      "paired_change_percent": {
+        "review1": -0.7579383045857702,
+        "review2": -2.5469762704736554
+      },
+      "median_paired_change_percent": -1.6524572875297128
+    },
+    "progress_copy_dense/unobserved": {
+      "candidate": {
+        "runs_ns": {
+          "review1": 13224109.0,
+          "review2": 13494598.2125
+        },
+        "median_ns": 13359353.60625
+      },
+      "baseline": {
+        "runs_ns": {
+          "review1": 12961205.5125,
+          "review2": 13545532.425
+        },
+        "median_ns": 13253368.96875
+      },
+      "paired_change_percent": {
+        "review1": 2.0283876160010816,
+        "review2": -0.37602222564536714
+      },
+      "median_paired_change_percent": 0.8261826951778573
+    },
+    "progress_copy_fragmented50/counter": {
+      "candidate": {
+        "runs_ns": {
+          "review1": 12352914.325,
+          "review2": 16845054.783333335
+        },
+        "median_ns": 14598984.554166667
+      },
+      "baseline": {
+        "runs_ns": {
+          "review1": 12306071.4125,
+          "review2": 16245912.633333331
+        },
+        "median_ns": 14275992.022916665
+      },
+      "paired_change_percent": {
+        "review1": 0.38064879464634327,
+        "review2": 3.6879562479653183
+      },
+      "median_paired_change_percent": 2.034302521305831
+    },
+    "progress_copy_fragmented50/noop": {
+      "candidate": {
+        "runs_ns": {
+          "review1": 12880262.6875,
+          "review2": 18198440.7
+        },
+        "median_ns": 15539351.69375
+      },
+      "baseline": {
+        "runs_ns": {
+          "review1": 12325575.5375,
+          "review2": 16421713.73333333
+        },
+        "median_ns": 14373644.635416664
+      },
+      "paired_change_percent": {
+        "review1": 4.500294110505343,
+        "review2": 10.819376074375286
+      },
+      "median_paired_change_percent": 7.659835092440314
+    },
+    "progress_copy_fragmented50/unobserved": {
+      "candidate": {
+        "runs_ns": {
+          "review1": 12275718.3125,
+          "review2": 13265010.325
+        },
+        "median_ns": 12770364.31875
+      },
+      "baseline": {
+        "runs_ns": {
+          "review1": 12249921.5875,
+          "review2": 13045422.45
+        },
+        "median_ns": 12647672.01875
+      },
+      "paired_change_percent": {
+        "review1": 0.2105868581748549,
+        "review2": 1.683256144763634
+      },
+      "median_paired_change_percent": 0.9469215014692445
+    },
+    "semantic_policy_hole_fallback/workers1": {
+      "candidate": {
+        "runs_ns": {
+          "review1": 46738.197499999995,
+          "review2": 54529.67667173252
+        },
+        "median_ns": 50633.93708586626
+      },
+      "baseline": {
+        "runs_ns": {
+          "review1": 48172.59090909091,
+          "review2": 45613.19568106311
+        },
+        "median_ns": 46892.89329507701
+      },
+      "paired_change_percent": {
+        "review1": -2.977613165540205,
+        "review2": 19.54802959436408
+      },
+      "median_paired_change_percent": 8.285208214411938
+    },
+    "semantic_policy_hole_fallback/workers4": {
+      "candidate": {
+        "runs_ns": {
+          "review1": 140065.8494397759,
+          "review2": 137967.86911764703
+        },
+        "median_ns": 139016.85927871146
+      },
+      "baseline": {
+        "runs_ns": {
+          "review1": 138554.86274193547,
+          "review2": 135816.02230538923
+        },
+        "median_ns": 137185.44252366235
+      },
+      "paired_change_percent": {
+        "review1": 1.0905331418462616,
+        "review2": 1.58438362111597
+      },
+      "median_paired_change_percent": 1.3374583814811158
+    },
+    "semantic_policy_mixed_accelerated/workers1": {
+      "candidate": {
+        "runs_ns": {
+          "review1": 47404.87973231358,
+          "review2": 48247.167777777766
+        },
+        "median_ns": 47826.02375504567
+      },
+      "baseline": {
+        "runs_ns": {
+          "review1": 48641.07065602837,
+          "review2": 49843.48309716598
+        },
+        "median_ns": 49242.27687659718
+      },
+      "paired_change_percent": {
+        "review1": -2.5414550030295913,
+        "review2": -3.202656034844764
+      },
+      "median_paired_change_percent": -2.8720555189371777
+    },
+    "semantic_policy_mixed_accelerated/workers4": {
+      "candidate": {
+        "runs_ns": {
+          "review1": 131601.1464285714,
+          "review2": 128256.77205438065
+        },
+        "median_ns": 129928.95924147603
+      },
+      "baseline": {
+        "runs_ns": {
+          "review1": 128229.8125,
+          "review2": 128290.8573033708
+        },
+        "median_ns": 128260.33490168539
+      },
+      "paired_change_percent": {
+        "review1": 2.629134257348631,
+        "review2": -0.026568728050158086
+      },
+      "median_paired_change_percent": 1.3012827646492364
+    },
+    "semantic_policy_zero_fallback/workers1": {
+      "candidate": {
+        "runs_ns": {
+          "review1": 65074.09244288226,
+          "review2": 47302.705371900825
+        },
+        "median_ns": 56188.39890739154
+      },
+      "baseline": {
+        "runs_ns": {
+          "review1": 49810.25812603649,
+          "review2": 48471.64779771615
+        },
+        "median_ns": 49140.95296187632
+      },
+      "paired_change_percent": {
+        "review1": 30.643957472019533,
+        "review2": -2.41160034561565
+      },
+      "median_paired_change_percent": 14.116178563201942
+    },
+    "semantic_policy_zero_fallback/workers4": {
+      "candidate": {
+        "runs_ns": {
+          "review1": 214567.32616666664,
+          "review2": 198964.0839015151
+        },
+        "median_ns": 206765.70503409088
+      },
+      "baseline": {
+        "runs_ns": {
+          "review1": 213578.6655797101,
+          "review2": 209221.8808544304
+        },
+        "median_ns": 211400.27321707027
+      },
+      "paired_change_percent": {
+        "review1": 0.46290231483234745,
+        "review2": -4.902831821903142
+      },
+      "median_paired_change_percent": -2.2199647535353972
+    }
+  },
+  "tuned": {
+    "semantic_policy_mixed_accelerated/workers4": {
+      "candidate": {
+        "runs_ns": {
+          "tuned1": 103382.75941759603,
+          "tuned2": 104267.94782874618,
+          "tuned3": 104814.91621294616
+        },
+        "median_ns": 104267.94782874618
+      },
+      "baseline": {
+        "runs_ns": {
+          "tuned1": 104030.1777977259,
+          "tuned2": 107329.88957133716,
+          "tuned3": 123453.25570012387
+        },
+        "median_ns": 107329.88957133716
+      },
+      "paired_change_percent": {
+        "tuned1": -0.6223370889442359,
+        "tuned2": -2.8528322863463407,
+        "tuned3": -15.097487207993499
+      },
+      "median_paired_change_percent": -2.8528322863463407
+    }
+  }
+}
