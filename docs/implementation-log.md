@@ -490,12 +490,67 @@ separate and retain their existing lifetime/shutdown behavior. Contextual errors
 partial statistics, terminal events, memory budgets, and prepared endpoint
 snapshots remain future work.
 
+## R1.3 — Share fresh local RAW endpoint inspections
+
+Date: 2026-09-28. Baseline: `28221ec` (R1.2). Scope: remove duplicate
+local descriptor metadata work while preserving logical endpoint authorization,
+native identity binding, and execution-time refresh.
+
+Implementation sequence:
+
+1. Added platform `FileInspection`, with private state and a live descriptor
+   borrow, and the optional `LinuxFdBackend::copy_endpoint_from_inspection` hook.
+   Custom backends default to their original logical endpoint checks.
+2. Local files check the exact descriptor before deriving current capacity,
+   identity, and restricted capabilities. Portable calls take a fresh inspection;
+   RAW preflight shares it between logical and physical checks. Neither planning
+   nor execution caches it across calls.
+3. Kept source size, logical READ/WRITE/FLUSH, bounds, aliases, file modes, and
+   native Data binding validation. Core remains independent of platform; platform
+   now imports core's portable endpoint contract.
+4. Added tests for a different descriptor to the same inode, logical restrictions
+   on a writable FD, refreshed capacity/append flags, default custom-backend
+   checks on every plan/execute call, and unknown native identity. The custom
+   backend contract test also passes on the unchanged baseline runtime.
+5. Added complete RAW copy controls to the existing preflight benchmark: reset
+   and readback outside timing, planning/execution/final flush inside timing.
+   Measured isolated optimized baseline/candidate builds with adjacent pairs.
+6. Final review caught the optional hook making the trait non-dyn-compatible.
+   Restricted that hook to sized backends, preserving the pre-existing FD trait
+   object API and FD-only implementations. Added a compile/runtime regression,
+   repeated validation and the benchmark matrix, and retained both source states
+   with their raw evidence.
+
+Validation: **277 workspace tests passed** (four new), formatting, strict
+all-target Clippy, and core/datamover library compilation for
+`wasm32-unknown-unknown`. The portability check is compilation, not a runtime
+qualification. Freshness, alias, mismatch, and rejection-before-observation
+regressions continue to pass.
+
+Performance: strace confirms **eight → four metadata/access syscalls per local
+RAW pair preflight**, for both Threaded and IoUring planning (100 plans each).
+The [R1.3 report](benchmark-results/2026-09-28-r13/README.md) records final paired
+planning/copy latency, all initial/final samples, source/binary fingerprints,
+process resource logs, and the qualification decision. Final planning medians
+improve 14.16% (Threaded) and 28.34% (IoUring); complete-copy medians change
+−0.05%/+0.25%. One native copy pair is +9.92%; keep its variability for
+controlled-runner qualification rather than declaring a clean performance pass.
+
+Limits: inspection is point-in-time and its syscalls are not atomic. Custom
+backends may still perform independent metadata work. Lower native layers retain
+their preflight boundaries; persistent native preparation/ring reuse remains R2.
+This does not establish snapshot consistency, extend durability, or close PERF.0.
+The R1.2 fragmented observer and sequential Hole/Zero follow-ups remain open.
+[ADR-0028](adr/0028-endpoint-inspection.md) records the accepted boundary.
+
 ## Next session
 
-Start **R1.3**: consolidate endpoint preparation and safely reuse descriptor
-snapshots for RAW capacity/access/identity checks. Carry the R1.2 fragmented
-no-op observer and sequential Hole/Zero performance qualification forward in
-PERF.0; do not declare those profiles qualified. Preserve logical capability
-checks and pre-observation rejection. Measure RAW planning latency and retain
-point-in-time/unknown-identity limitations. Continue PERF.0 qualification on a
-controlled runner. ESXi is still unnecessary; request the trial only when V0 is ready.
+Start **R1.4**: separate logical copy intent from executor preparation. Introduce
+a clear internal preparation result and execution-selection reason without
+weakening current plan validation, endpoint checks, or callback ordering.
+Keep runtime io_uring readiness/unaligned native policy in the R2 scope.
+Continue recording benchmark baselines and commit each completed step.
+
+Carry the R1.2 fragmented no-op observer and sequential Hole/Zero performance
+qualification forward in PERF.0; do not declare those profiles qualified.
+ESXi is still unnecessary; request the 60-day trial only when V0 is ready.

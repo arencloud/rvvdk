@@ -1,0 +1,544 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 068f856..0ea02fb 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -457,6 +457,7 @@ name = "rvvdk-platform"
+ version = "0.1.0"
+ dependencies = [
+  "libc",
++ "rvvdk-core",
+ ]
+ 
+ [[package]]
+diff --git a/crates/rvvdk-datamover/benches/preflight.rs b/crates/rvvdk-datamover/benches/preflight.rs
+index 78b9592..1c9566d 100644
+--- a/crates/rvvdk-datamover/benches/preflight.rs
++++ b/crates/rvvdk-datamover/benches/preflight.rs
+@@ -1,11 +1,11 @@
+ mod support;
+ 
+ use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
+-use rvvdk_core::RawDisk;
++use rvvdk_core::{RawDisk, VirtualDisk};
+ use rvvdk_datamover::{CopyOptions, DataMover, ExecutionStrategy, IoUringExecutionOptions};
+ use rvvdk_local::LocalFileBlockDevice;
+ use std::hint::black_box;
+-use std::time::Duration;
++use std::time::{Duration, Instant};
+ 
+ fn preflight(criterion: &mut Criterion) {
+     support::ensure_benchmark_directory();
+@@ -39,6 +39,40 @@ fn preflight(criterion: &mut Criterion) {
+     }
+     group.finish();
+     assert_eq!(std::fs::read(&destination_path).unwrap(), before);
++
++    // Full RAW public-call boundary: fresh planning + execution preflight,
++    // payload transfer, and final flush. Reset/readback are deliberately untimed.
++    let expected = std::fs::read(&source_path).unwrap();
++    let mut actual = vec![0; support::MIB];
++    let mut group = criterion.benchmark_group("preflight_copy");
++    group.sampling_mode(SamplingMode::Flat);
++    for (name, strategy) in [
++        ("threaded", ExecutionStrategy::Threaded),
++        (
++            "native",
++            ExecutionStrategy::IoUring(IoUringExecutionOptions::new(8).unwrap()),
++        ),
++    ] {
++        let mover = DataMover::with_execution_strategy(CopyOptions::new(65536).unwrap(), strategy);
++        group.bench_function(name, |b| {
++            b.iter_custom(|iterations| {
++                let mut elapsed = Duration::ZERO;
++                for _ in 0..iterations {
++                    destination.write_all_at(0, &before).unwrap();
++                    destination.flush().unwrap();
++                    let started = Instant::now();
++                    let report = mover.copy_raw_with_report(&source, &destination).unwrap();
++                    elapsed += started.elapsed();
++                    assert_eq!(report.stats().bytes_read(), support::MIB as u64);
++                    assert_eq!(report.stats().bytes_written(), support::MIB as u64);
++                    destination.read_exact_at(0, &mut actual).unwrap();
++                    assert_eq!(actual, expected);
++                }
++                elapsed
++            })
++        });
++    }
++    group.finish();
+     drop(source);
+     drop(destination);
+     support::remove_file(source_path);
+diff --git a/crates/rvvdk-datamover/src/preflight.rs b/crates/rvvdk-datamover/src/preflight.rs
+index d3945aa..40521b6 100644
+--- a/crates/rvvdk-datamover/src/preflight.rs
++++ b/crates/rvvdk-datamover/src/preflight.rs
+@@ -67,6 +67,15 @@ pub(crate) fn virtual_pair<S: VirtualDisk + ?Sized, D: VirtualDisk + ?Sized>(
+         return Err(Error::AliasedEndpoints);
+     }
+     let source_info = source.copy_endpoint().map_err(|e| context("source", e))?;
++    source_size(source_info, length)?;
++    let destination_info = destination
++        .copy_endpoint()
++        .map_err(|e| context("destination", e))?;
++    pair(source_info, destination_info, 0, length, true)?;
++    Ok((source_info, destination_info))
++}
++
++fn source_size(source_info: CopyEndpoint, length: u64) -> Result<()> {
+     if source_info.size != length {
+         return Err(context(
+             "source",
+@@ -76,17 +85,18 @@ pub(crate) fn virtual_pair<S: VirtualDisk + ?Sized, D: VirtualDisk + ?Sized>(
+             )),
+         ));
+     }
+-    let destination_info = destination
+-        .copy_endpoint()
+-        .map_err(|e| context("destination", e))?;
+-    pair(source_info, destination_info, 0, length, true)?;
+-    Ok((source_info, destination_info))
++    Ok(())
+ }
+ 
+ #[cfg(target_os = "linux")]
+ pub(crate) fn file(fd: std::os::fd::BorrowedFd<'_>, role: &'static str) -> Result<CopyEndpoint> {
++    let state = rvvdk_platform::inspect_file(fd).map_err(|e| context(role, e.into()))?;
++    file_state(state, role)
++}
++
++#[cfg(target_os = "linux")]
++fn file_state(state: rvvdk_platform::FileState, role: &'static str) -> Result<CopyEndpoint> {
+     (|| {
+-        let state = rvvdk_platform::inspect_file(fd)?;
+         if !state.regular {
+             return Err(Error::InvalidEndpoint {
+                 reason: "native copy requires a regular file",
+@@ -173,9 +183,16 @@ where
+     S: rvvdk_core::BlockDevice + rvvdk_platform::LinuxFdBackend,
+     D: rvvdk_core::BlockDevice + rvvdk_platform::LinuxFdBackend,
+ {
+-    let (source_info, destination_info) = virtual_pair(source, destination, length)?;
+-    let source_fd = file(source.device().as_fd(), "source")?;
+-    let destination_fd = file(destination.device().as_fd(), "destination")?;
++    if std::mem::size_of_val(source) != 0
++        && std::mem::size_of_val(destination) != 0
++        && std::ptr::from_ref(source).cast::<()>() == std::ptr::from_ref(destination).cast::<()>()
++    {
++        return Err(Error::AliasedEndpoints);
++    }
++    let (source_info, source_fd) = raw_endpoint(source.device(), "source")?;
++    source_size(source_info, length)?;
++    let (destination_info, destination_fd) = raw_endpoint(destination.device(), "destination")?;
++    pair(source_info, destination_info, 0, length, true)?;
+     pair(source_fd, destination_fd, 0, length, false)?;
+     Ok(RawEndpoints {
+         source: source_info,
+@@ -185,6 +202,20 @@ where
+     })
+ }
+ 
++#[cfg(target_os = "linux")]
++fn raw_endpoint<B>(backend: &B, role: &'static str) -> Result<(CopyEndpoint, CopyEndpoint)>
++where
++    B: rvvdk_core::BlockDevice + rvvdk_platform::LinuxFdBackend,
++{
++    let inspection = rvvdk_platform::FileInspection::new(backend.as_fd())
++        .map_err(|e| context(role, e.into()))?;
++    let logical = backend
++        .copy_endpoint_from_inspection(&inspection)
++        .map_err(|e| context(role, e))?;
++    let descriptor = file_state(inspection.state(), role)?;
++    Ok((logical, descriptor))
++}
++
+ #[cfg(test)]
+ mod tests {
+     use super::*;
+diff --git a/crates/rvvdk-local/src/file.rs b/crates/rvvdk-local/src/file.rs
+index 87d7728..bbbacf9 100644
+--- a/crates/rvvdk-local/src/file.rs
++++ b/crates/rvvdk-local/src/file.rs
+@@ -174,32 +174,8 @@ impl BlockDevice for LocalFileBlockDevice {
+ 
+     #[cfg(target_os = "linux")]
+     fn copy_endpoint(&self) -> Result<rvvdk_core::CopyEndpoint> {
+-        let state = rvvdk_platform::inspect_file(self.file.as_fd())?;
+-        if !state.regular {
+-            return Err(Error::InvalidEndpoint {
+-                reason: "a regular file is required",
+-            });
+-        }
+-        if state.append {
+-            return Err(Error::InvalidEndpoint {
+-                reason: "append mode cannot preserve copy offsets",
+-            });
+-        }
+-        let mut capabilities = self.capabilities;
+-        if !state.readable {
+-            capabilities.remove(Capabilities::READ);
+-        }
+-        if !state.writable {
+-            capabilities.remove(Capabilities::WRITE | Capabilities::FLUSH);
+-        }
+-        Ok(rvvdk_core::CopyEndpoint {
+-            size: state.size,
+-            capabilities,
+-            identity: Some(rvvdk_core::EndpointIdentity::LocalFile {
+-                device: state.device,
+-                inode: state.inode,
+-            }),
+-        })
++        let inspection = rvvdk_platform::FileInspection::new(self.file.as_fd())?;
++        self.copy_endpoint_from_inspection(&inspection)
+     }
+ 
+     fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
+@@ -357,6 +333,41 @@ impl AsFd for LocalFileBlockDevice {
+ 
+ #[cfg(target_os = "linux")]
+ impl LinuxFdBackend for LocalFileBlockDevice {
++    fn copy_endpoint_from_inspection(
++        &self,
++        inspection: &rvvdk_platform::FileInspection<'_>,
++    ) -> Result<rvvdk_core::CopyEndpoint> {
++        if !inspection.is_for(self.file.as_fd()) {
++            return Err(Error::EndpointMismatch);
++        }
++        let state = inspection.state();
++        if !state.regular {
++            return Err(Error::InvalidEndpoint {
++                reason: "a regular file is required",
++            });
++        }
++        if state.append {
++            return Err(Error::InvalidEndpoint {
++                reason: "append mode cannot preserve copy offsets",
++            });
++        }
++        let mut capabilities = self.capabilities;
++        if !state.readable {
++            capabilities.remove(Capabilities::READ);
++        }
++        if !state.writable {
++            capabilities.remove(Capabilities::WRITE | Capabilities::FLUSH);
++        }
++        Ok(rvvdk_core::CopyEndpoint {
++            size: state.size,
++            capabilities,
++            identity: Some(rvvdk_core::EndpointIdentity::LocalFile {
++                device: state.device,
++                inode: state.inode,
++            }),
++        })
++    }
++
+     fn raw_fd(&self) -> std::os::fd::RawFd {
+         self.file.as_raw_fd()
+     }
+@@ -378,6 +389,39 @@ impl LinuxFdBackend for LocalFileBlockDevice {
+ mod preflight_tests {
+     use super::*;
+ 
++    #[test]
++    #[cfg(target_os = "linux")]
++    fn inspection_rejects_other_descriptor_even_for_same_inode() {
++        let path = std::env::temp_dir().join(format!("rvvdk-r13-binding-{}", std::process::id()));
++        std::fs::write(&path, [0x5a; 4096]).unwrap();
++        let device = LocalFileBlockDevice::open_read_write(&path).unwrap();
++        let alias = File::open(&path).unwrap();
++        std::fs::remove_file(path).unwrap();
++        let inspection = rvvdk_platform::FileInspection::new(alias.as_fd()).unwrap();
++        assert!(matches!(
++            device.copy_endpoint_from_inspection(&inspection),
++            Err(Error::EndpointMismatch)
++        ));
++    }
++
++    #[test]
++    #[cfg(target_os = "linux")]
++    fn inspection_preserves_logical_restrictions_and_current_capacity() {
++        let path = std::env::temp_dir().join(format!("rvvdk-r13-access-{}", std::process::id()));
++        std::fs::write(&path, [0x5a; 4096]).unwrap();
++        let file = File::options().read(true).write(true).open(&path).unwrap();
++        std::fs::remove_file(path).unwrap();
++        let device =
++            LocalFileBlockDevice::from_file(file, None, Capabilities::READ, false).unwrap();
++        device.file.set_len(8192).unwrap();
++        let inspection = rvvdk_platform::FileInspection::new(device.as_fd()).unwrap();
++        assert!(inspection.state().writable);
++        let endpoint = device.copy_endpoint_from_inspection(&inspection).unwrap();
++        assert_eq!(endpoint.capabilities, Capabilities::READ);
++        assert_eq!(endpoint.size, 8192);
++        assert_eq!(device.geometry().size(), 4096);
++    }
++
+     #[test]
+     fn rejects_mismatched_direct_and_buffered_handles() {
+         let directory = std::env::temp_dir();
+@@ -412,6 +456,8 @@ mod preflight_tests {
+         std::fs::write(&path, [0xff; 4096]).unwrap();
+         let device = LocalFileBlockDevice::open_read_write(&path).unwrap();
+         std::fs::remove_file(path).unwrap();
++        let before = rvvdk_platform::FileInspection::new(device.as_fd()).unwrap();
++        assert!(!before.state().append);
+         // SAFETY: F_GETFL/F_SETFL operate on this live, uniquely used test FD.
+         unsafe {
+             let flags = libc::fcntl(device.as_raw_fd(), libc::F_GETFL);
+@@ -421,6 +467,12 @@ mod preflight_tests {
+                 0
+             );
+         }
++        let after = rvvdk_platform::FileInspection::new(device.as_fd()).unwrap();
++        assert!(after.state().append);
++        assert!(matches!(
++            device.copy_endpoint_from_inspection(&after),
++            Err(Error::InvalidEndpoint { .. })
++        ));
+         assert!(matches!(
+             device.copy_endpoint(),
+             Err(Error::InvalidEndpoint { .. })
+diff --git a/crates/rvvdk-platform/Cargo.toml b/crates/rvvdk-platform/Cargo.toml
+index 9e70ef2..5fe4e04 100644
+--- a/crates/rvvdk-platform/Cargo.toml
++++ b/crates/rvvdk-platform/Cargo.toml
+@@ -4,5 +4,6 @@ version = "0.1.0"
+ edition = "2024"
+ 
+ [dependencies]
++rvvdk-core = { path = "../rvvdk-core" }
+ [target.'cfg(target_os = "linux")'.dependencies]
+ libc = "0.2.189"
+diff --git a/crates/rvvdk-platform/src/lib.rs b/crates/rvvdk-platform/src/lib.rs
+index a83fe98..21c6f27 100644
+--- a/crates/rvvdk-platform/src/lib.rs
++++ b/crates/rvvdk-platform/src/lib.rs
+@@ -2,4 +2,4 @@
+ mod linux;
+ 
+ #[cfg(target_os = "linux")]
+-pub use linux::{FileState, LinuxFdBackend, LinuxFdCapabilities, inspect_file};
++pub use linux::{FileInspection, FileState, LinuxFdBackend, LinuxFdCapabilities, inspect_file};
+diff --git a/crates/rvvdk-platform/src/linux.rs b/crates/rvvdk-platform/src/linux.rs
+index f82b846..de0c916 100644
+--- a/crates/rvvdk-platform/src/linux.rs
++++ b/crates/rvvdk-platform/src/linux.rs
+@@ -1,4 +1,4 @@
+-use std::os::fd::{AsFd, AsRawFd, RawFd};
++use std::os::fd::{AsFd, AsRawFd, BorrowedFd, RawFd};
+ 
+ #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+ pub struct LinuxFdCapabilities {
+@@ -35,6 +35,22 @@ pub trait LinuxFdBackend: AsFd {
+     }
+ 
+     fn linux_fd_capabilities(&self) -> LinuxFdCapabilities;
++
++    /// Derive logical endpoint facts during a fresh descriptor inspection.
++    ///
++    /// The default preserves independent logical checks for custom backends.
++    /// An override may reuse the inspection only after checking that it belongs
++    /// to the descriptor implementing its logical I/O. It must preserve logical
++    /// capability restrictions; descriptor access alone does not grant them.
++    fn copy_endpoint_from_inspection(
++        &self,
++        _inspection: &FileInspection<'_>,
++    ) -> rvvdk_core::Result<rvvdk_core::CopyEndpoint>
++    where
++        Self: rvvdk_core::BlockDevice,
++    {
++        self.copy_endpoint()
++    }
+ }
+ 
+ #[cfg(test)]
+@@ -65,6 +81,35 @@ pub struct FileState {
+     pub append: bool,
+ }
+ 
++/// One point-in-time inspection bound to a live descriptor borrow.
++///
++/// Construct immediately before preflight and do not cache across planning or
++/// execution calls. The borrow prevents descriptor reuse, but is not a lock:
++/// external truncation and status-flag changes can invalidate these facts.
++#[derive(Debug)]
++pub struct FileInspection<'fd> {
++    fd: BorrowedFd<'fd>,
++    state: FileState,
++}
++
++impl<'fd> FileInspection<'fd> {
++    pub fn new(fd: BorrowedFd<'fd>) -> std::io::Result<Self> {
++        Ok(Self {
++            fd,
++            state: inspect_file(fd)?,
++        })
++    }
++
++    /// Match the exact borrowed descriptor, not merely an alias of its inode.
++    pub fn is_for(&self, fd: BorrowedFd<'_>) -> bool {
++        self.fd.as_raw_fd() == fd.as_raw_fd()
++    }
++
++    pub fn state(&self) -> FileState {
++        self.state
++    }
++}
++
+ pub fn inspect_file(fd: std::os::fd::BorrowedFd<'_>) -> std::io::Result<FileState> {
+     let mut stat = std::mem::MaybeUninit::<libc::stat>::uninit();
+     loop {
+diff --git a/crates/rvvdk-datamover/tests/preflight_snapshot.rs b/crates/rvvdk-datamover/tests/preflight_snapshot.rs
+new file mode 100644
+index 0000000..a6f0e0d
+--- /dev/null
++++ b/crates/rvvdk-datamover/tests/preflight_snapshot.rs
+@@ -0,0 +1,148 @@
++#![cfg(target_os = "linux")]
++
++use rvvdk_core::{BlockDevice, Capabilities, CopyEndpoint, DiskGeometry, Extent, RawDisk, Result};
++use rvvdk_datamover::{
++    CopyOptions, DataMover, ExecutionStrategy, IoUringExecutionOptions, ProgressObserver,
++    ProgressSnapshot,
++};
++use rvvdk_local::LocalFileBlockDevice;
++use rvvdk_platform::{LinuxFdBackend, LinuxFdCapabilities};
++use std::fs;
++use std::os::fd::{AsFd, BorrowedFd};
++use std::sync::atomic::{AtomicUsize, Ordering};
++
++// This wrapper intentionally uses the default inspection hook: access to an
++// underlying writable FD must never grant operations denied by its logical API.
++struct Restricted {
++    inner: LocalFileBlockDevice,
++    denied: AtomicUsize,
++    calls: AtomicUsize,
++}
++impl Restricted {
++    fn new(inner: LocalFileBlockDevice) -> Self {
++        Self {
++            inner,
++            denied: AtomicUsize::new(0),
++            calls: AtomicUsize::new(0),
++        }
++    }
++}
++impl AsFd for Restricted {
++    fn as_fd(&self) -> BorrowedFd<'_> {
++        self.inner.as_fd()
++    }
++}
++impl LinuxFdBackend for Restricted {
++    fn linux_fd_capabilities(&self) -> LinuxFdCapabilities {
++        self.inner.linux_fd_capabilities()
++    }
++}
++impl BlockDevice for Restricted {
++    fn geometry(&self) -> DiskGeometry {
++        self.inner.geometry()
++    }
++    fn capabilities(&self) -> Capabilities {
++        self.inner.capabilities()
++    }
++    fn copy_endpoint(&self) -> Result<CopyEndpoint> {
++        self.calls.fetch_add(1, Ordering::Relaxed);
++        let mut info = self.inner.copy_endpoint()?;
++        match self.denied.load(Ordering::Relaxed) {
++            1 => info.capabilities.remove(Capabilities::READ),
++            2 => info.capabilities.remove(Capabilities::WRITE),
++            3 => info.capabilities.remove(Capabilities::FLUSH),
++            4 => info.identity = None,
++            _ => {}
++        }
++        Ok(info)
++    }
++    fn extents(&self, offset: u64, length: u64) -> Result<Vec<Extent>> {
++        self.inner.extents(offset, length)
++    }
++    fn read_at(&self, _: u64, _: &mut [u8]) -> Result<usize> {
++        panic!("rejection must precede payload I/O")
++    }
++    fn write_at(&self, _: u64, _: &[u8]) -> Result<usize> {
++        panic!("rejection must precede payload I/O")
++    }
++    fn flush(&self) -> Result<()> {
++        panic!("rejection must precede flush")
++    }
++}
++#[derive(Default)]
++struct Observer(AtomicUsize);
++impl ProgressObserver for Observer {
++    fn on_progress(&self, _: &ProgressSnapshot) {
++        self.0.fetch_add(1, Ordering::Relaxed);
++    }
++}
++fn fixture() -> (RawDisk<Restricted>, RawDisk<Restricted>, std::fs::File) {
++    let stem = std::env::temp_dir().join(format!("rvvdk-r13-restrict-{}", std::process::id()));
++    let src = stem.with_extension("source");
++    let dst = stem.with_extension("destination");
++    fs::write(&src, [0x5a; 8192]).unwrap();
++    fs::write(&dst, [0xa5; 8192]).unwrap();
++    let source = LocalFileBlockDevice::open_read_only(&src).unwrap();
++    let destination = LocalFileBlockDevice::open_read_write(&dst).unwrap();
++    let verify = std::fs::File::open(&dst).unwrap();
++    fs::remove_file(src).unwrap();
++    fs::remove_file(dst).unwrap();
++    (
++        RawDisk::new(Restricted::new(source)),
++        RawDisk::new(Restricted::new(destination)),
++        verify,
++    )
++}
++
++#[test]
++fn custom_endpoint_checks_remain_fresh_and_authoritative() {
++    use std::os::unix::fs::FileExt;
++    let (source, destination, verify) = fixture();
++    for strategy in [
++        ExecutionStrategy::Threaded,
++        ExecutionStrategy::IoUring(IoUringExecutionOptions::new(2).unwrap()),
++        ExecutionStrategy::Auto(IoUringExecutionOptions::new(2).unwrap()),
++    ] {
++        let mover = DataMover::with_execution_strategy(CopyOptions::new(4096).unwrap(), strategy);
++        for (role, denied, message) in [
++            ("source", 1, "read"),
++            ("destination", 2, "write"),
++            ("destination", 3, "flush"),
++            ("source", 4, "known backing identity"),
++            ("destination", 4, "known backing identity"),
++        ] {
++            if denied == 4 && strategy == ExecutionStrategy::Threaded {
++                continue;
++            }
++            let plan = mover
++                .plan_raw_with_destination(&source, &destination)
++                .unwrap();
++            let endpoint = if role == "source" {
++                source.device()
++            } else {
++                destination.device()
++            };
++            endpoint.denied.store(denied, Ordering::Relaxed);
++            let calls_before = endpoint.calls.load(Ordering::Relaxed);
++            let error = mover
++                .plan_raw_with_destination(&source, &destination)
++                .unwrap_err();
++            assert!(
++                error.to_string().contains(&format!("{role} preflight")),
++                "{error}"
++            );
++            assert!(error.to_string().contains(message), "{error}");
++            let observer = Observer::default();
++            let error = mover
++                .execute_raw_plan_with_observer(&plan, &source, &destination, &observer)
++                .unwrap_err();
++            assert!(error.to_string().contains(message), "{error}");
++            assert_eq!(observer.0.load(Ordering::Relaxed), 0);
++            assert_eq!(endpoint.calls.load(Ordering::Relaxed) - calls_before, 2);
++            endpoint.denied.store(0, Ordering::Relaxed);
++            let mut actual = [0; 8192];
++            verify.read_exact_at(&mut actual, 0).unwrap();
++            assert_eq!(actual, [0xa5; 8192]);
++        }
++    }
++}

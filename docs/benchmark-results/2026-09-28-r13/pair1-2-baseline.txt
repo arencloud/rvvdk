@@ -1,0 +1,15 @@
+Gnuplot not found, using plotters backend
+progress/dense: logical=16777216, data=16777216, holes=0, extents=1, block=65536, workers=1, buffered, flush=included
+Benchmarking progress_plan/dense/plan
+Benchmarking progress_plan/dense/plan: Warming up for 300.00 ms
+Benchmarking progress_plan/dense/plan: Collecting 30 samples in estimated 2.0000 s (1.2M iterations)
+Benchmarking progress_plan/dense/plan: Analyzing
+progress_plan/dense/plan
+                        time:   [1.7561 µs 1.7838 µs 1.8125 µs]
+                        thrpt:  [551.73 Kelem/s 560.61 Kelem/s 569.45 Kelem/s]
+                 change:
+                        time:   [+5.0205% +6.6443% +8.6625%] (p = 0.00 < 0.05)
+                        thrpt:  [−7.9719% −6.2303% −4.7805%]
+                        Performance has regressed.
+
+progress/fragmented50: logical=16777216, data=8388608, holes=8388608, extents=256, block=65536, workers=1, buffered, flush=included

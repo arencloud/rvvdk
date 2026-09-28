@@ -2,4 +2,4 @@
 mod linux;
 
 #[cfg(target_os = "linux")]
-pub use linux::{FileState, LinuxFdBackend, LinuxFdCapabilities, inspect_file};
+pub use linux::{FileInspection, FileState, LinuxFdBackend, LinuxFdCapabilities, inspect_file};

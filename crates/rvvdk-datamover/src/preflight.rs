@@ -67,6 +67,15 @@ pub(crate) fn virtual_pair<S: VirtualDisk + ?Sized, D: VirtualDisk + ?Sized>(
         return Err(Error::AliasedEndpoints);
     }
     let source_info = source.copy_endpoint().map_err(|e| context("source", e))?;
+    source_size(source_info, length)?;
+    let destination_info = destination
+        .copy_endpoint()
+        .map_err(|e| context("destination", e))?;
+    pair(source_info, destination_info, 0, length, true)?;
+    Ok((source_info, destination_info))
+}
+
+fn source_size(source_info: CopyEndpoint, length: u64) -> Result<()> {
     if source_info.size != length {
         return Err(context(
             "source",
@@ -76,17 +85,18 @@ pub(crate) fn virtual_pair<S: VirtualDisk + ?Sized, D: VirtualDisk + ?Sized>(
             )),
         ));
     }
-    let destination_info = destination
-        .copy_endpoint()
-        .map_err(|e| context("destination", e))?;
-    pair(source_info, destination_info, 0, length, true)?;
-    Ok((source_info, destination_info))
+    Ok(())
 }
 
 #[cfg(target_os = "linux")]
 pub(crate) fn file(fd: std::os::fd::BorrowedFd<'_>, role: &'static str) -> Result<CopyEndpoint> {
+    let state = rvvdk_platform::inspect_file(fd).map_err(|e| context(role, e.into()))?;
+    file_state(state, role)
+}
+
+#[cfg(target_os = "linux")]
+fn file_state(state: rvvdk_platform::FileState, role: &'static str) -> Result<CopyEndpoint> {
     (|| {
-        let state = rvvdk_platform::inspect_file(fd)?;
         if !state.regular {
             return Err(Error::InvalidEndpoint {
                 reason: "native copy requires a regular file",
@@ -173,9 +183,16 @@ where
     S: rvvdk_core::BlockDevice + rvvdk_platform::LinuxFdBackend,
     D: rvvdk_core::BlockDevice + rvvdk_platform::LinuxFdBackend,
 {
-    let (source_info, destination_info) = virtual_pair(source, destination, length)?;
-    let source_fd = file(source.device().as_fd(), "source")?;
-    let destination_fd = file(destination.device().as_fd(), "destination")?;
+    if std::mem::size_of_val(source) != 0
+        && std::mem::size_of_val(destination) != 0
+        && std::ptr::from_ref(source).cast::<()>() == std::ptr::from_ref(destination).cast::<()>()
+    {
+        return Err(Error::AliasedEndpoints);
+    }
+    let (source_info, source_fd) = raw_endpoint(source.device(), "source")?;
+    source_size(source_info, length)?;
+    let (destination_info, destination_fd) = raw_endpoint(destination.device(), "destination")?;
+    pair(source_info, destination_info, 0, length, true)?;
     pair(source_fd, destination_fd, 0, length, false)?;
     Ok(RawEndpoints {
         source: source_info,
@@ -183,6 +200,20 @@ where
         source_fd,
         destination_fd,
     })
+}
+
+#[cfg(target_os = "linux")]
+fn raw_endpoint<B>(backend: &B, role: &'static str) -> Result<(CopyEndpoint, CopyEndpoint)>
+where
+    B: rvvdk_core::BlockDevice + rvvdk_platform::LinuxFdBackend,
+{
+    let inspection = rvvdk_platform::FileInspection::new(backend.as_fd())
+        .map_err(|e| context(role, e.into()))?;
+    let logical = backend
+        .copy_endpoint_from_inspection(&inspection)
+        .map_err(|e| context(role, e))?;
+    let descriptor = file_state(inspection.state(), role)?;
+    Ok((logical, descriptor))
 }
 
 #[cfg(test)]

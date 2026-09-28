@@ -1,0 +1,75 @@
+[
+  {
+    "name": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "status": 0
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "status": 0
+  },
+  {
+    "name": "tests",
+    "command": [
+      "cargo",
+      "test",
+      "--workspace"
+    ],
+    "status": 0
+  },
+  {
+    "name": "portable",
+    "command": [
+      "cargo",
+      "check",
+      "-p",
+      "rvvdk-core",
+      "-p",
+      "rvvdk-datamover",
+      "--lib",
+      "--target",
+      "wasm32-unknown-unknown"
+    ],
+    "status": 0
+  },
+  {
+    "name": "baseline-contract",
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "rvvdk-datamover",
+      "--test",
+      "preflight_snapshot",
+      "--target-dir",
+      "/tmp/rvvdk-r13-3ey1clhf/baseline-target"
+    ],
+    "status": 0
+  },
+  {
+    "name": "test-inventory",
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--",
+      "--list"
+    ],
+    "status": 0,
+    "unique_tests": 277
+  }
+]

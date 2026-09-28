@@ -46,7 +46,7 @@ VMware disk access and migration, extensible to other platforms.
 | **Memory management** | Aligned allocations and reusable buffer pools |
 | **Direct I/O** | Local `O_DIRECT`, runtime alignment discovery, buffered fallback for unaligned backend requests |
 | **Copy planning** | Portable plan/execute/report APIs for logical disks and trait objects; explicit Linux RAW adapters |
-| **Copy preflight** | Access, flush support, live local capacity, known alias and native descriptor checks |
+| **Copy preflight** | Access, flush support, live capacity, alias and native binding checks; shared fresh local FD inspections |
 | **Progress reporting** | In development; intermediate updates on the single-worker threaded path |
 | **Sparse destination allocation** | Planned; local holes currently use zero-write fallback |
 | **VMDK and VMware access** | Planned; no VMware VDDK dependency in the current workspace |

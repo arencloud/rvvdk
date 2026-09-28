@@ -1,4 +1,4 @@
-use std::os::fd::{AsFd, AsRawFd, RawFd};
+use std::os::fd::{AsFd, AsRawFd, BorrowedFd, RawFd};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LinuxFdCapabilities {
@@ -35,11 +35,46 @@ pub trait LinuxFdBackend: AsFd {
     }
 
     fn linux_fd_capabilities(&self) -> LinuxFdCapabilities;
+
+    /// Derive logical endpoint facts during a fresh descriptor inspection.
+    ///
+    /// The default preserves independent logical checks for custom backends.
+    /// An override may reuse the inspection only after checking that it belongs
+    /// to the descriptor implementing its logical I/O. It must preserve logical
+    /// capability restrictions; descriptor access alone does not grant them.
+    fn copy_endpoint_from_inspection(
+        &self,
+        _inspection: &FileInspection<'_>,
+    ) -> rvvdk_core::Result<rvvdk_core::CopyEndpoint>
+    where
+        Self: rvvdk_core::BlockDevice + Sized,
+    {
+        self.copy_endpoint()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fd_only_backends_remain_dyn_compatible() {
+        struct FdOnly(std::fs::File);
+        impl AsFd for FdOnly {
+            fn as_fd(&self) -> BorrowedFd<'_> {
+                self.0.as_fd()
+            }
+        }
+        impl LinuxFdBackend for FdOnly {
+            fn linux_fd_capabilities(&self) -> LinuxFdCapabilities {
+                LinuxFdCapabilities::new(false, 1, 1)
+            }
+        }
+        let backend = FdOnly(std::fs::File::open("/dev/null").unwrap());
+        let dynamic: &dyn LinuxFdBackend = &backend;
+        assert_eq!(dynamic.raw_fd(), backend.as_fd().as_raw_fd());
+        assert_eq!(dynamic.linux_fd_capabilities().offset_alignment(), 1);
+    }
 
     #[test]
     fn stores_capabilities() {
@@ -63,6 +98,35 @@ pub struct FileState {
     pub readable: bool,
     pub writable: bool,
     pub append: bool,
+}
+
+/// One point-in-time inspection bound to a live descriptor borrow.
+///
+/// Construct immediately before preflight and do not cache across planning or
+/// execution calls. The borrow prevents descriptor reuse, but is not a lock:
+/// external truncation and status-flag changes can invalidate these facts.
+#[derive(Debug)]
+pub struct FileInspection<'fd> {
+    fd: BorrowedFd<'fd>,
+    state: FileState,
+}
+
+impl<'fd> FileInspection<'fd> {
+    pub fn new(fd: BorrowedFd<'fd>) -> std::io::Result<Self> {
+        Ok(Self {
+            fd,
+            state: inspect_file(fd)?,
+        })
+    }
+
+    /// Match the exact borrowed descriptor, not merely an alias of its inode.
+    pub fn is_for(&self, fd: BorrowedFd<'_>) -> bool {
+        self.fd.as_raw_fd() == fd.as_raw_fd()
+    }
+
+    pub fn state(&self) -> FileState {
+        self.state
+    }
 }
 
 pub fn inspect_file(fd: std::os::fd::BorrowedFd<'_>) -> std::io::Result<FileState> {

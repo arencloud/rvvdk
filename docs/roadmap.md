@@ -114,13 +114,15 @@ Acceptance:
 R1.2 performance follow-up (PERF.0): qualify fragmented no-op observation and
 sequential Hole/Zero fallback on a controlled runner. Final development-host
 medians exceed 5% in these profiles; conflicting repeats are preserved in the
-[R1.2 report](benchmark-results/2026-09-28-r12/README.md).
+[R1.2 report](benchmark-results/2026-09-28-r12/README.md). R1.3 also retains
+a native complete-copy pair at +9.92% (aggregate +0.25%) for controlled-runner
+qualification; see its [report](benchmark-results/2026-09-28-r13/README.md).
 
 - [x] **R1.1:** Add destination-aware portable planning and execution for arbitrary `VirtualDisk` implementations, including trait objects where useful (`?Sized` or deliberate forwarding implementations).
 - [x] **R1.1:** Use one canonical extent topology validator at plan construction and execution boundaries.
 - [x] **R1.2:** Consolidate Data/Zero/Hole execution policy and duplicated sequential observed/unobserved loops. Preserve existing statistics and observer/flush boundaries; leave stronger deallocation guarantees to R2.
-- [ ] Separate logical intent from executor preparation. Suggested internal concepts: `LogicalCopyPlan`, `PreparedExecution`, and `ExecutionSelection { requested, selected, reason }`; these are design names, not required public types.
-- [ ] **R1.3 (next):** Consolidate endpoint preparation so one descriptor snapshot can serve current capacity/access/identity checks without weakening logical capability checks; measure planning latency against R0.5.
+- [ ] **R1.4 (next):** Separate logical intent from executor preparation. Suggested internal concepts: `LogicalCopyPlan`, `PreparedExecution`, and `ExecutionSelection { requested, selected, reason }`; these are design names, not required public types.
+- [x] **R1.3:** Share fresh local RAW descriptor inspections across logical and physical capacity/access/identity checks. Preserve custom logical checks and native binding. Measure against the preceding implementation of R0.5 preflight. [Evidence](benchmark-results/2026-09-28-r13/README.md); [ADR-0028](adr/0028-endpoint-inspection.md).
 - [x] **R1.1:** Treat existing `CopyPlan` as an in-memory structural plan. Avoid promising stable serialization until identity/versioning rules are settled.
 - [ ] Define contextual copy errors with operation, range, backend, cause, and partial progress. Separate invalid configuration/stale plan from corrupt source metadata.
 - [ ] Define a memory budget covering buffers, queue entries, and extent metadata. Keep the initial Vec extent API, but do not claim total memory is independent of fragmentation.
@@ -286,7 +288,7 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 | [0025](adr/0025-shared-plan-validation.md) | Accepted: shared structural plan validation; broader lifecycle/error termination remains future work |
 | 0026 | Logical Hole semantics and zero-guaranteed deallocation |
 | [0027](adr/0027-portable-planning.md) | Accepted: portable planning and explicit RAW adapters; optional native preparation remains follow-up work |
-| 0028 | Source/destination identity, consistency, and durability contracts |
+| [0028](adr/0028-endpoint-inspection.md) | Accepted: fresh descriptor inspection and current endpoint identity; persistent consistency/durability contracts remain future work |
 | 0029 | VMDK support subset, backing resolver, parent-chain rules |
 | 0030 | Independent VMware transport feasibility and selected first workflow |
 | 0031 | Changed-range selection and CBT baseline identity |
@@ -294,7 +296,7 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 
 ## First implementation session — R0.1 completed
 
-The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs and R1.2 shared semantic policy are also complete; continue with R1.3 endpoint preparation next.
+The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, and R1.3 shared endpoint inspection are also complete; continue with R1.4 logical/executor preparation separation next.
 
 R0.1 was the bounded change directly related to the observer work:
 
@@ -309,7 +311,7 @@ R0.1 was the bounded change directly related to the observer work:
    tradeoff in the implementation log. Update this checklist and ADR-0025 with
    the implemented behavior and remaining limitations.
 
-R0, R1.1, and R1.2 are complete. Start **R1.3** with shared endpoint preparation and descriptor snapshots, measuring RAW planning against R0.5/R1.1. Then complete R1 error context and memory-budget work before R2 native/sparse qualification.
+R0 and R1.1–R1.3 are complete. Start **R1.4** with explicit logical intent and executor preparation boundaries. Then complete R1 error context and memory-budget work before R2 native/sparse qualification. Keep PERF.0 and the R1.2 performance follow-ups open.
 
 ## Decisions to record before their milestone
 

@@ -677,6 +677,23 @@ backends and bind their identities to the supplied descriptors before selection
 or dispatch. A custom RAW backend must override/forward `copy_endpoint` to enable
 this native path; unknown identity is not accepted as a matching descriptor.
 
+R1.3 shares the local RAW inspection through
+`rvvdk-platform::FileInspection`: a private-field record of live FD facts tied to
+a descriptor borrow. `LinuxFdBackend::copy_endpoint_from_inspection` defaults to
+the independent logical `BlockDevice::copy_endpoint`. The local override checks
+the exact descriptor and preserves logical capability restrictions while using
+its current size/access/identity. RAW pair preflight now takes two fstat/F_GETFL
+pairs instead of four. Portable local preflight uses the same conversion with a
+new inspection. Custom implementations keep their original logical checks by
+default; descriptors never implicitly grant logical capabilities.
+
+The platform crate depends on core's portable endpoint types; core remains free
+of platform dependencies and Linux disk-trait methods. Inspections are not kept
+in plans or reused across execution calls, and are not atomic metadata snapshots.
+Native lower layers retain separate preflight checks. See
+[ADR-0028](adr/0028-endpoint-inspection.md) for binding, consistency, and durability
+limits.
+
 Nonempty low-level native range/extent copies require regular file sources,
 readable source FDs, writable non-append destination FDs, sufficient current
 capacity for the complete requested range, and distinct backing objects. Native
