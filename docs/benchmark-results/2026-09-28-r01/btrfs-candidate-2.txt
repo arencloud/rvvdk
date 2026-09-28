@@ -1,0 +1,70 @@
+Gnuplot not found, using plotters backend
+progress/dense: logical=16777216, data=16777216, holes=0, extents=1, block=65536, workers=1, buffered, flush=included
+Benchmarking progress_plan/dense/plan
+Benchmarking progress_plan/dense/plan: Warming up for 300.00 ms
+Benchmarking progress_plan/dense/plan: Collecting 20 samples in estimated 1.0000 s (1.1M iterations)
+Benchmarking progress_plan/dense/plan: Analyzing
+progress_plan/dense/plan
+                        time:   [866.18 ns 870.57 ns 874.98 ns]
+                        thrpt:  [1.1429 Melem/s 1.1487 Melem/s 1.1545 Melem/s]
+
+Benchmarking progress_copy/dense/unobserved
+Benchmarking progress_copy/dense/unobserved: Warming up for 300.00 ms
+Benchmarking progress_copy/dense/unobserved: Collecting 20 samples in estimated 1.1737 s (40 iterations)
+Benchmarking progress_copy/dense/unobserved: Analyzing
+progress_copy/dense/unobserved
+                        time:   [13.090 ms 13.286 ms 13.493 ms]
+                        thrpt:  [1.1580 GiB/s 1.1760 GiB/s 1.1937 GiB/s]
+Benchmarking progress_copy/dense/noop
+Benchmarking progress_copy/dense/noop: Warming up for 300.00 ms
+Benchmarking progress_copy/dense/noop: Collecting 20 samples in estimated 1.1287 s (40 iterations)
+Benchmarking progress_copy/dense/noop: Analyzing
+progress_copy/dense/noop
+                        time:   [13.056 ms 13.313 ms 13.642 ms]
+                        thrpt:  [1.1453 GiB/s 1.1737 GiB/s 1.1967 GiB/s]
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high severe
+Benchmarking progress_copy/dense/counter
+Benchmarking progress_copy/dense/counter: Warming up for 300.00 ms
+Benchmarking progress_copy/dense/counter: Collecting 20 samples in estimated 1.1293 s (40 iterations)
+Benchmarking progress_copy/dense/counter: Analyzing
+progress_copy/dense/counter
+                        time:   [12.907 ms 13.125 ms 13.413 ms]
+                        thrpt:  [1.1649 GiB/s 1.1904 GiB/s 1.2105 GiB/s]
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high severe
+
+progress/fragmented50: logical=16777216, data=8388608, holes=8388608, extents=256, block=65536, workers=1, buffered, flush=included
+Benchmarking progress_plan/fragmented50/plan
+Benchmarking progress_plan/fragmented50/plan: Warming up for 300.00 ms
+Benchmarking progress_plan/fragmented50/plan: Collecting 20 samples in estimated 1.0039 s (4760 iterations)
+Benchmarking progress_plan/fragmented50/plan: Analyzing
+progress_plan/fragmented50/plan
+                        time:   [212.62 µs 213.31 µs 214.14 µs]
+                        thrpt:  [1.1955 Melem/s 1.2001 Melem/s 1.2040 Melem/s]
+Found 2 outliers among 20 measurements (10.00%)
+  1 (5.00%) high mild
+  1 (5.00%) high severe
+
+Benchmarking progress_copy/fragmented50/unobserved
+Benchmarking progress_copy/fragmented50/unobserved: Warming up for 300.00 ms
+Benchmarking progress_copy/fragmented50/unobserved: Collecting 20 samples in estimated 1.1165 s (40 iterations)
+Benchmarking progress_copy/fragmented50/unobserved: Analyzing
+progress_copy/fragmented50/unobserved
+                        time:   [12.419 ms 12.592 ms 12.775 ms]
+                        thrpt:  [1.2231 GiB/s 1.2408 GiB/s 1.2581 GiB/s]
+Benchmarking progress_copy/fragmented50/noop
+Benchmarking progress_copy/fragmented50/noop: Warming up for 300.00 ms
+Benchmarking progress_copy/fragmented50/noop: Collecting 20 samples in estimated 1.1215 s (40 iterations)
+Benchmarking progress_copy/fragmented50/noop: Analyzing
+progress_copy/fragmented50/noop
+                        time:   [12.286 ms 12.492 ms 12.705 ms]
+                        thrpt:  [1.2299 GiB/s 1.2508 GiB/s 1.2717 GiB/s]
+Benchmarking progress_copy/fragmented50/counter
+Benchmarking progress_copy/fragmented50/counter: Warming up for 300.00 ms
+Benchmarking progress_copy/fragmented50/counter: Collecting 20 samples in estimated 1.1349 s (40 iterations)
+Benchmarking progress_copy/fragmented50/counter: Analyzing
+progress_copy/fragmented50/counter
+                        time:   [12.067 ms 12.248 ms 12.432 ms]
+                        thrpt:  [1.2568 GiB/s 1.2757 GiB/s 1.2948 GiB/s]
+

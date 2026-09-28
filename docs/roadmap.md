@@ -95,7 +95,7 @@ Use these IDs in subsequent work so the review findings and implementation remai
 
 Deliver small, separate changes rather than a wholesale rewrite:
 
-- [ ] **R0.1: observer validation parity** — factor shared plan validation out of `execute_plan`; ensure both observer and ordinary entry points use it. Remove the separate observed copy loop in favor of shared execution events where practical. Covers F03.
+- [x] **R0.1: observer validation parity** — both entry points share structural validation before execution/notification; private dispatch avoids duplicate scans. Eight regressions added. Covers F03. [Evidence and performance disposition](benchmark-results/2026-09-28-r01/README.md); broad loop consolidation remains in R1.
 - [ ] **R0.2: worker shutdown** — fix retained receiver ownership, first-error propagation, producer wakeup, and worker joining. Exercise read/write/zero/discard failures with a full queue. Covers F01.
 - [ ] **R0.3: io_uring lifetime repair** — eliminate early return with live borrowed-buffer operations; review owned teardown, submission errors, interrupted waits, unknown completions, and FD lifetime. Covers F02.
 - [ ] **R0.4: entry-point validation** — validate all exported low-level configurations, including zero block size and unsupported extent plans before writes. Covers F08.
@@ -271,11 +271,11 @@ Acceptance: each advertised configuration has evidence; engine defaults follow r
 
 ## ADR queue
 
-Proposed next decisions, numbered after ADR-0024. Create each when implementing its milestone; do not mark these accepted in advance.
+Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; create the remaining proposals when implementing their milestones.
 
 | Proposed ADR | Decision |
 |---|---|
-| 0025 | Unified validation and execution lifecycle, observer semantics, error termination |
+| [0025](adr/0025-shared-plan-validation.md) | Accepted: shared structural plan validation; broader lifecycle/error termination remains future work |
 | 0026 | Logical Hole semantics and zero-guaranteed deallocation |
 | 0027 | Portable planning and optional native execution preparation |
 | 0028 | Source/destination identity, consistency, and durability contracts |
@@ -284,9 +284,11 @@ Proposed next decisions, numbered after ADR-0024. Create each when implementing 
 | 0031 | Changed-range selection and CBT baseline identity |
 | 0032 | Durable journals, checkpoint ordering, and resume |
 
-## First implementation session
+## First implementation session — R0.1 completed
 
-Start with **R0.1**, a bounded change directly related to the current observer work:
+The following sequence is recorded in the [implementation log](implementation-log.md). R0.1's correctness scope is complete; its performance disposition and controlled-runner follow-up are documented. Continue with R0.2 next.
+
+R0.1 was the bounded change directly related to the observer work:
 
 1. Preserve and review the existing uncommitted observer changes.
    Prepare PERF.0's corrected harness and baseline/source-state records alongside

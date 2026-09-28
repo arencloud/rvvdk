@@ -1,0 +1,56 @@
+Gnuplot not found, using plotters backend
+progress/dense: logical=16777216, data=16777216, holes=0, extents=1, block=65536, workers=1, buffered, flush=included
+Benchmarking progress_plan/dense/plan
+Benchmarking progress_plan/dense/plan: Warming up for 300.00 ms
+Benchmarking progress_plan/dense/plan: Collecting 20 samples in estimated 1.0010 s (19k iterations)
+Benchmarking progress_plan/dense/plan: Analyzing
+progress_plan/dense/plan
+                        time:   [52.142 µs 52.982 µs 54.161 µs]
+                        thrpt:  [18.463 Kelem/s 18.874 Kelem/s 19.178 Kelem/s]
+Found 2 outliers among 20 measurements (10.00%)
+  2 (10.00%) high severe
+
+Benchmarking progress_copy/dense/unobserved
+Benchmarking progress_copy/dense/unobserved: Warming up for 300.00 ms
+Benchmarking progress_copy/dense/unobserved: Collecting 20 samples in estimated 1.0083 s (120 iterations)
+Benchmarking progress_copy/dense/unobserved: Analyzing
+progress_copy/dense/unobserved
+                        time:   [3.1461 ms 3.1702 ms 3.1975 ms]
+                        thrpt:  [4.8866 GiB/s 4.9287 GiB/s 4.9665 GiB/s]
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high mild
+Benchmarking progress_copy/dense/noop
+Benchmarking progress_copy/dense/noop: Warming up for 300.00 ms
+Benchmarking progress_copy/dense/noop: Collecting 20 samples in estimated 1.0643 s (120 iterations)
+Benchmarking progress_copy/dense/noop: Analyzing
+progress_copy/dense/noop
+                        time:   [3.5850 ms 3.7370 ms 3.9034 ms]
+                        thrpt:  [4.0029 GiB/s 4.1812 GiB/s 4.3584 GiB/s]
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high mild
+Benchmarking progress_copy/dense/counter
+Benchmarking progress_copy/dense/counter: Warming up for 300.00 ms
+Benchmarking progress_copy/dense/counter: Collecting 20 samples in estimated 1.0550 s (120 iterations)
+Benchmarking progress_copy/dense/counter: Analyzing
+progress_copy/dense/counter
+                        time:   [3.0829 ms 3.1013 ms 3.1209 ms]
+                        thrpt:  [5.0065 GiB/s 5.0382 GiB/s 5.0682 GiB/s]
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high mild
+
+progress/fragmented50: logical=16777216, data=8388608, holes=8388608, extents=256, block=65536, workers=1, buffered, flush=included
+Benchmarking progress_plan/fragmented50/plan
+Benchmarking progress_plan/fragmented50/plan: Warming up for 300.00 ms
+Benchmarking progress_plan/fragmented50/plan: Collecting 20 samples in estimated 1.0015 s (14k iterations)
+Benchmarking progress_plan/fragmented50/plan: Analyzing
+progress_plan/fragmented50/plan
+                        time:   [56.597 µs 59.990 µs 63.579 µs]
+                        thrpt:  [4.0265 Melem/s 4.2674 Melem/s 4.5232 Melem/s]
+
+Benchmarking progress_copy/fragmented50/unobserved
+Benchmarking progress_copy/fragmented50/unobserved: Warming up for 300.00 ms
+
+thread 'main' (184113) panicked at crates/rvvdk-datamover/benches/progress.rs:95:26:
+called `Result::unwrap()` on an `Err` value: CorruptMetadata("copy plan extent map changed: planned=0xc58dd05608375b25, current=0x10dbac65bec11863")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+

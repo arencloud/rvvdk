@@ -1,0 +1,33 @@
+{
+  "baseline_commit": "b579dfb275f33849e90c8c876d65a057013244a7",
+  "candidate_patch_sha256": "2e55ca527705834ea7d9fbd0d018ac9d6d76634e87500f2ae854b4ce81e48ffb",
+  "candidate_patch": "candidate.patch",
+  "baseline_harness": "Baseline commit plus identical candidate Cargo.toml, progress.rs and io_uring_direct.rs benchmark files; no runtime changes.",
+  "harness_sha256": {
+    "crates/rvvdk-datamover/Cargo.toml": "0a7aded73ec72d485bb3d800a8f4cac93f8fb5da21f7ddbb9a7aa7110b5cb19a",
+    "crates/rvvdk-datamover/benches/progress.rs": "d0655f5471e0aca90d1ccc5b9ef2ef9aa2501a836f7053b565af8ea79d1775fa",
+    "crates/rvvdk-datamover/benches/io_uring_direct.rs": "75ede60a4351dd60367ae163702576bd3260dd28f74189f18667332224533b26"
+  },
+  "binaries_sha256": {
+    "baseline": "83b971041beb50650577714645392990ae07cee77cb868ece70a0c188311a4b3",
+    "candidate": "266cc88ce8138e4055f445ad09d2b8275dd74eaf994a27469f19d773f501fd1f"
+  },
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+  "kernel": "7.2.5-200.fc44.x86_64",
+  "cpu": "11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz",
+  "logical_cpus": 16,
+  "memory": "MemTotal:       65527436 kB",
+  "storage": "NAME    MODEL                        SIZE ROTA\nzram0                                  8G    0\nnvme0n1 SAMSUNG MZVL21T0HCLR-00BL7 953.9G    0\n",
+  "filesystems": {
+    "tmpfs": "tmpfs rw,nosuid,nodev,seclabel,size=32763720k,nr_inodes=1048576,inode64,usrquota",
+    "btrfs": "btrfs rw,relatime,seclabel,compress=zstd:1,ssd,discard=async,space_cache=v2,subvolid=256,subvol=/home"
+  },
+  "profile": "cargo bench (optimized, default workspace release settings), single worker, 64 KiB block, 4096 alignment, one buffer; same storage device for source and destination",
+  "workload": "16 MiB dense and 50% sparse with alternating 64 KiB extents, deterministic incompressible Data. Warm buffered source. Reset destination with incompressible bytes and flush before every timed execution.",
+  "timing": "Plan benchmark measures plan_with_destination. Copy benchmark measures execute_plan or execute_plan_with_observer including structural validation and destination flush, excluding initial planning, reset, and read-back verification. Entire output verified after each timed copy.",
+  "sampling": "Initial comparison: 20 samples, flat, 300 ms warmup, 1 s measurement target; 3 runs per source version on Btrfs, order baseline/candidate, candidate/baseline, baseline/candidate.",
+  "limits": "Development laptop, frequency scaling and background activity not controlled; no CPU affinity. API/observer comparison, not sustained device bandwidth qualification. CPU/RSS/latency counters not instrumented.",
+  "build_isolation": "Separate target/r01-baseline-build and target/r01-candidate-build; executable hashes differ. Shared-output-directory attempt discarded.",
+  "followup": "Fragmented copy matrix repeated with 40 samples, 500 ms warmup, 3 s measurement target; 3 runs per source version, order candidate/baseline, baseline/candidate, candidate/baseline. Triggered by initial counter median increase above 5%.",
+  "discarded_attempts": "tmpfs sparse source allocation map became dense before copy, even after replacing whole-source read with Data-only reads; cause not established. Both attempts failed rather than reporting successful performance. Attempt 1 also used a shared Cargo output directory and is invalid for comparison. Accepted runs use Btrfs and isolated builds."
+}

@@ -1,0 +1,70 @@
+   Compiling rvvdk-datamover v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-datamover)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.44s
+     Running tests/plan_validation.rs (target/debug/deps/plan_validation-c27bf775d51476e1)
+
+running 7 tests
+test both_entry_points_reject_larger_execution_blocks_without_panicking ... FAILED
+test both_entry_points_reject_changed_source_size_before_partial_copy ... FAILED
+test both_entry_points_reject_changed_alignment ... FAILED
+test both_entry_points_reject_smaller_destination_before_partial_copy ... FAILED
+test both_entry_points_reject_smaller_execution_blocks ... FAILED
+test concurrent_observer_rejects_invalid_plan_before_emitting_progress ... FAILED
+test stale_hole_plan_must_not_clear_new_source_data ... FAILED
+
+failures:
+
+---- both_entry_points_reject_larger_execution_blocks_without_panicking stdout ----
+
+thread 'both_entry_points_reject_larger_execution_blocks_without_panicking' (179171) panicked at crates/rvvdk-datamover/src/mover.rs:482:72:
+range end index 8192 out of range for slice of length 4096
+
+---- both_entry_points_reject_changed_source_size_before_partial_copy stdout ----
+
+thread 'both_entry_points_reject_changed_source_size_before_partial_copy' (179170) panicked at crates/rvvdk-datamover/tests/plan_validation.rs:98:5:
+assertion `left == right` failed
+  left: "range outside device bounds: offset=8192, length=4096, size=8192"
+ right: "corrupt metadata: copy plan source size mismatch: plan=16384, source=8192"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- both_entry_points_reject_changed_alignment stdout ----
+
+thread 'both_entry_points_reject_changed_alignment' (179169) panicked at crates/rvvdk-datamover/tests/plan_validation.rs:96:10:
+called `Result::unwrap_err()` on an `Ok` value: CopyReport { backend: Threaded, stats: CopyStats { bytes_read: 16384, bytes_written: 16384, bytes_zeroed: 0, bytes_discarded: 0, blocks_copied: 4, extents_processed: 1, elapsed: 14.503µs } }
+
+---- both_entry_points_reject_smaller_destination_before_partial_copy stdout ----
+
+thread 'both_entry_points_reject_smaller_destination_before_partial_copy' (179172) panicked at crates/rvvdk-datamover/tests/plan_validation.rs:98:5:
+assertion `left == right` failed
+  left: "range outside device bounds: offset=8192, length=4096, size=8192"
+ right: "range outside device bounds: offset=0, length=16384, size=8192"
+
+---- both_entry_points_reject_smaller_execution_blocks stdout ----
+
+thread 'both_entry_points_reject_smaller_execution_blocks' (179173) panicked at crates/rvvdk-datamover/tests/plan_validation.rs:96:10:
+called `Result::unwrap_err()` on an `Ok` value: CopyReport { backend: Threaded, stats: CopyStats { bytes_read: 16384, bytes_written: 16384, bytes_zeroed: 0, bytes_discarded: 0, blocks_copied: 8, extents_processed: 1, elapsed: 19.961µs } }
+
+---- concurrent_observer_rejects_invalid_plan_before_emitting_progress stdout ----
+
+thread 'concurrent_observer_rejects_invalid_plan_before_emitting_progress' (179174) panicked at crates/rvvdk-datamover/tests/plan_validation.rs:100:5:
+assertion `left == right` failed: invalid plans must not emit progress
+  left: 1
+ right: 0
+
+---- stale_hole_plan_must_not_clear_new_source_data stdout ----
+
+thread 'stale_hole_plan_must_not_clear_new_source_data' (179175) panicked at crates/rvvdk-datamover/tests/plan_validation.rs:96:10:
+called `Result::unwrap_err()` on an `Ok` value: CopyReport { backend: Threaded, stats: CopyStats { bytes_read: 0, bytes_written: 16384, bytes_zeroed: 0, bytes_discarded: 0, blocks_copied: 4, extents_processed: 1, elapsed: 14.197µs } }
+
+
+failures:
+    both_entry_points_reject_changed_alignment
+    both_entry_points_reject_changed_source_size_before_partial_copy
+    both_entry_points_reject_larger_execution_blocks_without_panicking
+    both_entry_points_reject_smaller_destination_before_partial_copy
+    both_entry_points_reject_smaller_execution_blocks
+    concurrent_observer_rejects_invalid_plan_before_emitting_progress
+    stale_hole_plan_must_not_clear_new_source_data
+
+test result: FAILED. 0 passed; 7 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p rvvdk-datamover --test plan_validation`

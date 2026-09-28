@@ -296,6 +296,22 @@ impl DataMover {
         S: BlockDevice + LinuxFdBackend,
         D: BlockDevice + LinuxFdBackend,
     {
+        self.validate_plan(plan, source, destination)?;
+        self.execute_validated_plan(plan, source, destination)
+    }
+
+    /// Validate structural plan invariants before any execution or observation.
+    #[cfg(target_os = "linux")]
+    fn validate_plan<S, D>(
+        &self,
+        plan: &CopyPlan,
+        source: &RawDisk<S>,
+        destination: &RawDisk<D>,
+    ) -> Result<()>
+    where
+        S: BlockDevice + LinuxFdBackend,
+        D: BlockDevice + LinuxFdBackend,
+    {
         let source_size = source.size();
 
         let destination_size = destination.size();
@@ -369,36 +385,35 @@ impl DataMover {
             )));
         }
 
+        if plan.backend() == ExecutionBackend::Threaded
+            && plan.alignment() != self.options.buffer_alignment()
+        {
+            return Err(Error::CorruptMetadata(format!(
+                "copy plan alignment mismatch: plan={}, mover={}",
+                plan.alignment(),
+                self.options.buffer_alignment(),
+            )));
+        }
+
+        Ok(())
+    }
+
+    /// Dispatch only after the caller has validated the structural plan.
+    #[cfg(target_os = "linux")]
+    fn execute_validated_plan<S, D>(
+        &self,
+        plan: &CopyPlan,
+        source: &RawDisk<S>,
+        destination: &RawDisk<D>,
+    ) -> Result<CopyReport>
+    where
+        S: BlockDevice + LinuxFdBackend,
+        D: BlockDevice + LinuxFdBackend,
+    {
         match plan.backend() {
-            ExecutionBackend::Threaded => {
-                /*
-                 * Threaded plans use the configured buffer alignment.
-                 *
-                 * Reject execution through a differently configured
-                 * DataMover.
-                 */
-                if plan.alignment() != self.options.buffer_alignment() {
-                    return Err(Error::CorruptMetadata(format!(
-                        "copy plan alignment mismatch: \
-                             plan={}, mover={}",
-                        plan.alignment(),
-                        self.options.buffer_alignment(),
-                    )));
-                }
-
-                self.execute_threaded_plan(plan, source, destination)
-            }
-
-            ExecutionBackend::IoUring => {
-                /*
-                 * Native compatibility and runtime alignment are checked
-                 * again inside execute_io_uring_plan().
-                 *
-                 * This protects execution if the native backend
-                 * capabilities changed after planning.
-                 */
-                self.execute_io_uring_plan(plan, source, destination)
-            }
+            ExecutionBackend::Threaded => self.execute_threaded_plan(plan, source, destination),
+            // Native compatibility and runtime alignment are rechecked before native I/O.
+            ExecutionBackend::IoUring => self.execute_io_uring_plan(plan, source, destination),
         }
     }
 
@@ -415,13 +430,14 @@ impl DataMover {
         D: BlockDevice + LinuxFdBackend,
         O: ProgressObserver + ?Sized,
     {
+        self.validate_plan(plan, source, destination)?;
         observer.on_progress(&ProgressSnapshot::initial(plan));
 
         let report =
             if plan.backend() == ExecutionBackend::Threaded && self.options.concurrency() == 1 {
                 self.execute_threaded_plan_with_observer(plan, source, destination, observer)?
             } else {
-                self.execute_plan(plan, source, destination)?
+                self.execute_validated_plan(plan, source, destination)?
             };
 
         let stats = report.stats();

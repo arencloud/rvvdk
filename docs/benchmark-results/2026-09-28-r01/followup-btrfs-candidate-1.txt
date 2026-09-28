@@ -1,0 +1,33 @@
+Gnuplot not found, using plotters backend
+progress/dense: logical=16777216, data=16777216, holes=0, extents=1, block=65536, workers=1, buffered, flush=included
+progress/fragmented50: logical=16777216, data=8388608, holes=8388608, extents=256, block=65536, workers=1, buffered, flush=included
+Benchmarking progress_copy/fragmented50/unobserved
+Benchmarking progress_copy/fragmented50/unobserved: Warming up for 500.00 ms
+Benchmarking progress_copy/fragmented50/unobserved: Collecting 40 samples in estimated 3.3351 s (120 iterations)
+Benchmarking progress_copy/fragmented50/unobserved: Analyzing
+progress_copy/fragmented50/unobserved
+                        time:   [12.388 ms 12.491 ms 12.605 ms]
+                        thrpt:  [1.2396 GiB/s 1.2509 GiB/s 1.2613 GiB/s]
+Found 3 outliers among 40 measurements (7.50%)
+  1 (2.50%) low mild
+  2 (5.00%) high severe
+Benchmarking progress_copy/fragmented50/noop
+Benchmarking progress_copy/fragmented50/noop: Warming up for 500.00 ms
+Benchmarking progress_copy/fragmented50/noop: Collecting 40 samples in estimated 3.2810 s (120 iterations)
+Benchmarking progress_copy/fragmented50/noop: Analyzing
+progress_copy/fragmented50/noop
+                        time:   [12.283 ms 12.401 ms 12.533 ms]
+                        thrpt:  [1.2468 GiB/s 1.2600 GiB/s 1.2721 GiB/s]
+Found 4 outliers among 40 measurements (10.00%)
+  3 (7.50%) high mild
+  1 (2.50%) high severe
+Benchmarking progress_copy/fragmented50/counter
+Benchmarking progress_copy/fragmented50/counter: Warming up for 500.00 ms
+Benchmarking progress_copy/fragmented50/counter: Collecting 40 samples in estimated 3.2637 s (120 iterations)
+Benchmarking progress_copy/fragmented50/counter: Analyzing
+progress_copy/fragmented50/counter
+                        time:   [12.433 ms 12.553 ms 12.678 ms]
+                        thrpt:  [1.2324 GiB/s 1.2447 GiB/s 1.2568 GiB/s]
+Found 1 outliers among 40 measurements (2.50%)
+  1 (2.50%) high mild
+

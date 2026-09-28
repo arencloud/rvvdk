@@ -694,3 +694,8 @@ plan_with_destination()
 execute_plan()
 ```
 
+Both `execute_plan` and `execute_plan_with_observer` now share structural plan
+validation before copying or notifying observers. Private validated dispatch
+avoids repeating that scan for concurrent/native observed execution. Native
+compatibility checks remain inside the native executor. See
+[ADR-0025](adr/0025-shared-plan-validation.md).

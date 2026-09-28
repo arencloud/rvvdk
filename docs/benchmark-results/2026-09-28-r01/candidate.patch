@@ -1,0 +1,505 @@
+diff --git a/crates/rvvdk-datamover/Cargo.toml b/crates/rvvdk-datamover/Cargo.toml
+index 59bfb8c..93e45ff 100644
+--- a/crates/rvvdk-datamover/Cargo.toml
++++ b/crates/rvvdk-datamover/Cargo.toml
+@@ -37,4 +37,8 @@ harness = false
+ 
+ [[bench]]
+ name = "sparse"
+-harness = false
+\ No newline at end of file
++harness = false
++
++[[bench]]
++name = "progress"
++harness = false
+diff --git a/crates/rvvdk-datamover/benches/io_uring_direct.rs b/crates/rvvdk-datamover/benches/io_uring_direct.rs
+index dd47a0e..d67c9b7 100644
+--- a/crates/rvvdk-datamover/benches/io_uring_direct.rs
++++ b/crates/rvvdk-datamover/benches/io_uring_direct.rs
+@@ -7,7 +7,7 @@ use criterion::{
+     BenchmarkId, Criterion, SamplingMode, Throughput, criterion_group, criterion_main,
+ };
+ 
+-use rvvdk_core::RawDisk;
++use rvvdk_core::{BlockDevice, RawDisk};
+ 
+ use rvvdk_datamover::{CopyOptions, DataMover};
+ 
+@@ -140,6 +140,9 @@ fn benchmark_io_uring_direct(criterion: &mut Criterion) {
+                     )
+                     .unwrap();
+ 
++                    // Match DataMover's durability boundary in the threaded benchmark.
++                    destination.flush().unwrap();
++
+                     assert_eq!(stats.bytes_read(), DISK_SIZE as u64,);
+ 
+                     assert_eq!(stats.bytes_written(), DISK_SIZE as u64,);
+diff --git a/crates/rvvdk-datamover/src/mover.rs b/crates/rvvdk-datamover/src/mover.rs
+index 265279e..313a01e 100644
+--- a/crates/rvvdk-datamover/src/mover.rs
++++ b/crates/rvvdk-datamover/src/mover.rs
+@@ -292,6 +292,22 @@ impl DataMover {
+         source: &RawDisk<S>,
+         destination: &RawDisk<D>,
+     ) -> Result<CopyReport>
++    where
++        S: BlockDevice + LinuxFdBackend,
++        D: BlockDevice + LinuxFdBackend,
++    {
++        self.validate_plan(plan, source, destination)?;
++        self.execute_validated_plan(plan, source, destination)
++    }
++
++    /// Validate structural plan invariants before any execution or observation.
++    #[cfg(target_os = "linux")]
++    fn validate_plan<S, D>(
++        &self,
++        plan: &CopyPlan,
++        source: &RawDisk<S>,
++        destination: &RawDisk<D>,
++    ) -> Result<()>
+     where
+         S: BlockDevice + LinuxFdBackend,
+         D: BlockDevice + LinuxFdBackend,
+@@ -369,36 +385,35 @@ impl DataMover {
+             )));
+         }
+ 
+-        match plan.backend() {
+-            ExecutionBackend::Threaded => {
+-                /*
+-                 * Threaded plans use the configured buffer alignment.
+-                 *
+-                 * Reject execution through a differently configured
+-                 * DataMover.
+-                 */
+-                if plan.alignment() != self.options.buffer_alignment() {
+-                    return Err(Error::CorruptMetadata(format!(
+-                        "copy plan alignment mismatch: \
+-                             plan={}, mover={}",
+-                        plan.alignment(),
+-                        self.options.buffer_alignment(),
+-                    )));
+-                }
++        if plan.backend() == ExecutionBackend::Threaded
++            && plan.alignment() != self.options.buffer_alignment()
++        {
++            return Err(Error::CorruptMetadata(format!(
++                "copy plan alignment mismatch: plan={}, mover={}",
++                plan.alignment(),
++                self.options.buffer_alignment(),
++            )));
++        }
+ 
+-                self.execute_threaded_plan(plan, source, destination)
+-            }
++        Ok(())
++    }
+ 
+-            ExecutionBackend::IoUring => {
+-                /*
+-                 * Native compatibility and runtime alignment are checked
+-                 * again inside execute_io_uring_plan().
+-                 *
+-                 * This protects execution if the native backend
+-                 * capabilities changed after planning.
+-                 */
+-                self.execute_io_uring_plan(plan, source, destination)
+-            }
++    /// Dispatch only after the caller has validated the structural plan.
++    #[cfg(target_os = "linux")]
++    fn execute_validated_plan<S, D>(
++        &self,
++        plan: &CopyPlan,
++        source: &RawDisk<S>,
++        destination: &RawDisk<D>,
++    ) -> Result<CopyReport>
++    where
++        S: BlockDevice + LinuxFdBackend,
++        D: BlockDevice + LinuxFdBackend,
++    {
++        match plan.backend() {
++            ExecutionBackend::Threaded => self.execute_threaded_plan(plan, source, destination),
++            // Native compatibility and runtime alignment are rechecked before native I/O.
++            ExecutionBackend::IoUring => self.execute_io_uring_plan(plan, source, destination),
+         }
+     }
+ 
+@@ -415,13 +430,14 @@ impl DataMover {
+         D: BlockDevice + LinuxFdBackend,
+         O: ProgressObserver + ?Sized,
+     {
++        self.validate_plan(plan, source, destination)?;
+         observer.on_progress(&ProgressSnapshot::initial(plan));
+ 
+         let report =
+             if plan.backend() == ExecutionBackend::Threaded && self.options.concurrency() == 1 {
+                 self.execute_threaded_plan_with_observer(plan, source, destination, observer)?
+             } else {
+-                self.execute_plan(plan, source, destination)?
++                self.execute_validated_plan(plan, source, destination)?
+             };
+ 
+         let stats = report.stats();
+diff --git a/crates/rvvdk-datamover/benches/progress.rs b/crates/rvvdk-datamover/benches/progress.rs
+new file mode 100644
+index 0000000..4329799
+--- /dev/null
++++ b/crates/rvvdk-datamover/benches/progress.rs
+@@ -0,0 +1,139 @@
++mod support;
++
++use std::cell::Cell;
++use std::hint::black_box;
++use std::time::{Duration, Instant};
++
++use criterion::{Criterion, SamplingMode, Throughput, criterion_group, criterion_main};
++use rvvdk_core::{ExtentKind, RawDisk, VirtualDisk};
++use rvvdk_datamover::{CopyOptions, DataMover, NoopProgressObserver, ProgressSnapshot};
++use rvvdk_local::LocalFileBlockDevice;
++
++use support::{
++    MIB, benchmark_path, create_sparse_incompressible_file, ensure_benchmark_directory,
++    incompressible_buffer, materialize_file, remove_file,
++};
++
++const SIZE: usize = 16 * MIB;
++const BLOCK_SIZE: usize = 64 * 1024;
++const SEED: u64 = 0x5256_5644_4b52_3031;
++
++fn benchmark_progress(criterion: &mut Criterion) {
++    ensure_benchmark_directory();
++
++    for (profile, group_size) in [("dense", 1), ("fragmented50", 2)] {
++        let source_path = benchmark_path(&format!("progress-{profile}-source"));
++        let destination_path = benchmark_path(&format!("progress-{profile}-destination"));
++        create_sparse_incompressible_file(&source_path, SIZE, BLOCK_SIZE, 1, group_size, SEED);
++        materialize_file(&destination_path, SIZE, 0xff);
++
++        let source = RawDisk::new(LocalFileBlockDevice::open_read_only(&source_path).unwrap());
++        let destination =
++            RawDisk::new(LocalFileBlockDevice::open_read_write(&destination_path).unwrap());
++        let mover = DataMover::new(CopyOptions::new(BLOCK_SIZE).unwrap());
++        let plan = mover.plan_with_destination(&source, &destination).unwrap();
++        assert_eq!(plan.data_bytes(), (SIZE / group_size) as u64);
++
++        // Warm buffered source reads are intentional: this measures API/observer
++        // overhead, not a device's cold-read bandwidth. Setup and verification
++        // stay outside the timed interval for both execution entry points.
++        // Reading holes can materialize tmpfs pages and change SEEK_DATA results.
++        // Build expected logical bytes from Data extents without touching holes.
++        let mut expected = vec![0_u8; SIZE];
++        for extent in plan.extents() {
++            if extent.kind() == ExtentKind::Data {
++                source
++                    .read_exact_at(
++                        extent.offset(),
++                        &mut expected[extent.offset() as usize..extent.end() as usize],
++                    )
++                    .unwrap();
++            }
++        }
++        let prefill = incompressible_buffer(SIZE, SEED + 1);
++        let mut actual = vec![0_u8; SIZE];
++        println!(
++            "progress/{profile}: logical={}, data={}, holes={}, extents={}, block={}, workers=1, buffered, flush=included",
++            plan.logical_bytes(),
++            plan.data_bytes(),
++            plan.hole_bytes(),
++            plan.extent_count(),
++            BLOCK_SIZE,
++        );
++
++        let mut planning = criterion.benchmark_group(format!("progress_plan/{profile}"));
++        planning.sampling_mode(SamplingMode::Flat);
++        planning.throughput(Throughput::Elements(plan.extent_count() as u64));
++        planning.bench_function("plan", |bencher| {
++            bencher.iter(|| black_box(mover.plan_with_destination(&source, &destination).unwrap()));
++        });
++        planning.finish();
++
++        let mut execution = criterion.benchmark_group(format!("progress_copy/{profile}"));
++        execution.sampling_mode(SamplingMode::Flat);
++        execution.throughput(Throughput::Bytes(SIZE as u64));
++
++        for mode in ["unobserved", "noop", "counter"] {
++            execution.bench_function(mode, |bencher| {
++                bencher.iter_custom(|iterations| {
++                    let mut elapsed = Duration::ZERO;
++                    for _ in 0..iterations {
++                        destination.write_all_at(0, &prefill).unwrap();
++                        destination.flush().unwrap();
++
++                        let callbacks = Cell::new(0_u64);
++                        let observer = |snapshot: &ProgressSnapshot| {
++                            callbacks.set(callbacks.get() + 1);
++                            black_box(snapshot.logical_bytes_completed());
++                        };
++
++                        let started = Instant::now();
++                        let report = match mode {
++                            "unobserved" => mover.execute_plan(&plan, &source, &destination),
++                            "noop" => mover.execute_plan_with_observer(
++                                &plan,
++                                &source,
++                                &destination,
++                                &NoopProgressObserver,
++                            ),
++                            "counter" => mover.execute_plan_with_observer(
++                                &plan,
++                                &source,
++                                &destination,
++                                &observer,
++                            ),
++                            _ => unreachable!(),
++                        }
++                        .unwrap();
++                        elapsed += started.elapsed();
++
++                        assert_eq!(report.stats().bytes_read(), plan.data_bytes());
++                        assert_eq!(report.stats().bytes_written(), SIZE as u64);
++                        destination.read_exact_at(0, &mut actual).unwrap();
++                        assert_eq!(actual, expected, "{profile}/{mode}: output differs");
++                        if mode == "counter" {
++                            assert_eq!(callbacks.get(), plan.extent_count() as u64 + 1);
++                        }
++                    }
++                    elapsed
++                });
++            });
++        }
++        execution.finish();
++
++        drop(destination);
++        drop(source);
++        remove_file(source_path);
++        remove_file(destination_path);
++    }
++}
++
++criterion_group! {
++    name = benches;
++    config = Criterion::default()
++        .sample_size(20)
++        .warm_up_time(Duration::from_millis(300))
++        .measurement_time(Duration::from_secs(1));
++    targets = benchmark_progress
++}
++criterion_main!(benches);
+diff --git a/crates/rvvdk-datamover/tests/plan_validation.rs b/crates/rvvdk-datamover/tests/plan_validation.rs
+new file mode 100644
+index 0000000..c91dd4d
+--- /dev/null
++++ b/crates/rvvdk-datamover/tests/plan_validation.rs
+@@ -0,0 +1,209 @@
++#![cfg(target_os = "linux")]
++
++mod support;
++
++use std::cell::Cell;
++use std::fs;
++use std::path::PathBuf;
++use std::sync::atomic::{AtomicU64, Ordering};
++
++use rvvdk_core::{Capabilities, Extent, ExtentKind, RawDisk, VirtualDisk};
++use rvvdk_datamover::{
++    CopyOptions, DataMover, ExecutionStrategy, IoUringExecutionOptions, ProgressSnapshot,
++};
++
++use support::test_block_device::TestExtentBlockDevice;
++
++const SIZE: usize = 16 * 1024;
++const BLOCK: usize = 4096;
++
++struct Fixture(PathBuf);
++
++impl Fixture {
++    fn new() -> Self {
++        static NEXT_ID: AtomicU64 = AtomicU64::new(0);
++        let path = std::env::temp_dir().join(format!(
++            "rvvdk-plan-validation-{}-{}",
++            std::process::id(),
++            NEXT_ID.fetch_add(1, Ordering::Relaxed),
++        ));
++        fs::create_dir(&path).unwrap();
++        fs::write(path.join("source"), vec![0x5a; SIZE]).unwrap();
++        Self(path)
++    }
++
++    fn source(&self, size: usize, kind: ExtentKind) -> RawDisk<TestExtentBlockDevice> {
++        RawDisk::new(
++            TestExtentBlockDevice::open_read_only(
++                self.0.join("source"),
++                size as u64,
++                Capabilities::READ | Capabilities::EXTENTS,
++                vec![Extent::new(0, size as u64, kind).unwrap()],
++            )
++            .unwrap(),
++        )
++    }
++
++    fn destination(&self, size: usize) -> RawDisk<TestExtentBlockDevice> {
++        let destination = RawDisk::new(
++            TestExtentBlockDevice::create(
++                self.0.join("destination"),
++                size as u64,
++                Capabilities::READ | Capabilities::WRITE | Capabilities::FLUSH,
++                vec![],
++            )
++            .unwrap(),
++        );
++        destination.write_all_at(0, &vec![0xff; size]).unwrap();
++        destination
++    }
++}
++
++impl Drop for Fixture {
++    fn drop(&mut self) {
++        let _ = fs::remove_dir_all(&self.0);
++    }
++}
++
++fn assert_rejected_without_side_effects(
++    execution_options: CopyOptions,
++    source_size: usize,
++    destination_size: usize,
++    planned_kind: ExtentKind,
++    current_kind: ExtentKind,
++    expected_error: &str,
++) {
++    let fixture = Fixture::new();
++    let planner = DataMover::new(CopyOptions::new(BLOCK).unwrap());
++    let original_source = fixture.source(SIZE, planned_kind);
++    let original_destination = fixture.destination(SIZE);
++    let plan = planner
++        .plan_with_destination(&original_source, &original_destination)
++        .unwrap();
++    drop(original_destination);
++
++    let source = fixture.source(source_size, current_kind);
++    let destination = fixture.destination(destination_size);
++    let executor = DataMover::new(execution_options);
++    let before = fs::read(fixture.0.join("destination")).unwrap();
++
++    let ordinary_error = executor
++        .execute_plan(&plan, &source, &destination)
++        .unwrap_err();
++    assert!(ordinary_error.to_string().contains(expected_error));
++    assert_eq!(fs::read(fixture.0.join("destination")).unwrap(), before);
++
++    let callbacks = Cell::new(0);
++    let observer = |_: &ProgressSnapshot| callbacks.set(callbacks.get() + 1);
++    let observed_error = executor
++        .execute_plan_with_observer(&plan, &source, &destination, &observer)
++        .unwrap_err();
++
++    assert_eq!(observed_error.to_string(), ordinary_error.to_string());
++    assert_eq!(fs::read(fixture.0.join("destination")).unwrap(), before);
++    assert_eq!(callbacks.get(), 0, "invalid plans must not emit progress");
++}
++
++#[test]
++fn both_entry_points_reject_smaller_execution_blocks() {
++    assert_configuration_rejected(CopyOptions::new(BLOCK / 2).unwrap(), "block size mismatch");
++}
++
++#[test]
++fn both_entry_points_reject_larger_execution_blocks_without_panicking() {
++    assert_configuration_rejected(CopyOptions::new(BLOCK * 2).unwrap(), "block size mismatch");
++}
++
++#[test]
++fn both_entry_points_reject_changed_alignment() {
++    assert_configuration_rejected(
++        CopyOptions::with_alignment(BLOCK, 8192).unwrap(),
++        "alignment mismatch",
++    );
++}
++
++fn assert_configuration_rejected(options: CopyOptions, message: &str) {
++    assert_rejected_without_side_effects(
++        options,
++        SIZE,
++        SIZE,
++        ExtentKind::Data,
++        ExtentKind::Data,
++        message,
++    );
++}
++
++#[test]
++fn both_entry_points_reject_changed_source_size_before_partial_copy() {
++    assert_rejected_without_side_effects(
++        CopyOptions::new(BLOCK).unwrap(),
++        SIZE / 2,
++        SIZE,
++        ExtentKind::Data,
++        ExtentKind::Data,
++        "source size mismatch",
++    );
++}
++
++#[test]
++fn both_entry_points_reject_smaller_destination_before_partial_copy() {
++    assert_rejected_without_side_effects(
++        CopyOptions::new(BLOCK).unwrap(),
++        SIZE,
++        SIZE / 2,
++        ExtentKind::Data,
++        ExtentKind::Data,
++        "range outside device bounds",
++    );
++}
++
++#[test]
++fn stale_hole_plan_must_not_clear_new_source_data() {
++    assert_rejected_without_side_effects(
++        CopyOptions::new(BLOCK).unwrap(),
++        SIZE,
++        SIZE,
++        ExtentKind::Hole,
++        ExtentKind::Data,
++        "extent map changed",
++    );
++}
++
++#[test]
++fn concurrent_observer_rejects_invalid_plan_before_emitting_progress() {
++    assert_configuration_rejected(
++        CopyOptions::with_concurrency(BLOCK / 2, 4096, 2).unwrap(),
++        "block size mismatch",
++    );
++}
++
++#[test]
++fn native_observer_rejects_invalid_plan_before_emitting_progress() {
++    let fixture = Fixture::new();
++    let source = fixture.source(SIZE, ExtentKind::Data);
++    let destination = fixture.destination(SIZE);
++    let strategy = ExecutionStrategy::IoUring(IoUringExecutionOptions::new(2).unwrap());
++    let planner = DataMover::with_execution_strategy(CopyOptions::new(BLOCK).unwrap(), strategy);
++    let plan = planner
++        .plan_with_destination(&source, &destination)
++        .unwrap();
++    let executor =
++        DataMover::with_execution_strategy(CopyOptions::new(BLOCK * 2).unwrap(), strategy);
++    let callbacks = Cell::new(0);
++    let observer = |_: &ProgressSnapshot| callbacks.set(callbacks.get() + 1);
++
++    let ordinary_error = executor
++        .execute_plan(&plan, &source, &destination)
++        .unwrap_err();
++    let observed_error = executor
++        .execute_plan_with_observer(&plan, &source, &destination, &observer)
++        .unwrap_err();
++
++    assert!(ordinary_error.to_string().contains("block size mismatch"));
++    assert_eq!(observed_error.to_string(), ordinary_error.to_string());
++    assert_eq!(callbacks.get(), 0);
++    assert_eq!(
++        fs::read(fixture.0.join("destination")).unwrap(),
++        vec![0xff; SIZE]
++    );
++}

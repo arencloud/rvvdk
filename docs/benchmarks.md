@@ -9,21 +9,22 @@ with R0; R9 is final qualification, not the first time we measure.
 
 The results below this policy are historical measurements. They are not yet an
 approved regression baseline: the review identified unequal flush boundaries in
-the direct io_uring comparison, and the current worktree contains uncommitted
-changes. Do not derive engine defaults or performance claims from an unmatched
-comparison.
+the direct io_uring comparison. The harness correction is committed, but those
+historical results still need replacement measurements. Do not derive engine
+defaults or performance claims from an unmatched comparison.
 
 ### PERF.0 — Establish a reproducible baseline
 
-- [ ] Equalize timed durability boundaries: the threaded direct benchmark flushes,
-  while the low-level native direct benchmark currently does not. Include the
-  same required flush on both sides before comparing durable-copy throughput.
+- [x] Equalize timed durability boundaries: the low-level native direct benchmark
+  now calls the local destination's flush inside the timed interval, matching
+  the threaded mover. Historical direct-I/O results still require fresh runs
+  before they can serve as a corrected baseline.
 - [ ] Choose and record a dedicated storage directory, disk/filesystem, and
   representative workload sizes. Keep tmpfs measurements separate from storage
   throughput; `/tmp` is tmpfs in the reviewed environment.
 - [ ] Identify each tested source state by commit plus dirty patch/content hashes,
   including relevant untracked source. Preserve enough evidence to reconstruct
-  that state. A commit SHA alone does not identify this worktree.
+  that state. A commit SHA alone does not identify a dirty worktree.
 - [ ] Capture the environment and initial repeated baseline results using the
   same harness that will test the candidate. If the harness changes, rerun both
   baseline and candidate with the corrected harness.
@@ -31,8 +32,8 @@ comparison.
   Record which metrics are actually instrumented; do not invent unmeasured
   latency, CPU, or memory values.
 
-PERF.0 is pending. Run it before accepting throughput comparisons for engine
-changes. Immediate safety fixes can proceed if the old path cannot safely run;
+PERF.0 is in progress. Complete the relevant workload baseline before accepting
+throughput comparisons for engine changes. Immediate safety fixes can proceed if the old path cannot safely run;
 record the unavailable comparison and establish the first safe baseline.
 
 ### Required record for an implementation step
@@ -116,6 +117,27 @@ project history.
 
 Keep existing `benchmark-m11.txt` as historical input until its provenance and
 environment are documented; it has not been deleted or promoted to a baseline.
+
+### Planning and observer overhead
+
+The `progress` target isolates structural planning and single-worker observed
+execution. It compares unobserved, no-op observer, and counter observer copies
+for a 16 MiB dense source and a 50% sparse source with alternating 64 KiB extents.
+Every timed copy includes destination flush. Destination reset/flush and full
+output read-back verification occur outside the timer, on every iteration.
+
+```bash
+RVVDK_BENCH_DIR=/path/to/benchmark-storage \
+cargo bench -p rvvdk-datamover --bench progress -- --noplot
+```
+
+Source reads are buffered and warm. This is an API/observer overhead comparison,
+not a sustained physical-device throughput result. A changed extent map or wrong
+output fails the benchmark rather than producing a misleading timing result.
+Before/after builds must use separate Cargo target directories to prevent reuse
+of stale artifacts between same-named workspace packages.
+
+First recorded comparison: [R0.1 results](benchmark-results/2026-09-28-r01/README.md).
 
 ## Purpose
 
