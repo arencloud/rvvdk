@@ -9,7 +9,8 @@ use crate::planner::ExtentWorkIter;
 
 use crate::{
     CopyOptions, CopyPlan, CopyReport, CopyStats, ExecutionBackend, ExecutionStrategy,
-    NativeCopyReport, NativeCopyStats,
+    NativeCopyReport, NativeCopyStats, ProgressCompleted, ProgressObserver, ProgressSnapshot,
+    ProgressState, ProgressTotals,
 };
 
 #[cfg(target_os = "linux")]
@@ -20,6 +21,8 @@ use crate::io_uring::{
     NativeExtentPlan, copy_extent_plan_with_destination, copy_file_range_with_options,
     evaluate_compatibility,
 };
+
+const DEFAULT_PROGRESS_INTERVAL_BYTES: u64 = 64 * 1024 * 1024;
 
 pub struct DataMover {
     options: CopyOptions,
@@ -397,6 +400,246 @@ impl DataMover {
                 self.execute_io_uring_plan(plan, source, destination)
             }
         }
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn execute_plan_with_observer<S, D, O>(
+        &self,
+        plan: &CopyPlan,
+        source: &RawDisk<S>,
+        destination: &RawDisk<D>,
+        observer: &O,
+    ) -> Result<CopyReport>
+    where
+        S: BlockDevice + LinuxFdBackend,
+        D: BlockDevice + LinuxFdBackend,
+        O: ProgressObserver + ?Sized,
+    {
+        observer.on_progress(&ProgressSnapshot::initial(plan));
+
+        let report =
+            if plan.backend() == ExecutionBackend::Threaded && self.options.concurrency() == 1 {
+                self.execute_threaded_plan_with_observer(plan, source, destination, observer)?
+            } else {
+                self.execute_plan(plan, source, destination)?
+            };
+
+        let stats = report.stats();
+        let completed = ProgressCompleted::new(
+            plan.logical_bytes(),
+            stats.bytes_read(),
+            stats.bytes_written(),
+            stats.bytes_zeroed(),
+            stats.bytes_discarded(),
+            stats.extents_processed(),
+        );
+
+        observer.on_progress(&ProgressSnapshot::new(
+            report.backend(),
+            ProgressTotals::from_plan(plan),
+            completed,
+            stats.elapsed(),
+        ));
+
+        Ok(report)
+    }
+
+    #[cfg(target_os = "linux")]
+    fn execute_threaded_plan_with_observer<S, D, O>(
+        &self,
+        plan: &CopyPlan,
+        source: &RawDisk<S>,
+        destination: &RawDisk<D>,
+        observer: &O,
+    ) -> Result<CopyReport>
+    where
+        S: BlockDevice + LinuxFdBackend,
+        D: BlockDevice + LinuxFdBackend,
+        O: ProgressObserver + ?Sized,
+    {
+        let started = Instant::now();
+        let pool = BufferPool::new(
+            self.options.buffer_count(),
+            plan.block_size(),
+            plan.alignment(),
+        )?;
+        let mut buffer = pool.acquire();
+        let mut stats = MutableStats::default();
+        let mut progress = ProgressState::from_plan(plan);
+        let mut last_emitted = 0_u64;
+
+        for extent in plan.extents() {
+            match extent.kind() {
+                ExtentKind::Data => {
+                    let mut offset = extent.offset();
+                    let end = extent.end();
+
+                    while offset < end {
+                        let remaining = end - offset;
+                        let length = remaining.min(self.options.block_size() as u64);
+                        let request_size = usize::try_from(length)
+                            .map_err(|_| Error::RangeOverflow { offset, length })?;
+                        let current_buffer = &mut buffer.as_mut_slice()[..request_size];
+
+                        source.read_exact_at(offset, current_buffer)?;
+                        destination.write_all_at(offset, current_buffer)?;
+
+                        offset = offset
+                            .checked_add(length)
+                            .ok_or(Error::RangeOverflow { offset, length })?;
+
+                        stats.bytes_read += length;
+                        stats.bytes_written += length;
+                        stats.blocks_copied += 1;
+                        progress.complete_data(length);
+
+                        Self::emit_progress_if_needed(
+                            &progress,
+                            observer,
+                            started,
+                            &mut last_emitted,
+                            false,
+                        );
+                    }
+                }
+
+                ExtentKind::Zero => {
+                    if destination
+                        .capabilities()
+                        .contains(Capabilities::WRITE_ZERO)
+                    {
+                        destination.write_zero_at(extent.offset(), extent.length())?;
+                        stats.bytes_zeroed += extent.length();
+                        progress.complete_zero(extent.length());
+                    } else {
+                        buffer.as_mut_slice().fill(0);
+                        let mut offset = extent.offset();
+                        let end = extent.end();
+
+                        while offset < end {
+                            let remaining = end - offset;
+                            let length = remaining.min(self.options.block_size() as u64);
+                            let request_size = usize::try_from(length)
+                                .map_err(|_| Error::RangeOverflow { offset, length })?;
+
+                            destination
+                                .write_all_at(offset, &buffer.as_mut_slice()[..request_size])?;
+
+                            offset = offset
+                                .checked_add(length)
+                                .ok_or(Error::RangeOverflow { offset, length })?;
+
+                            stats.bytes_written += length;
+                            stats.blocks_copied += 1;
+                            progress.complete_fallback_write(length);
+
+                            Self::emit_progress_if_needed(
+                                &progress,
+                                observer,
+                                started,
+                                &mut last_emitted,
+                                false,
+                            );
+                        }
+                    }
+                }
+
+                ExtentKind::Hole => {
+                    let capabilities = destination.capabilities();
+
+                    if capabilities.contains(Capabilities::DISCARD) {
+                        destination.discard(extent.offset(), extent.length())?;
+                        stats.bytes_discarded += extent.length();
+                        progress.complete_discard(extent.length());
+                    } else if capabilities.contains(Capabilities::WRITE_ZERO) {
+                        destination.write_zero_at(extent.offset(), extent.length())?;
+                        stats.bytes_zeroed += extent.length();
+                        progress.complete_zero(extent.length());
+                    } else {
+                        buffer.as_mut_slice().fill(0);
+                        let mut offset = extent.offset();
+                        let end = extent.end();
+
+                        while offset < end {
+                            let remaining = end - offset;
+                            let length = remaining.min(self.options.block_size() as u64);
+                            let request_size = usize::try_from(length)
+                                .map_err(|_| Error::RangeOverflow { offset, length })?;
+
+                            destination
+                                .write_all_at(offset, &buffer.as_mut_slice()[..request_size])?;
+
+                            offset = offset
+                                .checked_add(length)
+                                .ok_or(Error::RangeOverflow { offset, length })?;
+
+                            stats.bytes_written += length;
+                            stats.blocks_copied += 1;
+                            progress.complete_fallback_write(length);
+
+                            Self::emit_progress_if_needed(
+                                &progress,
+                                observer,
+                                started,
+                                &mut last_emitted,
+                                false,
+                            );
+                        }
+                    }
+                }
+            }
+
+            stats.extents_processed += 1;
+            progress.complete_extent();
+
+            if progress.completed().logical_bytes_completed() < progress.totals().logical_bytes() {
+                Self::emit_progress_if_needed(
+                    &progress,
+                    observer,
+                    started,
+                    &mut last_emitted,
+                    true,
+                );
+            }
+        }
+
+        destination.flush()?;
+
+        Ok(CopyReport::new(
+            ExecutionBackend::Threaded,
+            CopyStats::new(
+                stats.bytes_read,
+                stats.bytes_written,
+                stats.bytes_zeroed,
+                stats.bytes_discarded,
+                stats.blocks_copied,
+                stats.extents_processed,
+                started.elapsed(),
+            ),
+        ))
+    }
+
+    #[cfg(target_os = "linux")]
+    fn emit_progress_if_needed<O>(
+        progress: &ProgressState,
+        observer: &O,
+        started: Instant,
+        last_emitted: &mut u64,
+        force: bool,
+    ) where
+        O: ProgressObserver + ?Sized,
+    {
+        let logical_completed = progress.completed().logical_bytes_completed();
+        let interval_reached =
+            logical_completed.saturating_sub(*last_emitted) >= DEFAULT_PROGRESS_INTERVAL_BYTES;
+
+        if logical_completed == *last_emitted || (!force && !interval_reached) {
+            return;
+        }
+
+        observer.on_progress(&progress.snapshot(ExecutionBackend::Threaded, started.elapsed()));
+
+        *last_emitted = logical_completed;
     }
 
     #[cfg(target_os = "linux")]

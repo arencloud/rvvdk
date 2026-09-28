@@ -5,9 +5,11 @@ mod extent_validation;
 pub mod io_uring;
 mod mover;
 mod native;
+mod observer;
 mod options;
 mod plan;
 mod planner;
+mod progress;
 mod stats;
 mod work;
 
@@ -23,4 +25,7 @@ pub use stats::{CopyReport, CopyStats};
 pub use execution::IoUringExecutionOptions;
 
 pub use native::{NativeCopyReport, NativeCopyStats};
+pub use observer::{NoopProgressObserver, ProgressObserver};
 pub use plan::{CopyPlan, CopyPlanSummary};
+pub(crate) use progress::ProgressState;
+pub use progress::{ProgressCompleted, ProgressSnapshot, ProgressTotals};
