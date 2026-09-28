@@ -41,7 +41,7 @@ VMware disk access and migration, extensible to other platforms.
 |:---|:---|
 | **Logical disk model** | `BlockDevice`, `VirtualDisk`, checked ranges, geometry, and capabilities |
 | **RAW disk access** | Memory devices and local regular files |
-| **Sparse source discovery** | Linux Data/Hole extents; [zero-read guarantees and safe Hole copying](docs/adr/0026-logical-hole-guarantee.md) |
+| **Sparse source discovery** | Linux Data/Hole extents with [safe dense fallback](docs/local-sparse-discovery.md) when discovery is unavailable |
 | **Copy execution** | Sequential and bounded threaded execution; Linux io_uring path |
 | **Memory management** | Aligned allocations and reusable buffer pools |
 | **Direct I/O** | Local `O_DIRECT`, runtime alignment discovery, buffered fallback for unaligned backend requests |

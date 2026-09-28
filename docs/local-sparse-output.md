@@ -91,6 +91,6 @@ allocation behavior. Forced-error tests separately validate fallback when kernel
 acceleration is unavailable. [R2.2 evidence](benchmark-results/2026-09-29-r22/README.md)
 contains commands, raw output, matched timings, and performance limitations.
 
-Sparse source discovery fallback is R2.3. Native runtime availability/request
+[Sparse source discovery fallback](local-sparse-discovery.md) is implemented by R2.3. Native runtime availability/request
 compatibility and persistent per-job ring reuse remain subsequent R2 work.
 The [logical Hole contract](adr/0026-logical-hole-guarantee.md) remains authoritative.

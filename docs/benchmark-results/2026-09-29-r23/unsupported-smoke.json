@@ -1,0 +1,41 @@
+[
+  {
+    "tag": "unsupported-baseline-preflight-smoke",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r23-o8v0_3pn/baseline-target/release/deps/preflight-be0e1eb85f2113ab",
+      "--test",
+      "preflight/plan_native$"
+    ],
+    "exit_code": 101,
+    "expected_success": false
+  },
+  {
+    "tag": "unsupported-candidate-preflight-smoke",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r23-o8v0_3pn/candidate-target/release/deps/preflight-be0e1eb85f2113ab",
+      "--test",
+      "preflight_copy/"
+    ],
+    "exit_code": 0,
+    "expected_success": true
+  },
+  {
+    "tag": "unsupported-candidate-progress-smoke",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r23-o8v0_3pn/candidate-target/release/deps/progress-89ddd66446e24832",
+      "--test",
+      "progress_"
+    ],
+    "exit_code": 0,
+    "expected_success": true
+  }
+]

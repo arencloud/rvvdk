@@ -41,8 +41,8 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 | R0.5 | Complete | Endpoint capabilities/live capacity, known aliases, native binding, and contextual preflight errors | Required correctness cost accepted: planning +2.08–2.15 µs; final copy aggregates −1.93% to +2.37%; general qualification provisional |
 | V0 | Planned | Independent VMware access feasibility; licensed/evaluation host needed for representative API workflows | Pending — first transport baseline follows functional proof |
 
-R1.1–R1.6 and R2.1–R2.2 are complete within their documented scopes; their detailed
-records appear below. R2.3 onward and V0 remain planned in the roadmap. Performance qualification
+R1.1–R1.6 and R2.1–R2.3 are complete within their documented scopes; their detailed
+records appear below. R2.4 onward and V0 remain planned in the roadmap. Performance qualification
 remains provisional as recorded for each step.
 
 ## Per-step record template
@@ -871,17 +871,81 @@ before qualification. Full samples, counter checks, control variability, and
 limits are in the [R2.2 report](benchmark-results/2026-09-29-r22/README.md).
 Prior PERF.0 issues remain open.
 
+## R2.3 — Dense fallback for unavailable sparse discovery
+
+Date: 2026-09-29. Status: **Complete within the local discovery contract**.
+Baseline: `2755be0` (R2.2), initially clean working tree. Candidate is committed
+with this record; [source, hashes, and measurements](benchmark-results/2026-09-29-r23/README.md)
+identify the measured implementation.
+
+Problem: unsupported SEEK_DATA/SEEK_HOLE prevented local RAW copying altogether.
+Discovery also trusted the size captured at open, so truncation could turn ENXIO
+into a false trailing Hole. Partial maps needed a conservative all-or-error
+policy before fallback could be safe.
+
+Implementation:
+
+1. Extracted private discovery logic with injectable seek results. EINVAL,
+   EOPNOTSUPP, or ENOSYS from either selector returns one Data extent for the
+   entire requested range, discarding any partial map. No unknown allocation
+   state is classified as Hole.
+2. Validate checked range arithmetic, original geometry, off_t limits, and fresh
+   size before scanning; recheck fresh size before returning a nonempty map.
+   Empty valid requests do not seek. Observed truncation cannot produce a false
+   Hole or a dense map extending beyond current EOF.
+3. Retry EINTR and preserve genuine errors. ENXIO from SEEK_DATA means trailing
+   Hole only with the final range check; ENXIO from SEEK_HOLE is an error.
+   Reject backward, nonprogressing, and past-EOF offsets before clipping valid
+   results to the query.
+4. Deliberately avoid a negative discovery cache, so later errors or changed
+   allocation maps remain visible. Existing extent validation and stale-plan
+   fingerprints are unchanged. Caller-managed source stability remains required;
+   metadata checks do not create a snapshot or detect every concurrent mutation.
+5. Added ten regression tests: unsupported selectors at the first/late seek,
+   discarded partial maps, full logical readback through real holes and nonzero
+   regions, exact subranges, interruption, real errors, invalid/empty requests,
+   malformed maps, and truncation before/during discovery.
+6. Added an opt-in dense-map expectation to the existing progress harness, used
+   identically in both builds. A process-local lseek interposer forces EINVAL
+   for a separate candidate experiment, without adding production fault hooks.
+   This is injected unavailability on the recorded storage filesystem, not
+   qualification of a second filesystem.
+7. Updated README, architecture, roadmap, sparse-output cross-reference, and the
+   [source discovery contract](local-sparse-discovery.md). Benchmarks retain raw
+   samples, commands, resource logs, matched harness/source patches, and hashes.
+
+Validation: **323 workspace tests pass**, one existing storage-allocation test
+is explicitly gated (324 distinct tests in the inventory). Formatting, strict
+all-target Clippy, and core/datamover wasm32 library compilation pass. The
+allocation test is unchanged and was exercised on Btrfs in R2.2; this step does
+not claim a renewed physical-allocation result or runtime portability.
+
+Injected-discovery smoke checks reproduce the baseline Io/EINVAL failure and
+verify candidate complete RAW Threaded/native copies plus all eight progress
+planning/copy profiles. The sparse fixture becomes one Data extent, with every
+logical byte read and written and complete output verified on a nonzero prefill.
+
+Performance disposition: native small-plan aggregate **+34.54%** (1.766 →
+2.376 µs), accepted as an explicit correctness cost. Complete RAW Threaded/native
+are **+0.94%/+1.07%**; dense/fragmented copies **−0.30%/+0.05%**. Fragmented planning
+is **+3.02%** with a **+9.10%** pair; the longer repeat is
+**+1.35%**, with pairs **+1.40%, -2.36%, +0.35%**.
+Keep this concern provisional; no same-binary control was run. Candidate-only
+injected fallback timings characterize a different I/O path, not a baseline
+speedup. [All results and limits](benchmark-results/2026-09-29-r23/README.md)
+are retained. Prior PERF.0 and R2.2's fragmented-output cost remain open.
+
 ## Next session
 
-Start **R2.3**: provide dense Data extent fallback when local sparse discovery
-is unavailable. Distinguish unsupported discovery from genuine I/O failures,
-validate every requested range, and never infer Hole from unknown allocation
-state. Cover partial discovery and complete logical reads without weakening
-extent validation or source consistency requirements.
+Start **R2.4**: validate complete native request compatibility before callbacks
+or destination mutation. Cover Data offsets/lengths, block size, direct-I/O
+alignment, odd tails, and mixed buffered/direct endpoints. For Auto, select
+whole-plan Threaded fallback with an observable reason when requests cannot be
+submitted safely; explicit IoUring should fail precisely before execution.
+Preserve source validation, budgets, and observed/unobserved parity.
 
-Keep prior PERF.0 investigations and this step's performance disposition open
-for controlled-runner qualification. Native runtime/request compatibility,
-concurrent buffered/direct policy, and per-job ring reuse remain later R2 work.
-Preserve failure context, copy budgets, and shared semantics; track evidence and
+Runtime io_uring resource preparation and per-job ring/buffer reuse remain later
+R2 work. Keep PERF.0 and all recorded performance dispositions open, including
+R2.2's fragmented-output cost and R2.3's discovery checks. Track evidence and
 commit each completed step. ESXi is still unnecessary; request the 60-day trial
 when V0 is ready.

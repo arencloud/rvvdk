@@ -1,0 +1,23 @@
+diff --git a/crates/rvvdk-datamover/benches/progress.rs b/crates/rvvdk-datamover/benches/progress.rs
+index 5fdc0ef..f43316d 100644
+--- a/crates/rvvdk-datamover/benches/progress.rs
++++ b/crates/rvvdk-datamover/benches/progress.rs
+@@ -32,7 +32,17 @@ fn benchmark_progress(criterion: &mut Criterion) {
+             RawDisk::new(LocalFileBlockDevice::open_read_write(&destination_path).unwrap());
+         let mover = DataMover::new(CopyOptions::new(BLOCK_SIZE).unwrap());
+         let plan = mover.plan_with_destination(&source, &destination).unwrap();
+-        assert_eq!(plan.data_bytes(), (SIZE / group_size) as u64);
++        // Set only for an explicitly recorded unsupported-discovery experiment.
++        // The logical fixture stays sparse; its conservative map is all Data.
++        let dense_discovery = std::env::var_os("RVVDK_BENCH_DENSE_DISCOVERY").is_some();
++        assert_eq!(
++            plan.data_bytes(),
++            if dense_discovery {
++                SIZE
++            } else {
++                SIZE / group_size
++            } as u64
++        );
+ 
+         // Warm buffered source reads are intentional: this measures API/observer
+         // overhead, not a device's cold-read bandwidth. Setup and verification

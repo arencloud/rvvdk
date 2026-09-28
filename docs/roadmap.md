@@ -148,9 +148,14 @@ an explicit fragmented-output cost: +26.67% main / +15.39% longer-repeat aggrega
 Investigate sparse-operation batching and backend costs without weakening logical
 or boundary guarantees. [Evidence](benchmark-results/2026-09-29-r22/README.md).
 
+R2.3 accepts a small native-planning cost of +34.54% (about 0.610 µs) for fresh
+size validation. Fragmented planning is +3.02% main / +1.35% repeat,
+with the main +9.10% pair retained for qualification. [Evidence](benchmark-results/2026-09-29-r23/README.md).
+
 - [x] **R2.1:** Define logical Zero/Hole zero reads and require DISCARD plus DISCARD_ZEROES before selecting discard. Cover fallback, partial failures, portable/native parity, and explicit backend migration. [ADR-0026](adr/0026-logical-hole-guarantee.md); [evidence](benchmark-results/2026-09-29-r21/README.md).
 - [x] **R2.2:** Implement local zeroing and zero-guaranteed hole punching with fresh range/access checks, exact partial-block boundaries, bounded unsupported-mode fallback, and storage-backed allocation/readback tests. [Contract](local-sparse-output.md); [evidence](benchmark-results/2026-09-29-r22/README.md).
-- [ ] **R2.3 (next):** Add dense extent fallback when sparse discovery is unavailable; never invent Hole extents from unknown allocation state.
+- [x] **R2.3:** Fall back to one Data extent when sparse discovery is unavailable; validate fresh size and seek results, preserve real errors, and discard partial maps. [Contract](local-sparse-discovery.md); [evidence](benchmark-results/2026-09-29-r23/README.md).
+- [ ] **R2.4 (next):** Validate native request offsets, lengths, block sizes, and direct-I/O alignment before callbacks or mutation. Auto should select whole-plan Threaded fallback with an observable reason; explicit IoUring should return a precise incompatibility error. Cover odd tails, unaligned Data extents, and mixed buffered/direct endpoints. Runtime ring preparation and reuse remain subsequent work.
 - [x] Verify direct/buffered descriptors refer to the same underlying file (R0.5).
 - [ ] Define how concurrent buffered/direct ranges are handled.
 - [ ] Integrate runtime io_uring initialization and request compatibility into preparation. Make Auto fallback reasons observable and explicit IoUring errors precise.
@@ -312,7 +317,7 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 
 ## First implementation session — R0.1 completed
 
-The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees and R2.2 local sparse output are complete; continue with R2.3 source discovery fallback next.
+The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, and R2.3 source discovery fallback are complete; continue with R2.4 native request compatibility next.
 
 R0.1 was the bounded change directly related to the observer work:
 
@@ -327,7 +332,7 @@ R0.1 was the bounded change directly related to the observer work:
    tradeoff in the implementation log. Update this checklist and ADR-0025 with
    the implemented behavior and remaining limitations.
 
-R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output is complete. Start **R2.3** with dense extent fallback for unavailable sparse discovery. Keep PERF.0 and the prior performance follow-ups open.
+R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output and R2.3 source discovery fallback are complete. Start **R2.4** with native request compatibility and explicit whole-plan fallback policy. Keep PERF.0 and the prior performance follow-ups open.
 
 ## Decisions to record before their milestone
 

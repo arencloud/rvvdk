@@ -231,7 +231,12 @@ destination write_all_at
 ## Linux sparse-file extent discovery
 
 `LocalFileBlockDevice` supports sparse extent discovery on Linux using
-`SEEK_DATA` and `SEEK_HOLE`.
+`SEEK_DATA` and `SEEK_HOLE`. R2.3 returns a single Data extent for the complete
+requested range when either selector is unsupported, even after partial discovery.
+Fresh size checks bracket discovery; real I/O errors and invalid seek results
+remain errors. No unsupported-discovery cache hides later errors or map changes.
+The [discovery contract](local-sparse-discovery.md) defines errno handling,
+source consistency, and stale-plan behavior.
 
 The backend advertises:
 
@@ -1011,5 +1016,5 @@ unsupported modes are cached separately per open file. Other errors propagate.
 The [local sparse-output contract](local-sparse-output.md) defines error handling,
 concurrency limits, operation counters, and storage-backed allocation evidence.
 Fallback can allocate space; bytes_discarded counts logical operation bytes.
-Source extent discovery fallback and broader native request compatibility remain
-follow-up work.
+Source extent discovery fallback is implemented in R2.3; broader native request
+compatibility remains follow-up work.
