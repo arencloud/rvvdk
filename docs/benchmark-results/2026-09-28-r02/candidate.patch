@@ -1,0 +1,757 @@
+diff --git a/crates/rvvdk-datamover/Cargo.toml b/crates/rvvdk-datamover/Cargo.toml
+index 93e45ff..df4e466 100644
+--- a/crates/rvvdk-datamover/Cargo.toml
++++ b/crates/rvvdk-datamover/Cargo.toml
+@@ -42,3 +42,7 @@ harness = false
+ [[bench]]
+ name = "progress"
+ harness = false
++
++[[bench]]
++name = "scheduler"
++harness = false
+diff --git a/crates/rvvdk-datamover/src/concurrent.rs b/crates/rvvdk-datamover/src/concurrent.rs
+index 6cf5fc6..b8be336 100644
+--- a/crates/rvvdk-datamover/src/concurrent.rs
++++ b/crates/rvvdk-datamover/src/concurrent.rs
+@@ -1,12 +1,38 @@
+ use std::sync::{
+     Arc, Mutex,
++    atomic::{AtomicBool, Ordering},
+     mpsc::{Receiver, SyncSender, sync_channel},
+ };
+ 
+-use rvvdk_core::{BufferPool, Capabilities, Result, VirtualDisk};
++use rvvdk_core::{BufferPool, Capabilities, Error, Result, VirtualDisk};
+ 
+ use crate::work::{WorkItem, WorkKind};
+ 
++#[cfg(test)]
++mod tests;
++
++#[derive(Default)]
++struct Failure {
++    stopped: AtomicBool,
++    first: Mutex<Option<Error>>,
++}
++
++impl Failure {
++    fn record(&self, error: Error) {
++        let mut first = self.first.lock().unwrap_or_else(|p| p.into_inner());
++        if first.is_none() {
++            *first = Some(error);
++        }
++        // Publish cancellation only after retaining its cause. Channel closure
++        // during shutdown must never replace that original error.
++        self.stopped.store(true, Ordering::Release);
++    }
++
++    fn is_stopped(&self) -> bool {
++        self.stopped.load(Ordering::Acquire)
++    }
++}
++
+ #[derive(Debug, Default, Clone, Copy)]
+ pub(crate) struct WorkerStats {
+     pub(crate) bytes_read: u64,
+@@ -33,32 +59,47 @@ where
+ 
+     let receiver = Arc::new(Mutex::new(receiver));
+ 
+-    let results = Mutex::new(Vec::<Result<WorkerStats>>::new());
++    let results = Mutex::new(Vec::<WorkerStats>::with_capacity(worker_count));
++    let failure = Failure::default();
+ 
+-    let producer_result = std::thread::scope(|scope| {
++    std::thread::scope(|scope| {
+         for _ in 0..worker_count {
+             let receiver = Arc::clone(&receiver);
+ 
+             let results = &results;
++            let failure = &failure;
++
++            scope.spawn(
++                move || match run_worker(source, destination, &receiver, pool, failure) {
++                    Ok(stats) => results
++                        .lock()
++                        .unwrap_or_else(|poisoned| poisoned.into_inner())
++                        .push(stats),
++                    Err(error) => failure.record(error),
++                },
++            );
++        }
+ 
+-            scope.spawn(move || {
+-                let result = run_worker(source, destination, &receiver, pool);
++        // Only workers retain receivers. Their exit disconnects the channel and
++        // wakes a producer blocked in send, even when the queue is full.
++        drop(receiver);
+ 
+-                results
+-                    .lock()
+-                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+-                    .push(result);
+-            });
++        if let Err(error) = producer(&sender) {
++            failure.record(error);
+         }
+ 
+-        let result = producer(&sender);
+-
++        // Wake idle receivers on success or producer error. Scope exit joins all
++        // workers before any error or buffer ownership returns to the caller.
+         drop(sender);
+-
+-        result
+     });
+ 
+-    producer_result?;
++    if let Some(error) = failure
++        .first
++        .into_inner()
++        .unwrap_or_else(|p| p.into_inner())
++    {
++        return Err(error);
++    }
+ 
+     let results = results
+         .into_inner()
+@@ -66,9 +107,7 @@ where
+ 
+     let mut total = WorkerStats::default();
+ 
+-    for result in results {
+-        let stats = result?;
+-
++    for stats in results {
+         total.bytes_read += stats.bytes_read;
+ 
+         total.bytes_written += stats.bytes_written;
+@@ -88,6 +127,7 @@ fn run_worker<S, D>(
+     destination: &D,
+     receiver: &Arc<Mutex<Receiver<WorkItem>>>,
+     pool: &BufferPool,
++    failure: &Failure,
+ ) -> Result<WorkerStats>
+ where
+     S: VirtualDisk,
+@@ -101,6 +141,9 @@ where
+                 .lock()
+                 .unwrap_or_else(|poisoned| poisoned.into_inner());
+ 
++            if failure.is_stopped() {
++                break;
++            }
+             receiver.recv()
+         };
+ 
+@@ -109,6 +152,9 @@ where
+             Err(_) => break,
+         };
+ 
++        if failure.is_stopped() {
++            break;
++        }
+         process_work(source, destination, work, pool, &mut stats)?;
+     }
+ 
+diff --git a/crates/rvvdk-datamover/src/concurrent/tests.rs b/crates/rvvdk-datamover/src/concurrent/tests.rs
+new file mode 100644
+index 0000000..59d5540
+--- /dev/null
++++ b/crates/rvvdk-datamover/src/concurrent/tests.rs
+@@ -0,0 +1,378 @@
++use std::process::Command;
++use std::sync::{Condvar, mpsc};
++use std::time::{Duration, Instant};
++
++use rvvdk_core::{DiskGeometry, Error, Extent};
++
++use super::*;
++
++const BLOCK: usize = 4096;
++const CHILD: &str = "RVVDK_SHUTDOWN_TEST_CHILD";
++
++// A regression must fail within a deadline, never leave a hung worker in the
++// test runner. Each child runs just this test and is killed/reaped on timeout.
++fn bounded(name: &str, test: impl FnOnce()) {
++    if std::env::var(CHILD).as_deref() == Ok(name) {
++        test();
++        return;
++    }
++    let mut child = Command::new(std::env::current_exe().unwrap())
++        .args([
++            "--exact",
++            &format!("concurrent::tests::{name}"),
++            "--nocapture",
++        ])
++        .env(CHILD, name)
++        .spawn()
++        .unwrap();
++    let deadline = Instant::now() + Duration::from_secs(5);
++    loop {
++        if let Some(status) = child.try_wait().unwrap() {
++            assert!(status.success(), "{name}: child failed: {status}");
++            return;
++        }
++        if Instant::now() >= deadline {
++            child.kill().unwrap();
++            child.wait().unwrap();
++            panic!("{name}: worker shutdown exceeded five seconds");
++        }
++        std::thread::sleep(Duration::from_millis(10));
++    }
++}
++
++#[derive(Clone, Copy, PartialEq)]
++enum Fault {
++    None,
++    Read,
++    Write,
++    FirstWrite,
++    Zero,
++    Discard,
++    Panic,
++}
++
++struct Gate {
++    entered: mpsc::Sender<()>,
++    released: Mutex<bool>,
++    ready: Condvar,
++}
++
++impl Gate {
++    fn release(&self) {
++        *self.released.lock().unwrap() = true;
++        self.ready.notify_all();
++    }
++
++    fn wait(&self) {
++        self.entered.send(()).unwrap();
++        let released = self.released.lock().unwrap();
++        drop(
++            self.ready
++                .wait_while(released, |released| !*released)
++                .unwrap(),
++        );
++    }
++}
++
++struct FaultDisk<'a> {
++    fault: Fault,
++    gate: Option<&'a Gate>,
++}
++
++impl FaultDisk<'_> {
++    fn check(&self, operation: Fault) -> Result<()> {
++        if self.fault == operation || self.fault == Fault::Panic {
++            if let Some(gate) = self.gate {
++                gate.wait();
++            }
++            assert!(self.fault != Fault::Panic, "injected worker panic");
++            return Err(Error::Io(std::io::Error::new(
++                std::io::ErrorKind::PermissionDenied,
++                "injected backend failure",
++            )));
++        }
++        Ok(())
++    }
++}
++
++impl VirtualDisk for FaultDisk<'_> {
++    fn geometry(&self) -> DiskGeometry {
++        DiskGeometry::new((1024 * BLOCK) as u64, 512, BLOCK as u32).unwrap()
++    }
++    fn capabilities(&self) -> Capabilities {
++        Capabilities::READ | Capabilities::WRITE | Capabilities::WRITE_ZERO | Capabilities::DISCARD
++    }
++    fn read_at(&self, _: u64, buffer: &mut [u8]) -> Result<usize> {
++        self.check(Fault::Read)?;
++        buffer.fill(0x5a);
++        Ok(buffer.len())
++    }
++    fn write_at(&self, offset: u64, buffer: &[u8]) -> Result<usize> {
++        if self.fault == Fault::FirstWrite {
++            if offset == 0 {
++                return FaultDisk {
++                    fault: Fault::Write,
++                    gate: None,
++                }
++                .check(Fault::Write)
++                .map(|()| buffer.len());
++            }
++            // Healthy peers must stop rather than draining this slow workload.
++            std::thread::sleep(Duration::from_millis(1));
++        }
++        self.check(Fault::Write)?;
++        Ok(buffer.len())
++    }
++    fn write_zero_at(&self, _: u64, _: u64) -> Result<()> {
++        self.check(Fault::Zero)
++    }
++    fn discard(&self, _: u64, _: u64) -> Result<()> {
++        self.check(Fault::Discard)
++    }
++    fn flush(&self) -> Result<()> {
++        panic!("failed copy must not flush")
++    }
++    fn extents(&self, offset: u64, length: u64) -> Result<Vec<Extent>> {
++        Ok(vec![Extent::new(
++            offset,
++            length,
++            rvvdk_core::ExtentKind::Data,
++        )?])
++    }
++}
++
++fn assert_backend_error<T: std::fmt::Debug>(result: Result<T>) {
++    match result.unwrap_err() {
++        Error::Io(error) => {
++            assert_eq!(error.kind(), std::io::ErrorKind::PermissionDenied);
++            assert_eq!(error.to_string(), "injected backend failure");
++        }
++        error => panic!("original backend error was replaced: {error}"),
++    }
++}
++
++fn full_queue_failure(fault: Fault, kind: WorkKind) {
++    for workers in [2, 4] {
++        for capacity in [1, 4] {
++            let (entered, waiting) = mpsc::channel();
++            let gate = Gate {
++                entered,
++                released: Mutex::new(false),
++                ready: Condvar::new(),
++            };
++            let source = FaultDisk {
++                fault: if fault == Fault::Read {
++                    fault
++                } else {
++                    Fault::None
++                },
++                gate: Some(&gate),
++            };
++            let destination = FaultDisk {
++                fault: if fault == Fault::Read {
++                    Fault::None
++                } else {
++                    fault
++                },
++                gate: Some(&gate),
++            };
++            let pool = BufferPool::new(workers, BLOCK, BLOCK).unwrap();
++            let work = WorkItem::new(0, BLOCK, kind);
++            let result = execute(&source, &destination, workers, capacity, &pool, |sender| {
++                for _ in 0..workers {
++                    sender.send(work).unwrap();
++                }
++                for _ in 0..workers {
++                    waiting.recv().unwrap();
++                }
++                // All workers are inside the failing backend operation. Fill
++                // the queue and prove the next send would block before release.
++                for _ in 0..capacity {
++                    sender.try_send(work).unwrap();
++                }
++                assert!(matches!(
++                    sender.try_send(work),
++                    Err(mpsc::TrySendError::Full(_))
++                ));
++                gate.release();
++                sender.send(work).map_err(|_| Error::WorkQueueClosed)
++            });
++            assert_backend_error(result);
++            assert_eq!(pool.available(), workers, "all buffer guards must return");
++        }
++    }
++}
++
++#[test]
++fn read_failure_wakes_full_queue() {
++    bounded("read_failure_wakes_full_queue", || {
++        full_queue_failure(Fault::Read, WorkKind::Copy)
++    });
++}
++
++#[test]
++fn write_failure_wakes_full_queue() {
++    bounded("write_failure_wakes_full_queue", || {
++        full_queue_failure(Fault::Write, WorkKind::Copy)
++    });
++}
++
++#[test]
++fn zero_failure_wakes_full_queue() {
++    bounded("zero_failure_wakes_full_queue", || {
++        full_queue_failure(Fault::Zero, WorkKind::Zero)
++    });
++}
++
++#[test]
++fn discard_failure_wakes_full_queue() {
++    bounded("discard_failure_wakes_full_queue", || {
++        full_queue_failure(Fault::Discard, WorkKind::Discard)
++    });
++}
++
++#[test]
++fn error_returns_buffers_with_more_workers_than_buffers() {
++    bounded(
++        "error_returns_buffers_with_more_workers_than_buffers",
++        || {
++            let source = FaultDisk {
++                fault: Fault::None,
++                gate: None,
++            };
++            let destination = FaultDisk {
++                fault: Fault::Write,
++                gate: None,
++            };
++            let pool = BufferPool::new(1, BLOCK, BLOCK).unwrap();
++            let result = execute(&source, &destination, 8, 1, &pool, |sender| {
++                for _ in 0..1024 {
++                    sender
++                        .send(WorkItem::new(0, BLOCK, WorkKind::Copy))
++                        .map_err(|_| Error::WorkQueueClosed)?;
++                }
++                Ok(())
++            });
++            assert_backend_error(result);
++            assert_eq!(pool.available(), 1);
++        },
++    );
++}
++
++#[test]
++fn producer_error_wakes_idle_workers() {
++    bounded("producer_error_wakes_idle_workers", || {
++        let disk = FaultDisk {
++            fault: Fault::None,
++            gate: None,
++        };
++        let pool = BufferPool::new(2, BLOCK, BLOCK).unwrap();
++        let result = execute(&disk, &disk, 2, 1, &pool, |_| Err(Error::Unsupported));
++        assert!(matches!(result, Err(Error::Unsupported)));
++        assert_eq!(pool.available(), 2);
++    });
++}
++
++#[test]
++fn worker_panics_unblock_producer_and_propagate() {
++    bounded("worker_panics_unblock_producer_and_propagate", || {
++        let disk = FaultDisk {
++            fault: Fault::Panic,
++            gate: None,
++        };
++        let pool = BufferPool::new(2, BLOCK, BLOCK).unwrap();
++        let result = std::panic::catch_unwind(|| {
++            execute(&disk, &disk, 2, 1, &pool, |sender| {
++                for _ in 0..1024 {
++                    sender
++                        .send(WorkItem::new(0, BLOCK, WorkKind::Copy))
++                        .map_err(|_| Error::WorkQueueClosed)?;
++                }
++                Ok(())
++            })
++        });
++        assert!(result.is_err());
++        assert_eq!(pool.available(), 2);
++    });
++}
++
++#[test]
++fn one_worker_failure_stops_healthy_peers() {
++    bounded("one_worker_failure_stops_healthy_peers", || {
++        let source = FaultDisk {
++            fault: Fault::None,
++            gate: None,
++        };
++        let destination = FaultDisk {
++            fault: Fault::FirstWrite,
++            gate: None,
++        };
++        let pool = BufferPool::new(4, BLOCK, BLOCK).unwrap();
++        let result = execute(&source, &destination, 4, 64, &pool, |sender| {
++            for block in 0..100_000 {
++                sender
++                    .send(WorkItem::new(block * BLOCK as u64, BLOCK, WorkKind::Copy))
++                    .map_err(|_| Error::WorkQueueClosed)?;
++            }
++            Ok(())
++        });
++        assert_backend_error(result);
++        assert_eq!(pool.available(), 4);
++    });
++}
++
++#[test]
++fn public_copy_preserves_worker_error_without_flushing() {
++    bounded(
++        "public_copy_preserves_worker_error_without_flushing",
++        || {
++            let source = FaultDisk {
++                fault: Fault::None,
++                gate: None,
++            };
++            let destination = FaultDisk {
++                fault: Fault::Write,
++                gate: None,
++            };
++            let options = crate::CopyOptions::with_execution(BLOCK, BLOCK, 2, 1).unwrap();
++            assert_backend_error(crate::DataMover::new(options).copy(&source, &destination));
++        },
++    );
++}
++
++#[test]
++fn first_recorded_error_survives_later_errors() {
++    let failure = Failure::default();
++    failure.record(Error::Unsupported);
++    failure.record(Error::WorkQueueClosed);
++    failure.record(Error::Io(std::io::Error::other("later backend failure")));
++    assert!(failure.is_stopped());
++    assert!(matches!(
++        failure.first.into_inner().unwrap(),
++        Some(Error::Unsupported)
++    ));
++}
++
++#[test]
++fn successful_producer_drains_queued_work() {
++    bounded("successful_producer_drains_queued_work", || {
++        let disk = FaultDisk {
++            fault: Fault::None,
++            gate: None,
++        };
++        let pool = BufferPool::new(2, BLOCK, BLOCK).unwrap();
++        let stats = execute(&disk, &disk, 2, 64, &pool, |sender| {
++            for _ in 0..1000 {
++                sender
++                    .send(WorkItem::new(0, BLOCK, WorkKind::Copy))
++                    .unwrap();
++            }
++            Ok(())
++        })
++        .unwrap();
++        assert_eq!(stats.blocks_copied, 1000);
++        assert_eq!(stats.bytes_read, 1000 * BLOCK as u64);
++        assert_eq!(stats.bytes_written, 1000 * BLOCK as u64);
++        assert_eq!(pool.available(), 2);
++    });
++}
+diff --git a/crates/rvvdk-datamover/benches/scheduler.rs b/crates/rvvdk-datamover/benches/scheduler.rs
+new file mode 100644
+index 0000000..d9e2e2e
+--- /dev/null
++++ b/crates/rvvdk-datamover/benches/scheduler.rs
+@@ -0,0 +1,210 @@
++mod support;
++
++use std::sync::Mutex;
++use std::time::{Duration, Instant};
++
++use criterion::{Criterion, SamplingMode, Throughput, criterion_group, criterion_main};
++use rvvdk_core::{
++    Capabilities, DiskGeometry, Error, Extent, ExtentKind, MemoryBlockDevice, RawDisk, Result,
++    VirtualDisk,
++};
++use rvvdk_datamover::{CopyOptions, DataMover};
++use rvvdk_local::LocalFileBlockDevice;
++
++use support::{
++    MIB, benchmark_path, create_incompressible_file, ensure_benchmark_directory,
++    incompressible_buffer, remove_file,
++};
++
++const SIZE: usize = 16 * MIB;
++const BLOCK: usize = 64 * 1024;
++
++fn benchmark_pair<S: VirtualDisk, D: VirtualDisk>(
++    criterion: &mut Criterion,
++    profile: &str,
++    source: &S,
++    destination: &D,
++    payload: &[u8],
++) {
++    let mut group = criterion.benchmark_group(format!("scheduler_copy/{profile}"));
++    group.sampling_mode(SamplingMode::Flat);
++    group.throughput(Throughput::Bytes(SIZE as u64));
++    let reset = incompressible_buffer(SIZE, 0x5256_5644_4b32);
++    let mut actual = vec![0; SIZE];
++    let mut configurations = vec![(2, 1, BLOCK), (2, 16, BLOCK), (4, 1, BLOCK), (4, 16, BLOCK)];
++    if profile == "memory" {
++        configurations.push((4, 16, 4096));
++    }
++    for (workers, queue, block) in configurations {
++        let mover =
++            DataMover::new(CopyOptions::with_execution(block, 4096, workers, queue).unwrap());
++        group.bench_function(format!("w{workers}_q{queue}_b{block}"), |bencher| {
++            bencher.iter_custom(|iterations| {
++                let mut elapsed = Duration::ZERO;
++                for _ in 0..iterations {
++                    destination.write_all_at(0, &reset).unwrap();
++                    destination.flush().unwrap();
++                    let started = Instant::now();
++                    let stats = mover.copy(source, destination).unwrap();
++                    elapsed += started.elapsed();
++                    assert_eq!(stats.bytes_read(), SIZE as u64);
++                    assert_eq!(stats.bytes_written(), SIZE as u64);
++                    assert_eq!(stats.blocks_copied(), (SIZE / block) as u64);
++                    destination.read_exact_at(0, &mut actual).unwrap();
++                    assert_eq!(actual, payload);
++                }
++                elapsed
++            });
++        });
++    }
++    group.finish();
++}
++
++fn scheduler_copy(criterion: &mut Criterion) {
++    let payload = incompressible_buffer(SIZE, 0x5256_5644_4b31);
++    let source = RawDisk::new(MemoryBlockDevice::new(SIZE).unwrap());
++    let destination = RawDisk::new(MemoryBlockDevice::new(SIZE).unwrap());
++    source.write_all_at(0, &payload).unwrap();
++    benchmark_pair(criterion, "memory", &source, &destination, &payload);
++
++    ensure_benchmark_directory();
++    let source_path = benchmark_path("scheduler-source");
++    let destination_path = benchmark_path("scheduler-destination");
++    create_incompressible_file(&source_path, SIZE, 0x5256_5644_4b31);
++    std::fs::write(&destination_path, &payload).unwrap();
++    let source = RawDisk::new(LocalFileBlockDevice::open_read_only(&source_path).unwrap());
++    let destination =
++        RawDisk::new(LocalFileBlockDevice::open_read_write(&destination_path).unwrap());
++    destination.flush().unwrap();
++    benchmark_pair(criterion, "buffered_file", &source, &destination, &payload);
++    drop((source, destination));
++    remove_file(source_path);
++    remove_file(destination_path);
++}
++
++#[derive(Clone, Copy, PartialEq)]
++enum Operation {
++    None,
++    Read,
++    Write,
++    Zero,
++    Discard,
++}
++
++struct FaultDisk {
++    operation: Operation,
++    extent: ExtentKind,
++    first_failure: Mutex<Option<Instant>>,
++}
++
++impl FaultDisk {
++    fn new(operation: Operation, extent: ExtentKind) -> Self {
++        Self {
++            operation,
++            extent,
++            first_failure: Mutex::new(None),
++        }
++    }
++
++    fn check(&self, operation: Operation) -> Result<()> {
++        if self.operation == operation {
++            self.first_failure
++                .lock()
++                .unwrap()
++                .get_or_insert_with(Instant::now);
++            return Err(Error::Io(std::io::Error::other(
++                "scheduler benchmark fault",
++            )));
++        }
++        Ok(())
++    }
++}
++
++impl VirtualDisk for FaultDisk {
++    fn geometry(&self) -> DiskGeometry {
++        DiskGeometry::new(SIZE as u64, 512, 4096).unwrap()
++    }
++    fn capabilities(&self) -> Capabilities {
++        Capabilities::READ | Capabilities::WRITE | Capabilities::WRITE_ZERO | Capabilities::DISCARD
++    }
++    fn read_at(&self, _: u64, buffer: &mut [u8]) -> Result<usize> {
++        self.check(Operation::Read)?;
++        buffer.fill(0x5a);
++        Ok(buffer.len())
++    }
++    fn write_at(&self, _: u64, buffer: &[u8]) -> Result<usize> {
++        self.check(Operation::Write)?;
++        Ok(buffer.len())
++    }
++    fn write_zero_at(&self, _: u64, _: u64) -> Result<()> {
++        self.check(Operation::Zero)
++    }
++    fn discard(&self, _: u64, _: u64) -> Result<()> {
++        self.check(Operation::Discard)
++    }
++    fn flush(&self) -> Result<()> {
++        panic!("failed copy must not flush")
++    }
++    fn extents(&self, offset: u64, length: u64) -> Result<Vec<Extent>> {
++        Ok(vec![Extent::new(offset, length, self.extent)?])
++    }
++}
++
++fn scheduler_failure(criterion: &mut Criterion) {
++    let mut group = criterion.benchmark_group("scheduler_failure");
++    group.sampling_mode(SamplingMode::Flat);
++    let mover = DataMover::new(CopyOptions::with_execution(4096, 4096, 4, 1).unwrap());
++    for (name, operation, extent) in [
++        ("read", Operation::Read, ExtentKind::Data),
++        ("write", Operation::Write, ExtentKind::Data),
++        ("zero", Operation::Zero, ExtentKind::Zero),
++        ("discard", Operation::Discard, ExtentKind::Hole),
++    ] {
++        let source = FaultDisk::new(
++            if operation == Operation::Read {
++                operation
++            } else {
++                Operation::None
++            },
++            extent,
++        );
++        let destination = FaultDisk::new(
++            if operation == Operation::Read {
++                Operation::None
++            } else {
++                operation
++            },
++            extent,
++        );
++        let failing = if operation == Operation::Read {
++            &source
++        } else {
++            &destination
++        };
++        for metric in ["call", "after_fault"] {
++            group.bench_function(format!("{name}/{metric}"), |bencher| {
++                bencher.iter_custom(|iterations| {
++                    let mut elapsed = Duration::ZERO;
++                    for _ in 0..iterations {
++                        *failing.first_failure.lock().unwrap() = None;
++                        let started = Instant::now();
++                        let error = mover.copy(&source, &destination).unwrap_err();
++                        let finished = Instant::now();
++                        let first_failure = failing.first_failure.lock().unwrap().unwrap();
++                        elapsed += finished.duration_since(if metric == "call" { started } else { first_failure });
++                        assert!(matches!(error, Error::Io(ref cause) if cause.to_string() == "scheduler benchmark fault"));
++                    }
++                    elapsed
++                });
++            });
++        }
++    }
++    group.finish();
++}
++
++criterion_group! {
++    name = benches;
++    config = Criterion::default().sample_size(20).warm_up_time(Duration::from_millis(300)).measurement_time(Duration::from_secs(2));
++    targets = scheduler_copy, scheduler_failure
++}
++criterion_main!(benches);

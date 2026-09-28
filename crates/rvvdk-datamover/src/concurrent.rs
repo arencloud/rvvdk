@@ -1,11 +1,37 @@
 use std::sync::{
     Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
     mpsc::{Receiver, SyncSender, sync_channel},
 };
 
-use rvvdk_core::{BufferPool, Capabilities, Result, VirtualDisk};
+use rvvdk_core::{BufferPool, Capabilities, Error, Result, VirtualDisk};
 
 use crate::work::{WorkItem, WorkKind};
+
+#[cfg(test)]
+mod tests;
+
+#[derive(Default)]
+struct Failure {
+    stopped: AtomicBool,
+    first: Mutex<Option<Error>>,
+}
+
+impl Failure {
+    fn record(&self, error: Error) {
+        let mut first = self.first.lock().unwrap_or_else(|p| p.into_inner());
+        if first.is_none() {
+            *first = Some(error);
+        }
+        // Publish cancellation only after retaining its cause. Channel closure
+        // during shutdown must never replace that original error.
+        self.stopped.store(true, Ordering::Release);
+    }
+
+    fn is_stopped(&self) -> bool {
+        self.stopped.load(Ordering::Acquire)
+    }
+}
 
 #[derive(Debug, Default, Clone, Copy)]
 pub(crate) struct WorkerStats {
@@ -33,32 +59,47 @@ where
 
     let receiver = Arc::new(Mutex::new(receiver));
 
-    let results = Mutex::new(Vec::<Result<WorkerStats>>::new());
+    let results = Mutex::new(Vec::<WorkerStats>::with_capacity(worker_count));
+    let failure = Failure::default();
 
-    let producer_result = std::thread::scope(|scope| {
+    std::thread::scope(|scope| {
         for _ in 0..worker_count {
             let receiver = Arc::clone(&receiver);
 
             let results = &results;
+            let failure = &failure;
 
-            scope.spawn(move || {
-                let result = run_worker(source, destination, &receiver, pool);
-
-                results
-                    .lock()
-                    .unwrap_or_else(|poisoned| poisoned.into_inner())
-                    .push(result);
-            });
+            scope.spawn(
+                move || match run_worker(source, destination, &receiver, pool, failure) {
+                    Ok(stats) => results
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner())
+                        .push(stats),
+                    Err(error) => failure.record(error),
+                },
+            );
         }
 
-        let result = producer(&sender);
+        // Only workers retain receivers. Their exit disconnects the channel and
+        // wakes a producer blocked in send, even when the queue is full.
+        drop(receiver);
 
+        if let Err(error) = producer(&sender) {
+            failure.record(error);
+        }
+
+        // Wake idle receivers on success or producer error. Scope exit joins all
+        // workers before any error or buffer ownership returns to the caller.
         drop(sender);
-
-        result
     });
 
-    producer_result?;
+    if let Some(error) = failure
+        .first
+        .into_inner()
+        .unwrap_or_else(|p| p.into_inner())
+    {
+        return Err(error);
+    }
 
     let results = results
         .into_inner()
@@ -66,9 +107,7 @@ where
 
     let mut total = WorkerStats::default();
 
-    for result in results {
-        let stats = result?;
-
+    for stats in results {
         total.bytes_read += stats.bytes_read;
 
         total.bytes_written += stats.bytes_written;
@@ -88,6 +127,7 @@ fn run_worker<S, D>(
     destination: &D,
     receiver: &Arc<Mutex<Receiver<WorkItem>>>,
     pool: &BufferPool,
+    failure: &Failure,
 ) -> Result<WorkerStats>
 where
     S: VirtualDisk,
@@ -101,6 +141,9 @@ where
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
 
+            if failure.is_stopped() {
+                break;
+            }
             receiver.recv()
         };
 
@@ -109,6 +152,9 @@ where
             Err(_) => break,
         };
 
+        if failure.is_stopped() {
+            break;
+        }
         process_work(source, destination, work, pool, &mut stats)?;
     }
 

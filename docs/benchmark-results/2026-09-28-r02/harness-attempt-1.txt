@@ -1,0 +1,51 @@
+Gnuplot not found, using plotters backend
+Benchmarking scheduler_copy/memory/w2_q1_b65536
+Benchmarking scheduler_copy/memory/w2_q1_b65536: Warming up for 300.00 ms
+Benchmarking scheduler_copy/memory/w2_q1_b65536: Collecting 20 samples in estimated 2.0038 s (320 iterations)
+Benchmarking scheduler_copy/memory/w2_q1_b65536: Analyzing
+scheduler_copy/memory/w2_q1_b65536
+                        time:   [1.3842 ms 1.4501 ms 1.5355 ms]
+                        thrpt:  [10.176 GiB/s 10.775 GiB/s 11.288 GiB/s]
+Found 3 outliers among 20 measurements (15.00%)
+  2 (10.00%) low mild
+  1 (5.00%) high severe
+Benchmarking scheduler_copy/memory/w2_q16_b65536
+Benchmarking scheduler_copy/memory/w2_q16_b65536: Warming up for 300.00 ms
+Benchmarking scheduler_copy/memory/w2_q16_b65536: Collecting 20 samples in estimated 2.1084 s (360 iterations)
+Benchmarking scheduler_copy/memory/w2_q16_b65536: Analyzing
+scheduler_copy/memory/w2_q16_b65536
+                        time:   [1.3176 ms 1.3546 ms 1.3852 ms]
+                        thrpt:  [11.280 GiB/s 11.535 GiB/s 11.859 GiB/s]
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) low severe
+Benchmarking scheduler_copy/memory/w4_q1_b65536
+Benchmarking scheduler_copy/memory/w4_q1_b65536: Warming up for 300.00 ms
+Benchmarking scheduler_copy/memory/w4_q1_b65536: Collecting 20 samples in estimated 2.0938 s (380 iterations)
+Benchmarking scheduler_copy/memory/w4_q1_b65536: Analyzing
+scheduler_copy/memory/w4_q1_b65536
+                        time:   [1.1678 ms 1.1815 ms 1.1954 ms]
+                        thrpt:  [13.071 GiB/s 13.225 GiB/s 13.380 GiB/s]
+Benchmarking scheduler_copy/memory/w4_q16_b65536
+Benchmarking scheduler_copy/memory/w4_q16_b65536: Warming up for 300.00 ms
+Benchmarking scheduler_copy/memory/w4_q16_b65536: Collecting 20 samples in estimated 2.0912 s (360 iterations)
+Benchmarking scheduler_copy/memory/w4_q16_b65536: Analyzing
+scheduler_copy/memory/w4_q16_b65536
+                        time:   [1.1013 ms 1.1266 ms 1.1548 ms]
+                        thrpt:  [13.531 GiB/s 13.869 GiB/s 14.188 GiB/s]
+Found 2 outliers among 20 measurements (10.00%)
+  1 (5.00%) low mild
+  1 (5.00%) high severe
+Benchmarking scheduler_copy/memory/w4_q16_b4096
+Benchmarking scheduler_copy/memory/w4_q16_b4096: Warming up for 300.00 ms
+Benchmarking scheduler_copy/memory/w4_q16_b4096: Collecting 20 samples in estimated 2.0669 s (260 iterations)
+Benchmarking scheduler_copy/memory/w4_q16_b4096: Analyzing
+scheduler_copy/memory/w4_q16_b4096
+                        time:   [3.1246 ms 3.1612 ms 3.2054 ms]
+                        thrpt:  [4.8746 GiB/s 4.9427 GiB/s 5.0006 GiB/s]
+Found 2 outliers among 20 measurements (10.00%)
+  2 (10.00%) high mild
+
+
+thread 'main' (215010) panicked at crates/rvvdk-datamover/benches/scheduler.rs:77:20:
+called `Result::unwrap()` on an `Err` value: Unsupported
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

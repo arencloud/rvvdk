@@ -139,6 +139,31 @@ of stale artifacts between same-named workspace packages.
 
 First recorded comparison: [R0.1 results](benchmark-results/2026-09-28-r01/README.md).
 
+### Concurrent scheduling and failure shutdown
+
+The `scheduler` target measures successful 16 MiB dense copies in memory and on
+buffered local files, using 2/4 workers and queue capacities 1/16. The normal block
+size is 64 KiB; an additional memory case uses 4 KiB blocks to increase scheduler
+pressure. Timed copies include planning, pool/thread setup, joining, and flush.
+Destination reset/flush and complete output verification occur outside the timer.
+
+Its failure group injects read/write/zero/discard errors with four workers and a
+one-item queue. It separately measures complete API-call time and the interval
+from the first injected backend error to API return, which includes worker joining.
+These synthetic backends return promptly; results do not bound real backend stalls.
+
+```bash
+RVVDK_BENCH_DIR=/path/to/benchmark-storage \
+cargo bench -p rvvdk-datamover --bench scheduler -- scheduler_copy --noplot
+
+cargo bench -p rvvdk-datamover --bench scheduler -- scheduler_failure --noplot
+```
+
+The failure group must not run on the old runtime: it deadlocks. Baseline comparison
+is restricted to successful copies, using identical harnesses and isolated build
+directories. See the [R0.2 report](benchmark-results/2026-09-28-r02/README.md) for
+source fingerprints, measurements, and limitations.
+
 ## Purpose
 
 rvvdk uses benchmarks to validate performance changes rather than

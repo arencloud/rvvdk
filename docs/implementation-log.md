@@ -35,7 +35,7 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 | WIP.OBS | In progress — checkpoint committed | `c951547` records the pre-existing observer/progress modules, exports, mover integration, and sparse progress test; F03 validation bypass is now fixed by R0.1; other progress lifecycle work remains open | [R0.1 comparison](benchmark-results/2026-09-28-r01/README.md) recorded; broader qualification remains pending |
 | PERF.0 | In progress | Flush parity corrected; isolated builds, source patch/hashes, and repeated Btrfs planning/observer comparisons captured | Targeted evidence recorded; controlled-runner repeat, sustained direct I/O, and broader matrix remain pending |
 | R0.1 | Complete | Shared structural validation before execution/notification; 8 regression cases; [ADR-0025](adr/0025-shared-plan-validation.md); committed with this step record | Required correctness fix accepted; [comparison and noise/overhead limits](benchmark-results/2026-09-28-r01/README.md) recorded; performance qualification provisional |
-| R0.2 | Planned | Worker failure termination and preservation of first error | Pending — scheduler throughput and failure termination latency |
+| R0.2 | Complete | Worker failure termination and first-recorded-error preservation; 11 regressions; ADR-0008 shutdown contract; committed with this record | [Comparison and failure latency](benchmark-results/2026-09-28-r02/README.md) accepted for this fix; initial memory increases investigated with affinity repeat; broader PERF.0 qualification remains open |
 | R0.3 | Planned | io_uring buffer/FD lifetime and error-path repair | Pending — native throughput/resource comparisons on safe paths |
 | R0.4 | Planned | Public low-level configuration and preflight validation | Pending — relevant setup/copy overhead |
 | R0.5 | Planned | Access/durability preflight and endpoint identity checks | Pending — preflight overhead |
@@ -136,9 +136,59 @@ PERF.0; no engine tuning defaults were changed. See the
 Roadmap: R0.1 checked off; PERF.0 remains in progress. R0.2 worker shutdown and
 R0.3 native lifetime repair are not changed by this step.
 
+## R0.2 — 2026-09-28
+
+**Baseline:** `3302c1b`, initially clean. **Candidate:** the
+[source patch](benchmark-results/2026-09-28-r02/candidate.patch) and
+[environment/source hashes](benchmark-results/2026-09-28-r02/environment.json)
+identify the measured implementation. The implementation, tests, benchmark harness,
+evidence, and tracking are committed together; use this record's Git history to
+locate the revision.
+
+Implementation steps:
+
+1. Added bounded subprocess reproductions. Six of the first seven tests timed
+   out on the original runtime; the producer-error/idle-worker case already
+   passed. Forced full queues behind read/write/zero/discard failures.
+2. Released the coordinator's receiver before production. Added first-recorded
+   error storage and an atomic stop flag checked at worker-item boundaries.
+   Producer and worker failures share the same recording path; all scoped
+   workers join before returning. Successful production still drains the queue.
+3. Extended coverage to healthy-peer stopping, buffer return under contention,
+   public-copy error preservation without flush, panic propagation, first-error
+   ordering, and successful draining. Eleven new tests in total.
+4. Updated ADR-0008 and architecture with ownership, wakeup, error ordering, and
+   cooperative shutdown limits. Public APIs and execution defaults are unchanged.
+5. Added memory/file scheduler comparisons and synthetic failure-to-return
+   latency measurements. Corrected a read-only fixture flush in the first harness
+   attempt, then rebuilt both variants identically with separate target paths.
+6. Ran three successful-copy comparisons and three candidate failure runs.
+   Memory results above the 5% investigation threshold triggered a longer repeat
+   with five physical cores selected through CPU affinity; all results are kept.
+
+Correctness: `cargo test --workspace` passed 213 tests; strict all-target Clippy
+and formatting passed. The runtime is unchanged since that test run. The
+[benchmark report](benchmark-results/2026-09-28-r02/README.md) records exact
+commands, raw samples, the failed harness attempt, and performance disposition.
+
+Performance disposition: accept this correctness fix with targeted evidence.
+File-copy aggregate medians changed by −0.39% to +3.58%. Initial unpinned memory
+increases reached +23.03%; a longer repeat with fixed CPU affinity ranged from
+−3.63% to +0.30%, so those increases did not persist under that configuration.
+Synthetic first-error-to-return medians were 17.0–18.3 µs, including worker joining.
+This is not a guarantee for real backend stalls or a general regression-free
+bound. Dedicated-runner and broader storage qualification remain under PERF.0.
+No execution defaults were tuned. R0.2 is checked off in the roadmap.
+
+Remaining limits: dispatched synchronous I/O can finish after cancellation and
+must return for shutdown to complete. This is not a public cancellation API,
+backend timeout mechanism, or partial-copy report. R0.3 native lifetimes remain
+unrepaired by this work.
+
 ## Next session
 
-Implement R0.2: worker-error shutdown and preservation of the first failure, with
-bounded-time regressions and scheduler/failure-latency measurements. Continue
-PERF.0 qualification on controlled storage, including the outstanding fragmented
-observer comparison and corrected direct-I/O benchmark.
+Implement R0.3: io_uring buffer/FD lifetime and error-path repair, including a
+safety argument and fault-injection tests. Continue PERF.0 qualification on
+controlled storage, including the outstanding fragmented observer comparison,
+corrected direct-I/O benchmark, and broader scheduler workloads. ESXi is still
+unnecessary for these local steps; request the trial only when V0 is ready.

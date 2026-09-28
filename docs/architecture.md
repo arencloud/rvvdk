@@ -699,3 +699,16 @@ validation before copying or notifying observers. Private validated dispatch
 avoids repeating that scan for concurrent/native observed execution. Native
 compatibility checks remain inside the native executor. See
 [ADR-0025](adr/0025-shared-plan-validation.md).
+
+## Concurrent worker shutdown
+
+The coordinator releases its work-queue receiver before producing items. On a
+worker or producer error, shared state retains the first recorded cause and stops
+workers at work-item boundaries. Receiver destruction wakes a blocked producer;
+sender destruction wakes idle workers. All scoped workers join before returning.
+Successful copies still drain queued work and flush the destination.
+
+Already-dispatched work can finish, and shutdown cannot interrupt a blocked
+synchronous backend call. Public cancellation and partial-result reporting remain
+future work. The contract and tests are documented in
+[ADR-0008](adr/0008-streaming-work-scheduler.md#shutdown-contract--r02-2026-09-28).

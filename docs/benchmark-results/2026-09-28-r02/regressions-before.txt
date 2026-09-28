@@ -1,0 +1,83 @@
+   Compiling rvvdk-datamover v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-datamover)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.67s
+     Running unittests src/lib.rs (target/debug/deps/rvvdk_datamover-bb772ce1dcce6bfb)
+
+running 7 tests
+test concurrent::tests::discard_failure_wakes_full_queue ... 
+running 1 test
+FAILED
+test concurrent::tests::error_returns_buffers_with_more_workers_than_buffers ... 
+running 1 test
+FAILED
+test concurrent::tests::producer_error_wakes_idle_workers ... 
+running 1 test
+test concurrent::tests::producer_error_wakes_idle_workers ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 42 filtered out; finished in 0.00s
+
+ok
+test concurrent::tests::read_failure_wakes_full_queue ... 
+running 1 test
+FAILED
+test concurrent::tests::worker_panics_unblock_producer_and_propagate ... 
+running 1 test
+
+thread '<unnamed>' (204777) panicked at crates/rvvdk-datamover/src/concurrent/tests.rs:79:13:
+injected worker panic
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (204778) panicked at crates/rvvdk-datamover/src/concurrent/tests.rs:79:13:
+injected worker panic
+FAILED
+test concurrent::tests::write_failure_wakes_full_queue ... 
+running 1 test
+FAILED
+test concurrent::tests::zero_failure_wakes_full_queue ... 
+running 1 test
+FAILED
+
+failures:
+
+---- concurrent::tests::discard_failure_wakes_full_queue stdout ----
+
+thread 'concurrent::tests::discard_failure_wakes_full_queue' (204668) panicked at crates/rvvdk-datamover/src/concurrent/tests.rs:33:13:
+discard_failure_wakes_full_queue: worker shutdown exceeded five seconds
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- concurrent::tests::error_returns_buffers_with_more_workers_than_buffers stdout ----
+
+thread 'concurrent::tests::error_returns_buffers_with_more_workers_than_buffers' (204692) panicked at crates/rvvdk-datamover/src/concurrent/tests.rs:33:13:
+error_returns_buffers_with_more_workers_than_buffers: worker shutdown exceeded five seconds
+
+---- concurrent::tests::read_failure_wakes_full_queue stdout ----
+
+thread 'concurrent::tests::read_failure_wakes_full_queue' (204743) panicked at crates/rvvdk-datamover/src/concurrent/tests.rs:33:13:
+read_failure_wakes_full_queue: worker shutdown exceeded five seconds
+
+---- concurrent::tests::worker_panics_unblock_producer_and_propagate stdout ----
+
+thread 'concurrent::tests::worker_panics_unblock_producer_and_propagate' (204774) panicked at crates/rvvdk-datamover/src/concurrent/tests.rs:33:13:
+worker_panics_unblock_producer_and_propagate: worker shutdown exceeded five seconds
+
+---- concurrent::tests::write_failure_wakes_full_queue stdout ----
+
+thread 'concurrent::tests::write_failure_wakes_full_queue' (204797) panicked at crates/rvvdk-datamover/src/concurrent/tests.rs:33:13:
+write_failure_wakes_full_queue: worker shutdown exceeded five seconds
+
+---- concurrent::tests::zero_failure_wakes_full_queue stdout ----
+
+thread 'concurrent::tests::zero_failure_wakes_full_queue' (205036) panicked at crates/rvvdk-datamover/src/concurrent/tests.rs:33:13:
+zero_failure_wakes_full_queue: worker shutdown exceeded five seconds
+
+
+failures:
+    concurrent::tests::discard_failure_wakes_full_queue
+    concurrent::tests::error_returns_buffers_with_more_workers_than_buffers
+    concurrent::tests::read_failure_wakes_full_queue
+    concurrent::tests::worker_panics_unblock_producer_and_propagate
+    concurrent::tests::write_failure_wakes_full_queue
+    concurrent::tests::zero_failure_wakes_full_queue
+
+test result: FAILED. 1 passed; 6 failed; 0 ignored; 0 measured; 36 filtered out; finished in 30.05s
+
+error: test failed, to rerun pass `-p rvvdk-datamover --lib`
