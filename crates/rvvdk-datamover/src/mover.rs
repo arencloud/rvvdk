@@ -190,8 +190,8 @@ impl DataMover {
                     .max(self.options.buffer_alignment());
 
                 let stats = copy_file_range_with_options(
-                    source.raw_fd(),
-                    destination.raw_fd(),
+                    source.as_fd(),
+                    destination.as_fd(),
                     offset,
                     length,
                     self.options.block_size(),
@@ -762,8 +762,8 @@ impl DataMover {
         let started = Instant::now();
 
         let stats = copy_extent_plan_with_destination(
-            source_backend.raw_fd(),
-            destination_backend.raw_fd(),
+            source_backend.as_fd(),
+            destination_backend.as_fd(),
             destination,
             &native_plan,
             plan.block_size(),

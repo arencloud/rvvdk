@@ -1,0 +1,2306 @@
+diff --git a/crates/rvvdk-core/src/error.rs b/crates/rvvdk-core/src/error.rs
+index 865cc29..89a4800 100644
+--- a/crates/rvvdk-core/src/error.rs
++++ b/crates/rvvdk-core/src/error.rs
+@@ -76,6 +76,18 @@ pub enum Error {
+     #[error("io_uring engine has been shut down")]
+     IoUringEngineShutDown,
+ 
++    #[error(
++        "io_uring shutdown could not confirm completion; {operations} operations retained permanently for memory safety"
++    )]
++    IoUringShutdownUnconfirmed { operations: usize },
++
++    #[error("{original}; io_uring cleanup retained {operations} unconfirmed operations")]
++    IoUringCleanup {
++        #[source]
++        original: Box<Error>,
++        operations: usize,
++    },
++
+     #[error("short write at offset {offset}: expected {expected} bytes, wrote {actual}")]
+     ShortWrite {
+         offset: u64,
+diff --git a/crates/rvvdk-datamover/Cargo.toml b/crates/rvvdk-datamover/Cargo.toml
+index df4e466..a91596d 100644
+--- a/crates/rvvdk-datamover/Cargo.toml
++++ b/crates/rvvdk-datamover/Cargo.toml
+@@ -46,3 +46,7 @@ harness = false
+ [[bench]]
+ name = "scheduler"
+ harness = false
++
++[[bench]]
++name = "native_lifetime"
++harness = false
+diff --git a/crates/rvvdk-datamover/benches/io_uring.rs b/crates/rvvdk-datamover/benches/io_uring.rs
+index e0a978b..b359d28 100644
+--- a/crates/rvvdk-datamover/benches/io_uring.rs
++++ b/crates/rvvdk-datamover/benches/io_uring.rs
+@@ -1,7 +1,7 @@
+ mod support;
+ 
+ use std::fs::OpenOptions;
+-use std::os::fd::AsRawFd;
++use std::os::fd::AsFd;
+ use std::time::Duration;
+ 
+ use rvvdk_core::RawDisk;
+@@ -65,8 +65,8 @@ fn benchmark_io_uring(criterion: &mut Criterion) {
+                         .unwrap();
+ 
+                     let stats = copy_file_range(
+-                        source.as_raw_fd(),
+-                        destination.as_raw_fd(),
++                        source.as_fd(),
++                        destination.as_fd(),
+                         0,
+                         DISK_SIZE as u64,
+                         BLOCK_SIZE,
+diff --git a/crates/rvvdk-datamover/benches/io_uring_direct.rs b/crates/rvvdk-datamover/benches/io_uring_direct.rs
+index d67c9b7..aaad87c 100644
+--- a/crates/rvvdk-datamover/benches/io_uring_direct.rs
++++ b/crates/rvvdk-datamover/benches/io_uring_direct.rs
+@@ -1,6 +1,6 @@
+ mod support;
+ 
+-use std::os::fd::AsRawFd;
++use std::os::fd::AsFd;
+ use std::time::Duration;
+ 
+ use criterion::{
+@@ -130,8 +130,8 @@ fn benchmark_io_uring_direct(criterion: &mut Criterion) {
+                         LocalFileBlockDevice::open_direct_read_write(&destination_path).unwrap();
+ 
+                     let stats = copy_file_range(
+-                        source.as_raw_fd(),
+-                        destination.as_raw_fd(),
++                        source.as_fd(),
++                        destination.as_fd(),
+                         0,
+                         DISK_SIZE as u64,
+                         BLOCK_SIZE,
+diff --git a/crates/rvvdk-datamover/src/io_uring/copy.rs b/crates/rvvdk-datamover/src/io_uring/copy.rs
+index b35a697..113293b 100644
+--- a/crates/rvvdk-datamover/src/io_uring/copy.rs
++++ b/crates/rvvdk-datamover/src/io_uring/copy.rs
+@@ -1,8 +1,8 @@
+-use std::os::fd::RawFd;
++use std::os::fd::BorrowedFd;
+ 
+ use rvvdk_core::{BufferPool, Error, Result};
+ 
+-use super::{CompletedOperation, IoUringEngine, IoUringOperationKind};
++use super::{CompletedOperation, IoUringEngine, IoUringFile, IoUringOperationKind};
+ 
+ #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+ pub struct IoUringCopyStats {
+@@ -46,8 +46,8 @@ impl IoUringCopyStats {
+ }
+ 
+ struct CopyContext {
+-    source_fd: RawFd,
+-    destination_fd: RawFd,
++    source_fd: IoUringFile,
++    destination_fd: IoUringFile,
+     start_offset: u64,
+     length: u64,
+     block_size: usize,
+@@ -99,8 +99,8 @@ fn update_peaks(stats: &mut IoUringCopyStats, state: &PipelineState) {
+ }
+ 
+ pub fn copy_file_range(
+-    source_fd: RawFd,
+-    destination_fd: RawFd,
++    source_fd: BorrowedFd<'_>,
++    destination_fd: BorrowedFd<'_>,
+     offset: u64,
+     length: u64,
+     block_size: usize,
+@@ -122,8 +122,8 @@ pub fn copy_file_range(
+ }
+ 
+ pub fn copy_file_range_with_options(
+-    source_fd: RawFd,
+-    destination_fd: RawFd,
++    source_fd: BorrowedFd<'_>,
++    destination_fd: BorrowedFd<'_>,
+     offset: u64,
+     length: u64,
+     block_size: usize,
+@@ -148,8 +148,8 @@ pub fn copy_file_range_with_options(
+     let mut engine = IoUringEngine::new(queue_depth)?;
+ 
+     let context = CopyContext {
+-        source_fd,
+-        destination_fd,
++        source_fd: IoUringFile::new(source_fd)?,
++        destination_fd: IoUringFile::new(destination_fd)?,
+         start_offset: offset,
+         length,
+         block_size,
+@@ -157,7 +157,18 @@ pub fn copy_file_range_with_options(
+         read_window: options.read_window(),
+     };
+ 
+-    copy_with_engine(&mut engine, &pool, &context)
++    let result = copy_with_engine(&mut engine, &pool, &context);
++    let cleanup = engine.shutdown();
++    match (result, cleanup) {
++        (Err(original), Err(Error::IoUringShutdownUnconfirmed { operations })) => {
++            Err(Error::IoUringCleanup {
++                original: Box::new(original),
++                operations,
++            })
++        }
++        (Err(error), _) | (Ok(_), Err(error)) => Err(error),
++        (Ok(stats), Ok(())) => Ok(stats),
++    }
+ }
+ 
+ fn copy_with_engine(
+@@ -278,7 +289,7 @@ fn process_read_completion(
+      */
+     let buffer = completed.into_buffer();
+ 
+-    engine.submit_owned_write(context.destination_fd, offset, actual, buffer)?;
++    engine.submit_owned_write(&context.destination_fd, offset, actual, buffer)?;
+ 
+     state.write_submitted();
+ 
+@@ -336,7 +347,7 @@ fn process_write_completion(
+ fn submit_read(
+     engine: &mut IoUringEngine,
+     pool: &BufferPool,
+-    source_fd: RawFd,
++    source_fd: &IoUringFile,
+     offset: u64,
+     length: usize,
+     state: &mut PipelineState,
+@@ -396,7 +407,7 @@ fn refill_reads(
+         submit_read(
+             engine,
+             pool,
+-            context.source_fd,
++            &context.source_fd,
+             *next_offset,
+             length,
+             state,
+diff --git a/crates/rvvdk-datamover/src/io_uring/engine.rs b/crates/rvvdk-datamover/src/io_uring/engine.rs
+index 5bc7eec..16803e1 100644
+--- a/crates/rvvdk-datamover/src/io_uring/engine.rs
++++ b/crates/rvvdk-datamover/src/io_uring/engine.rs
+@@ -1,27 +1,27 @@
+ use std::collections::HashMap;
+-use std::os::fd::RawFd;
++use std::os::fd::{AsFd, AsRawFd};
+ 
+ use io_uring::{IoUring, opcode, types};
+-
+ use rvvdk_core::{BufferGuard, Error, Result};
+ 
++use super::IoUringFile;
+ use super::operation::{CompletedOperation, InFlightOperation, IoUringOperationKind};
+ 
++/// An owned-buffer engine. Every queued SQE retains both its buffer and file.
++///
++/// Call `shutdown` to observe cleanup errors. Drop performs the same cleanup, but
++/// cannot report errors. Unconfirmed operations are permanently retained instead
++/// of releasing memory that the kernel may still access.
+ pub struct IoUringEngine {
+     ring: Option<IoUring>,
+     queue_depth: u32,
+     next_user_data: u64,
+-
+-    // Ownership-safe asynchronous operations.
+-    //
+-    // Each entry owns the BufferGuard referenced by its SQE.
+     in_flight: HashMap<u64, InFlightOperation>,
+-
+-    // M17B compatibility path.
+-    //
+-    // Borrowed read_at()/write_at() never permit more than one
+-    // outstanding borrowed operation.
+-    borrowed_in_flight: bool,
++    accepting: bool,
++    completion_lost: bool,
++    quarantined: usize,
++    #[cfg(test)]
++    faults: faults::Faults,
+ }
+ 
+ impl IoUringEngine {
+@@ -29,15 +29,16 @@ impl IoUringEngine {
+         if queue_depth == 0 {
+             return Err(Error::InvalidIoUringQueueDepth);
+         }
+-
+-        let ring = IoUring::new(queue_depth).map_err(Error::Io)?;
+-
+         Ok(Self {
+-            ring: Some(ring),
++            ring: Some(IoUring::new(queue_depth)?),
+             queue_depth,
+             next_user_data: 1,
+             in_flight: HashMap::with_capacity(queue_depth as usize),
+-            borrowed_in_flight: false,
++            accepting: true,
++            completion_lost: false,
++            quarantined: 0,
++            #[cfg(test)]
++            faults: faults::Faults::default(),
+         })
+     }
+ 
+@@ -46,456 +47,314 @@ impl IoUringEngine {
+     }
+ 
+     pub fn in_flight(&self) -> usize {
+-        self.in_flight.len() + usize::from(self.borrowed_in_flight)
++        self.in_flight.len()
+     }
+ 
+-    pub fn read_at(&mut self, fd: RawFd, offset: u64, buffer: &mut [u8]) -> Result<usize> {
+-        let user_data = self.submit_borrowed_read(fd, offset, buffer)?;
+-
+-        self.submit()?;
+-
+-        let completion = self.wait_borrowed_completion()?;
+-
+-        if completion.user_data != user_data {
+-            return Err(Error::IoUringUnexpectedCompletion {
+-                expected: user_data,
+-                actual: completion.user_data,
+-            });
+-        }
+-
+-        completion_result_to_bytes(completion.result)
+-    }
+-
+-    pub fn write_at(&mut self, fd: RawFd, offset: u64, buffer: &[u8]) -> Result<usize> {
+-        let user_data = self.submit_borrowed_write(fd, offset, buffer)?;
+-
+-        self.submit()?;
+-
+-        let completion = self.wait_borrowed_completion()?;
+-
+-        if completion.user_data != user_data {
+-            return Err(Error::IoUringUnexpectedCompletion {
+-                expected: user_data,
+-                actual: completion.user_data,
+-            });
+-        }
+-
+-        completion_result_to_bytes(completion.result)
++    /// Operations retained permanently after cleanup could not prove completion.
++    pub const fn quarantined_operations(&self) -> usize {
++        self.quarantined
+     }
+ 
+     pub fn submit_owned_read(
+         &mut self,
+-        fd: RawFd,
++        file: &IoUringFile,
+         offset: u64,
+         length: usize,
+-        mut buffer: BufferGuard,
++        buffer: BufferGuard,
+     ) -> Result<u64> {
+-        if self.borrowed_in_flight {
+-            return Err(Error::IoUringOperationModeConflict);
+-        }
+-
+-        let available = buffer.as_slice().len();
+-
+-        if length > available {
+-            return Err(Error::BufferTooSmall {
+-                requested: length,
+-                available,
+-            });
+-        }
+-
+-        let length_u32 = u32::try_from(length).map_err(|_| Error::RangeOverflow {
+-            offset,
+-            length: length as u64,
+-        })?;
+-
+-        let user_data = self.next_user_data();
+-
+-        let pointer = buffer.as_mut_slice().as_mut_ptr();
+-
+-        let entry = opcode::Read::new(types::Fd(fd), pointer, length_u32)
+-            .offset(offset)
+-            .build()
+-            .user_data(user_data);
+-
+-        // SAFETY:
+-        //
+-        // The SQE contains a pointer into `buffer`.
+-        //
+-        // After the SQE is successfully pushed, `buffer` is moved
+-        // into `InFlightOperation` and then into `self.in_flight`.
+-        //
+-        // The BufferGuard therefore remains alive and its allocation
+-        // cannot return to the BufferPool until the corresponding CQE
+-        // is consumed and the resulting CompletedOperation is dropped.
+-        let queue_depth = self.queue_depth;
+-
+-        // SAFETY:
+-        //
+-        // The safety invariant depends on the operation being submitted.
+-        // See the operation-specific comment above this block.
+-        unsafe {
+-            self.ring_mut()?
+-                .submission()
+-                .push(&entry)
+-                .map_err(|_| Error::IoUringQueueFull { queue_depth })?;
+-        }
+-
+-        let operation = InFlightOperation::new(
+-            user_data,
+-            IoUringOperationKind::Read,
+-            offset,
+-            length,
+-            buffer,
+-        );
+-
+-        let previous = self.in_flight.insert(user_data, operation);
+-
+-        debug_assert!(previous.is_none(), "io_uring user_data collision");
+-
+-        Ok(user_data)
++        self.enqueue(file, offset, length, buffer, IoUringOperationKind::Read)
+     }
+ 
+     pub fn submit_owned_write(
+         &mut self,
+-        fd: RawFd,
++        file: &IoUringFile,
+         offset: u64,
+         length: usize,
+         buffer: BufferGuard,
+     ) -> Result<u64> {
+-        if self.borrowed_in_flight {
+-            return Err(Error::IoUringOperationModeConflict);
+-        }
+-
+-        let available = buffer.as_slice().len();
++        self.enqueue(file, offset, length, buffer, IoUringOperationKind::Write)
++    }
+ 
+-        if length > available {
++    fn enqueue(
++        &mut self,
++        file: &IoUringFile,
++        offset: u64,
++        length: usize,
++        mut buffer: BufferGuard,
++        kind: IoUringOperationKind,
++    ) -> Result<u64> {
++        self.ensure_accepting()?;
++        if length > buffer.as_slice().len() {
+             return Err(Error::BufferTooSmall {
+                 requested: length,
+-                available,
++                available: buffer.as_slice().len(),
+             });
+         }
+-
+         let length_u32 = u32::try_from(length).map_err(|_| Error::RangeOverflow {
+             offset,
+             length: length as u64,
+         })?;
+-
++        if self.in_flight.len() >= self.queue_depth as usize {
++            return Err(Error::IoUringQueueFull {
++                queue_depth: self.queue_depth,
++            });
++        }
+         let user_data = self.next_user_data();
++        let fd = types::Fd(file.as_fd().as_raw_fd());
++        let entry = match kind {
++            IoUringOperationKind::Read => {
++                opcode::Read::new(fd, buffer.as_mut_slice().as_mut_ptr(), length_u32)
++                    .offset(offset)
++                    .build()
++            }
++            IoUringOperationKind::Write => {
++                opcode::Write::new(fd, buffer.as_slice().as_ptr(), length_u32)
++                    .offset(offset)
++                    .build()
++            }
++        }
++        .user_data(user_data);
+ 
+-        let pointer = buffer.as_slice().as_ptr();
+-
+-        let entry = opcode::Write::new(types::Fd(fd), pointer, length_u32)
+-            .offset(offset)
+-            .build()
+-            .user_data(user_data);
+-
+-        // SAFETY:
+-        //
+-        // The SQE contains a pointer into `buffer`.
+-        //
+-        // Once pushed, the BufferGuard is transferred into the
+-        // in-flight operation table and remains alive until the CQE
+-        // has been consumed.
++        // Own every resource BEFORE publishing its pointer in the SQ. A panic
++        // or subsequent error cannot leave a published pointer without an owner.
++        let operation =
++            InFlightOperation::new(file.clone(), user_data, kind, offset, length, buffer);
++        let previous = self.in_flight.insert(user_data, operation);
++        debug_assert!(previous.is_none());
+         let queue_depth = self.queue_depth;
+-
+-        // SAFETY:
+-        //
+-        // The safety invariant depends on the operation being submitted.
+-        // See the operation-specific comment above this block.
+-        unsafe {
+-            self.ring_mut()?
++        // SAFETY: the table owns the stable allocation and descriptor. Only a
++        // matching, final CQE permits removal. Shutdown retains anything whose
++        // completion is unconfirmed. Only single-shot Read/Write SQEs are used.
++        let pushed = unsafe {
++            self.ring
++                .as_mut()
++                .expect("accepting engine has a ring")
+                 .submission()
+                 .push(&entry)
+-                .map_err(|_| Error::IoUringQueueFull { queue_depth })?;
++        };
++        if pushed.is_err() {
++            // A failed push publishes nothing, so ownership can be returned.
++            self.in_flight.remove(&user_data);
++            return Err(Error::IoUringQueueFull { queue_depth });
+         }
+-
+-        let operation = InFlightOperation::new(
+-            user_data,
+-            IoUringOperationKind::Write,
+-            offset,
+-            length,
+-            buffer,
+-        );
+-
+-        let previous = self.in_flight.insert(user_data, operation);
+-
+-        debug_assert!(previous.is_none(), "io_uring user_data collision");
+-
+         Ok(user_data)
+     }
+ 
+     pub fn submit(&mut self) -> Result<usize> {
+-        self.ring_mut()?.submit().map_err(Error::Io)
++        self.ensure_accepting()?;
++        self.enter(0)
+     }
+ 
++    /// Consume one completion, retaining all other operations on error.
++    ///
++    /// After an I/O error, new submissions are rejected, but remaining known
++    /// completions may still be consumed or drained by `shutdown`.
+     pub fn wait_owned_completion(&mut self) -> Result<CompletedOperation> {
++        self.quarantine_result()?;
++        if self.completion_lost {
++            return Err(Error::IoUringShutdownUnconfirmed {
++                operations: self.in_flight.len(),
++            });
++        }
+         if self.in_flight.is_empty() {
+             return Err(Error::IoUringNoInFlight);
+         }
++        let result = self.wait_one();
++        if result.is_err() {
++            self.accepting = false;
++        }
++        result
++    }
+ 
+-        self.ring_mut()?.submit_and_wait(1).map_err(Error::Io)?;
+-
+-        let (user_data, result) = self.next_completion()?;
+-
++    fn wait_one(&mut self) -> Result<CompletedOperation> {
++        self.enter(1)?;
++        let completion = match self.next_completion()? {
++            Some(completion) => completion,
++            None => {
++                self.completion_lost = true;
++                return Err(Error::IoUringCompletionMissing);
++            }
++        };
++        let (user_data, result, flags) = completion;
++        // These plain single-shot opcodes cannot legitimately return MORE. Do
++        // not release an owner if the completion cannot establish finality.
++        if io_uring::cqueue::more(flags) || !self.in_flight.contains_key(&user_data) {
++            self.completion_lost = true;
++            return Err(Error::IoUringUnknownCompletion { user_data });
++        }
+         let operation = self
+             .in_flight
+             .remove(&user_data)
+-            .ok_or(Error::IoUringUnknownCompletion { user_data })?;
+-
+-        let bytes_transferred = completion_result_to_bytes(result)?;
+-
+-        Ok(operation.complete(bytes_transferred))
++            .expect("checked completion id");
++        let bytes = completion_result_to_bytes(result)?;
++        if bytes > operation.length() {
++            return Err(Error::CorruptMetadata(
++                "io_uring completion exceeded requested length".into(),
++            ));
++        }
++        Ok(operation.complete(bytes))
+     }
+ 
+     pub fn drain(&mut self) -> Result<Vec<CompletedOperation>> {
+-        if self.borrowed_in_flight {
+-            return Err(Error::IoUringOperationModeConflict);
+-        }
+-
++        self.quarantine_result()?;
+         let mut completed = Vec::with_capacity(self.in_flight.len());
+-
+         while !self.in_flight.is_empty() {
+             completed.push(self.wait_owned_completion()?);
+         }
+-
+         Ok(completed)
+     }
+ 
+-    fn submit_borrowed_read(&mut self, fd: RawFd, offset: u64, buffer: &mut [u8]) -> Result<u64> {
+-        if !self.in_flight.is_empty() || self.borrowed_in_flight {
+-            return Err(Error::IoUringOperationModeConflict);
++    /// Drain queued/submitted operations and close the ring. May block on I/O.
++    ///
++    /// Negative operation CQEs do not prevent draining the remaining requests.
++    /// If completion cannot be confirmed, retain outstanding buffers and FDs
++    /// permanently, close the ring, and report `IoUringShutdownUnconfirmed`.
++    pub fn shutdown(&mut self) -> Result<()> {
++        self.accepting = false;
++        if self.ring.is_none() {
++            return self.quarantine_result();
+         }
+-
+-        let length = u32::try_from(buffer.len()).map_err(|_| Error::RangeOverflow {
+-            offset,
+-            length: buffer.len() as u64,
+-        })?;
+-
+-        let user_data = self.next_user_data();
+-
+-        let entry = opcode::Read::new(types::Fd(fd), buffer.as_mut_ptr(), length)
+-            .offset(offset)
+-            .build()
+-            .user_data(user_data);
+-
+-        // SAFETY:
+-        //
+-        // This is the synchronous borrowed compatibility path.
+-        // `read_at()` does not return until the corresponding CQE has
+-        // been consumed, so the caller's mutable buffer remains
+-        // borrowed for the complete kernel access interval.
+-        let queue_depth = self.queue_depth;
+-
+-        // SAFETY:
+-        //
+-        // The safety invariant depends on the operation being submitted.
+-        // See the operation-specific comment above this block.
+-        unsafe {
+-            self.ring_mut()?
+-                .submission()
+-                .push(&entry)
+-                .map_err(|_| Error::IoUringQueueFull { queue_depth })?;
++        let mut first_error = None;
++        while !self.in_flight.is_empty() && !self.completion_lost {
++            let before = self.in_flight.len();
++            if let Err(error) = self.wait_owned_completion() {
++                first_error.get_or_insert(error);
++                if self.in_flight.len() == before {
++                    break;
++                }
++            }
+         }
+-
+-        self.borrowed_in_flight = true;
+-
+-        Ok(user_data)
+-    }
+-
+-    fn submit_borrowed_write(&mut self, fd: RawFd, offset: u64, buffer: &[u8]) -> Result<u64> {
+-        if !self.in_flight.is_empty() || self.borrowed_in_flight {
+-            return Err(Error::IoUringOperationModeConflict);
++        if !self.in_flight.is_empty() {
++            self.quarantined = self.in_flight.len();
++            // Closing a ring requests cancellation, but is not our proof that
++            // kernel access has ended. Leak the owners rather than reuse/free
++            // their allocations or descriptor numbers without that proof.
++            std::mem::forget(std::mem::take(&mut self.in_flight));
+         }
+-
+-        let length = u32::try_from(buffer.len()).map_err(|_| Error::RangeOverflow {
+-            offset,
+-            length: buffer.len() as u64,
+-        })?;
+-
+-        let user_data = self.next_user_data();
+-
+-        let entry = opcode::Write::new(types::Fd(fd), buffer.as_ptr(), length)
+-            .offset(offset)
+-            .build()
+-            .user_data(user_data);
+-
+-        // SAFETY:
+-        //
+-        // `write_at()` waits for the CQE before returning, keeping the
+-        // immutable borrow alive for the entire kernel access
+-        // interval.
+-        let queue_depth = self.queue_depth;
+-
+-        // SAFETY:
+-        //
+-        // The safety invariant depends on the operation being submitted.
+-        // See the operation-specific comment above this block.
+-        unsafe {
+-            self.ring_mut()?
+-                .submission()
+-                .push(&entry)
+-                .map_err(|_| Error::IoUringQueueFull { queue_depth })?;
++        drop(self.ring.take());
++        self.quarantine_result()?;
++        match first_error {
++            Some(error) => Err(error),
++            None => Ok(()),
+         }
+-
+-        self.borrowed_in_flight = true;
+-
+-        Ok(user_data)
+     }
+ 
+-    fn wait_borrowed_completion(&mut self) -> Result<BorrowedCompletion> {
+-        if !self.borrowed_in_flight {
+-            return Err(Error::IoUringNoInFlight);
++    fn quarantine_result(&self) -> Result<()> {
++        if self.quarantined != 0 {
++            Err(Error::IoUringShutdownUnconfirmed {
++                operations: self.quarantined,
++            })
++        } else {
++            Ok(())
+         }
+-
+-        self.ring_mut()?.submit_and_wait(1).map_err(Error::Io)?;
+-
+-        let (user_data, result) = self.next_completion()?;
+-
+-        self.borrowed_in_flight = false;
+-
+-        Ok(BorrowedCompletion { user_data, result })
+     }
+ 
+-    fn next_completion(&mut self) -> Result<(u64, i32)> {
+-        let mut completion_queue = self.ring_mut()?.completion();
+-
+-        completion_queue
+-            .next()
+-            .map(|entry| (entry.user_data(), entry.result()))
+-            .ok_or(Error::IoUringCompletionMissing)
++    fn ensure_accepting(&self) -> Result<()> {
++        if !self.accepting {
++            return Err(Error::IoUringEngineShutDown);
++        }
++        Ok(())
+     }
+ 
+-    fn next_user_data(&mut self) -> u64 {
++    fn enter(&mut self, want: usize) -> Result<usize> {
+         loop {
+-            let value = self.next_user_data;
+-
+-            self.next_user_data = self.next_user_data.wrapping_add(1);
+-
+-            if self.next_user_data == 0 {
+-                self.next_user_data = 1;
+-            }
+-
+-            if value != 0 && !self.in_flight.contains_key(&value) {
+-                return value;
++            let result = self.enter_once(want);
++            match result {
++                Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
++                Err(error) => {
++                    self.accepting = false;
++                    return Err(Error::Io(error));
++                }
++                Ok(count) => return Ok(count),
+             }
+         }
+     }
+ 
+-    fn ring_mut(&mut self) -> Result<&mut IoUring> {
+-        self.ring.as_mut().ok_or(Error::IoUringEngineShutDown)
+-    }
+-
+-    fn drain_for_drop(&mut self) {
+-        if self.borrowed_in_flight {
+-            /*
+-             * A borrowed operation is only created and completed
+-             * within read_at()/write_at(). Reaching Drop with one
+-             * outstanding indicates an interrupted/error path.
+-             *
+-             * Keep the ring alive while attempting to consume its CQE.
+-             */
+-            if let Some(ring) = self.ring.as_mut()
+-                && ring.submit_and_wait(1).is_ok()
+-            {
+-                let mut queue = ring.completion();
+-
+-                if queue.next().is_some() {
+-                    self.borrowed_in_flight = false;
++    fn enter_once(&mut self, want: usize) -> std::io::Result<usize> {
++        #[cfg(test)]
++        if let Some(fault) = self.faults.enter.pop_front() {
++            match fault {
++                faults::Enter::Before(kind) => return Err(std::io::Error::from(kind)),
++                faults::Enter::After(kind) => {
++                    self.ring.as_mut().unwrap().submit()?;
++                    return Err(std::io::Error::from(kind));
++                }
++                faults::Enter::PanicAfterSubmit => {
++                    self.ring.as_mut().unwrap().submit()?;
++                    panic!("injected panic after submission");
++                }
++                faults::Enter::Partial(fail) => {
++                    // SAFETY: test-only entry submits just one already-published
++                    // SQE. All its resources are owned; no signal mask or flags.
++                    let count = unsafe {
++                        self.ring
++                            .as_ref()
++                            .unwrap()
++                            .submitter()
++                            .enter(1, 0, 0, None::<&()>)?
++                    };
++                    return if fail {
++                        Err(std::io::Error::other(
++                            "injected error after partial submission",
++                        ))
++                    } else {
++                        Ok(count)
++                    };
+                 }
+             }
+         }
++        self.ring
++            .as_mut()
++            .expect("live operation has a ring")
++            .submit_and_wait(want)
++    }
+ 
+-        while !self.in_flight.is_empty() {
+-            let wait_result = match self.ring.as_mut() {
+-                Some(ring) => ring.submit_and_wait(1),
+-
+-                None => break,
+-            };
++    fn next_completion(&mut self) -> Result<Option<(u64, i32, u32)>> {
++        #[cfg(test)]
++        if self.faults.hide_completions {
++            return Ok(None);
++        }
++        let entry = self
++            .ring
++            .as_mut()
++            .ok_or(Error::IoUringEngineShutDown)?
++            .completion()
++            .next()
++            .map(|cqe| (cqe.user_data(), cqe.result(), cqe.flags()));
++        #[cfg(test)]
++        let entry = entry.map(|entry| self.faults.transform(entry));
++        Ok(entry)
++    }
+ 
+-            if wait_result.is_err() {
+-                break;
++    fn next_user_data(&mut self) -> u64 {
++        loop {
++            let value = self.next_user_data;
++            self.next_user_data = self.next_user_data.wrapping_add(1).max(1);
++            if value != 0 && !self.in_flight.contains_key(&value) {
++                return value;
+             }
+-
+-            let user_data = match self.ring.as_mut() {
+-                Some(ring) => {
+-                    let mut queue = ring.completion();
+-
+-                    queue.next().map(|entry| entry.user_data())
+-                }
+-
+-                None => None,
+-            };
+-
+-            let Some(user_data) = user_data else {
+-                break;
+-            };
+-
+-            self.in_flight.remove(&user_data);
+         }
+     }
+ }
+ 
+ impl Drop for IoUringEngine {
+     fn drop(&mut self) {
+-        self.drain_for_drop();
+-
+-        /*
+-         * Drop order is explicit:
+-         *
+-         * 1. attempt to consume outstanding CQEs;
+-         * 2. destroy the io_uring instance;
+-         * 3. only then allow any remaining InFlightOperation values
+-         *    and their BufferGuards to be dropped.
+-         *
+-         * Keeping the ring in Option<IoUring> lets us force this
+-         * ordering rather than depending on struct field drop order.
+-         */
+-        drop(self.ring.take());
+-
+-        self.in_flight.clear();
++        let _ = self.shutdown();
+     }
+ }
+ 
+-struct BorrowedCompletion {
+-    user_data: u64,
+-    result: i32,
+-}
+-
+ fn completion_result_to_bytes(result: i32) -> Result<usize> {
+     if result < 0 {
+-        return Err(Error::Io(std::io::Error::from_raw_os_error(-result)));
++        // checked_neg also handles a malformed i32::MIN CQE without panicking.
++        let errno = result.checked_neg().ok_or_else(|| {
++            Error::CorruptMetadata("invalid io_uring negative completion result".into())
++        })?;
++        return Err(Error::Io(std::io::Error::from_raw_os_error(errno)));
+     }
+-
+-    usize::try_from(result)
+-        .map_err(|_| Error::CorruptMetadata("io_uring completion result does not fit usize".into()))
++    Ok(result as usize)
+ }
+ 
+ #[cfg(test)]
+-mod tests {
+-    use super::*;
+-
+-    #[test]
+-    fn creates_engine() {
+-        let engine = IoUringEngine::new(8).unwrap();
+-
+-        assert_eq!(engine.queue_depth(), 8,);
+-
+-        assert_eq!(engine.in_flight(), 0,);
+-    }
+-
+-    #[test]
+-    fn rejects_zero_queue_depth() {
+-        let result = IoUringEngine::new(0);
+-
+-        assert!(matches!(result, Err(Error::InvalidIoUringQueueDepth)));
+-    }
+-
+-    #[test]
+-    fn owned_completion_without_submission_fails() {
+-        let mut engine = IoUringEngine::new(8).unwrap();
+-
+-        let result = engine.wait_owned_completion();
+-
+-        assert!(matches!(result, Err(Error::IoUringNoInFlight)));
+-    }
+-}
++mod faults;
++#[cfg(test)]
++mod tests;
+diff --git a/crates/rvvdk-datamover/src/io_uring/extent_copy.rs b/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
+index 341ae41..7b3c6a7 100644
+--- a/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
++++ b/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
+@@ -1,4 +1,4 @@
+-use std::os::fd::RawFd;
++use std::os::fd::BorrowedFd;
+ 
+ use rvvdk_core::{Capabilities, Error, Extent, ExtentKind, Result, VirtualDisk};
+ 
+@@ -127,8 +127,8 @@ impl IoUringExtentCopyStats {
+ }
+ 
+ pub fn copy_extent_plan(
+-    source_fd: RawFd,
+-    destination_fd: RawFd,
++    source_fd: BorrowedFd<'_>,
++    destination_fd: BorrowedFd<'_>,
+     plan: &NativeExtentPlan,
+     block_size: usize,
+     alignment: usize,
+@@ -174,8 +174,8 @@ pub fn copy_extent_plan(
+ }
+ 
+ pub fn copy_extent_plan_with_destination<D>(
+-    source_fd: RawFd,
+-    destination_fd: RawFd,
++    source_fd: BorrowedFd<'_>,
++    destination_fd: BorrowedFd<'_>,
+     destination: &D,
+     plan: &NativeExtentPlan,
+     block_size: usize,
+diff --git a/crates/rvvdk-datamover/src/io_uring/mod.rs b/crates/rvvdk-datamover/src/io_uring/mod.rs
+index 3a9438f..afb7b6c 100644
+--- a/crates/rvvdk-datamover/src/io_uring/mod.rs
++++ b/crates/rvvdk-datamover/src/io_uring/mod.rs
+@@ -4,11 +4,13 @@ mod copy;
+ mod engine;
+ mod extent_copy;
+ mod extent_plan;
++mod file;
+ mod operation;
+ 
+ pub use capabilities::{IoUringCapabilities, probe_io_uring};
+ 
+ pub use engine::IoUringEngine;
++pub use file::IoUringFile;
+ 
+ pub use operation::{CompletedOperation, IoUringOperationKind};
+ 
+diff --git a/crates/rvvdk-datamover/src/io_uring/operation.rs b/crates/rvvdk-datamover/src/io_uring/operation.rs
+index 94e6c00..4c7f86d 100644
+--- a/crates/rvvdk-datamover/src/io_uring/operation.rs
++++ b/crates/rvvdk-datamover/src/io_uring/operation.rs
+@@ -1,3 +1,4 @@
++use super::IoUringFile;
+ use rvvdk_core::BufferGuard;
+ 
+ #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+@@ -7,6 +8,7 @@ pub enum IoUringOperationKind {
+ }
+ 
+ pub(crate) struct InFlightOperation {
++    _file: IoUringFile,
+     user_data: u64,
+     kind: IoUringOperationKind,
+     offset: u64,
+@@ -16,6 +18,7 @@ pub(crate) struct InFlightOperation {
+ 
+ impl InFlightOperation {
+     pub(crate) fn new(
++        file: IoUringFile,
+         user_data: u64,
+         kind: IoUringOperationKind,
+         offset: u64,
+@@ -23,6 +26,7 @@ impl InFlightOperation {
+         buffer: BufferGuard,
+     ) -> Self {
+         Self {
++            _file: file,
+             user_data,
+             kind,
+             offset,
+@@ -41,6 +45,10 @@ impl InFlightOperation {
+             buffer: self.buffer,
+         }
+     }
++
++    pub(crate) fn length(&self) -> usize {
++        self.length
++    }
+ }
+ 
+ pub struct CompletedOperation {
+diff --git a/crates/rvvdk-datamover/src/mover.rs b/crates/rvvdk-datamover/src/mover.rs
+index 313a01e..19c90e0 100644
+--- a/crates/rvvdk-datamover/src/mover.rs
++++ b/crates/rvvdk-datamover/src/mover.rs
+@@ -190,8 +190,8 @@ impl DataMover {
+                     .max(self.options.buffer_alignment());
+ 
+                 let stats = copy_file_range_with_options(
+-                    source.raw_fd(),
+-                    destination.raw_fd(),
++                    source.as_fd(),
++                    destination.as_fd(),
+                     offset,
+                     length,
+                     self.options.block_size(),
+@@ -762,8 +762,8 @@ impl DataMover {
+         let started = Instant::now();
+ 
+         let stats = copy_extent_plan_with_destination(
+-            source_backend.raw_fd(),
+-            destination_backend.raw_fd(),
++            source_backend.as_fd(),
++            destination_backend.as_fd(),
+             destination,
+             &native_plan,
+             plan.block_size(),
+diff --git a/crates/rvvdk-datamover/tests/io_uring.rs b/crates/rvvdk-datamover/tests/io_uring.rs
+index e22b9e3..64e57b6 100644
+--- a/crates/rvvdk-datamover/tests/io_uring.rs
++++ b/crates/rvvdk-datamover/tests/io_uring.rs
+@@ -1,170 +1,78 @@
+ #![cfg(target_os = "linux")]
+ 
+ use std::fs::{self, OpenOptions};
+-use std::os::fd::AsRawFd;
+-use std::path::PathBuf;
++use std::os::fd::AsFd;
+ use std::time::{SystemTime, UNIX_EPOCH};
+ 
+-use rvvdk_core::AlignedBuffer;
+-use rvvdk_datamover::io_uring::IoUringEngine;
++use rvvdk_core::BufferPool;
++use rvvdk_datamover::io_uring::{IoUringEngine, IoUringFile};
+ 
+-const ALIGNMENT: usize = 4096;
+-const TRANSFER_SIZE: usize = 4096;
+-
+-fn temporary_path(name: &str) -> PathBuf {
+-    let unique = SystemTime::now()
+-        .duration_since(UNIX_EPOCH)
+-        .expect("system clock must be after UNIX epoch")
+-        .as_nanos();
+-
+-    std::env::temp_dir().join(format!("rvvdk-io-uring-{name}-{unique}.img"))
+-}
+-
+-#[test]
+-fn positional_write_and_read_round_trip() {
+-    let path = temporary_path("round-trip");
++const BLOCK: usize = 4096;
+ 
++fn positional_round_trip(offsets: &[u64]) {
++    let path = std::env::temp_dir().join(format!(
++        "rvvdk-owned-positional-{}-{}.img",
++        std::process::id(),
++        SystemTime::now()
++            .duration_since(UNIX_EPOCH)
++            .unwrap()
++            .as_nanos()
++    ));
+     let file = OpenOptions::new()
+         .read(true)
+         .write(true)
+-        .create(true)
+-        .truncate(true)
++        .create_new(true)
+         .open(&path)
+         .unwrap();
+-
+-    file.set_len(TRANSFER_SIZE as u64).unwrap();
+-
++    fs::remove_file(path).unwrap();
++    file.set_len((4 * BLOCK) as u64).unwrap();
++    let endpoint = IoUringFile::new(file.as_fd()).unwrap();
++    let pool = BufferPool::new(1, BLOCK, BLOCK).unwrap();
+     let mut engine = IoUringEngine::new(8).unwrap();
++    for (index, offset) in offsets.iter().copied().enumerate() {
++        let value = index as u8 + 1;
++        let mut buffer = pool.acquire();
++        buffer.as_mut_slice().fill(value);
++        engine
++            .submit_owned_write(&endpoint, offset, BLOCK, buffer)
++            .unwrap();
++        let completion = engine.wait_owned_completion().unwrap();
++        assert_eq!(completion.bytes_transferred(), BLOCK);
++        drop(completion);
++        engine
++            .submit_owned_read(&endpoint, offset, BLOCK, pool.acquire())
++            .unwrap();
++        let completion = engine.wait_owned_completion().unwrap();
++        assert_eq!(completion.bytes_transferred(), BLOCK);
++        assert!(completion.buffer().iter().all(|byte| *byte == value));
++        drop(completion);
++    }
++    assert_eq!(engine.in_flight(), 0);
++    assert_eq!(pool.available(), 1);
++}
+ 
+-    let mut write_buffer = AlignedBuffer::new(TRANSFER_SIZE, ALIGNMENT).unwrap();
+-
+-    write_buffer.fill(0x5a);
+-
+-    let written = engine
+-        .write_at(file.as_raw_fd(), 0, write_buffer.as_slice())
+-        .unwrap();
+-
+-    assert_eq!(written, TRANSFER_SIZE,);
+-
+-    assert_eq!(engine.in_flight(), 0,);
+-
+-    let mut read_buffer = AlignedBuffer::new(TRANSFER_SIZE, ALIGNMENT).unwrap();
+-
+-    let read = engine
+-        .read_at(file.as_raw_fd(), 0, read_buffer.as_mut_slice())
+-        .unwrap();
+-
+-    assert_eq!(read, TRANSFER_SIZE,);
+-
+-    assert_eq!(engine.in_flight(), 0,);
+-
+-    assert_eq!(read_buffer.as_slice(), write_buffer.as_slice(),);
+-
+-    drop(file);
+-
+-    fs::remove_file(path).unwrap();
++#[test]
++fn positional_write_and_read_round_trip() {
++    positional_round_trip(&[0]);
+ }
+ 
+ #[test]
+ fn positional_io_respects_offsets() {
+-    const FILE_SIZE: usize = TRANSFER_SIZE * 4;
+-
+-    let path = temporary_path("offsets");
+-
+-    let file = OpenOptions::new()
+-        .read(true)
+-        .write(true)
+-        .create(true)
+-        .truncate(true)
+-        .open(&path)
+-        .unwrap();
+-
+-    file.set_len(FILE_SIZE as u64).unwrap();
+-
+-    let mut engine = IoUringEngine::new(8).unwrap();
+-
+-    let mut first = AlignedBuffer::new(TRANSFER_SIZE, ALIGNMENT).unwrap();
+-
+-    first.fill(0x11);
+-
+-    let mut second = AlignedBuffer::new(TRANSFER_SIZE, ALIGNMENT).unwrap();
+-
+-    second.fill(0x22);
+-
+-    let first_offset = TRANSFER_SIZE as u64;
+-
+-    let second_offset = (TRANSFER_SIZE * 3) as u64;
+-
+-    let written = engine
+-        .write_at(file.as_raw_fd(), first_offset, first.as_slice())
+-        .unwrap();
+-
+-    assert_eq!(written, TRANSFER_SIZE,);
+-
+-    let written = engine
+-        .write_at(file.as_raw_fd(), second_offset, second.as_slice())
+-        .unwrap();
+-
+-    assert_eq!(written, TRANSFER_SIZE,);
+-
+-    let mut first_read = AlignedBuffer::new(TRANSFER_SIZE, ALIGNMENT).unwrap();
+-
+-    let read = engine
+-        .read_at(file.as_raw_fd(), first_offset, first_read.as_mut_slice())
+-        .unwrap();
+-
+-    assert_eq!(read, TRANSFER_SIZE,);
+-
+-    assert_eq!(first_read.as_slice(), first.as_slice(),);
+-
+-    let mut second_read = AlignedBuffer::new(TRANSFER_SIZE, ALIGNMENT).unwrap();
+-
+-    let read = engine
+-        .read_at(file.as_raw_fd(), second_offset, second_read.as_mut_slice())
+-        .unwrap();
+-
+-    assert_eq!(read, TRANSFER_SIZE,);
+-
+-    assert_eq!(second_read.as_slice(), second.as_slice(),);
+-
+-    assert_eq!(engine.in_flight(), 0,);
+-
+-    drop(file);
+-
+-    fs::remove_file(path).unwrap();
++    positional_round_trip(&[BLOCK as u64, (3 * BLOCK) as u64]);
+ }
+ 
+ #[test]
+ fn positional_read_reports_end_of_file() {
+-    let path = temporary_path("eof");
+-
+-    let file = OpenOptions::new()
+-        .read(true)
+-        .write(true)
+-        .create(true)
+-        .truncate(true)
+-        .open(&path)
+-        .unwrap();
+-
+-    file.set_len(TRANSFER_SIZE as u64).unwrap();
+-
++    let file = std::fs::File::open("/dev/null").unwrap();
++    let endpoint = IoUringFile::new(file.as_fd()).unwrap();
++    let pool = BufferPool::new(1, BLOCK, BLOCK).unwrap();
+     let mut engine = IoUringEngine::new(8).unwrap();
+-
+-    let mut buffer = AlignedBuffer::new(TRANSFER_SIZE, ALIGNMENT).unwrap();
+-
+-    let read = engine
+-        .read_at(
+-            file.as_raw_fd(),
+-            TRANSFER_SIZE as u64,
+-            buffer.as_mut_slice(),
+-        )
++    engine
++        .submit_owned_read(&endpoint, BLOCK as u64, BLOCK, pool.acquire())
+         .unwrap();
+-
+-    assert_eq!(read, 0,);
+-
+-    assert_eq!(engine.in_flight(), 0,);
+-
+-    drop(file);
+-
+-    fs::remove_file(path).unwrap();
++    let completed = engine.wait_owned_completion().unwrap();
++    assert_eq!(completed.bytes_transferred(), 0);
++    drop(completed);
++    assert_eq!(engine.in_flight(), 0);
++    assert_eq!(pool.available(), 1);
+ }
+diff --git a/crates/rvvdk-datamover/tests/io_uring_copy.rs b/crates/rvvdk-datamover/tests/io_uring_copy.rs
+index 3b93ea4..57cff85 100644
+--- a/crates/rvvdk-datamover/tests/io_uring_copy.rs
++++ b/crates/rvvdk-datamover/tests/io_uring_copy.rs
+@@ -1,7 +1,7 @@
+ #![cfg(target_os = "linux")]
+ 
+ use std::fs::{self, OpenOptions};
+-use std::os::fd::AsRawFd;
++use std::os::fd::AsFd;
+ use std::path::PathBuf;
+ use std::time::{SystemTime, UNIX_EPOCH};
+ 
+@@ -67,8 +67,8 @@ fn copies_file_with_io_uring_pipeline() {
+         .unwrap();
+ 
+     let stats = copy_file_range(
+-        source.as_raw_fd(),
+-        destination.as_raw_fd(),
++        source.as_fd(),
++        destination.as_fd(),
+         0,
+         FILE_SIZE as u64,
+         BLOCK_SIZE,
+@@ -117,8 +117,8 @@ fn copies_with_multiple_queue_depths() {
+             .unwrap();
+ 
+         let stats = copy_file_range(
+-            source.as_raw_fd(),
+-            destination.as_raw_fd(),
++            source.as_fd(),
++            destination.as_fd(),
+             0,
+             FILE_SIZE as u64,
+             BLOCK_SIZE,
+@@ -197,8 +197,8 @@ fn copies_partial_final_block() {
+         .unwrap();
+ 
+     let stats = copy_file_range(
+-        source.as_raw_fd(),
+-        destination.as_raw_fd(),
++        source.as_fd(),
++        destination.as_fd(),
+         0,
+         file_size as u64,
+         BLOCK_SIZE,
+@@ -261,8 +261,8 @@ fn copies_non_zero_file_range() {
+         .unwrap();
+ 
+     let stats = copy_file_range(
+-        source.as_raw_fd(),
+-        destination.as_raw_fd(),
++        source.as_fd(),
++        destination.as_fd(),
+         PREFIX as u64,
+         COPY_LENGTH as u64,
+         BLOCK_SIZE,
+@@ -330,8 +330,8 @@ fn zero_length_copy_does_nothing() {
+         .unwrap();
+ 
+     let stats = copy_file_range(
+-        source.as_raw_fd(),
+-        destination.as_raw_fd(),
++        source.as_fd(),
++        destination.as_fd(),
+         0,
+         0,
+         BLOCK_SIZE,
+@@ -379,8 +379,8 @@ fn pipeline_uses_reads_and_writes_concurrently() {
+         .unwrap();
+ 
+     let stats = copy_file_range(
+-        source.as_raw_fd(),
+-        destination.as_raw_fd(),
++        source.as_fd(),
++        destination.as_fd(),
+         0,
+         FILE_SIZE as u64,
+         BLOCK_SIZE,
+@@ -435,8 +435,8 @@ fn supports_custom_read_window() {
+     let options = IoUringExecutionOptions::with_read_window(8, 3).unwrap();
+ 
+     let stats = copy_file_range_with_options(
+-        source.as_raw_fd(),
+-        destination.as_raw_fd(),
++        source.as_fd(),
++        destination.as_fd(),
+         0,
+         FILE_SIZE as u64,
+         BLOCK_SIZE,
+diff --git a/crates/rvvdk-datamover/tests/io_uring_extent_copy.rs b/crates/rvvdk-datamover/tests/io_uring_extent_copy.rs
+index 4ea59f1..6560d04 100644
+--- a/crates/rvvdk-datamover/tests/io_uring_extent_copy.rs
++++ b/crates/rvvdk-datamover/tests/io_uring_extent_copy.rs
+@@ -1,7 +1,7 @@
+ #![cfg(target_os = "linux")]
+ 
+ use std::fs::{self, OpenOptions};
+-use std::os::fd::AsRawFd;
++use std::os::fd::AsFd;
+ use std::path::PathBuf;
+ use std::time::{SystemTime, UNIX_EPOCH};
+ 
+@@ -76,8 +76,8 @@ fn copies_multiple_data_extents() {
+     .unwrap();
+ 
+     let stats = copy_extent_plan(
+-        source.as_raw_fd(),
+-        destination.as_raw_fd(),
++        source.as_fd(),
++        destination.as_fd(),
+         &plan,
+         BLOCK_SIZE,
+         4096,
+@@ -129,8 +129,8 @@ fn copies_zero_extent_with_destination_semantics() {
+     .unwrap();
+ 
+     let stats = copy_extent_plan_with_destination(
+-        source_backend.as_raw_fd(),
+-        destination.device().as_raw_fd(),
++        source_backend.as_fd(),
++        destination.device().as_fd(),
+         &destination,
+         &plan,
+         BLOCK_SIZE,
+@@ -199,8 +199,8 @@ fn copies_data_zero_data_extent_plan() {
+     .unwrap();
+ 
+     let stats = copy_extent_plan_with_destination(
+-        source_backend.as_raw_fd(),
+-        destination.device().as_raw_fd(),
++        source_backend.as_fd(),
++        destination.device().as_fd(),
+         &destination,
+         &plan,
+         BLOCK_SIZE,
+@@ -265,8 +265,8 @@ fn copies_hole_extent_with_destination_semantics() {
+     .unwrap();
+ 
+     let stats = copy_extent_plan_with_destination(
+-        source_backend.as_raw_fd(),
+-        destination.device().as_raw_fd(),
++        source_backend.as_fd(),
++        destination.device().as_fd(),
+         &destination,
+         &plan,
+         BLOCK_SIZE,
+@@ -336,8 +336,8 @@ fn copies_data_hole_data_extent_plan() {
+     .unwrap();
+ 
+     let stats = copy_extent_plan_with_destination(
+-        source_backend.as_raw_fd(),
+-        destination.device().as_raw_fd(),
++        source_backend.as_fd(),
++        destination.device().as_fd(),
+         &destination,
+         &plan,
+         BLOCK_SIZE,
+@@ -402,8 +402,8 @@ fn low_level_extent_copy_still_rejects_zero() {
+     .unwrap();
+ 
+     let result = copy_extent_plan(
+-        source.as_raw_fd(),
+-        destination.as_raw_fd(),
++        source.as_fd(),
++        destination.as_fd(),
+         &plan,
+         BLOCK_SIZE,
+         4096,
+@@ -448,8 +448,8 @@ fn low_level_extent_copy_still_rejects_hole() {
+     .unwrap();
+ 
+     let result = copy_extent_plan(
+-        source.as_raw_fd(),
+-        destination.as_raw_fd(),
++        source.as_fd(),
++        destination.as_fd(),
+         &plan,
+         BLOCK_SIZE,
+         4096,
+diff --git a/crates/rvvdk-datamover/tests/io_uring_owned.rs b/crates/rvvdk-datamover/tests/io_uring_owned.rs
+index 14de2b4..3410bc9 100644
+--- a/crates/rvvdk-datamover/tests/io_uring_owned.rs
++++ b/crates/rvvdk-datamover/tests/io_uring_owned.rs
+@@ -1,12 +1,12 @@
+ #![cfg(target_os = "linux")]
+ 
+ use std::fs::{self, OpenOptions};
+-use std::os::fd::AsRawFd;
++use std::os::fd::AsFd;
+ use std::path::PathBuf;
+ use std::time::{SystemTime, UNIX_EPOCH};
+ 
+ use rvvdk_core::BufferPool;
+-use rvvdk_datamover::io_uring::{IoUringEngine, IoUringOperationKind};
++use rvvdk_datamover::io_uring::{IoUringEngine, IoUringFile, IoUringOperationKind};
+ 
+ const ALIGNMENT: usize = 4096;
+ const BLOCK_SIZE: usize = 4096;
+@@ -47,7 +47,12 @@ fn owned_write_completes_and_returns_buffer() {
+     let mut engine = IoUringEngine::new(8).unwrap();
+ 
+     let user_data = engine
+-        .submit_owned_write(file.as_raw_fd(), 0, BLOCK_SIZE, buffer)
++        .submit_owned_write(
++            &IoUringFile::new(file.as_fd()).unwrap(),
++            0,
++            BLOCK_SIZE,
++            buffer,
++        )
+         .unwrap();
+ 
+     assert_eq!(engine.in_flight(), 1,);
+@@ -113,7 +118,12 @@ fn owned_read_returns_completed_buffer_with_data() {
+     let mut engine = IoUringEngine::new(8).unwrap();
+ 
+     let user_data = engine
+-        .submit_owned_read(file.as_raw_fd(), 0, BLOCK_SIZE, buffer)
++        .submit_owned_read(
++            &IoUringFile::new(file.as_fd()).unwrap(),
++            0,
++            BLOCK_SIZE,
++            buffer,
++        )
+         .unwrap();
+ 
+     assert_eq!(engine.in_flight(), 1,);
+@@ -189,7 +199,7 @@ fn multiple_owned_reads_remain_in_flight() {
+ 
+         let user_data = engine
+             .submit_owned_read(
+-                file.as_raw_fd(),
++                &IoUringFile::new(file.as_fd()).unwrap(),
+                 (block * BLOCK_SIZE) as u64,
+                 BLOCK_SIZE,
+                 buffer,
+@@ -311,7 +321,7 @@ fn multiple_owned_writes_remain_in_flight() {
+ 
+         let user_data = engine
+             .submit_owned_write(
+-                file.as_raw_fd(),
++                &IoUringFile::new(file.as_fd()).unwrap(),
+                 (block * BLOCK_SIZE) as u64,
+                 BLOCK_SIZE,
+                 buffer,
+@@ -401,7 +411,12 @@ fn owned_submission_rejects_oversized_request() {
+ 
+     let mut engine = IoUringEngine::new(8).unwrap();
+ 
+-    let result = engine.submit_owned_read(file.as_raw_fd(), 0, BLOCK_SIZE * 2, buffer);
++    let result = engine.submit_owned_read(
++        &IoUringFile::new(file.as_fd()).unwrap(),
++        0,
++        BLOCK_SIZE * 2,
++        buffer,
++    );
+ 
+     assert!(matches!(
+         result,
+@@ -458,7 +473,7 @@ fn drain_returns_all_completed_operations() {
+ 
+         engine
+             .submit_owned_read(
+-                file.as_raw_fd(),
++                &IoUringFile::new(file.as_fd()).unwrap(),
+                 (block * BLOCK_SIZE) as u64,
+                 BLOCK_SIZE,
+                 buffer,
+@@ -525,7 +540,7 @@ fn dropping_engine_with_outstanding_operations_returns_buffers() {
+ 
+             engine
+                 .submit_owned_read(
+-                    file.as_raw_fd(),
++                    &IoUringFile::new(file.as_fd()).unwrap(),
+                     (block * BLOCK_SIZE) as u64,
+                     BLOCK_SIZE,
+                     buffer,
+diff --git a/crates/rvvdk-datamover/tests/support/test_block_device.rs b/crates/rvvdk-datamover/tests/support/test_block_device.rs
+index a06fbe4..01dece0 100644
+--- a/crates/rvvdk-datamover/tests/support/test_block_device.rs
++++ b/crates/rvvdk-datamover/tests/support/test_block_device.rs
+@@ -1,5 +1,5 @@
+ use std::fs::{File, OpenOptions};
+-use std::os::fd::{AsRawFd, RawFd};
++use std::os::fd::{AsFd, AsRawFd, BorrowedFd, RawFd};
+ use std::os::unix::fs::FileExt;
+ use std::path::Path;
+ 
+@@ -219,6 +219,12 @@ impl BlockDevice for TestExtentBlockDevice {
+     }
+ }
+ 
++impl AsFd for TestExtentBlockDevice {
++    fn as_fd(&self) -> BorrowedFd<'_> {
++        self.file.as_fd()
++    }
++}
++
+ impl LinuxFdBackend for TestExtentBlockDevice {
+     fn raw_fd(&self) -> RawFd {
+         self.file.as_raw_fd()
+diff --git a/crates/rvvdk-local/src/file.rs b/crates/rvvdk-local/src/file.rs
+index 1d88e68..bf79153 100644
+--- a/crates/rvvdk-local/src/file.rs
++++ b/crates/rvvdk-local/src/file.rs
+@@ -1,7 +1,7 @@
+ use crate::DirectIoAlignment;
+ use std::fs::File;
+ #[cfg(target_os = "linux")]
+-use std::os::fd::AsRawFd;
++use std::os::fd::{AsFd, AsRawFd, BorrowedFd};
+ use std::os::unix::fs::{FileExt, OpenOptionsExt};
+ use std::path::Path;
+ 
+@@ -308,6 +308,13 @@ impl AsRawFd for LocalFileBlockDevice {
+     }
+ }
+ 
++#[cfg(target_os = "linux")]
++impl AsFd for LocalFileBlockDevice {
++    fn as_fd(&self) -> BorrowedFd<'_> {
++        self.file.as_fd()
++    }
++}
++
+ #[cfg(target_os = "linux")]
+ impl LinuxFdBackend for LocalFileBlockDevice {
+     fn raw_fd(&self) -> std::os::fd::RawFd {
+diff --git a/crates/rvvdk-platform/src/linux.rs b/crates/rvvdk-platform/src/linux.rs
+index f8f12dc..fb46e3d 100644
+--- a/crates/rvvdk-platform/src/linux.rs
++++ b/crates/rvvdk-platform/src/linux.rs
+@@ -1,4 +1,4 @@
+-use std::os::fd::RawFd;
++use std::os::fd::{AsFd, AsRawFd, RawFd};
+ 
+ #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+ pub struct LinuxFdCapabilities {
+@@ -29,8 +29,10 @@ impl LinuxFdCapabilities {
+     }
+ }
+ 
+-pub trait LinuxFdBackend {
+-    fn raw_fd(&self) -> RawFd;
++pub trait LinuxFdBackend: AsFd {
++    fn raw_fd(&self) -> RawFd {
++        self.as_fd().as_raw_fd()
++    }
+ 
+     fn linux_fd_capabilities(&self) -> LinuxFdCapabilities;
+ }
+diff --git a/crates/rvvdk-datamover/benches/native_lifetime.rs b/crates/rvvdk-datamover/benches/native_lifetime.rs
+new file mode 100644
+index 0000000..0285725
+--- /dev/null
++++ b/crates/rvvdk-datamover/benches/native_lifetime.rs
+@@ -0,0 +1,111 @@
++mod support;
++
++use std::time::{Duration, Instant};
++
++use criterion::{Criterion, SamplingMode, Throughput, criterion_group, criterion_main};
++use rvvdk_core::{BlockDevice, RawDisk};
++use rvvdk_datamover::{CopyOptions, DataMover, ExecutionStrategy, IoUringExecutionOptions};
++use rvvdk_local::LocalFileBlockDevice;
++
++use support::{
++    MIB, benchmark_path, create_incompressible_file, ensure_benchmark_directory,
++    incompressible_buffer, remove_file,
++};
++
++const SIZE: usize = 16 * MIB;
++
++fn fd_count() -> usize {
++    std::fs::read_dir("/proc/self/fd").unwrap().count()
++}
++
++fn native_lifetime(criterion: &mut Criterion) {
++    ensure_benchmark_directory();
++    let source_path = benchmark_path("lifetime-source");
++    let destination_path = benchmark_path("lifetime-destination");
++    let expected = incompressible_buffer(SIZE, 0x5256_5644_4b33);
++    let reset = incompressible_buffer(SIZE, 0x5256_5644_4b34);
++    create_incompressible_file(&source_path, SIZE, 0x5256_5644_4b33);
++    std::fs::write(&destination_path, &reset).unwrap();
++    let reset_device = LocalFileBlockDevice::open_read_write(&destination_path).unwrap();
++    let mut actual = vec![0; SIZE];
++
++    for direct in [false, true] {
++        let source = if direct {
++            LocalFileBlockDevice::open_direct_read_only(&source_path).unwrap()
++        } else {
++            LocalFileBlockDevice::open_read_only(&source_path).unwrap()
++        };
++        let destination = if direct {
++            LocalFileBlockDevice::open_direct_read_write(&destination_path).unwrap()
++        } else {
++            LocalFileBlockDevice::open_read_write(&destination_path).unwrap()
++        };
++        let source = RawDisk::new(source);
++        let destination = RawDisk::new(destination);
++        let profile = if direct { "direct" } else { "buffered" };
++        let mut group = criterion.benchmark_group(format!("native_lifetime/{profile}"));
++        group.sampling_mode(SamplingMode::Flat);
++        group.throughput(Throughput::Bytes(SIZE as u64));
++        for (queue, block) in [
++            (1, 64 * 1024),
++            (8, 64 * 1024),
++            (8, 4096),
++            (8, MIB),
++            (0, 64 * 1024),
++        ] {
++            let native = queue != 0;
++            let mover = if native {
++                DataMover::with_execution_strategy(
++                    CopyOptions::new(block).unwrap(),
++                    ExecutionStrategy::IoUring(IoUringExecutionOptions::new(queue).unwrap()),
++                )
++            } else {
++                DataMover::new(CopyOptions::with_concurrency(block, 4096, 4).unwrap())
++            };
++            let name = if native {
++                format!("q{queue}_b{block}")
++            } else {
++                "threaded_control".into()
++            };
++            group.bench_function(name, |bencher| {
++                bencher.iter_custom(|iterations| {
++                    let before = fd_count();
++                    let mut elapsed = Duration::ZERO;
++                    for _ in 0..iterations {
++                        reset_device.write_all_at(0, &reset).unwrap();
++                        reset_device.flush().unwrap();
++                        let started = Instant::now();
++                        let (read, written) = if native {
++                            let stats = mover
++                                .copy_native(source.device(), destination.device(), 0, SIZE as u64)
++                                .unwrap();
++                            // copy_native does not flush; match the threaded boundary.
++                            destination.device().flush().unwrap();
++                            (stats.bytes_read(), stats.bytes_written())
++                        } else {
++                            let stats = mover.copy(&source, &destination).unwrap();
++                            (stats.bytes_read(), stats.bytes_written())
++                        };
++                        elapsed += started.elapsed();
++                        assert_eq!((read, written), (SIZE as u64, SIZE as u64));
++                        reset_device.read_exact_at(0, &mut actual).unwrap();
++                        assert_eq!(actual, expected);
++                        assert_eq!(fd_count(), before, "copy leaked file descriptors");
++                    }
++                    elapsed
++                });
++            });
++        }
++        group.finish();
++    }
++    drop(reset_device);
++    remove_file(source_path);
++    remove_file(destination_path);
++}
++
++criterion_group! {
++    name = benches;
++    config = Criterion::default().sample_size(20).warm_up_time(Duration::from_millis(300)).measurement_time(Duration::from_secs(2));
++    targets = native_lifetime
++}
++criterion_main!(benches);
+diff --git a/crates/rvvdk-datamover/src/io_uring/engine/faults.rs b/crates/rvvdk-datamover/src/io_uring/engine/faults.rs
+new file mode 100644
+index 0000000..d2dee95
+--- /dev/null
++++ b/crates/rvvdk-datamover/src/io_uring/engine/faults.rs
+@@ -0,0 +1,29 @@
++use std::collections::VecDeque;
++use std::io::ErrorKind;
++
++pub(super) enum Enter {
++    Before(ErrorKind),
++    After(ErrorKind),
++    Partial(bool),
++    PanicAfterSubmit,
++}
++
++#[derive(Default)]
++pub(super) struct Faults {
++    pub enter: VecDeque<Enter>,
++    pub hide_completions: bool,
++    pub completion: Option<(Option<u64>, Option<i32>, Option<u32>)>,
++}
++
++impl Faults {
++    pub fn transform(&mut self, (id, result, flags): (u64, i32, u32)) -> (u64, i32, u32) {
++        match self.completion.take() {
++            Some((new_id, new_result, new_flags)) => (
++                new_id.unwrap_or(id),
++                new_result.unwrap_or(result),
++                new_flags.unwrap_or(flags),
++            ),
++            None => (id, result, flags),
++        }
++    }
++}
+diff --git a/crates/rvvdk-datamover/src/io_uring/engine/tests.rs b/crates/rvvdk-datamover/src/io_uring/engine/tests.rs
+new file mode 100644
+index 0000000..a54d491
+--- /dev/null
++++ b/crates/rvvdk-datamover/src/io_uring/engine/tests.rs
+@@ -0,0 +1,382 @@
++use std::fs::{File, OpenOptions};
++use std::io::ErrorKind;
++use std::os::unix::fs::FileExt;
++use std::process::Command;
++use std::sync::atomic::{AtomicUsize, Ordering};
++use std::time::{Duration, Instant};
++
++use rvvdk_core::BufferPool;
++
++use super::{faults::Enter, *};
++
++const BLOCK: usize = 4096;
++static NEXT: AtomicUsize = AtomicUsize::new(0);
++
++fn file() -> File {
++    let path = std::env::temp_dir().join(format!(
++        "rvvdk-r03-{}-{}.img",
++        std::process::id(),
++        NEXT.fetch_add(1, Ordering::Relaxed)
++    ));
++    let file = OpenOptions::new()
++        .read(true)
++        .write(true)
++        .create_new(true)
++        .open(&path)
++        .unwrap();
++    std::fs::remove_file(path).unwrap();
++    file.write_all_at(&vec![0x5a; 4 * BLOCK], 0).unwrap();
++    file
++}
++
++fn setup(count: usize) -> (IoUringEngine, BufferPool, IoUringFile) {
++    let file = file();
++    let endpoint = IoUringFile::new(file.as_fd()).unwrap();
++    let pool = BufferPool::new(count, BLOCK, BLOCK).unwrap();
++    let mut engine = IoUringEngine::new(count as u32).unwrap();
++    for offset in 0..count {
++        engine
++            .submit_owned_read(&endpoint, (offset * BLOCK) as u64, BLOCK, pool.acquire())
++            .unwrap();
++    }
++    (engine, pool, endpoint)
++}
++
++fn bounded(name: &str, test: impl FnOnce()) {
++    const CHILD: &str = "RVVDK_LIFETIME_TEST_CHILD";
++    if std::env::var(CHILD).as_deref() == Ok(name) {
++        test();
++        return;
++    }
++    let mut child = Command::new(std::env::current_exe().unwrap())
++        .args([
++            "--exact",
++            &format!("io_uring::engine::tests::{name}"),
++            "--nocapture",
++        ])
++        .env(CHILD, name)
++        .spawn()
++        .unwrap();
++    let deadline = Instant::now() + Duration::from_secs(10);
++    loop {
++        if let Some(status) = child.try_wait().unwrap() {
++            assert!(status.success(), "{name}: child failed");
++            return;
++        }
++        if Instant::now() >= deadline {
++            child.kill().unwrap();
++            child.wait().unwrap();
++            panic!("{name}: exceeded ten-second shutdown deadline");
++        }
++        std::thread::sleep(Duration::from_millis(10));
++    }
++}
++
++macro_rules! fault_test {
++    ($name:ident, $body:block) => {
++        #[test]
++        fn $name() {
++            bounded(stringify!($name), || $body);
++        }
++    };
++}
++
++#[test]
++fn creates_engine() {
++    let engine = IoUringEngine::new(8).unwrap();
++    assert_eq!(engine.queue_depth(), 8);
++    assert_eq!(engine.in_flight(), 0);
++}
++
++#[test]
++fn rejects_zero_queue_depth() {
++    assert!(matches!(
++        IoUringEngine::new(0),
++        Err(Error::InvalidIoUringQueueDepth)
++    ));
++}
++
++#[test]
++fn owned_completion_without_submission_fails() {
++    let mut engine = IoUringEngine::new(8).unwrap();
++    assert!(matches!(
++        engine.wait_owned_completion(),
++        Err(Error::IoUringNoInFlight)
++    ));
++}
++
++fault_test!(
++    interrupted_submit_and_wait_retry_without_releasing_buffers,
++    {
++        let (mut engine, pool, _) = setup(2);
++        engine.faults.enter.extend([
++            Enter::Before(ErrorKind::Interrupted),
++            Enter::After(ErrorKind::Interrupted),
++        ]);
++        engine.submit().unwrap();
++        assert_eq!(pool.available(), 0);
++        engine
++            .faults
++            .enter
++            .push_back(Enter::Before(ErrorKind::Interrupted));
++        let done = engine.drain().unwrap();
++        assert_eq!(done.len(), 2);
++        assert!(done.iter().all(|c| c.buffer().iter().all(|b| *b == 0x5a)));
++        assert_eq!(pool.available(), 0);
++        drop(done);
++        assert_eq!(pool.available(), 2);
++    }
++);
++
++fault_test!(submit_errors_before_and_after_kernel_entry_keep_owners, {
++    for fault in [
++        Enter::Before(ErrorKind::Other),
++        Enter::After(ErrorKind::Other),
++    ] {
++        let (mut engine, pool, endpoint) = setup(2);
++        engine.faults.enter.push_back(fault);
++        assert!(matches!(engine.submit(), Err(Error::Io(_))));
++        assert_eq!(engine.in_flight(), 2);
++        assert_eq!(pool.available(), 0);
++        let spare = BufferPool::new(1, BLOCK, BLOCK).unwrap();
++        assert!(matches!(
++            engine.submit_owned_read(&endpoint, 0, BLOCK, spare.acquire()),
++            Err(Error::IoUringEngineShutDown)
++        ));
++        assert_eq!(spare.available(), 1);
++        engine.shutdown().unwrap();
++        assert_eq!(pool.available(), 2);
++        assert_eq!(engine.quarantined_operations(), 0);
++    }
++});
++
++fault_test!(wait_error_retains_owners_until_shutdown_completes, {
++    let (mut engine, pool, _) = setup(2);
++    engine.submit().unwrap();
++    engine
++        .faults
++        .enter
++        .push_back(Enter::Before(ErrorKind::Other));
++    assert!(matches!(engine.wait_owned_completion(), Err(Error::Io(_))));
++    assert_eq!(pool.available(), 0);
++    engine.shutdown().unwrap();
++    assert_eq!(pool.available(), 2);
++});
++
++fault_test!(partial_submission_retains_submitted_and_queued_owners, {
++    for fail in [false, true] {
++        let (mut engine, pool, _) = setup(2);
++        engine.faults.enter.push_back(Enter::Partial(fail));
++        let result = engine.submit();
++        if fail {
++            assert!(matches!(result, Err(Error::Io(_))));
++        } else {
++            assert_eq!(result.unwrap(), 1);
++        }
++        assert_eq!(engine.in_flight(), 2);
++        assert_eq!(pool.available(), 0);
++        engine.shutdown().unwrap();
++        assert_eq!(pool.available(), 2);
++    }
++});
++
++fault_test!(unconfirmed_shutdown_retains_buffers_and_rejects_reuse, {
++    let (mut engine, pool, endpoint) = setup(2);
++    engine.submit().unwrap();
++    engine
++        .faults
++        .enter
++        .push_back(Enter::Before(ErrorKind::Other));
++    assert!(matches!(
++        engine.shutdown(),
++        Err(Error::IoUringShutdownUnconfirmed { operations: 2 })
++    ));
++    assert_eq!(pool.available(), 0);
++    assert_eq!(engine.quarantined_operations(), 2);
++    assert!(matches!(
++        engine.drain(),
++        Err(Error::IoUringShutdownUnconfirmed { operations: 2 })
++    ));
++    assert!(matches!(
++        engine.wait_owned_completion(),
++        Err(Error::IoUringShutdownUnconfirmed { operations: 2 })
++    ));
++    assert!(matches!(
++        engine.shutdown(),
++        Err(Error::IoUringShutdownUnconfirmed { operations: 2 })
++    ));
++    assert!(matches!(engine.submit(), Err(Error::IoUringEngineShutDown)));
++    let spare = BufferPool::new(1, BLOCK, BLOCK).unwrap();
++    assert!(matches!(
++        engine.submit_owned_write(&endpoint, 0, BLOCK, spare.acquire()),
++        Err(Error::IoUringEngineShutDown)
++    ));
++    drop(engine);
++    assert_eq!(pool.available(), 0);
++    assert_eq!(spare.available(), 1);
++});
++
++fault_test!(drop_after_fatal_wait_keeps_unconfirmed_owners, {
++    let (mut engine, pool, _) = setup(2);
++    engine
++        .faults
++        .enter
++        .push_back(Enter::Before(ErrorKind::Other));
++    drop(engine);
++    assert_eq!(pool.available(), 0);
++});
++
++fault_test!(unknown_or_nonfinal_completions_never_release_owners, {
++    for change in [(Some(u64::MAX), None, None), (None, None, Some(2))] {
++        let (mut engine, pool, _) = setup(2);
++        engine.faults.completion = Some(change);
++        assert!(matches!(
++            engine.wait_owned_completion(),
++            Err(Error::IoUringUnknownCompletion { .. })
++        ));
++        assert_eq!(pool.available(), 0);
++        assert!(matches!(
++            engine.shutdown(),
++            Err(Error::IoUringShutdownUnconfirmed { operations: 2 })
++        ));
++        assert_eq!(pool.available(), 0);
++    }
++});
++
++fault_test!(duplicate_completion_does_not_release_another_buffer, {
++    let (mut engine, pool, _) = setup(2);
++    let first = engine.wait_owned_completion().unwrap();
++    let id = first.user_data();
++    drop(first);
++    assert_eq!(pool.available(), 1);
++    engine.faults.completion = Some((Some(id), None, None));
++    assert!(matches!(
++        engine.wait_owned_completion(),
++        Err(Error::IoUringUnknownCompletion { .. })
++    ));
++    assert!(engine.shutdown().is_err());
++    assert_eq!(pool.available(), 1);
++});
++
++fault_test!(missing_completion_retains_owners_without_spinning, {
++    let (mut engine, pool, _) = setup(2);
++    engine.faults.hide_completions = true;
++    assert!(matches!(
++        engine.wait_owned_completion(),
++        Err(Error::IoUringCompletionMissing)
++    ));
++    assert!(engine.shutdown().is_err());
++    assert_eq!(pool.available(), 0);
++});
++
++fault_test!(malformed_results_release_only_the_confirmed_operation, {
++    for result in [i32::MIN, (BLOCK + 1) as i32] {
++        let (mut engine, pool, _) = setup(2);
++        engine.faults.completion = Some((None, Some(result), None));
++        assert!(matches!(
++            engine.wait_owned_completion(),
++            Err(Error::CorruptMetadata(_))
++        ));
++        assert_eq!(pool.available(), 1);
++        engine.shutdown().unwrap();
++        assert_eq!(pool.available(), 2);
++    }
++});
++
++fault_test!(negative_cqe_does_not_prevent_draining_other_operations, {
++    let read_only = File::open("/dev/zero").unwrap();
++    let endpoint = IoUringFile::new(read_only.as_fd()).unwrap();
++    let pool = BufferPool::new(2, BLOCK, BLOCK).unwrap();
++    let mut engine = IoUringEngine::new(2).unwrap();
++    for _ in 0..2 {
++        engine
++            .submit_owned_write(&endpoint, 0, BLOCK, pool.acquire())
++            .unwrap();
++    }
++    assert!(matches!(engine.shutdown(), Err(Error::Io(_))));
++    assert_eq!(pool.available(), 2);
++    assert_eq!(engine.quarantined_operations(), 0);
++});
++
++fault_test!(queued_fd_survives_caller_close_and_descriptor_reuse, {
++    let original = file();
++    let original_fd = original.as_raw_fd();
++    let endpoint = IoUringFile::new(original.as_fd()).unwrap();
++    let pool = BufferPool::new(1, BLOCK, BLOCK).unwrap();
++    let mut engine = IoUringEngine::new(1).unwrap();
++    engine
++        .submit_owned_read(&endpoint, 0, BLOCK, pool.acquire())
++        .unwrap();
++    drop(endpoint);
++    drop(original);
++    let replacement = File::open("/dev/zero").unwrap();
++    assert_eq!(
++        replacement.as_raw_fd(),
++        original_fd,
++        "isolated child must reuse the original FD"
++    );
++    let done = engine.wait_owned_completion().unwrap();
++    assert!(done.buffer().iter().all(|b| *b == 0x5a));
++    drop(done);
++    assert_eq!(pool.available(), 1);
++});
++
++fault_test!(capacity_error_returns_only_unpublished_buffer, {
++    let (mut engine, pool, endpoint) = setup(1);
++    engine.submit().unwrap();
++    let spare = BufferPool::new(1, BLOCK, BLOCK).unwrap();
++    assert!(matches!(
++        engine.submit_owned_read(&endpoint, 0, BLOCK, spare.acquire()),
++        Err(Error::IoUringQueueFull { .. })
++    ));
++    assert_eq!(pool.available(), 0);
++    assert_eq!(spare.available(), 1);
++    engine.shutdown().unwrap();
++    assert_eq!(pool.available(), 1);
++});
++
++fault_test!(shutdown_is_idempotent_and_returns_all_confirmed_buffers, {
++    let (mut engine, pool, _) = setup(2);
++    engine.shutdown().unwrap();
++    engine.shutdown().unwrap();
++    assert_eq!(pool.available(), 2);
++    assert_eq!(engine.quarantined_operations(), 0);
++    assert!(matches!(engine.submit(), Err(Error::IoUringEngineShutDown)));
++});
++
++fault_test!(user_data_wraparound_skips_live_ids, {
++    let endpoint = IoUringFile::new(file().as_fd()).unwrap();
++    let pool = BufferPool::new(3, BLOCK, BLOCK).unwrap();
++    let mut engine = IoUringEngine::new(3).unwrap();
++    let first = engine
++        .submit_owned_read(&endpoint, 0, BLOCK, pool.acquire())
++        .unwrap();
++    assert_eq!(first, 1);
++    engine.next_user_data = u64::MAX;
++    let last = engine
++        .submit_owned_read(&endpoint, 0, BLOCK, pool.acquire())
++        .unwrap();
++    assert_eq!(last, u64::MAX);
++    let wrapped = engine
++        .submit_owned_read(&endpoint, 0, BLOCK, pool.acquire())
++        .unwrap();
++    assert_eq!(wrapped, 2, "must skip the still-live operation with id 1");
++    assert_eq!(pool.available(), 0);
++    let completed = engine.drain().unwrap();
++    assert_eq!(completed.len(), 3);
++    drop(completed);
++    assert_eq!(pool.available(), 3);
++});
++
++fault_test!(
++    unwinding_after_submission_drains_before_returning_buffers,
++    {
++        let (mut engine, pool, _) = setup(2);
++        engine.faults.enter.push_back(Enter::PanicAfterSubmit);
++        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
++            engine.submit().unwrap();
++        }));
++        assert!(result.is_err());
++        assert_eq!(pool.available(), 2);
++    }
++);
+diff --git a/crates/rvvdk-datamover/src/io_uring/file.rs b/crates/rvvdk-datamover/src/io_uring/file.rs
+new file mode 100644
+index 0000000..72fcc03
+--- /dev/null
++++ b/crates/rvvdk-datamover/src/io_uring/file.rs
+@@ -0,0 +1,28 @@
++use std::os::fd::{AsFd, BorrowedFd, OwnedFd};
++use std::sync::Arc;
++
++use rvvdk_core::Result;
++
++/// An owned descriptor shared by queued operations, independently of the caller.
++///
++/// Duplicate once per endpoint, then cheaply clone the handle for each operation.
++#[derive(Clone, Debug)]
++pub struct IoUringFile(Arc<OwnedFd>);
++
++impl IoUringFile {
++    pub fn new(fd: BorrowedFd<'_>) -> Result<Self> {
++        Ok(Self::from(fd.try_clone_to_owned()?))
++    }
++}
++
++impl From<OwnedFd> for IoUringFile {
++    fn from(fd: OwnedFd) -> Self {
++        Self(Arc::new(fd))
++    }
++}
++
++impl AsFd for IoUringFile {
++    fn as_fd(&self) -> BorrowedFd<'_> {
++        self.0.as_fd()
++    }
++}
+diff --git a/crates/rvvdk-datamover/tests/io_uring_lifetime.rs b/crates/rvvdk-datamover/tests/io_uring_lifetime.rs
+new file mode 100644
+index 0000000..e2d215c
+--- /dev/null
++++ b/crates/rvvdk-datamover/tests/io_uring_lifetime.rs
+@@ -0,0 +1,98 @@
++#![cfg(target_os = "linux")]
++
++use std::fs::{File, OpenOptions};
++use std::os::fd::AsFd;
++use std::process::Command;
++use std::time::{Duration, Instant};
++
++use rvvdk_core::Error;
++use rvvdk_datamover::io_uring::copy_file_range;
++
++fn bounded(name: &str, test: impl FnOnce()) {
++    const CHILD: &str = "RVVDK_PIPELINE_LIFETIME_CHILD";
++    if std::env::var(CHILD).as_deref() == Ok(name) {
++        test();
++        return;
++    }
++    let mut child = Command::new(std::env::current_exe().unwrap())
++        .args(["--exact", name, "--nocapture"])
++        .env(CHILD, name)
++        .spawn()
++        .unwrap();
++    let deadline = Instant::now() + Duration::from_secs(10);
++    loop {
++        if let Some(status) = child.try_wait().unwrap() {
++            assert!(status.success());
++            return;
++        }
++        if Instant::now() >= deadline {
++            child.kill().unwrap();
++            child.wait().unwrap();
++            panic!("pipeline error cleanup exceeded ten seconds");
++        }
++        std::thread::sleep(Duration::from_millis(10));
++    }
++}
++
++fn fd_count() -> usize {
++    std::fs::read_dir("/proc/self/fd").unwrap().count()
++}
++
++#[test]
++fn eof_cleanup_preserves_original_error_and_releases_descriptors() {
++    bounded(
++        "eof_cleanup_preserves_original_error_and_releases_descriptors",
++        || {
++            let path = std::env::temp_dir().join(format!("rvvdk-r03-eof-{}", std::process::id()));
++            let source = OpenOptions::new()
++                .read(true)
++                .write(true)
++                .create_new(true)
++                .open(&path)
++                .unwrap();
++            std::fs::remove_file(&path).unwrap();
++            let destination = OpenOptions::new().write(true).open("/dev/null").unwrap();
++            let before = fd_count();
++            for _ in 0..16 {
++                let error = copy_file_range(
++                    source.as_fd(),
++                    destination.as_fd(),
++                    0,
++                    64 * 1024,
++                    4096,
++                    8,
++                    4096,
++                )
++                .unwrap_err();
++                assert!(matches!(error, Error::UnexpectedEof { .. }));
++                assert_eq!(fd_count(), before);
++            }
++        },
++    );
++}
++
++#[test]
++fn write_error_cleanup_preserves_errno_and_releases_descriptors() {
++    bounded(
++        "write_error_cleanup_preserves_errno_and_releases_descriptors",
++        || {
++            let source = File::open("/dev/zero").unwrap();
++            let destination = File::open("/dev/null").unwrap();
++            let before = fd_count();
++            for _ in 0..16 {
++                let error = copy_file_range(
++                    source.as_fd(),
++                    destination.as_fd(),
++                    0,
++                    64 * 1024,
++                    4096,
++                    8,
++                    4096,
++                )
++                .unwrap_err();
++                assert!(matches!(error, Error::Io(ref cause) if cause.raw_os_error() == Some(9)));
++                assert_eq!(fd_count(), before);
++            }
++        },
++    );
++}

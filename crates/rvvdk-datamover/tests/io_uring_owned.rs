@@ -1,12 +1,12 @@
 #![cfg(target_os = "linux")]
 
 use std::fs::{self, OpenOptions};
-use std::os::fd::AsRawFd;
+use std::os::fd::AsFd;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use rvvdk_core::BufferPool;
-use rvvdk_datamover::io_uring::{IoUringEngine, IoUringOperationKind};
+use rvvdk_datamover::io_uring::{IoUringEngine, IoUringFile, IoUringOperationKind};
 
 const ALIGNMENT: usize = 4096;
 const BLOCK_SIZE: usize = 4096;
@@ -47,7 +47,12 @@ fn owned_write_completes_and_returns_buffer() {
     let mut engine = IoUringEngine::new(8).unwrap();
 
     let user_data = engine
-        .submit_owned_write(file.as_raw_fd(), 0, BLOCK_SIZE, buffer)
+        .submit_owned_write(
+            &IoUringFile::new(file.as_fd()).unwrap(),
+            0,
+            BLOCK_SIZE,
+            buffer,
+        )
         .unwrap();
 
     assert_eq!(engine.in_flight(), 1,);
@@ -113,7 +118,12 @@ fn owned_read_returns_completed_buffer_with_data() {
     let mut engine = IoUringEngine::new(8).unwrap();
 
     let user_data = engine
-        .submit_owned_read(file.as_raw_fd(), 0, BLOCK_SIZE, buffer)
+        .submit_owned_read(
+            &IoUringFile::new(file.as_fd()).unwrap(),
+            0,
+            BLOCK_SIZE,
+            buffer,
+        )
         .unwrap();
 
     assert_eq!(engine.in_flight(), 1,);
@@ -189,7 +199,7 @@ fn multiple_owned_reads_remain_in_flight() {
 
         let user_data = engine
             .submit_owned_read(
-                file.as_raw_fd(),
+                &IoUringFile::new(file.as_fd()).unwrap(),
                 (block * BLOCK_SIZE) as u64,
                 BLOCK_SIZE,
                 buffer,
@@ -311,7 +321,7 @@ fn multiple_owned_writes_remain_in_flight() {
 
         let user_data = engine
             .submit_owned_write(
-                file.as_raw_fd(),
+                &IoUringFile::new(file.as_fd()).unwrap(),
                 (block * BLOCK_SIZE) as u64,
                 BLOCK_SIZE,
                 buffer,
@@ -401,7 +411,12 @@ fn owned_submission_rejects_oversized_request() {
 
     let mut engine = IoUringEngine::new(8).unwrap();
 
-    let result = engine.submit_owned_read(file.as_raw_fd(), 0, BLOCK_SIZE * 2, buffer);
+    let result = engine.submit_owned_read(
+        &IoUringFile::new(file.as_fd()).unwrap(),
+        0,
+        BLOCK_SIZE * 2,
+        buffer,
+    );
 
     assert!(matches!(
         result,
@@ -458,7 +473,7 @@ fn drain_returns_all_completed_operations() {
 
         engine
             .submit_owned_read(
-                file.as_raw_fd(),
+                &IoUringFile::new(file.as_fd()).unwrap(),
                 (block * BLOCK_SIZE) as u64,
                 BLOCK_SIZE,
                 buffer,
@@ -525,7 +540,7 @@ fn dropping_engine_with_outstanding_operations_returns_buffers() {
 
             engine
                 .submit_owned_read(
-                    file.as_raw_fd(),
+                    &IoUringFile::new(file.as_fd()).unwrap(),
                     (block * BLOCK_SIZE) as u64,
                     BLOCK_SIZE,
                     buffer,

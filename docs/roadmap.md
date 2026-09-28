@@ -97,7 +97,7 @@ Deliver small, separate changes rather than a wholesale rewrite:
 
 - [x] **R0.1: observer validation parity** — both entry points share structural validation before execution/notification; private dispatch avoids duplicate scans. Eight regressions added. Covers F03. [Evidence and performance disposition](benchmark-results/2026-09-28-r01/README.md); broad loop consolidation remains in R1.
 - [x] **R0.2: worker shutdown** — coordinator receiver released; first-recorded error retained; cooperative worker stop, producer wakeup, and scoped joining verified. Eleven regressions include full-queue read/write/zero/discard failures. Covers F01. [Evidence and performance disposition](benchmark-results/2026-09-28-r02/README.md); synchronous backend calls must return for shutdown to complete.
-- [ ] **R0.3: io_uring lifetime repair** — eliminate early return with live borrowed-buffer operations; review owned teardown, submission errors, interrupted waits, unknown completions, and FD lifetime. Covers F02.
+- [x] **R0.3: io_uring lifetime repair** — removed borrowed engine I/O; operations retain buffers and owned descriptors before publication. Explicit shutdown confirms completions or reports permanent resource retention. Eighteen lifetime/error regressions and [ADR-0013 safety argument](adr/0013-io-uring-buffer-ownership.md) cover F02 and FD reuse. [Performance evidence](benchmark-results/2026-09-28-r03/README.md) is provisional; cancellation deadlines and resource reclamation after unconfirmed shutdown remain limitations.
 - [ ] **R0.4: entry-point validation** — validate all exported low-level configurations, including zero block size and unsupported extent plans before writes. Covers F08.
 - [ ] **R0.5: basic preflight** — check access/durability requirements, destination size, and unsupported endpoint aliasing before execution; preserve contextual error information. Covers parts of F04/F10.
 
@@ -286,7 +286,7 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 
 ## First implementation session — R0.1 completed
 
-The following sequence is recorded in the [implementation log](implementation-log.md). R0.1 and R0.2 are complete, with performance dispositions and remaining qualification work documented. Continue with R0.3 next.
+The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.3 are complete, with performance dispositions and remaining qualification work documented. Continue with R0.4 next.
 
 R0.1 was the bounded change directly related to the observer work:
 
@@ -301,7 +301,7 @@ R0.1 was the bounded change directly related to the observer work:
    tradeoff in the implementation log. Update this checklist and ADR-0025 with
    the implemented behavior and remaining limitations.
 
-R0.2 is also complete. Finish **R0.3** before expanding native or remote functionality. The shared validation extraction and worker shutdown fix did not require a full executor refactor.
+R0.2 and R0.3 are also complete. Finish **R0.4** and **R0.5** before expanding native or remote functionality. The shared validation, worker shutdown, and lifetime fixes did not require a full executor refactor.
 
 ## Decisions to record before their milestone
 

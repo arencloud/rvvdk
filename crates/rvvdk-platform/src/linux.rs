@@ -1,4 +1,4 @@
-use std::os::fd::RawFd;
+use std::os::fd::{AsFd, AsRawFd, RawFd};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LinuxFdCapabilities {
@@ -29,8 +29,10 @@ impl LinuxFdCapabilities {
     }
 }
 
-pub trait LinuxFdBackend {
-    fn raw_fd(&self) -> RawFd;
+pub trait LinuxFdBackend: AsFd {
+    fn raw_fd(&self) -> RawFd {
+        self.as_fd().as_raw_fd()
+    }
 
     fn linux_fd_capabilities(&self) -> LinuxFdCapabilities;
 }

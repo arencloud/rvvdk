@@ -36,7 +36,7 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 | PERF.0 | In progress | Flush parity corrected; isolated builds, source patch/hashes, and repeated Btrfs planning/observer comparisons captured | Targeted evidence recorded; controlled-runner repeat, sustained direct I/O, and broader matrix remain pending |
 | R0.1 | Complete | Shared structural validation before execution/notification; 8 regression cases; [ADR-0025](adr/0025-shared-plan-validation.md); committed with this step record | Required correctness fix accepted; [comparison and noise/overhead limits](benchmark-results/2026-09-28-r01/README.md) recorded; performance qualification provisional |
 | R0.2 | Complete | Worker failure termination and first-recorded-error preservation; 11 regressions; ADR-0008 shutdown contract; committed with this record | [Comparison and failure latency](benchmark-results/2026-09-28-r02/README.md) accepted for this fix; initial memory increases investigated with affinity repeat; broader PERF.0 qualification remains open |
-| R0.3 | Planned | io_uring buffer/FD lifetime and error-path repair | Pending — native throughput/resource comparisons on safe paths |
+| R0.3 | Complete | Owned-only engine, retained descriptors, verified completion/shutdown rules; 18 lifetime/error regressions; ADR-0013 safety argument and API migration; committed with this record | [Native comparison and resource evidence](benchmark-results/2026-09-28-r03/README.md) recorded; mandatory safety fix accepted; performance qualification provisional because native/control timings drifted |
 | R0.4 | Planned | Public low-level configuration and preflight validation | Pending — relevant setup/copy overhead |
 | R0.5 | Planned | Access/durability preflight and endpoint identity checks | Pending — preflight overhead |
 | V0 | Planned | Independent VMware access feasibility; licensed/evaluation host needed for representative API workflows | Pending — first transport baseline follows functional proof |
@@ -185,10 +185,66 @@ must return for shutdown to complete. This is not a public cancellation API,
 backend timeout mechanism, or partial-copy report. R0.3 native lifetimes remain
 unrepaired by this work.
 
+## R0.3 — 2026-09-28
+
+**Baseline:** `52ddb14`, initially clean. **Candidate:** the
+[source patch](benchmark-results/2026-09-28-r03/candidate.patch) and
+[environment/source fingerprints](benchmark-results/2026-09-28-r03/environment.json)
+identify this implementation. Code, tests, ADR, benchmark evidence, and tracking
+are committed together; use this record's Git history to locate the revision.
+
+Implementation steps:
+
+1. Traced borrowed/owned submission, CQE consumption, unwinding, and teardown.
+   Reviewed the pinned io-uring implementation and upstream buffer/cancellation
+   contracts; references and assumptions are in ADR-0013.
+2. Reproduced the old raw-FD reuse defect: a queued read used `/dev/zero` after
+   the original descriptor was closed and reused. Preserved the exact old-API
+   reproducer and failing output. No use-after-free experiment was performed.
+3. Removed borrowed-slice engine I/O. Operations now retain both BufferGuard and
+   shared owned IoUringFile before publishing SQEs. Added typed descriptor APIs
+   and migrated repository call sites. Native payload copying remains zero-copy
+   between completed reads and submitted writes.
+4. Added interrupted-enter retries, explicit in-flight capacity bounds, final-CQE
+   validation, and explicit shutdown. Cleanup drains confirmed operations, rejects
+   new submissions after errors, and permanently retains unconfirmed owners.
+   High-level copy errors preserve the original cause and cleanup-retention count.
+5. Added 18 bounded lifetime/fault-injection tests; migrated existing positional
+   tests to owned buffers. Covered actual partial submission, errors before/after
+   acceptance, waits, CQEs, FD reuse, unwinding, capacity, and shutdown. Public
+   pipeline EOF/write-error regressions verify original causes and FD release.
+6. Built identical high-level benchmarks against isolated source variants.
+   Recorded buffered/direct copy comparisons, threaded controls, per-copy FD
+   checks, and whole-process GNU time resource measurements. A noisy direct
+   control triggered a longer repeat alongside the native 64 KiB case.
+
+Correctness: 231 workspace tests passed; formatting and strict Clippy across all
+targets passed. Safety argument, API migration, and exceptional-retention costs
+are recorded in [ADR-0013](adr/0013-io-uring-buffer-ownership.md).
+
+Performance disposition: accept the mandatory safety repair; qualification remains
+provisional. Initial native aggregate medians changed by −6.10% to +2.38%, but the
+unchanged direct threaded control moved +15.25%. A longer repeat produced +12.64%
+for the direct native 64 KiB case and +38.39% for its control. These noisy results
+do not establish a general regression bound; retain the full evidence and repeat
+under controlled PERF.0 conditions. Every benchmark iteration verified output and
+stable FD counts. Process CPU/RSS statistics include harness overhead and unequal
+adaptive iteration counts. No execution defaults were tuned. R0.3 is checked off.
+
+After measuring, two public pipeline tests and a stronger live-ID wraparound case
+were added without runtime/harness changes. Rebuilding the candidate benchmark
+reproduced the measured binary SHA-256 exactly.
+
+Remaining limits: unconfirmed cleanup can retain buffers, pools, and FDs until
+process exit; draining can block on stalled I/O and is not rollback. Preflight,
+logical identity, public cancellation/deadlines, and sustained-device qualification
+remain separate work. The [benchmark report](benchmark-results/2026-09-28-r03/README.md)
+records the performance disposition and measurement limits.
+
 ## Next session
 
-Implement R0.3: io_uring buffer/FD lifetime and error-path repair, including a
-safety argument and fault-injection tests. Continue PERF.0 qualification on
-controlled storage, including the outstanding fragmented observer comparison,
-corrected direct-I/O benchmark, and broader scheduler workloads. ESXi is still
-unnecessary for these local steps; request the trial only when V0 is ready.
+Implement R0.4: validate all public low-level configurations before I/O, including
+zero block size and unsupported native extent plans. Continue PERF.0 qualification
+on controlled storage, including observer, scheduler, and native-lifetime results.
+ESXi is still unnecessary for these local steps; request the trial only when V0
+is ready.

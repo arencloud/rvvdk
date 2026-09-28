@@ -1,4 +1,4 @@
-use std::os::fd::RawFd;
+use std::os::fd::BorrowedFd;
 
 use rvvdk_core::{Capabilities, Error, Extent, ExtentKind, Result, VirtualDisk};
 
@@ -127,8 +127,8 @@ impl IoUringExtentCopyStats {
 }
 
 pub fn copy_extent_plan(
-    source_fd: RawFd,
-    destination_fd: RawFd,
+    source_fd: BorrowedFd<'_>,
+    destination_fd: BorrowedFd<'_>,
     plan: &NativeExtentPlan,
     block_size: usize,
     alignment: usize,
@@ -174,8 +174,8 @@ pub fn copy_extent_plan(
 }
 
 pub fn copy_extent_plan_with_destination<D>(
-    source_fd: RawFd,
-    destination_fd: RawFd,
+    source_fd: BorrowedFd<'_>,
+    destination_fd: BorrowedFd<'_>,
     destination: &D,
     plan: &NativeExtentPlan,
     block_size: usize,

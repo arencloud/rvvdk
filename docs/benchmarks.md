@@ -164,6 +164,26 @@ is restricted to successful copies, using identical harnesses and isolated build
 directories. See the [R0.2 report](benchmark-results/2026-09-28-r02/README.md) for
 source fingerprints, measurements, and limitations.
 
+### Native resource lifetime overhead
+
+The `native_lifetime` target compares unchanged high-level native-copy calls
+across the R0.3 ownership change. It uses 16 MiB dense buffered/O_DIRECT workloads,
+four queue/block configurations, and threaded controls. Each timed copy includes
+ring/pool/endpoint setup, copy completion, cleanup, and destination flush. Reset,
+full output verification, and FD-count checks are outside every iteration's timer.
+
+```bash
+RVVDK_BENCH_DIR=/path/to/benchmark-storage \
+cargo bench -p rvvdk-datamover --bench native_lifetime -- --noplot
+```
+
+Only successful paths are compared against the old runtime. Lifetime/error paths
+use candidate fault-injection tests, not unsafe baseline throughput runs. The
+[R0.3 report](benchmark-results/2026-09-28-r03/README.md) includes executable/source
+fingerprints, process CPU/RSS measurements, and the exceptional resource-retention
+policy. Whole-process resource usage includes setup and verification; it is not a
+measurement of per-copy resource cost.
+
 ## Purpose
 
 rvvdk uses benchmarks to validate performance changes rather than

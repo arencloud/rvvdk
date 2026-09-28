@@ -1,5 +1,5 @@
 use std::fs::{File, OpenOptions};
-use std::os::fd::{AsRawFd, RawFd};
+use std::os::fd::{AsFd, AsRawFd, BorrowedFd, RawFd};
 use std::os::unix::fs::FileExt;
 use std::path::Path;
 
@@ -216,6 +216,12 @@ impl BlockDevice for TestExtentBlockDevice {
         }
 
         Ok(())
+    }
+}
+
+impl AsFd for TestExtentBlockDevice {
+    fn as_fd(&self) -> BorrowedFd<'_> {
+        self.file.as_fd()
     }
 }
 

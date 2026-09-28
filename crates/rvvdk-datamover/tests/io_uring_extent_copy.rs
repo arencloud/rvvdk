@@ -1,7 +1,7 @@
 #![cfg(target_os = "linux")]
 
 use std::fs::{self, OpenOptions};
-use std::os::fd::AsRawFd;
+use std::os::fd::AsFd;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -76,8 +76,8 @@ fn copies_multiple_data_extents() {
     .unwrap();
 
     let stats = copy_extent_plan(
-        source.as_raw_fd(),
-        destination.as_raw_fd(),
+        source.as_fd(),
+        destination.as_fd(),
         &plan,
         BLOCK_SIZE,
         4096,
@@ -129,8 +129,8 @@ fn copies_zero_extent_with_destination_semantics() {
     .unwrap();
 
     let stats = copy_extent_plan_with_destination(
-        source_backend.as_raw_fd(),
-        destination.device().as_raw_fd(),
+        source_backend.as_fd(),
+        destination.device().as_fd(),
         &destination,
         &plan,
         BLOCK_SIZE,
@@ -199,8 +199,8 @@ fn copies_data_zero_data_extent_plan() {
     .unwrap();
 
     let stats = copy_extent_plan_with_destination(
-        source_backend.as_raw_fd(),
-        destination.device().as_raw_fd(),
+        source_backend.as_fd(),
+        destination.device().as_fd(),
         &destination,
         &plan,
         BLOCK_SIZE,
@@ -265,8 +265,8 @@ fn copies_hole_extent_with_destination_semantics() {
     .unwrap();
 
     let stats = copy_extent_plan_with_destination(
-        source_backend.as_raw_fd(),
-        destination.device().as_raw_fd(),
+        source_backend.as_fd(),
+        destination.device().as_fd(),
         &destination,
         &plan,
         BLOCK_SIZE,
@@ -336,8 +336,8 @@ fn copies_data_hole_data_extent_plan() {
     .unwrap();
 
     let stats = copy_extent_plan_with_destination(
-        source_backend.as_raw_fd(),
-        destination.device().as_raw_fd(),
+        source_backend.as_fd(),
+        destination.device().as_fd(),
         &destination,
         &plan,
         BLOCK_SIZE,
@@ -402,8 +402,8 @@ fn low_level_extent_copy_still_rejects_zero() {
     .unwrap();
 
     let result = copy_extent_plan(
-        source.as_raw_fd(),
-        destination.as_raw_fd(),
+        source.as_fd(),
+        destination.as_fd(),
         &plan,
         BLOCK_SIZE,
         4096,
@@ -448,8 +448,8 @@ fn low_level_extent_copy_still_rejects_hole() {
     .unwrap();
 
     let result = copy_extent_plan(
-        source.as_raw_fd(),
-        destination.as_raw_fd(),
+        source.as_fd(),
+        destination.as_fd(),
         &plan,
         BLOCK_SIZE,
         4096,

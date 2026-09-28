@@ -395,8 +395,10 @@ buffers.
 Those buffers must remain valid from SQE submission until the
 corresponding CQE has been consumed.
 
-rvvdk therefore does not expose raw asynchronous submission using
-ordinary borrowed slices as a public API.
+The engine now accepts only owned buffer operations. The former borrowed-slice
+compatibility methods were removed in R0.3 because error returns could end the
+borrow before kernel access ended. Native range/extent APIs take `BorrowedFd`;
+`LinuxFdBackend` requires `AsFd`.
 
 Ownership-safe asynchronous operations transfer a `BufferGuard` into
 an in-flight operation:
@@ -415,6 +417,7 @@ InFlightOperation
     +-- offset
     +-- length
     +-- owned BufferGuard
+    +-- shared owned IoUringFile
     |
     v
 io_uring SQE
@@ -431,6 +434,20 @@ CompletedOperation
     v
 BufferGuard
 ```
+
+Both owners enter the operation table before SQE publication. A matching final
+CQE permits release, including a negative operation result. Interrupted waits
+retry. Other errors stop new submissions while retaining pending resources.
+Explicit `shutdown()` drains before closing the ring; copy functions call it
+before returning. Drop uses the same protocol.
+
+If cleanup cannot confirm completion, outstanding guards and FD references are
+permanently retained and explicit shutdown reports their count. Ring close alone
+is not treated as proof that buffer reuse is safe. This exceptional fallback can
+also retain the guards' underlying pools; normal completion releases resources.
+Shutdown can block on active synchronous I/O and does not provide rollback.
+See [ADR-0013](adr/0013-io-uring-buffer-ownership.md) for the safety argument,
+API migration, and limitations.
 
 ## Balanced io_uring pipeline scheduling
 

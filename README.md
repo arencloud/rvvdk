@@ -129,6 +129,10 @@ Native acceleration currently serves Linux RAW backends. Future format readers
 must resolve logical offsets before physical I/O; a container file descriptor
 alone is not sufficient to bypass that mapping.
 
+The io_uring engine uses owned buffers and retained file handles. See its
+[ownership contract](docs/adr/0013-io-uring-buffer-ownership.md) for low-level API
+migration and exceptional cleanup behavior.
+
 ### Workspace
 
 | Crate | Responsibility |

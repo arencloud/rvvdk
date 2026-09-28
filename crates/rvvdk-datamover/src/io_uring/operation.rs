@@ -1,3 +1,4 @@
+use super::IoUringFile;
 use rvvdk_core::BufferGuard;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -7,6 +8,7 @@ pub enum IoUringOperationKind {
 }
 
 pub(crate) struct InFlightOperation {
+    _file: IoUringFile,
     user_data: u64,
     kind: IoUringOperationKind,
     offset: u64,
@@ -16,6 +18,7 @@ pub(crate) struct InFlightOperation {
 
 impl InFlightOperation {
     pub(crate) fn new(
+        file: IoUringFile,
         user_data: u64,
         kind: IoUringOperationKind,
         offset: u64,
@@ -23,6 +26,7 @@ impl InFlightOperation {
         buffer: BufferGuard,
     ) -> Self {
         Self {
+            _file: file,
             user_data,
             kind,
             offset,
@@ -40,6 +44,10 @@ impl InFlightOperation {
             bytes_transferred,
             buffer: self.buffer,
         }
+    }
+
+    pub(crate) fn length(&self) -> usize {
+        self.length
     }
 }
 

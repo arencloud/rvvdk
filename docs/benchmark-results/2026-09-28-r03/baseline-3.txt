@@ -1,0 +1,85 @@
+Gnuplot not found, using plotters backend
+Benchmarking native_lifetime/buffered/q1_b65536
+Benchmarking native_lifetime/buffered/q1_b65536: Warming up for 300.00 ms
+Benchmarking native_lifetime/buffered/q1_b65536: Collecting 20 samples in estimated 2.8009 s (60 iterations)
+Benchmarking native_lifetime/buffered/q1_b65536: Analyzing
+native_lifetime/buffered/q1_b65536
+                        time:   [22.002 ms 22.261 ms 22.522 ms]
+                        thrpt:  [710.41 MiB/s 718.73 MiB/s 727.20 MiB/s]
+Benchmarking native_lifetime/buffered/q8_b65536
+Benchmarking native_lifetime/buffered/q8_b65536: Warming up for 300.00 ms
+Benchmarking native_lifetime/buffered/q8_b65536: Collecting 20 samples in estimated 2.5177 s (60 iterations)
+Benchmarking native_lifetime/buffered/q8_b65536: Analyzing
+native_lifetime/buffered/q8_b65536
+                        time:   [20.142 ms 20.346 ms 20.553 ms]
+                        thrpt:  [778.48 MiB/s 786.39 MiB/s 794.35 MiB/s]
+Benchmarking native_lifetime/buffered/q8_b4096
+Benchmarking native_lifetime/buffered/q8_b4096: Warming up for 300.00 ms
+Benchmarking native_lifetime/buffered/q8_b4096: Collecting 20 samples in estimated 2.4481 s (40 iterations)
+Benchmarking native_lifetime/buffered/q8_b4096: Analyzing
+native_lifetime/buffered/q8_b4096
+                        time:   [34.019 ms 34.834 ms 35.773 ms]
+                        thrpt:  [447.27 MiB/s 459.32 MiB/s 470.32 MiB/s]
+Found 4 outliers among 20 measurements (20.00%)
+  4 (20.00%) high mild
+Benchmarking native_lifetime/buffered/q8_b1048576
+Benchmarking native_lifetime/buffered/q8_b1048576: Warming up for 300.00 ms
+Benchmarking native_lifetime/buffered/q8_b1048576: Collecting 20 samples in estimated 2.7683 s (60 iterations)
+Benchmarking native_lifetime/buffered/q8_b1048576: Analyzing
+native_lifetime/buffered/q8_b1048576
+                        time:   [22.652 ms 22.881 ms 23.146 ms]
+                        thrpt:  [691.27 MiB/s 699.27 MiB/s 706.34 MiB/s]
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high mild
+Benchmarking native_lifetime/buffered/threaded_control
+Benchmarking native_lifetime/buffered/threaded_control: Warming up for 300.00 ms
+Benchmarking native_lifetime/buffered/threaded_control: Collecting 20 samples in estimated 2.3895 s (60 iterations)
+Benchmarking native_lifetime/buffered/threaded_control: Analyzing
+native_lifetime/buffered/threaded_control
+                        time:   [18.280 ms 18.916 ms 20.031 ms]
+                        thrpt:  [798.75 MiB/s 845.85 MiB/s 875.26 MiB/s]
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high severe
+
+Benchmarking native_lifetime/direct/q1_b65536
+Benchmarking native_lifetime/direct/q1_b65536: Warming up for 300.00 ms
+Benchmarking native_lifetime/direct/q1_b65536: Collecting 20 samples in estimated 3.0219 s (40 iterations)
+Benchmarking native_lifetime/direct/q1_b65536: Analyzing
+native_lifetime/direct/q1_b65536
+                        time:   [52.385 ms 52.870 ms 53.382 ms]
+                        thrpt:  [299.73 MiB/s 302.63 MiB/s 305.43 MiB/s]
+Benchmarking native_lifetime/direct/q8_b65536
+Benchmarking native_lifetime/direct/q8_b65536: Warming up for 300.00 ms
+Benchmarking native_lifetime/direct/q8_b65536: Collecting 20 samples in estimated 2.5058 s (40 iterations)
+Benchmarking native_lifetime/direct/q8_b65536: Analyzing
+native_lifetime/direct/q8_b65536
+                        time:   [37.034 ms 38.056 ms 39.152 ms]
+                        thrpt:  [408.67 MiB/s 420.44 MiB/s 432.04 MiB/s]
+Benchmarking native_lifetime/direct/q8_b4096
+Benchmarking native_lifetime/direct/q8_b4096: Warming up for 300.00 ms
+
+Warning: Unable to complete 20 samples in 2.0s. You may wish to increase target time to 4.7s, or reduce sample count to 10.
+Benchmarking native_lifetime/direct/q8_b4096: Collecting 20 samples in estimated 4.7017 s (20 iterations)
+Benchmarking native_lifetime/direct/q8_b4096: Analyzing
+native_lifetime/direct/q8_b4096
+                        time:   [184.74 ms 191.47 ms 198.64 ms]
+                        thrpt:  [80.546 MiB/s 83.565 MiB/s 86.609 MiB/s]
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high mild
+Benchmarking native_lifetime/direct/q8_b1048576
+Benchmarking native_lifetime/direct/q8_b1048576: Warming up for 300.00 ms
+Benchmarking native_lifetime/direct/q8_b1048576: Collecting 20 samples in estimated 2.3483 s (40 iterations)
+Benchmarking native_lifetime/direct/q8_b1048576: Analyzing
+native_lifetime/direct/q8_b1048576
+                        time:   [27.025 ms 27.756 ms 28.769 ms]
+                        thrpt:  [556.16 MiB/s 576.46 MiB/s 592.04 MiB/s]
+Found 2 outliers among 20 measurements (10.00%)
+  2 (10.00%) high severe
+Benchmarking native_lifetime/direct/threaded_control
+Benchmarking native_lifetime/direct/threaded_control: Warming up for 300.00 ms
+Benchmarking native_lifetime/direct/threaded_control: Collecting 20 samples in estimated 2.4781 s (40 iterations)
+Benchmarking native_lifetime/direct/threaded_control: Analyzing
+native_lifetime/direct/threaded_control
+                        time:   [28.050 ms 29.644 ms 31.290 ms]
+                        thrpt:  [511.35 MiB/s 539.74 MiB/s 570.42 MiB/s]
+

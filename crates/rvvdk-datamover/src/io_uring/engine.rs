@@ -1,27 +1,27 @@
 use std::collections::HashMap;
-use std::os::fd::RawFd;
+use std::os::fd::{AsFd, AsRawFd};
 
 use io_uring::{IoUring, opcode, types};
-
 use rvvdk_core::{BufferGuard, Error, Result};
 
+use super::IoUringFile;
 use super::operation::{CompletedOperation, InFlightOperation, IoUringOperationKind};
 
+/// An owned-buffer engine. Every queued SQE retains both its buffer and file.
+///
+/// Call `shutdown` to observe cleanup errors. Drop performs the same cleanup, but
+/// cannot report errors. Unconfirmed operations are permanently retained instead
+/// of releasing memory that the kernel may still access.
 pub struct IoUringEngine {
     ring: Option<IoUring>,
     queue_depth: u32,
     next_user_data: u64,
-
-    // Ownership-safe asynchronous operations.
-    //
-    // Each entry owns the BufferGuard referenced by its SQE.
     in_flight: HashMap<u64, InFlightOperation>,
-
-    // M17B compatibility path.
-    //
-    // Borrowed read_at()/write_at() never permit more than one
-    // outstanding borrowed operation.
-    borrowed_in_flight: bool,
+    accepting: bool,
+    completion_lost: bool,
+    quarantined: usize,
+    #[cfg(test)]
+    faults: faults::Faults,
 }
 
 impl IoUringEngine {
@@ -29,15 +29,16 @@ impl IoUringEngine {
         if queue_depth == 0 {
             return Err(Error::InvalidIoUringQueueDepth);
         }
-
-        let ring = IoUring::new(queue_depth).map_err(Error::Io)?;
-
         Ok(Self {
-            ring: Some(ring),
+            ring: Some(IoUring::new(queue_depth)?),
             queue_depth,
             next_user_data: 1,
             in_flight: HashMap::with_capacity(queue_depth as usize),
-            borrowed_in_flight: false,
+            accepting: true,
+            completion_lost: false,
+            quarantined: 0,
+            #[cfg(test)]
+            faults: faults::Faults::default(),
         })
     }
 
@@ -46,456 +47,314 @@ impl IoUringEngine {
     }
 
     pub fn in_flight(&self) -> usize {
-        self.in_flight.len() + usize::from(self.borrowed_in_flight)
+        self.in_flight.len()
     }
 
-    pub fn read_at(&mut self, fd: RawFd, offset: u64, buffer: &mut [u8]) -> Result<usize> {
-        let user_data = self.submit_borrowed_read(fd, offset, buffer)?;
-
-        self.submit()?;
-
-        let completion = self.wait_borrowed_completion()?;
-
-        if completion.user_data != user_data {
-            return Err(Error::IoUringUnexpectedCompletion {
-                expected: user_data,
-                actual: completion.user_data,
-            });
-        }
-
-        completion_result_to_bytes(completion.result)
-    }
-
-    pub fn write_at(&mut self, fd: RawFd, offset: u64, buffer: &[u8]) -> Result<usize> {
-        let user_data = self.submit_borrowed_write(fd, offset, buffer)?;
-
-        self.submit()?;
-
-        let completion = self.wait_borrowed_completion()?;
-
-        if completion.user_data != user_data {
-            return Err(Error::IoUringUnexpectedCompletion {
-                expected: user_data,
-                actual: completion.user_data,
-            });
-        }
-
-        completion_result_to_bytes(completion.result)
+    /// Operations retained permanently after cleanup could not prove completion.
+    pub const fn quarantined_operations(&self) -> usize {
+        self.quarantined
     }
 
     pub fn submit_owned_read(
         &mut self,
-        fd: RawFd,
-        offset: u64,
-        length: usize,
-        mut buffer: BufferGuard,
-    ) -> Result<u64> {
-        if self.borrowed_in_flight {
-            return Err(Error::IoUringOperationModeConflict);
-        }
-
-        let available = buffer.as_slice().len();
-
-        if length > available {
-            return Err(Error::BufferTooSmall {
-                requested: length,
-                available,
-            });
-        }
-
-        let length_u32 = u32::try_from(length).map_err(|_| Error::RangeOverflow {
-            offset,
-            length: length as u64,
-        })?;
-
-        let user_data = self.next_user_data();
-
-        let pointer = buffer.as_mut_slice().as_mut_ptr();
-
-        let entry = opcode::Read::new(types::Fd(fd), pointer, length_u32)
-            .offset(offset)
-            .build()
-            .user_data(user_data);
-
-        // SAFETY:
-        //
-        // The SQE contains a pointer into `buffer`.
-        //
-        // After the SQE is successfully pushed, `buffer` is moved
-        // into `InFlightOperation` and then into `self.in_flight`.
-        //
-        // The BufferGuard therefore remains alive and its allocation
-        // cannot return to the BufferPool until the corresponding CQE
-        // is consumed and the resulting CompletedOperation is dropped.
-        let queue_depth = self.queue_depth;
-
-        // SAFETY:
-        //
-        // The safety invariant depends on the operation being submitted.
-        // See the operation-specific comment above this block.
-        unsafe {
-            self.ring_mut()?
-                .submission()
-                .push(&entry)
-                .map_err(|_| Error::IoUringQueueFull { queue_depth })?;
-        }
-
-        let operation = InFlightOperation::new(
-            user_data,
-            IoUringOperationKind::Read,
-            offset,
-            length,
-            buffer,
-        );
-
-        let previous = self.in_flight.insert(user_data, operation);
-
-        debug_assert!(previous.is_none(), "io_uring user_data collision");
-
-        Ok(user_data)
-    }
-
-    pub fn submit_owned_write(
-        &mut self,
-        fd: RawFd,
+        file: &IoUringFile,
         offset: u64,
         length: usize,
         buffer: BufferGuard,
     ) -> Result<u64> {
-        if self.borrowed_in_flight {
-            return Err(Error::IoUringOperationModeConflict);
-        }
+        self.enqueue(file, offset, length, buffer, IoUringOperationKind::Read)
+    }
 
-        let available = buffer.as_slice().len();
+    pub fn submit_owned_write(
+        &mut self,
+        file: &IoUringFile,
+        offset: u64,
+        length: usize,
+        buffer: BufferGuard,
+    ) -> Result<u64> {
+        self.enqueue(file, offset, length, buffer, IoUringOperationKind::Write)
+    }
 
-        if length > available {
+    fn enqueue(
+        &mut self,
+        file: &IoUringFile,
+        offset: u64,
+        length: usize,
+        mut buffer: BufferGuard,
+        kind: IoUringOperationKind,
+    ) -> Result<u64> {
+        self.ensure_accepting()?;
+        if length > buffer.as_slice().len() {
             return Err(Error::BufferTooSmall {
                 requested: length,
-                available,
+                available: buffer.as_slice().len(),
             });
         }
-
         let length_u32 = u32::try_from(length).map_err(|_| Error::RangeOverflow {
             offset,
             length: length as u64,
         })?;
-
+        if self.in_flight.len() >= self.queue_depth as usize {
+            return Err(Error::IoUringQueueFull {
+                queue_depth: self.queue_depth,
+            });
+        }
         let user_data = self.next_user_data();
+        let fd = types::Fd(file.as_fd().as_raw_fd());
+        let entry = match kind {
+            IoUringOperationKind::Read => {
+                opcode::Read::new(fd, buffer.as_mut_slice().as_mut_ptr(), length_u32)
+                    .offset(offset)
+                    .build()
+            }
+            IoUringOperationKind::Write => {
+                opcode::Write::new(fd, buffer.as_slice().as_ptr(), length_u32)
+                    .offset(offset)
+                    .build()
+            }
+        }
+        .user_data(user_data);
 
-        let pointer = buffer.as_slice().as_ptr();
-
-        let entry = opcode::Write::new(types::Fd(fd), pointer, length_u32)
-            .offset(offset)
-            .build()
-            .user_data(user_data);
-
-        // SAFETY:
-        //
-        // The SQE contains a pointer into `buffer`.
-        //
-        // Once pushed, the BufferGuard is transferred into the
-        // in-flight operation table and remains alive until the CQE
-        // has been consumed.
+        // Own every resource BEFORE publishing its pointer in the SQ. A panic
+        // or subsequent error cannot leave a published pointer without an owner.
+        let operation =
+            InFlightOperation::new(file.clone(), user_data, kind, offset, length, buffer);
+        let previous = self.in_flight.insert(user_data, operation);
+        debug_assert!(previous.is_none());
         let queue_depth = self.queue_depth;
-
-        // SAFETY:
-        //
-        // The safety invariant depends on the operation being submitted.
-        // See the operation-specific comment above this block.
-        unsafe {
-            self.ring_mut()?
+        // SAFETY: the table owns the stable allocation and descriptor. Only a
+        // matching, final CQE permits removal. Shutdown retains anything whose
+        // completion is unconfirmed. Only single-shot Read/Write SQEs are used.
+        let pushed = unsafe {
+            self.ring
+                .as_mut()
+                .expect("accepting engine has a ring")
                 .submission()
                 .push(&entry)
-                .map_err(|_| Error::IoUringQueueFull { queue_depth })?;
+        };
+        if pushed.is_err() {
+            // A failed push publishes nothing, so ownership can be returned.
+            self.in_flight.remove(&user_data);
+            return Err(Error::IoUringQueueFull { queue_depth });
         }
-
-        let operation = InFlightOperation::new(
-            user_data,
-            IoUringOperationKind::Write,
-            offset,
-            length,
-            buffer,
-        );
-
-        let previous = self.in_flight.insert(user_data, operation);
-
-        debug_assert!(previous.is_none(), "io_uring user_data collision");
-
         Ok(user_data)
     }
 
     pub fn submit(&mut self) -> Result<usize> {
-        self.ring_mut()?.submit().map_err(Error::Io)
+        self.ensure_accepting()?;
+        self.enter(0)
     }
 
+    /// Consume one completion, retaining all other operations on error.
+    ///
+    /// After an I/O error, new submissions are rejected, but remaining known
+    /// completions may still be consumed or drained by `shutdown`.
     pub fn wait_owned_completion(&mut self) -> Result<CompletedOperation> {
+        self.quarantine_result()?;
+        if self.completion_lost {
+            return Err(Error::IoUringShutdownUnconfirmed {
+                operations: self.in_flight.len(),
+            });
+        }
         if self.in_flight.is_empty() {
             return Err(Error::IoUringNoInFlight);
         }
+        let result = self.wait_one();
+        if result.is_err() {
+            self.accepting = false;
+        }
+        result
+    }
 
-        self.ring_mut()?.submit_and_wait(1).map_err(Error::Io)?;
-
-        let (user_data, result) = self.next_completion()?;
-
+    fn wait_one(&mut self) -> Result<CompletedOperation> {
+        self.enter(1)?;
+        let completion = match self.next_completion()? {
+            Some(completion) => completion,
+            None => {
+                self.completion_lost = true;
+                return Err(Error::IoUringCompletionMissing);
+            }
+        };
+        let (user_data, result, flags) = completion;
+        // These plain single-shot opcodes cannot legitimately return MORE. Do
+        // not release an owner if the completion cannot establish finality.
+        if io_uring::cqueue::more(flags) || !self.in_flight.contains_key(&user_data) {
+            self.completion_lost = true;
+            return Err(Error::IoUringUnknownCompletion { user_data });
+        }
         let operation = self
             .in_flight
             .remove(&user_data)
-            .ok_or(Error::IoUringUnknownCompletion { user_data })?;
-
-        let bytes_transferred = completion_result_to_bytes(result)?;
-
-        Ok(operation.complete(bytes_transferred))
+            .expect("checked completion id");
+        let bytes = completion_result_to_bytes(result)?;
+        if bytes > operation.length() {
+            return Err(Error::CorruptMetadata(
+                "io_uring completion exceeded requested length".into(),
+            ));
+        }
+        Ok(operation.complete(bytes))
     }
 
     pub fn drain(&mut self) -> Result<Vec<CompletedOperation>> {
-        if self.borrowed_in_flight {
-            return Err(Error::IoUringOperationModeConflict);
-        }
-
+        self.quarantine_result()?;
         let mut completed = Vec::with_capacity(self.in_flight.len());
-
         while !self.in_flight.is_empty() {
             completed.push(self.wait_owned_completion()?);
         }
-
         Ok(completed)
     }
 
-    fn submit_borrowed_read(&mut self, fd: RawFd, offset: u64, buffer: &mut [u8]) -> Result<u64> {
-        if !self.in_flight.is_empty() || self.borrowed_in_flight {
-            return Err(Error::IoUringOperationModeConflict);
+    /// Drain queued/submitted operations and close the ring. May block on I/O.
+    ///
+    /// Negative operation CQEs do not prevent draining the remaining requests.
+    /// If completion cannot be confirmed, retain outstanding buffers and FDs
+    /// permanently, close the ring, and report `IoUringShutdownUnconfirmed`.
+    pub fn shutdown(&mut self) -> Result<()> {
+        self.accepting = false;
+        if self.ring.is_none() {
+            return self.quarantine_result();
         }
-
-        let length = u32::try_from(buffer.len()).map_err(|_| Error::RangeOverflow {
-            offset,
-            length: buffer.len() as u64,
-        })?;
-
-        let user_data = self.next_user_data();
-
-        let entry = opcode::Read::new(types::Fd(fd), buffer.as_mut_ptr(), length)
-            .offset(offset)
-            .build()
-            .user_data(user_data);
-
-        // SAFETY:
-        //
-        // This is the synchronous borrowed compatibility path.
-        // `read_at()` does not return until the corresponding CQE has
-        // been consumed, so the caller's mutable buffer remains
-        // borrowed for the complete kernel access interval.
-        let queue_depth = self.queue_depth;
-
-        // SAFETY:
-        //
-        // The safety invariant depends on the operation being submitted.
-        // See the operation-specific comment above this block.
-        unsafe {
-            self.ring_mut()?
-                .submission()
-                .push(&entry)
-                .map_err(|_| Error::IoUringQueueFull { queue_depth })?;
+        let mut first_error = None;
+        while !self.in_flight.is_empty() && !self.completion_lost {
+            let before = self.in_flight.len();
+            if let Err(error) = self.wait_owned_completion() {
+                first_error.get_or_insert(error);
+                if self.in_flight.len() == before {
+                    break;
+                }
+            }
         }
-
-        self.borrowed_in_flight = true;
-
-        Ok(user_data)
+        if !self.in_flight.is_empty() {
+            self.quarantined = self.in_flight.len();
+            // Closing a ring requests cancellation, but is not our proof that
+            // kernel access has ended. Leak the owners rather than reuse/free
+            // their allocations or descriptor numbers without that proof.
+            std::mem::forget(std::mem::take(&mut self.in_flight));
+        }
+        drop(self.ring.take());
+        self.quarantine_result()?;
+        match first_error {
+            Some(error) => Err(error),
+            None => Ok(()),
+        }
     }
 
-    fn submit_borrowed_write(&mut self, fd: RawFd, offset: u64, buffer: &[u8]) -> Result<u64> {
-        if !self.in_flight.is_empty() || self.borrowed_in_flight {
-            return Err(Error::IoUringOperationModeConflict);
+    fn quarantine_result(&self) -> Result<()> {
+        if self.quarantined != 0 {
+            Err(Error::IoUringShutdownUnconfirmed {
+                operations: self.quarantined,
+            })
+        } else {
+            Ok(())
         }
-
-        let length = u32::try_from(buffer.len()).map_err(|_| Error::RangeOverflow {
-            offset,
-            length: buffer.len() as u64,
-        })?;
-
-        let user_data = self.next_user_data();
-
-        let entry = opcode::Write::new(types::Fd(fd), buffer.as_ptr(), length)
-            .offset(offset)
-            .build()
-            .user_data(user_data);
-
-        // SAFETY:
-        //
-        // `write_at()` waits for the CQE before returning, keeping the
-        // immutable borrow alive for the entire kernel access
-        // interval.
-        let queue_depth = self.queue_depth;
-
-        // SAFETY:
-        //
-        // The safety invariant depends on the operation being submitted.
-        // See the operation-specific comment above this block.
-        unsafe {
-            self.ring_mut()?
-                .submission()
-                .push(&entry)
-                .map_err(|_| Error::IoUringQueueFull { queue_depth })?;
-        }
-
-        self.borrowed_in_flight = true;
-
-        Ok(user_data)
     }
 
-    fn wait_borrowed_completion(&mut self) -> Result<BorrowedCompletion> {
-        if !self.borrowed_in_flight {
-            return Err(Error::IoUringNoInFlight);
+    fn ensure_accepting(&self) -> Result<()> {
+        if !self.accepting {
+            return Err(Error::IoUringEngineShutDown);
         }
-
-        self.ring_mut()?.submit_and_wait(1).map_err(Error::Io)?;
-
-        let (user_data, result) = self.next_completion()?;
-
-        self.borrowed_in_flight = false;
-
-        Ok(BorrowedCompletion { user_data, result })
+        Ok(())
     }
 
-    fn next_completion(&mut self) -> Result<(u64, i32)> {
-        let mut completion_queue = self.ring_mut()?.completion();
+    fn enter(&mut self, want: usize) -> Result<usize> {
+        loop {
+            let result = self.enter_once(want);
+            match result {
+                Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+                Err(error) => {
+                    self.accepting = false;
+                    return Err(Error::Io(error));
+                }
+                Ok(count) => return Ok(count),
+            }
+        }
+    }
 
-        completion_queue
+    fn enter_once(&mut self, want: usize) -> std::io::Result<usize> {
+        #[cfg(test)]
+        if let Some(fault) = self.faults.enter.pop_front() {
+            match fault {
+                faults::Enter::Before(kind) => return Err(std::io::Error::from(kind)),
+                faults::Enter::After(kind) => {
+                    self.ring.as_mut().unwrap().submit()?;
+                    return Err(std::io::Error::from(kind));
+                }
+                faults::Enter::PanicAfterSubmit => {
+                    self.ring.as_mut().unwrap().submit()?;
+                    panic!("injected panic after submission");
+                }
+                faults::Enter::Partial(fail) => {
+                    // SAFETY: test-only entry submits just one already-published
+                    // SQE. All its resources are owned; no signal mask or flags.
+                    let count = unsafe {
+                        self.ring
+                            .as_ref()
+                            .unwrap()
+                            .submitter()
+                            .enter(1, 0, 0, None::<&()>)?
+                    };
+                    return if fail {
+                        Err(std::io::Error::other(
+                            "injected error after partial submission",
+                        ))
+                    } else {
+                        Ok(count)
+                    };
+                }
+            }
+        }
+        self.ring
+            .as_mut()
+            .expect("live operation has a ring")
+            .submit_and_wait(want)
+    }
+
+    fn next_completion(&mut self) -> Result<Option<(u64, i32, u32)>> {
+        #[cfg(test)]
+        if self.faults.hide_completions {
+            return Ok(None);
+        }
+        let entry = self
+            .ring
+            .as_mut()
+            .ok_or(Error::IoUringEngineShutDown)?
+            .completion()
             .next()
-            .map(|entry| (entry.user_data(), entry.result()))
-            .ok_or(Error::IoUringCompletionMissing)
+            .map(|cqe| (cqe.user_data(), cqe.result(), cqe.flags()));
+        #[cfg(test)]
+        let entry = entry.map(|entry| self.faults.transform(entry));
+        Ok(entry)
     }
 
     fn next_user_data(&mut self) -> u64 {
         loop {
             let value = self.next_user_data;
-
-            self.next_user_data = self.next_user_data.wrapping_add(1);
-
-            if self.next_user_data == 0 {
-                self.next_user_data = 1;
-            }
-
+            self.next_user_data = self.next_user_data.wrapping_add(1).max(1);
             if value != 0 && !self.in_flight.contains_key(&value) {
                 return value;
             }
-        }
-    }
-
-    fn ring_mut(&mut self) -> Result<&mut IoUring> {
-        self.ring.as_mut().ok_or(Error::IoUringEngineShutDown)
-    }
-
-    fn drain_for_drop(&mut self) {
-        if self.borrowed_in_flight {
-            /*
-             * A borrowed operation is only created and completed
-             * within read_at()/write_at(). Reaching Drop with one
-             * outstanding indicates an interrupted/error path.
-             *
-             * Keep the ring alive while attempting to consume its CQE.
-             */
-            if let Some(ring) = self.ring.as_mut()
-                && ring.submit_and_wait(1).is_ok()
-            {
-                let mut queue = ring.completion();
-
-                if queue.next().is_some() {
-                    self.borrowed_in_flight = false;
-                }
-            }
-        }
-
-        while !self.in_flight.is_empty() {
-            let wait_result = match self.ring.as_mut() {
-                Some(ring) => ring.submit_and_wait(1),
-
-                None => break,
-            };
-
-            if wait_result.is_err() {
-                break;
-            }
-
-            let user_data = match self.ring.as_mut() {
-                Some(ring) => {
-                    let mut queue = ring.completion();
-
-                    queue.next().map(|entry| entry.user_data())
-                }
-
-                None => None,
-            };
-
-            let Some(user_data) = user_data else {
-                break;
-            };
-
-            self.in_flight.remove(&user_data);
         }
     }
 }
 
 impl Drop for IoUringEngine {
     fn drop(&mut self) {
-        self.drain_for_drop();
-
-        /*
-         * Drop order is explicit:
-         *
-         * 1. attempt to consume outstanding CQEs;
-         * 2. destroy the io_uring instance;
-         * 3. only then allow any remaining InFlightOperation values
-         *    and their BufferGuards to be dropped.
-         *
-         * Keeping the ring in Option<IoUring> lets us force this
-         * ordering rather than depending on struct field drop order.
-         */
-        drop(self.ring.take());
-
-        self.in_flight.clear();
+        let _ = self.shutdown();
     }
-}
-
-struct BorrowedCompletion {
-    user_data: u64,
-    result: i32,
 }
 
 fn completion_result_to_bytes(result: i32) -> Result<usize> {
     if result < 0 {
-        return Err(Error::Io(std::io::Error::from_raw_os_error(-result)));
+        // checked_neg also handles a malformed i32::MIN CQE without panicking.
+        let errno = result.checked_neg().ok_or_else(|| {
+            Error::CorruptMetadata("invalid io_uring negative completion result".into())
+        })?;
+        return Err(Error::Io(std::io::Error::from_raw_os_error(errno)));
     }
-
-    usize::try_from(result)
-        .map_err(|_| Error::CorruptMetadata("io_uring completion result does not fit usize".into()))
+    Ok(result as usize)
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn creates_engine() {
-        let engine = IoUringEngine::new(8).unwrap();
-
-        assert_eq!(engine.queue_depth(), 8,);
-
-        assert_eq!(engine.in_flight(), 0,);
-    }
-
-    #[test]
-    fn rejects_zero_queue_depth() {
-        let result = IoUringEngine::new(0);
-
-        assert!(matches!(result, Err(Error::InvalidIoUringQueueDepth)));
-    }
-
-    #[test]
-    fn owned_completion_without_submission_fails() {
-        let mut engine = IoUringEngine::new(8).unwrap();
-
-        let result = engine.wait_owned_completion();
-
-        assert!(matches!(result, Err(Error::IoUringNoInFlight)));
-    }
-}
+mod faults;
+#[cfg(test)]
+mod tests;

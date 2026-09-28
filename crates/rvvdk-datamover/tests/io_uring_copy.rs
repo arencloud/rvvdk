@@ -1,7 +1,7 @@
 #![cfg(target_os = "linux")]
 
 use std::fs::{self, OpenOptions};
-use std::os::fd::AsRawFd;
+use std::os::fd::AsFd;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -67,8 +67,8 @@ fn copies_file_with_io_uring_pipeline() {
         .unwrap();
 
     let stats = copy_file_range(
-        source.as_raw_fd(),
-        destination.as_raw_fd(),
+        source.as_fd(),
+        destination.as_fd(),
         0,
         FILE_SIZE as u64,
         BLOCK_SIZE,
@@ -117,8 +117,8 @@ fn copies_with_multiple_queue_depths() {
             .unwrap();
 
         let stats = copy_file_range(
-            source.as_raw_fd(),
-            destination.as_raw_fd(),
+            source.as_fd(),
+            destination.as_fd(),
             0,
             FILE_SIZE as u64,
             BLOCK_SIZE,
@@ -197,8 +197,8 @@ fn copies_partial_final_block() {
         .unwrap();
 
     let stats = copy_file_range(
-        source.as_raw_fd(),
-        destination.as_raw_fd(),
+        source.as_fd(),
+        destination.as_fd(),
         0,
         file_size as u64,
         BLOCK_SIZE,
@@ -261,8 +261,8 @@ fn copies_non_zero_file_range() {
         .unwrap();
 
     let stats = copy_file_range(
-        source.as_raw_fd(),
-        destination.as_raw_fd(),
+        source.as_fd(),
+        destination.as_fd(),
         PREFIX as u64,
         COPY_LENGTH as u64,
         BLOCK_SIZE,
@@ -330,8 +330,8 @@ fn zero_length_copy_does_nothing() {
         .unwrap();
 
     let stats = copy_file_range(
-        source.as_raw_fd(),
-        destination.as_raw_fd(),
+        source.as_fd(),
+        destination.as_fd(),
         0,
         0,
         BLOCK_SIZE,
@@ -379,8 +379,8 @@ fn pipeline_uses_reads_and_writes_concurrently() {
         .unwrap();
 
     let stats = copy_file_range(
-        source.as_raw_fd(),
-        destination.as_raw_fd(),
+        source.as_fd(),
+        destination.as_fd(),
         0,
         FILE_SIZE as u64,
         BLOCK_SIZE,
@@ -435,8 +435,8 @@ fn supports_custom_read_window() {
     let options = IoUringExecutionOptions::with_read_window(8, 3).unwrap();
 
     let stats = copy_file_range_with_options(
-        source.as_raw_fd(),
-        destination.as_raw_fd(),
+        source.as_fd(),
+        destination.as_fd(),
         0,
         FILE_SIZE as u64,
         BLOCK_SIZE,

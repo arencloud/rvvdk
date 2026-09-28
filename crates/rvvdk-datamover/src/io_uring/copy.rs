@@ -1,8 +1,8 @@
-use std::os::fd::RawFd;
+use std::os::fd::BorrowedFd;
 
 use rvvdk_core::{BufferPool, Error, Result};
 
-use super::{CompletedOperation, IoUringEngine, IoUringOperationKind};
+use super::{CompletedOperation, IoUringEngine, IoUringFile, IoUringOperationKind};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct IoUringCopyStats {
@@ -46,8 +46,8 @@ impl IoUringCopyStats {
 }
 
 struct CopyContext {
-    source_fd: RawFd,
-    destination_fd: RawFd,
+    source_fd: IoUringFile,
+    destination_fd: IoUringFile,
     start_offset: u64,
     length: u64,
     block_size: usize,
@@ -99,8 +99,8 @@ fn update_peaks(stats: &mut IoUringCopyStats, state: &PipelineState) {
 }
 
 pub fn copy_file_range(
-    source_fd: RawFd,
-    destination_fd: RawFd,
+    source_fd: BorrowedFd<'_>,
+    destination_fd: BorrowedFd<'_>,
     offset: u64,
     length: u64,
     block_size: usize,
@@ -122,8 +122,8 @@ pub fn copy_file_range(
 }
 
 pub fn copy_file_range_with_options(
-    source_fd: RawFd,
-    destination_fd: RawFd,
+    source_fd: BorrowedFd<'_>,
+    destination_fd: BorrowedFd<'_>,
     offset: u64,
     length: u64,
     block_size: usize,
@@ -148,8 +148,8 @@ pub fn copy_file_range_with_options(
     let mut engine = IoUringEngine::new(queue_depth)?;
 
     let context = CopyContext {
-        source_fd,
-        destination_fd,
+        source_fd: IoUringFile::new(source_fd)?,
+        destination_fd: IoUringFile::new(destination_fd)?,
         start_offset: offset,
         length,
         block_size,
@@ -157,7 +157,18 @@ pub fn copy_file_range_with_options(
         read_window: options.read_window(),
     };
 
-    copy_with_engine(&mut engine, &pool, &context)
+    let result = copy_with_engine(&mut engine, &pool, &context);
+    let cleanup = engine.shutdown();
+    match (result, cleanup) {
+        (Err(original), Err(Error::IoUringShutdownUnconfirmed { operations })) => {
+            Err(Error::IoUringCleanup {
+                original: Box::new(original),
+                operations,
+            })
+        }
+        (Err(error), _) | (Ok(_), Err(error)) => Err(error),
+        (Ok(stats), Ok(())) => Ok(stats),
+    }
 }
 
 fn copy_with_engine(
@@ -278,7 +289,7 @@ fn process_read_completion(
      */
     let buffer = completed.into_buffer();
 
-    engine.submit_owned_write(context.destination_fd, offset, actual, buffer)?;
+    engine.submit_owned_write(&context.destination_fd, offset, actual, buffer)?;
 
     state.write_submitted();
 
@@ -336,7 +347,7 @@ fn process_write_completion(
 fn submit_read(
     engine: &mut IoUringEngine,
     pool: &BufferPool,
-    source_fd: RawFd,
+    source_fd: &IoUringFile,
     offset: u64,
     length: usize,
     state: &mut PipelineState,
@@ -396,7 +407,7 @@ fn refill_reads(
         submit_read(
             engine,
             pool,
-            context.source_fd,
+            &context.source_fd,
             *next_offset,
             length,
             state,

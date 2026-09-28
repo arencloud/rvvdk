@@ -1,6 +1,6 @@
 mod support;
 
-use std::os::fd::AsRawFd;
+use std::os::fd::AsFd;
 use std::time::Duration;
 
 use criterion::{
@@ -130,8 +130,8 @@ fn benchmark_io_uring_direct(criterion: &mut Criterion) {
                         LocalFileBlockDevice::open_direct_read_write(&destination_path).unwrap();
 
                     let stats = copy_file_range(
-                        source.as_raw_fd(),
-                        destination.as_raw_fd(),
+                        source.as_fd(),
+                        destination.as_fd(),
                         0,
                         DISK_SIZE as u64,
                         BLOCK_SIZE,

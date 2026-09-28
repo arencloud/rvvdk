@@ -76,6 +76,18 @@ pub enum Error {
     #[error("io_uring engine has been shut down")]
     IoUringEngineShutDown,
 
+    #[error(
+        "io_uring shutdown could not confirm completion; {operations} operations retained permanently for memory safety"
+    )]
+    IoUringShutdownUnconfirmed { operations: usize },
+
+    #[error("{original}; io_uring cleanup retained {operations} unconfirmed operations")]
+    IoUringCleanup {
+        #[source]
+        original: Box<Error>,
+        operations: usize,
+    },
+
     #[error("short write at offset {offset}: expected {expected} bytes, wrote {actual}")]
     ShortWrite {
         offset: u64,

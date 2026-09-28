@@ -1,7 +1,7 @@
 use crate::DirectIoAlignment;
 use std::fs::File;
 #[cfg(target_os = "linux")]
-use std::os::fd::AsRawFd;
+use std::os::fd::{AsFd, AsRawFd, BorrowedFd};
 use std::os::unix::fs::{FileExt, OpenOptionsExt};
 use std::path::Path;
 
@@ -305,6 +305,13 @@ fn seek_extent(fd: std::os::fd::RawFd, offset: u64, whence: libc::c_int) -> Resu
 impl AsRawFd for LocalFileBlockDevice {
     fn as_raw_fd(&self) -> std::os::fd::RawFd {
         self.file.as_raw_fd()
+    }
+}
+
+#[cfg(target_os = "linux")]
+impl AsFd for LocalFileBlockDevice {
+    fn as_fd(&self) -> BorrowedFd<'_> {
+        self.file.as_fd()
     }
 }
 

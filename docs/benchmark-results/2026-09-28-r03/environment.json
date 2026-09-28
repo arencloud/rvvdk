@@ -1,0 +1,211 @@
+{
+  "baseline_commit": "52ddb14037ca90c287d260b1d9585575d5d2a222",
+  "baseline_harness": "Baseline plus identical candidate Cargo.toml and benches/native_lifetime.rs; unchanged runtime. High-level copy_native API is identical.",
+  "candidate_patch_sha256": "f5a91ef3c4b984ce6590e88f94cd53555833b22b58c63a34c2985320d49cfeb4",
+  "harness_sha256": {
+    "crates/rvvdk-datamover/Cargo.toml": "b14fa58407d6f5077eb60268e96c8bd1a714c1c5024793d6b4e4afbad52a0714",
+    "crates/rvvdk-datamover/benches/native_lifetime.rs": "440a48c7563666500fdb7d12265ccf401c704ca1d149a9b058acfc6482367e69"
+  },
+  "binaries_sha256": {
+    "baseline": "6fb8cb424b7e7140cafbdb32970f99c8158b585bb5adc2fe36b6f38076368916",
+    "candidate": "14a57cb2c231de7a0899b5a8ab081f7496ca5a8c5efa2033ee255ae57d730967"
+  },
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)\nbinary: rustc\ncommit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860\ncommit-date: 2026-04-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.95.0\nLLVM version: 22.1.2",
+  "kernel": "Linux 7.2.5-200.fc44.x86_64 x86_64 GNU/Linux",
+  "cpu": {
+    "lscpu": [
+      {
+        "field": "Architecture:",
+        "data": "x86_64"
+      },
+      {
+        "field": "CPU op-mode(s):",
+        "data": "32-bit, 64-bit"
+      },
+      {
+        "field": "Address sizes:",
+        "data": "39 bits physical, 48 bits virtual"
+      },
+      {
+        "field": "Byte Order:",
+        "data": "Little Endian"
+      },
+      {
+        "field": "CPU(s):",
+        "data": "16"
+      },
+      {
+        "field": "On-line CPU(s) list:",
+        "data": "0-15"
+      },
+      {
+        "field": "Vendor ID:",
+        "data": "GenuineIntel"
+      },
+      {
+        "field": "Model name:",
+        "data": "11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz"
+      },
+      {
+        "field": "CPU family:",
+        "data": "6"
+      },
+      {
+        "field": "Model:",
+        "data": "141"
+      },
+      {
+        "field": "Thread(s) per core:",
+        "data": "2"
+      },
+      {
+        "field": "Core(s) per socket:",
+        "data": "8"
+      },
+      {
+        "field": "Socket(s):",
+        "data": "1"
+      },
+      {
+        "field": "Stepping:",
+        "data": "1"
+      },
+      {
+        "field": "CPU(s) scaling MHz:",
+        "data": "49%"
+      },
+      {
+        "field": "CPU max MHz:",
+        "data": "4800.0000"
+      },
+      {
+        "field": "CPU min MHz:",
+        "data": "800.0000"
+      },
+      {
+        "field": "BogoMIPS:",
+        "data": "4992.00"
+      },
+      {
+        "field": "Flags:",
+        "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb cat_l2 cdp_l2 ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb intel_pt avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves split_lock_detect user_shstk dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid movdiri movdir64b fsrm avx512_vp2intersect md_clear ibt flush_l1d arch_capabilities"
+      },
+      {
+        "field": "Virtualization:",
+        "data": "VT-x"
+      },
+      {
+        "field": "L1d cache:",
+        "data": "384 KiB (8 instances)"
+      },
+      {
+        "field": "L1i cache:",
+        "data": "256 KiB (8 instances)"
+      },
+      {
+        "field": "L2 cache:",
+        "data": "10 MiB (8 instances)"
+      },
+      {
+        "field": "L3 cache:",
+        "data": "24 MiB (1 instance)"
+      },
+      {
+        "field": "NUMA node(s):",
+        "data": "1"
+      },
+      {
+        "field": "NUMA node0 CPU(s):",
+        "data": "0-15"
+      },
+      {
+        "field": "Vulnerability Gather data sampling:",
+        "data": "Mitigation; Microcode"
+      },
+      {
+        "field": "Vulnerability Ghostwrite:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Indirect target selection:",
+        "data": "Mitigation; Aligned branch/return thunks"
+      },
+      {
+        "field": "Vulnerability Itlb multihit:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability L1tf:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Meltdown:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mmio stale data:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Old microcode:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Reg file data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Retbleed:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec rstack overflow:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec store bypass:",
+        "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+      },
+      {
+        "field": "Vulnerability Spectre v1:",
+        "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+      },
+      {
+        "field": "Vulnerability Spectre v2:",
+        "data": "Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW loop"
+      },
+      {
+        "field": "Vulnerability Srbds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsa:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsx async abort:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Vmscape:",
+        "data": "Not affected"
+      }
+    ]
+  },
+  "memory": "MemTotal:       65527436 kB",
+  "storage": "NAME    MODEL                        SIZE ROTA\nzram0                                  8G    0\nnvme0n1 SAMSUNG MZVL21T0HCLR-00BL7 953.9G    0",
+  "filesystem": "btrfs rw,relatime,seclabel,compress=zstd:1,ssd,discard=async,space_cache=v2,subvolid=256,subvol=/home",
+  "governor": "powersave",
+  "profile": "Default optimized cargo bench, isolated target/r03-{baseline,candidate}-build directories.",
+  "sampling": "20 flat samples, 300 ms warmup, 2 s measurement target. All runs sequential with taskset -c 2-6 (five physical cores). 3 pairs in baseline/candidate, candidate/baseline, baseline/candidate order.",
+  "workload": "16 MiB deterministic incompressible dense source; buffered and O_DIRECT; native q1/64KiB, q8/64KiB, q8/4KiB, q8/1MiB; threaded 4-worker 64KiB controls.",
+  "timing": "Native copy setup, duplicated endpoint handles, pipeline, explicit cleanup, and destination flush timed. Threaded copy includes its flush. Reset with different payload and flush, full output verification, and FD-count checks excluded each iteration.",
+  "resources": "GNU time -v measures complete benchmark processes, including setup/verification/Criterion analysis; not per-copy CPU/RSS. Every copy verifies /proc/self/fd count unchanged.",
+  "limits": "Development laptop, powersave and background processes uncontrolled. Small warm buffered input; direct mode does not imply cold device/controller caches. No sustained-storage claim or per-I/O latency counters.",
+  "followup": "Investigate +15.25% direct threaded-control movement: repeat direct q8/64KiB and threaded control with identical binaries; 40 flat samples, 500 ms warmup, 4 s target; taskset 2-6; reverse order candidate/baseline, baseline/candidate, candidate/baseline.",
+  "validation_only_additions": "After measuring, added two public pipeline error/FD-cleanup tests and strengthened the live-ID wraparound unit test. No runtime or harness changes; rebuilding the candidate benchmark reproduced the measured executable SHA-256 exactly."
+}

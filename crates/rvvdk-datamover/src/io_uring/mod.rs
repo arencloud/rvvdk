@@ -4,11 +4,13 @@ mod copy;
 mod engine;
 mod extent_copy;
 mod extent_plan;
+mod file;
 mod operation;
 
 pub use capabilities::{IoUringCapabilities, probe_io_uring};
 
 pub use engine::IoUringEngine;
+pub use file::IoUringFile;
 
 pub use operation::{CompletedOperation, IoUringOperationKind};
 

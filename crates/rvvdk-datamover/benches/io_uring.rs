@@ -1,7 +1,7 @@
 mod support;
 
 use std::fs::OpenOptions;
-use std::os::fd::AsRawFd;
+use std::os::fd::AsFd;
 use std::time::Duration;
 
 use rvvdk_core::RawDisk;
@@ -65,8 +65,8 @@ fn benchmark_io_uring(criterion: &mut Criterion) {
                         .unwrap();
 
                     let stats = copy_file_range(
-                        source.as_raw_fd(),
-                        destination.as_raw_fd(),
+                        source.as_fd(),
+                        destination.as_fd(),
                         0,
                         DISK_SIZE as u64,
                         BLOCK_SIZE,
