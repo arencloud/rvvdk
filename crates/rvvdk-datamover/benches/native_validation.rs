@@ -101,7 +101,7 @@ fn native_validation(criterion: &mut Criterion) {
         MIB as u64,
     )
     .unwrap();
-    group.bench_function("zero_fallback_1mib_16extents", |b| {
+    group.bench_function("zero_destination_1mib_16extents", |b| {
         b.iter_custom(|iterations| {
             let mut elapsed = Duration::ZERO;
             for _ in 0..iterations {
@@ -119,7 +119,16 @@ fn native_validation(criterion: &mut Criterion) {
                 .unwrap();
                 disk.flush().unwrap();
                 elapsed += start.elapsed();
-                assert_eq!(stats.bytes_written(), MIB as u64);
+                let zeroed = if disk
+                    .capabilities()
+                    .contains(rvvdk_core::Capabilities::WRITE_ZERO)
+                {
+                    MIB as u64
+                } else {
+                    0
+                };
+                assert_eq!(stats.bytes_zeroed(), zeroed);
+                assert_eq!(stats.bytes_written(), MIB as u64 - zeroed);
                 assert_eq!(stats.extents_processed(), 16);
                 disk.read_exact_at(0, &mut actual).unwrap();
                 assert!(actual.iter().all(|byte| *byte == 0));

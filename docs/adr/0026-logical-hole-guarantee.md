@@ -102,3 +102,11 @@ with the new flag declaration and fixture. [R2.1 evidence](../benchmark-results/
 records this reproduction, correctness checks, matched benchmark harness changes,
 and performance limits. Local sparse allocation and native availability/tail
 compatibility remain separate R2 milestones. No ESXi host is required.
+
+## R2.2 implementation update — 2026-09-29
+
+LocalFileBlockDevice now advertises writable zeroing and zero-guaranteed discard.
+Native range operations and bounded unsupported-mode fallback satisfy the
+logical-content guarantee, including unaligned boundary bytes. The original
+R2.1 migration note above describes the preceding implementation. See the
+[local contract](../local-sparse-output.md) and [R2.2 results](../benchmark-results/2026-09-29-r22/README.md).

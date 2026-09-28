@@ -41,8 +41,8 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 | R0.5 | Complete | Endpoint capabilities/live capacity, known aliases, native binding, and contextual preflight errors | Required correctness cost accepted: planning +2.08–2.15 µs; final copy aggregates −1.93% to +2.37%; general qualification provisional |
 | V0 | Planned | Independent VMware access feasibility; licensed/evaluation host needed for representative API workflows | Pending — first transport baseline follows functional proof |
 
-R1.1–R1.6 and R2.1 are complete within their documented scopes; their detailed
-records appear below. R2.2 onward and V0 remain planned in the roadmap. Performance qualification
+R1.1–R1.6 and R2.1–R2.2 are complete within their documented scopes; their detailed
+records appear below. R2.3 onward and V0 remain planned in the roadmap. Performance qualification
 remains provisional as recorded for each step.
 
 ## Per-step record template
@@ -793,17 +793,95 @@ contracts. Its new guarantee declaration is migrated, but its runtime repair
 remains PERF.0 work before those failure-latency timings can be reused. It was
 not used for the R2.1 measurements.
 
+## R2.2 — Local zeroing and hole punching
+
+Date: 2026-09-29. Status: **Complete within the local sparse-output contract**;
+filesystem-independent allocation and general performance qualification are not
+claimed. Baseline: `a4a04fb` (R2.1), initially clean working tree. Candidate is
+committed with this record; [source/harness patches, hashes, and measurements](benchmark-results/2026-09-29-r22/README.md)
+identify the measured implementation.
+
+Problem: local output always materialized logical holes through ordinary zero
+writes, despite R2.1 having established the guarantee needed for safe deallocation.
+Local Zero ranges also lacked a backend operation. Both needed exact boundaries,
+access/range checks, and an honest fallback contract before advertising support.
+
+Implementation:
+
+1. Writable Linux LocalFileBlockDevice now advertises WRITE_ZERO and
+   DISCARD|DISCARD_ZEROES. Read-only handles do not. Fresh endpoint inspection
+   removes the new write capabilities when current descriptor access is not
+   writable. RawDisk and shared DataMover policy automatically use these paths.
+2. Implemented ZERO_RANGE|KEEP_SIZE and PUNCH_HOLE|KEEP_SIZE on exact byte ranges.
+   Kernel partial-block semantics preserve surrounding bytes and file size.
+   Direct-open devices use their verified buffered alias for sparse operations.
+3. Added cached-geometry and fresh-size checks, checked range/off_t arithmetic,
+   logical write permission, and current primary/buffered append/access checks.
+   Empty valid requests avoid fallocate. Observed truncation cannot silently
+   regrow the file through fallback. Checks remain inspections, not external
+   mutation locks.
+4. EOPNOTSUPP/ENOSYS use bounded positional writes from a shared 64 KiB zero
+   array, without per-operation heap allocation. Unsupported acceleration is
+   cached independently per mode/open device. EINTR retries; EINVAL, EPERM,
+   EIO, ENOSPC, and other errors propagate without fallback or caching.
+5. Preserved copy flush ownership and failure/no-retry behavior. Successful
+   backend zero/discard contributes its operation counter even if the backend
+   used ordinary writes internally. Counters do not measure physical allocation.
+   Updated old tests/harness assertions to reflect this intentional migration.
+6. Added nine tests covering unsupported-mode injection/cache independence,
+   interrupted and real errors with partial effects, empty/invalid/truncated
+   ranges, append flags on both handles, read-only access, odd edges and readback
+   through buffered/direct opens, storage allocation, and mixed copies through
+   one/four workers and io_uring with/without observation.
+7. Ran local output tests on the recorded storage filesystem, including the
+   explicitly gated physical-allocation test. Punching 6 MiB from an 8 MiB
+   incompressible file reduced allocated 512-byte blocks **16,384 → 4,096**;
+   full logical readback and file size remained correct.
+8. Added a matched 32 MiB mixed local-output benchmark (Data 8 MiB, Zero 4 MiB,
+   Hole 20 MiB) for sequential, four-worker, and native execution. Migrated
+   progress/native-zero harness counters with capability-aware assertions,
+   preserving identical harnesses across builds. Fixed the known scheduler
+   failure fixture's FLUSH capability and CopyExecution-aware error assertion;
+   smoke-ran all eight failure profiles on both builds without claiming renewed
+   latency qualification.
+9. Updated [local sparse output](local-sparse-output.md), architecture,
+   ADR-0026's implementation record, README, roadmap, and this log. Physical
+   reclamation remains filesystem dependent; fallback may allocate space.
+
+Validation: **314 distinct tests covered**: 313 pass in the workspace run, one
+storage-allocation test is explicitly gated there and passes in the separate
+storage run. All three local sparse-output integration tests also pass on that
+mount. Formatting, strict all-target Clippy, and the core/datamover wasm32 library
+compile check pass. The latter is not runtime portability qualification.
+
+Initial workspace runs exposed old local Zero/Hole counter expectations (four
+native-extent and two unified-dispatch assertions). Their failure logs are
+retained; expectations were migrated and the final suite passes. No payload
+readback failure was hidden. [The report](benchmark-results/2026-09-29-r22/README.md)
+records commands, smoke checks, allocation evidence, and timing samples.
+
+Performance disposition: 32 MiB mixed-copy aggregates improve 34.67% sequentially,
+27.53% with four workers, and 44.79% natively on this host. Dense RAW controls are
+−0.47%/−1.40%. However, fragmented no-op observation is **+26.67%** in the main
+comparison and **+15.39%** in a longer repeat, with every paired result slower.
+Accept the sparse-output feature with this explicit measured cost; do not dismiss
+it as noise or claim universal acceleration. Repeated small hole punches and
+fresh checks replace zero writes, and need targeted batching/backend-cost work
+before qualification. Full samples, counter checks, control variability, and
+limits are in the [R2.2 report](benchmark-results/2026-09-29-r22/README.md).
+Prior PERF.0 issues remain open.
+
 ## Next session
 
-Start **R2.2**: implement local zeroing and hole punching under the accepted
-logical-content guarantee. Check write access/ranges, preserve disk size and
-unaligned boundary bytes, handle unsupported filesystems inside the backend,
-and advertise only guarantees that every successful call satisfies. Test with
-nonzero-prefilled destinations and verify actual allocation separately on a
-supporting storage filesystem. Native availability/tail compatibility and
-per-job ring reuse remain later R2 steps.
+Start **R2.3**: provide dense Data extent fallback when local sparse discovery
+is unavailable. Distinguish unsupported discovery from genuine I/O failures,
+validate every requested range, and never infer Hole from unknown allocation
+state. Cover partial discovery and complete logical reads without weakening
+extent validation or source consistency requirements.
 
-Keep prior PERF.0 issues and this step's performance disposition open for a
-controlled runner. Preserve failure context, copy budgets, and shared-policy
-parity. Track evidence and commit each completed step. ESXi remains unnecessary;
-request the 60-day trial when V0 is ready.
+Keep prior PERF.0 investigations and this step's performance disposition open
+for controlled-runner qualification. Native runtime/request compatibility,
+concurrent buffered/direct policy, and per-job ring reuse remain later R2 work.
+Preserve failure context, copy budgets, and shared semantics; track evidence and
+commit each completed step. ESXi is still unnecessary; request the 60-day trial
+when V0 is ready.

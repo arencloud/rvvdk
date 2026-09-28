@@ -201,7 +201,7 @@ Layered disks must resolve parent contents before reporting logical Hole extents
 
 Default MemoryBlockDevice provides the guarantee by filling the range with zero;
 explicit capability masks remain unchanged. RawDisk forwards capabilities. Local
-file hole punching remains R2.2. A successful discard must preserve surrounding
+file zeroing/hole punching and bounded fallback are implemented in R2.2. A successful discard must preserve surrounding
 bytes and disk size, but does not promise physical reclamation or durability.
 `bytes_discarded` counts logical operation bytes, not space released. Failures may
 have partial effects and are never retried via a different sparse operation.
@@ -999,3 +999,17 @@ before its returned capacity can be checked; allocator/container overhead,
 thread stacks, backend/observer memory, kernel resources, and previous native
 quarantine are external. This does not bound RSS or eliminate fragmentation
 costs. See the [complete accounting contract](copy-memory.md).
+
+## Local zeroing and hole punching (R2.2)
+
+Writable Linux local files advertise WRITE_ZERO and zero-guaranteed DISCARD.
+KEEP_SIZE range operations preserve the logical file size and exact boundaries.
+Fresh primary/alias access and size checks precede every call. Unsupported
+acceleration falls back to bounded writes from a shared 64 KiB zero array;
+unsupported modes are cached separately per open file. Other errors propagate.
+
+The [local sparse-output contract](local-sparse-output.md) defines error handling,
+concurrency limits, operation counters, and storage-backed allocation evidence.
+Fallback can allocate space; bytes_discarded counts logical operation bytes.
+Source extent discovery fallback and broader native request compatibility remain
+follow-up work.

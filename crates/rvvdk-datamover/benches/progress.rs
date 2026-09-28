@@ -108,7 +108,16 @@ fn benchmark_progress(criterion: &mut Criterion) {
                         elapsed += started.elapsed();
 
                         assert_eq!(report.stats().bytes_read(), plan.data_bytes());
-                        assert_eq!(report.stats().bytes_written(), SIZE as u64);
+                        let discarded = if destination.capabilities().contains(
+                            rvvdk_core::Capabilities::DISCARD
+                                | rvvdk_core::Capabilities::DISCARD_ZEROES,
+                        ) {
+                            plan.hole_bytes()
+                        } else {
+                            0
+                        };
+                        assert_eq!(report.stats().bytes_discarded(), discarded);
+                        assert_eq!(report.stats().bytes_written(), SIZE as u64 - discarded);
                         destination.read_exact_at(0, &mut actual).unwrap();
                         assert_eq!(actual, expected, "{profile}/{mode}: output differs");
                         if mode == "counter" {

@@ -139,20 +139,15 @@ fn copies_zero_extent_with_destination_semantics() {
     )
     .unwrap();
 
-    /*
-     * LocalFileBlockDevice does not advertise WRITE_ZERO here.
-     *
-     * Zero therefore uses ordinary zero-filled fallback writes.
-     */
     assert_eq!(stats.bytes_read(), 0,);
 
-    assert_eq!(stats.bytes_written(), FILE_SIZE as u64,);
+    assert_eq!(stats.bytes_written(), 0,);
 
-    assert_eq!(stats.bytes_zeroed(), 0,);
+    assert_eq!(stats.bytes_zeroed(), FILE_SIZE as u64,);
 
     assert_eq!(stats.bytes_discarded(), 0,);
 
-    assert_eq!(stats.blocks_completed(), (FILE_SIZE / BLOCK_SIZE) as u64,);
+    assert_eq!(stats.blocks_completed(), 0,);
 
     assert_eq!(stats.extents_processed(), 1,);
 
@@ -209,23 +204,18 @@ fn copies_data_zero_data_extent_plan() {
     )
     .unwrap();
 
-    /*
-     * Two Data extents are read from the source.
-     */
     assert_eq!(stats.bytes_read(), (2 * EXTENT_SIZE) as u64,);
 
-    /*
-     * Data writes = 4 MiB.
-     * Zero fallback writes = 2 MiB.
-     * Total ordinary writes = 6 MiB.
-     */
-    assert_eq!(stats.bytes_written(), FILE_SIZE as u64,);
+    assert_eq!(stats.bytes_written(), (4 * 1024 * 1024) as u64,);
 
-    assert_eq!(stats.bytes_zeroed(), 0,);
+    assert_eq!(stats.bytes_zeroed(), (2 * 1024 * 1024) as u64,);
 
     assert_eq!(stats.bytes_discarded(), 0,);
 
-    assert_eq!(stats.blocks_completed(), (FILE_SIZE / BLOCK_SIZE) as u64,);
+    assert_eq!(
+        stats.blocks_completed(),
+        ((4 * 1024 * 1024) / BLOCK_SIZE) as u64,
+    );
 
     assert_eq!(stats.extents_processed(), 3,);
 
@@ -275,21 +265,15 @@ fn copies_hole_extent_with_destination_semantics() {
     )
     .unwrap();
 
-    /*
-     * LocalFileBlockDevice advertises neither DISCARD nor WRITE_ZERO
-     * for this destination.
-     *
-     * Hole therefore uses ordinary zero-filled fallback writes.
-     */
     assert_eq!(stats.bytes_read(), 0,);
 
-    assert_eq!(stats.bytes_written(), FILE_SIZE as u64,);
+    assert_eq!(stats.bytes_written(), 0,);
 
     assert_eq!(stats.bytes_zeroed(), 0,);
 
-    assert_eq!(stats.bytes_discarded(), 0,);
+    assert_eq!(stats.bytes_discarded(), FILE_SIZE as u64,);
 
-    assert_eq!(stats.blocks_completed(), (FILE_SIZE / BLOCK_SIZE) as u64,);
+    assert_eq!(stats.blocks_completed(), 0,);
 
     assert_eq!(stats.extents_processed(), 1,);
 
@@ -348,18 +332,16 @@ fn copies_data_hole_data_extent_plan() {
 
     assert_eq!(stats.bytes_read(), (2 * EXTENT_SIZE) as u64,);
 
-    /*
-     * Data writes = 4 MiB.
-     * Hole fallback writes = 2 MiB.
-     * Total ordinary writes = 6 MiB.
-     */
-    assert_eq!(stats.bytes_written(), FILE_SIZE as u64,);
+    assert_eq!(stats.bytes_written(), (4 * 1024 * 1024) as u64,);
 
     assert_eq!(stats.bytes_zeroed(), 0,);
 
-    assert_eq!(stats.bytes_discarded(), 0,);
+    assert_eq!(stats.bytes_discarded(), (2 * 1024 * 1024) as u64,);
 
-    assert_eq!(stats.blocks_completed(), (FILE_SIZE / BLOCK_SIZE) as u64,);
+    assert_eq!(
+        stats.blocks_completed(),
+        ((4 * 1024 * 1024) / BLOCK_SIZE) as u64,
+    );
 
     assert_eq!(stats.extents_processed(), 3,);
 

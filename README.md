@@ -49,7 +49,7 @@ VMware disk access and migration, extensible to other platforms.
 | **Copy preflight** | Access, flush support, live capacity, alias and native binding checks; shared fresh local FD inspections |
 | **Progress reporting** | Intermediate updates on the single-worker threaded path |
 | **Copy failures** | Operation/range/cause context and confirmed partial counters; [contract](docs/copy-errors.md) |
-| **Sparse destination allocation** | Planned; local holes currently use zero-write fallback |
+| **Sparse destination output** | Linux zeroing and hole punching with safe bounded fallback; [contract and allocation evidence](docs/local-sparse-output.md) |
 | **Copy memory budget** | Configurable 256 MiB default for buffers, queue entries, and extent metadata; [scope and limits](docs/copy-memory.md) |
 | **VMDK and VMware access** | Planned; no VMware VDDK dependency in the current workspace |
 

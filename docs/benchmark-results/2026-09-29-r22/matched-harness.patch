@@ -1,0 +1,217 @@
+diff --git a/crates/rvvdk-datamover/Cargo.toml b/crates/rvvdk-datamover/Cargo.toml
+index e3cac73..cf498d2 100644
+--- a/crates/rvvdk-datamover/Cargo.toml
++++ b/crates/rvvdk-datamover/Cargo.toml
+@@ -66,3 +66,7 @@ harness = false
+ [[bench]]
+ name = "semantic_policy"
+ harness = false
++
++[[bench]]
++name = "local_sparse"
++harness = false
+diff --git a/crates/rvvdk-datamover/benches/native_validation.rs b/crates/rvvdk-datamover/benches/native_validation.rs
+index c2634e5..f2170cd 100644
+--- a/crates/rvvdk-datamover/benches/native_validation.rs
++++ b/crates/rvvdk-datamover/benches/native_validation.rs
+@@ -101,7 +101,7 @@ fn native_validation(criterion: &mut Criterion) {
+         MIB as u64,
+     )
+     .unwrap();
+-    group.bench_function("zero_fallback_1mib_16extents", |b| {
++    group.bench_function("zero_destination_1mib_16extents", |b| {
+         b.iter_custom(|iterations| {
+             let mut elapsed = Duration::ZERO;
+             for _ in 0..iterations {
+@@ -119,7 +119,16 @@ fn native_validation(criterion: &mut Criterion) {
+                 .unwrap();
+                 disk.flush().unwrap();
+                 elapsed += start.elapsed();
+-                assert_eq!(stats.bytes_written(), MIB as u64);
++                let zeroed = if disk
++                    .capabilities()
++                    .contains(rvvdk_core::Capabilities::WRITE_ZERO)
++                {
++                    MIB as u64
++                } else {
++                    0
++                };
++                assert_eq!(stats.bytes_zeroed(), zeroed);
++                assert_eq!(stats.bytes_written(), MIB as u64 - zeroed);
+                 assert_eq!(stats.extents_processed(), 16);
+                 disk.read_exact_at(0, &mut actual).unwrap();
+                 assert!(actual.iter().all(|byte| *byte == 0));
+diff --git a/crates/rvvdk-datamover/benches/progress.rs b/crates/rvvdk-datamover/benches/progress.rs
+index 4329799..5fdc0ef 100644
+--- a/crates/rvvdk-datamover/benches/progress.rs
++++ b/crates/rvvdk-datamover/benches/progress.rs
+@@ -108,7 +108,16 @@ fn benchmark_progress(criterion: &mut Criterion) {
+                         elapsed += started.elapsed();
+ 
+                         assert_eq!(report.stats().bytes_read(), plan.data_bytes());
+-                        assert_eq!(report.stats().bytes_written(), SIZE as u64);
++                        let discarded = if destination.capabilities().contains(
++                            rvvdk_core::Capabilities::DISCARD
++                                | rvvdk_core::Capabilities::DISCARD_ZEROES,
++                        ) {
++                            plan.hole_bytes()
++                        } else {
++                            0
++                        };
++                        assert_eq!(report.stats().bytes_discarded(), discarded);
++                        assert_eq!(report.stats().bytes_written(), SIZE as u64 - discarded);
+                         destination.read_exact_at(0, &mut actual).unwrap();
+                         assert_eq!(actual, expected, "{profile}/{mode}: output differs");
+                         if mode == "counter" {
+diff --git a/crates/rvvdk-datamover/benches/scheduler.rs b/crates/rvvdk-datamover/benches/scheduler.rs
+index 219db96..d06af9c 100644
+--- a/crates/rvvdk-datamover/benches/scheduler.rs
++++ b/crates/rvvdk-datamover/benches/scheduler.rs
+@@ -128,6 +128,7 @@ impl VirtualDisk for FaultDisk {
+     }
+     fn capabilities(&self) -> Capabilities {
+         Capabilities::READ
++            | Capabilities::FLUSH
+             | Capabilities::WRITE
+             | Capabilities::WRITE_ZERO
+             | Capabilities::DISCARD
+@@ -198,7 +199,8 @@ fn scheduler_failure(criterion: &mut Criterion) {
+                         let finished = Instant::now();
+                         let first_failure = failing.first_failure.lock().unwrap().unwrap();
+                         elapsed += finished.duration_since(if metric == "call" { started } else { first_failure });
+-                        assert!(matches!(error, Error::Io(ref cause) if cause.to_string() == "scheduler benchmark fault"));
++                        let cause = &error.copy_failure().expect("worker execution failure").cause;
++                        assert!(matches!(cause, Error::Io(cause) if cause.to_string() == "scheduler benchmark fault"));
+                     }
+                     elapsed
+                 });
+diff --git a/crates/rvvdk-datamover/benches/local_sparse.rs b/crates/rvvdk-datamover/benches/local_sparse.rs
+new file mode 100644
+index 0000000..71cded7
+--- /dev/null
++++ b/crates/rvvdk-datamover/benches/local_sparse.rs
+@@ -0,0 +1,124 @@
++mod support;
++#[path = "../tests/support/test_block_device.rs"]
++mod test_block_device;
++use criterion::{Criterion, SamplingMode, Throughput, criterion_group, criterion_main};
++use rvvdk_core::{BlockDevice, Capabilities, Extent, ExtentKind, RawDisk, VirtualDisk};
++use rvvdk_datamover::{CopyOptions, DataMover, ExecutionStrategy, IoUringExecutionOptions};
++use rvvdk_local::LocalFileBlockDevice;
++use std::os::unix::fs::MetadataExt;
++use std::time::{Duration, Instant};
++use support::{
++    MIB, benchmark_path, ensure_benchmark_directory, incompressible_buffer, remove_file,
++};
++use test_block_device::TestExtentBlockDevice;
++
++fn local_sparse(c: &mut Criterion) {
++    ensure_benchmark_directory();
++    let src = benchmark_path("local-sparse-src");
++    let dst = benchmark_path("local-sparse-dst");
++    let size = 32 * MIB;
++    let extents: Vec<_> = [
++        (0, 4, ExtentKind::Data),
++        (4, 4, ExtentKind::Zero),
++        (8, 20, ExtentKind::Hole),
++        (28, 4, ExtentKind::Data),
++    ]
++    .into_iter()
++    .map(|(o, l, k)| Extent::new((o * MIB) as u64, (l * MIB) as u64, k).unwrap())
++    .collect();
++    let mut expected = incompressible_buffer(size, 0x5256523232000011);
++    expected[4 * MIB..28 * MIB].fill(0);
++    let device = TestExtentBlockDevice::create(
++        &src,
++        size as u64,
++        Capabilities::READ | Capabilities::WRITE | Capabilities::FLUSH | Capabilities::EXTENTS,
++        extents.clone(),
++    )
++    .unwrap();
++    device.write_all_at(0, &expected).unwrap();
++    device.flush().unwrap();
++    drop(device);
++    let source = RawDisk::new(
++        TestExtentBlockDevice::open_read_only(
++            &src,
++            size as u64,
++            Capabilities::READ | Capabilities::EXTENTS,
++            extents,
++        )
++        .unwrap(),
++    );
++    let reset = incompressible_buffer(size, 0x5256523232000022);
++    std::fs::write(&dst, &reset).unwrap();
++    let destination = RawDisk::new(LocalFileBlockDevice::open_read_write(&dst).unwrap());
++    let mut actual = vec![0; size];
++    let caps = destination.capabilities();
++    let zeroed = if caps.contains(Capabilities::WRITE_ZERO) {
++        4 * MIB
++    } else {
++        0
++    };
++    let discarded = if caps.contains(Capabilities::DISCARD | Capabilities::DISCARD_ZEROES) {
++        20 * MIB
++    } else {
++        0
++    };
++    println!(
++        "local_sparse: logical={size}, data={}, zero={}, hole={}, block=65536, flush=included, expected_zeroed={zeroed}, expected_discarded={discarded}",
++        8 * MIB,
++        4 * MIB,
++        20 * MIB
++    );
++    let mut group = c.benchmark_group("local_sparse");
++    group.sampling_mode(SamplingMode::Flat);
++    group.throughput(Throughput::Bytes(size as u64));
++    for (name, workers, strategy) in [
++        ("threaded1", 1, ExecutionStrategy::Threaded),
++        ("threaded4", 4, ExecutionStrategy::Threaded),
++        (
++            "native",
++            1,
++            ExecutionStrategy::IoUring(IoUringExecutionOptions::new(8).unwrap()),
++        ),
++    ] {
++        let mover = DataMover::with_execution_strategy(
++            CopyOptions::with_execution(65536, 4096, workers, 4).unwrap(),
++            strategy,
++        );
++        let plan = mover
++            .plan_raw_with_destination(&source, &destination)
++            .unwrap();
++        group.bench_function(name, |b| {
++            b.iter_custom(|iterations| {
++                let mut elapsed = Duration::ZERO;
++                for _ in 0..iterations {
++                    destination.write_all_at(0, &reset).unwrap();
++                    destination.flush().unwrap();
++                    let start = Instant::now();
++                    let report = mover
++                        .execute_raw_plan(&plan, &source, &destination)
++                        .unwrap();
++                    elapsed += start.elapsed();
++                    let stats = report.stats();
++                    assert_eq!(stats.bytes_read(), (8 * MIB) as u64);
++                    assert_eq!(stats.bytes_written(), (size - zeroed - discarded) as u64);
++                    assert_eq!(stats.bytes_zeroed(), zeroed as u64);
++                    assert_eq!(stats.bytes_discarded(), discarded as u64);
++                    destination.read_exact_at(0, &mut actual).unwrap();
++                    assert_eq!(actual, expected);
++                }
++                elapsed
++            })
++        });
++        println!(
++            "{name}: allocated_bytes_after_copy={}",
++            std::fs::metadata(&dst).unwrap().blocks() * 512
++        );
++    }
++    group.finish();
++    drop(destination);
++    drop(source);
++    remove_file(src);
++    remove_file(dst);
++}
++criterion_group! { name=benches; config=Criterion::default().sample_size(30).warm_up_time(Duration::from_millis(300)).measurement_time(Duration::from_secs(2)); targets=local_sparse }
++criterion_main!(benches);

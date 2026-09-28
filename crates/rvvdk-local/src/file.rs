@@ -1,4 +1,6 @@
 use crate::DirectIoAlignment;
+#[cfg(target_os = "linux")]
+mod sparse;
 use std::fs::File;
 #[cfg(target_os = "linux")]
 use std::os::fd::{AsFd, AsRawFd, BorrowedFd};
@@ -17,6 +19,8 @@ pub struct LocalFileBlockDevice {
     capabilities: Capabilities,
     direct_io: bool,
     direct_io_alignment: Option<DirectIoAlignment>,
+    #[cfg(target_os = "linux")]
+    sparse_unsupported: std::sync::atomic::AtomicU8,
 }
 
 impl LocalFileBlockDevice {
@@ -152,7 +156,19 @@ impl LocalFileBlockDevice {
             None
         };
 
+        #[cfg(target_os = "linux")]
+        let capabilities = if capabilities.contains(Capabilities::WRITE) {
+            capabilities
+                | Capabilities::WRITE_ZERO
+                | Capabilities::DISCARD
+                | Capabilities::DISCARD_ZEROES
+        } else {
+            capabilities
+        };
+
         Ok(Self {
+            #[cfg(target_os = "linux")]
+            sparse_unsupported: std::sync::atomic::AtomicU8::new(0),
             file,
             buffered_file,
             geometry,
@@ -204,6 +220,16 @@ impl BlockDevice for LocalFileBlockDevice {
         }
 
         Ok(self.buffered_file().write_at(buffer, offset)?)
+    }
+
+    #[cfg(target_os = "linux")]
+    fn write_zero_at(&self, offset: u64, length: u64) -> Result<()> {
+        self.sparse_operation(sparse::Operation::Zero, offset, length)
+    }
+
+    #[cfg(target_os = "linux")]
+    fn discard(&self, offset: u64, length: u64) -> Result<()> {
+        self.sparse_operation(sparse::Operation::Punch, offset, length)
     }
 
     fn extents(&self, offset: u64, length: u64) -> Result<Vec<Extent>> {
@@ -356,7 +382,13 @@ impl LinuxFdBackend for LocalFileBlockDevice {
             capabilities.remove(Capabilities::READ);
         }
         if !state.writable {
-            capabilities.remove(Capabilities::WRITE | Capabilities::FLUSH);
+            capabilities.remove(
+                Capabilities::WRITE
+                    | Capabilities::FLUSH
+                    | Capabilities::WRITE_ZERO
+                    | Capabilities::DISCARD
+                    | Capabilities::DISCARD_ZEROES,
+            );
         }
         Ok(rvvdk_core::CopyEndpoint {
             size: state.size,

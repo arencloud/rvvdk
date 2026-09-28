@@ -128,6 +128,7 @@ impl VirtualDisk for FaultDisk {
     }
     fn capabilities(&self) -> Capabilities {
         Capabilities::READ
+            | Capabilities::FLUSH
             | Capabilities::WRITE
             | Capabilities::WRITE_ZERO
             | Capabilities::DISCARD
@@ -198,7 +199,8 @@ fn scheduler_failure(criterion: &mut Criterion) {
                         let finished = Instant::now();
                         let first_failure = failing.first_failure.lock().unwrap().unwrap();
                         elapsed += finished.duration_since(if metric == "call" { started } else { first_failure });
-                        assert!(matches!(error, Error::Io(ref cause) if cause.to_string() == "scheduler benchmark fault"));
+                        let cause = &error.copy_failure().expect("worker execution failure").cause;
+                        assert!(matches!(cause, Error::Io(cause) if cause.to_string() == "scheduler benchmark fault"));
                     }
                     elapsed
                 });

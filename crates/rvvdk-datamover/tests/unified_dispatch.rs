@@ -224,6 +224,9 @@ fn explicit_io_uring_handles_hole_extents() {
         ExecutionStrategy::IoUring(IoUringExecutionOptions::new(8).unwrap()),
     );
 
+    let plan = mover
+        .plan_raw_with_destination(&source, &destination)
+        .unwrap();
     let report = mover.copy_raw_with_report(&source, &destination).unwrap();
 
     /*
@@ -232,18 +235,11 @@ fn explicit_io_uring_handles_hole_extents() {
      */
     assert_eq!(report.backend(), ExecutionBackend::IoUring,);
 
-    /*
-     * LocalFileBlockDevice uses ordinary zero-filled fallback writes
-     * for Hole ranges.
-     *
-     * Data and Hole therefore account as ordinary destination writes
-     * across the complete logical disk.
-     */
-    assert_eq!(report.stats().bytes_written(), FILE_SIZE as u64,);
+    // Hole bytes now use zero-guaranteed local discard.
+    assert_eq!(report.stats().bytes_written(), plan.data_bytes(),);
+    assert_eq!(report.stats().bytes_discarded(), plan.hole_bytes(),);
 
     assert_eq!(report.stats().bytes_zeroed(), 0,);
-
-    assert_eq!(report.stats().bytes_discarded(), 0,);
 
     drop(destination);
     drop(source);
@@ -279,6 +275,9 @@ fn auto_uses_io_uring_for_hole_extents() {
         ExecutionStrategy::Auto(IoUringExecutionOptions::new(8).unwrap()),
     );
 
+    let plan = mover
+        .plan_raw_with_destination(&source, &destination)
+        .unwrap();
     let report = mover.copy_raw_with_report(&source, &destination).unwrap();
 
     /*
@@ -289,18 +288,11 @@ fn auto_uses_io_uring_for_hole_extents() {
      */
     assert_eq!(report.backend(), ExecutionBackend::IoUring,);
 
-    /*
-     * LocalFileBlockDevice uses ordinary zero-filled fallback writes
-     * for Hole ranges.
-     *
-     * Therefore the complete logical disk contributes to
-     * bytes_written.
-     */
-    assert_eq!(report.stats().bytes_written(), FILE_SIZE as u64,);
+    // Hole bytes now use zero-guaranteed local discard.
+    assert_eq!(report.stats().bytes_written(), plan.data_bytes(),);
+    assert_eq!(report.stats().bytes_discarded(), plan.hole_bytes(),);
 
     assert_eq!(report.stats().bytes_zeroed(), 0,);
-
-    assert_eq!(report.stats().bytes_discarded(), 0,);
 
     drop(destination);
     drop(source);

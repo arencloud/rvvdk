@@ -141,12 +141,16 @@ Portable API acceptance **met by R1.1**: memory, local RAW, and a synthetic tran
 R2.1 performance qualification remains provisional: four-worker memory copying
 includes +5.92%/+7.49% main/repeat pairs, and fragmented no-op observation has a
 +10.39% pair. See the [comparison and control](benchmark-results/2026-09-29-r21/README.md).
-PERF.0 also needs to update the pre-existing scheduler failure benchmark's FLUSH
-capability and CopyExecution-aware error assertion before reusing its timings.
+R2.2 repairs the scheduler failure fixture's FLUSH capability and CopyExecution-aware
+error assertion; smoke checks establish execution, not renewed latency qualification.
+R2.2 improves the larger mixed-copy profiles on the development host but retains
+an explicit fragmented-output cost: +26.67% main / +15.39% longer-repeat aggregate.
+Investigate sparse-operation batching and backend costs without weakening logical
+or boundary guarantees. [Evidence](benchmark-results/2026-09-29-r22/README.md).
 
 - [x] **R2.1:** Define logical Zero/Hole zero reads and require DISCARD plus DISCARD_ZEROES before selecting discard. Cover fallback, partial failures, portable/native parity, and explicit backend migration. [ADR-0026](adr/0026-logical-hole-guarantee.md); [evidence](benchmark-results/2026-09-29-r21/README.md).
-- [ ] **R2.2 (next):** Implement local zeroing and hole punching, with range checks, read-only checks, partial filesystem block handling, and fallbacks on unsupported filesystems.
-- [ ] Add dense extent fallback when sparse discovery is unavailable; never invent Hole extents from unknown allocation state.
+- [x] **R2.2:** Implement local zeroing and zero-guaranteed hole punching with fresh range/access checks, exact partial-block boundaries, bounded unsupported-mode fallback, and storage-backed allocation/readback tests. [Contract](local-sparse-output.md); [evidence](benchmark-results/2026-09-29-r22/README.md).
+- [ ] **R2.3 (next):** Add dense extent fallback when sparse discovery is unavailable; never invent Hole extents from unknown allocation state.
 - [x] Verify direct/buffered descriptors refer to the same underlying file (R0.5).
 - [ ] Define how concurrent buffered/direct ranges are handled.
 - [ ] Integrate runtime io_uring initialization and request compatibility into preparation. Make Auto fallback reasons observable and explicit IoUring errors precise.
@@ -298,7 +302,7 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 | Proposed ADR | Decision |
 |---|---|
 | [0025](adr/0025-shared-plan-validation.md) | Accepted: shared structural plan validation; broader lifecycle/error termination remains future work |
-| [0026](adr/0026-logical-hole-guarantee.md) | Accepted: logical Hole zero reads and explicit zero-guaranteed discard; local filesystem operations remain R2.2 |
+| [0026](adr/0026-logical-hole-guarantee.md) | Accepted: logical Hole zero reads and explicit zero-guaranteed discard; local filesystem operations implemented by R2.2 |
 | [0027](adr/0027-portable-planning.md) | Accepted: portable planning, selection reasons, and invocation preparation; full native runtime preparation remains follow-up work |
 | [0028](adr/0028-endpoint-inspection.md) | Accepted: fresh descriptor inspection and current endpoint identity; persistent consistency/durability contracts remain future work |
 | 0029 | VMDK support subset, backing resolver, parent-chain rules |
@@ -308,7 +312,7 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 
 ## First implementation session — R0.1 completed
 
-The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees are complete; continue with R2.2 local zeroing/hole punching next.
+The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees and R2.2 local sparse output are complete; continue with R2.3 source discovery fallback next.
 
 R0.1 was the bounded change directly related to the observer work:
 
@@ -323,7 +327,7 @@ R0.1 was the bounded change directly related to the observer work:
    tradeoff in the implementation log. Update this checklist and ADR-0025 with
    the implemented behavior and remaining limitations.
 
-R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. Start **R2.2** with local zeroing and hole punching. Keep PERF.0 and the prior performance follow-ups open.
+R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output is complete. Start **R2.3** with dense extent fallback for unavailable sparse discovery. Keep PERF.0 and the prior performance follow-ups open.
 
 ## Decisions to record before their milestone
 
