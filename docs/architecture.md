@@ -819,8 +819,9 @@ The primary planning, execution, report, and observer APIs accept arbitrary
 `VirtualDisk + ?Sized`. Memory, local RAW, and translated logical disks follow
 the same lifecycle, with all payload access through logical methods. `Auto`
 selects Threaded here; explicit IoUring or a native plan is rejected before
-payload I/O or observer notification. No physical descriptor is inspected by
-this path, even if a logical disk also implements native traits.
+payload I/O or observer notification. The portable mover does not query native
+traits, even if a logical disk implements them. A backend may inspect its own
+storage through its logical endpoint contract.
 
 Linux RAW callers use `plan_raw_with_destination`, `execute_raw_plan`,
 `execute_raw_plan_with_observer`, and `copy_raw_with_report` to opt into native
@@ -833,9 +834,55 @@ runtime preparation can still fail after initial notification. The canonical ext
 validator is shared by plan construction and execution trust boundaries.
 
 `CopyPlan` remains an in-memory structural record. Callers must stabilize source
-contents and mappings. Contextual errors, descriptor snapshot reuse, and complete
-native preparation remain future steps. See
+contents and mappings. R1.3 shares descriptor inspections; R1.4 separates logical
+intent and invocation preparation below. Contextual errors and complete native
+runtime preparation remain future steps. See
 [ADR-0027](adr/0027-portable-planning.md) for migration and limits.
+
+### Logical intent and execution preparation (R1.4)
+
+`CopyPlan` contains separate logical and execution records. The private logical
+record owns canonical extents, summary counters, and the topology fingerprint.
+Selection records the requested strategy/options, selected backend, and reason.
+Existing plan getters remain available; `plan.execution_selection()` exposes the
+planning decision. That decision is not proof that a kernel or endpoint is ready.
+
+```mermaid
+flowchart LR
+    L[Logical extent map and accounting] --> P[CopyPlan]
+    S[Planning selection and configuration] --> P
+    P --> V[Live endpoint and structural validation]
+    V --> E[Invocation-scoped PreparedExecution]
+    E --> O[Initial observation]
+    O --> X[Dispatch and payload execution]
+    X --> F[Successful flush]
+    F --> C[Final observation]
+```
+
+Both observed and unobserved plan APIs use preparation. Its private result
+borrows the exact plan/source/destination checked in that invocation. Threaded
+preparation retains the portable checks. RAW preparation retains descriptor
+checks and native binding; native selection also resolves current execution
+options, constructs the native extent plan, and checks current descriptor/buffer
+alignment before observation. Dispatch consumes this configuration instead of
+rediscovering it after the initial callback. No inspection or preparation is
+cached in a plan.
+
+Reasons distinguish explicit Threaded/native requests, portable Auto, and RAW
+descriptor acceptance/rejection. The current RAW evaluator accepts descriptor
+pairs and combines their alignment claims; it does not validate complete native
+requests or ring availability. Structured runtime fallback policy remains R2.
+Successful reports continue to expose the actual backend. Plan selection remains
+historical even if a different mover executes it; native execution uses that
+mover's current native options, and a Threaded plan retains its chosen backend.
+
+Preparation is a checked dispatch boundary, not a resource reservation or lease.
+Native ring creation, buffer allocation, and remaining low-level request checks
+can still fail after initial observation. Callers must keep endpoints stable,
+including during observer callbacks. Snapshot consistency, contextual failures,
+partial progress, and terminal lifecycle events remain separate work. The direct
+portable `copy` API retains its existing single-pass fast path.
+[ADR-0027](adr/0027-portable-planning.md) records the public contract and limits.
 
 ### Shared semantic execution (R1.2)
 

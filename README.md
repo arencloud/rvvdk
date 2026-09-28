@@ -45,7 +45,7 @@ VMware disk access and migration, extensible to other platforms.
 | **Copy execution** | Sequential and bounded threaded execution; Linux io_uring path |
 | **Memory management** | Aligned allocations and reusable buffer pools |
 | **Direct I/O** | Local `O_DIRECT`, runtime alignment discovery, buffered fallback for unaligned backend requests |
-| **Copy planning** | Portable plan/execute/report APIs for logical disks and trait objects; explicit Linux RAW adapters |
+| **Copy planning** | Portable plans with selection reasons, fresh execution preparation, and explicit Linux RAW adapters |
 | **Copy preflight** | Access, flush support, live capacity, alias and native binding checks; shared fresh local FD inspections |
 | **Progress reporting** | In development; intermediate updates on the single-worker threaded path |
 | **Sparse destination allocation** | Planned; local holes currently use zero-write fallback |
@@ -109,6 +109,9 @@ threaded execution, and explicit `IoUring` is rejected. For Linux RAW native
 selection, use `plan_raw_with_destination`, `execute_raw_plan`,
 `execute_raw_plan_with_observer`, or `copy_raw_with_report`. See the
 [API migration and contract](docs/adr/0027-portable-planning.md).
+`plan.execution_selection()` records the requested strategy, selected backend,
+and reason. Execution rechecks current endpoints and configuration before progress
+callbacks; native runtime setup can still fail afterward.
 
 ## Architecture
 

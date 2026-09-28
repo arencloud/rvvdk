@@ -1,6 +1,6 @@
 use rvvdk_core::{Error, Extent, ExtentKind, Result};
 
-use crate::ExecutionBackend;
+use crate::{ExecutionBackend, ExecutionSelection};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CopyPlanSummary {
@@ -99,12 +99,35 @@ impl CopyPlanSummary {
     }
 }
 
+/// Portable logical intent, independent of the executor and its configuration.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CopyPlan {
+struct LogicalCopyPlan {
     summary: CopyPlanSummary,
     extents: Vec<Extent>,
     extent_fingerprint: u64,
-    backend: ExecutionBackend,
+}
+
+impl LogicalCopyPlan {
+    fn new(logical_bytes: u64, extents: Vec<Extent>) -> Result<Self> {
+        crate::extent_validation::validate_extents(&extents, logical_bytes)?;
+        let summary = CopyPlanSummary::from_extents(logical_bytes, &extents)?;
+        let extent_fingerprint = extent_fingerprint(&extents);
+        Ok(Self {
+            summary,
+            extents,
+            extent_fingerprint,
+        })
+    }
+}
+
+/// Structural logical plan plus planning-time execution selection.
+///
+/// This holds no prepared endpoints or runtime resources. Each execute call
+/// validates current state and prepares its executor again.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CopyPlan {
+    logical: LogicalCopyPlan,
+    selection: ExecutionSelection,
     block_size: usize,
     alignment: usize,
 }
@@ -113,58 +136,57 @@ impl CopyPlan {
     pub(crate) fn new(
         logical_bytes: u64,
         extents: Vec<Extent>,
-        backend: ExecutionBackend,
+        selection: ExecutionSelection,
         block_size: usize,
         alignment: usize,
     ) -> Result<Self> {
-        crate::extent_validation::validate_extents(&extents, logical_bytes)?;
-        let summary = CopyPlanSummary::from_extents(logical_bytes, &extents)?;
-        let extent_fingerprint = extent_fingerprint(&extents);
-
         Ok(Self {
-            summary,
-            extent_fingerprint,
-            extents,
-            backend,
+            logical: LogicalCopyPlan::new(logical_bytes, extents)?,
+            selection,
             block_size,
             alignment,
         })
     }
 
+    /// Historical planning decision, not the executing mover's configuration.
+    pub const fn execution_selection(&self) -> &ExecutionSelection {
+        &self.selection
+    }
+
     pub const fn extent_fingerprint(&self) -> u64 {
-        self.extent_fingerprint
+        self.logical.extent_fingerprint
     }
 
     pub const fn summary(&self) -> &CopyPlanSummary {
-        &self.summary
+        &self.logical.summary
     }
 
     pub const fn logical_bytes(&self) -> u64 {
-        self.summary.logical_bytes()
+        self.logical.summary.logical_bytes()
     }
 
     pub const fn data_bytes(&self) -> u64 {
-        self.summary.data_bytes()
+        self.logical.summary.data_bytes()
     }
 
     pub const fn zero_bytes(&self) -> u64 {
-        self.summary.zero_bytes()
+        self.logical.summary.zero_bytes()
     }
 
     pub const fn hole_bytes(&self) -> u64 {
-        self.summary.hole_bytes()
+        self.logical.summary.hole_bytes()
     }
 
     pub const fn extent_count(&self) -> usize {
-        self.extents.len()
+        self.logical.extents.len()
     }
 
     pub fn extents(&self) -> &[Extent] {
-        &self.extents
+        &self.logical.extents
     }
 
     pub const fn backend(&self) -> ExecutionBackend {
-        self.backend
+        self.selection.selected()
     }
 
     pub const fn block_size(&self) -> usize {
@@ -236,7 +258,13 @@ mod tests {
             ],
         ] {
             assert!(matches!(
-                CopyPlan::new(4096, extents, ExecutionBackend::Threaded, 1024, 4096),
+                CopyPlan::new(
+                    4096,
+                    extents,
+                    ExecutionSelection::portable(crate::ExecutionStrategy::Threaded).unwrap(),
+                    1024,
+                    4096
+                ),
                 Err(Error::CorruptMetadata(_))
             ));
         }
@@ -264,7 +292,7 @@ mod tests {
         let plan = CopyPlan::new(
             4 * MIB,
             extents.clone(),
-            ExecutionBackend::Threaded,
+            ExecutionSelection::portable(crate::ExecutionStrategy::Threaded).unwrap(),
             64 * 1024,
             4096,
         )
@@ -293,7 +321,14 @@ mod tests {
 
     #[test]
     fn supports_empty_plan() {
-        let plan = CopyPlan::new(0, Vec::new(), ExecutionBackend::Threaded, 64 * 1024, 1).unwrap();
+        let plan = CopyPlan::new(
+            0,
+            Vec::new(),
+            ExecutionSelection::portable(crate::ExecutionStrategy::Threaded).unwrap(),
+            64 * 1024,
+            1,
+        )
+        .unwrap();
 
         assert_eq!(plan.logical_bytes(), 0,);
 
@@ -318,7 +353,13 @@ mod tests {
     fn rejects_extent_bytes_that_do_not_match_logical_size() {
         let extents = vec![Extent::new(0, 2 * MIB, ExtentKind::Data).unwrap()];
 
-        let result = CopyPlan::new(4 * MIB, extents, ExecutionBackend::Threaded, 64 * 1024, 1);
+        let result = CopyPlan::new(
+            4 * MIB,
+            extents,
+            ExecutionSelection::portable(crate::ExecutionStrategy::Threaded).unwrap(),
+            64 * 1024,
+            1,
+        );
 
         assert!(matches!(result, Err(Error::CorruptMetadata(_))));
     }
@@ -330,7 +371,13 @@ mod tests {
             Extent::new(2 * MIB, 2 * MIB, ExtentKind::Zero).unwrap(),
         ];
 
-        let result = CopyPlan::new(3 * MIB, extents, ExecutionBackend::Threaded, 64 * 1024, 1);
+        let result = CopyPlan::new(
+            3 * MIB,
+            extents,
+            ExecutionSelection::portable(crate::ExecutionStrategy::Threaded).unwrap(),
+            64 * 1024,
+            1,
+        );
 
         assert!(matches!(result, Err(Error::CorruptMetadata(_))));
     }

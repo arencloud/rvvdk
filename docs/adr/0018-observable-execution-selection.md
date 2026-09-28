@@ -72,3 +72,13 @@ Auto
  +-- otherwise
         -> threaded VirtualDisk
 ```
+
+
+## R1.4 follow-up
+
+CopyPlan now exposes planning-time requested strategy, selected backend, and a
+structured selection reason. Reports continue to identify the backend actually
+executed. Selection is not a runtime readiness guarantee, and a later executing
+mover may have different native options. See
+[ADR-0027](0027-portable-planning.md#r14--logical-intent-and-invocation-preparation-2026-09-28)
+for the current preparation boundary and unchanged Auto limitations.

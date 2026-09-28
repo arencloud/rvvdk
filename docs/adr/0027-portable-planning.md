@@ -2,8 +2,8 @@
 
 ## Status
 
-Accepted for R1.1, 2026-09-28. Executor preparation and contextual errors remain
-follow-up work. Supersedes the Linux RAW bounds of ADR-0019/0024; preserves the
+Accepted for R1.1 and extended through R1.4, 2026-09-28. Full native runtime
+preparation and contextual errors remain follow-up work. Supersedes the Linux RAW bounds of ADR-0019/0024; preserves the
 validation contract of ADR-0025.
 
 ## Context
@@ -57,15 +57,15 @@ Plans remain in-memory structural records, not serialized snapshot identities.
 - Memory, local RAW, and translated disks use the same portable lifecycle,
   including trait objects, single/multiple workers, and observers.
 - Auto on a portable call intentionally does not choose native execution. The
-  selected backend remains visible in the plan/report; structured fallback reasons
-  and complete native runtime preparation are still pending.
+  selected backend remains visible in the plan/report. R1.4 adds planning selection
+  reasons; complete native runtime preparation is still pending.
 - Logical Data/Zero/Hole semantics and counters are preserved. Existing DISCARD
   semantics are not strengthened here; the zero-read contract belongs to R2 and
   ADR-0026. R1.2 consolidates policy and sequential loops as recorded below.
 - Initial progress follows endpoint and structural checks. Final progress follows
   successful flush. Concurrent/native execution still emits only initial/final
   progress; partial-error reporting and cancellation remain future work.
-- Raw descriptor snapshot deduplication, total memory budgets, and contextual
+- R1.3 shares local descriptor inspections. Total memory budgets and contextual
   errors remain open. Point-in-time preflight cannot stabilize mappings or contents.
 
 ## Validation
@@ -94,4 +94,61 @@ statistics, and flush ownership remain unchanged. Contract tests run on baseline
 and candidate preserve these behaviors, including the pre-flush 100% byte-threshold
 snapshot limitation. The [architecture contract](../architecture.md#shared-semantic-execution-r12)
 and [benchmark record](../benchmark-results/2026-09-28-r12/README.md) describe scope
-and remaining limits. R1.3 will address endpoint preparation/descriptor snapshots.
+and remaining limits. R1.3 shared endpoint descriptor inspections as recorded in
+[ADR-0028](0028-endpoint-inspection.md).
+
+
+## R1.4 — Logical intent and invocation preparation, 2026-09-28
+
+CopyPlan now contains a private LogicalCopyPlan (extent map, accounting, and
+fingerprint) separately from execution selection and block/alignment settings.
+Logical intent has no executor or descriptor fields. Existing public plan getters
+remain; `execution_selection()` adds a read-only planning decision containing the
+requested strategy/options, selected backend, and a non-exhaustive reason enum.
+
+| Planning request and API | Selection reason | Backend |
+|---|---|---|
+| Explicit Threaded, either API | RequestedThreaded | Threaded |
+| Auto, portable API | PortableApi | Threaded |
+| Explicit IoUring, accepted RAW descriptors | RequestedNative | IoUring |
+| Auto, accepted RAW descriptors | RawDescriptorsCompatible | IoUring |
+| Auto, rejected RAW descriptors | RawDescriptorsIncompatible | Threaded |
+
+Explicit IoUring on a portable API or rejected RAW descriptor pair still errors.
+The current descriptor evaluator accepts pairs and combines their reported
+alignment; it does not test kernel availability or complete request alignment.
+The incompatible reason represents the selection policy, covered with a unit
+test, rather than a newly implemented runtime fallback. Runtime readiness and
+unaligned native policy remain R2.
+
+Both plan execution families build a private PreparedExecution for each
+invocation. It borrows the validated plan/source/destination and contains checked
+dispatch state. Preparation performs existing live endpoint and structural checks;
+native preparation also resolves the executing mover's native options, rechecks
+descriptor capability alignment, and constructs the NativeExtentPlan. Dispatch
+uses that checked configuration. Initial observation follows this preparation.
+
+A native plan executed by a Threaded mover, changed native buffer alignment, or
+changed backend alignment now fails before any observer callback. These failures
+previously happened after the initial callback. Successful callback cadence,
+flush boundaries, and the native payload timer boundary are preserved.
+
+Planning selection is historical metadata, not the executing mover's settings.
+Existing behavior remains: a compatible Threaded plan stays Threaded when used
+with another mover; a native plan requires a mover requesting native execution
+and uses that mover's current native queue/read-window settings. Reports still
+identify the backend that actually executed. CopyPlan equality includes its
+planning selection; equivalent logical maps may have different plan provenance.
+
+PreparedExecution is private, short-lived, and not saved in CopyPlan. It does not
+open a ring, reserve buffers, stabilize endpoint state, or promise that later
+allocation/kernel/request checks cannot fail. Low-level native checks remain
+active. Runtime failures can still occur after initial observation; final
+observation still requires successful flush. The direct portable `copy` path
+retains its existing single-pass validation/execution flow without creating a
+persistent plan.
+
+Seven new tests cover selection/provenance and preparation boundaries. Three
+behavioral regressions fail on the baseline solely because it emits one callback
+before rejection, and pass on the candidate. See the
+[R1.4 evidence](../benchmark-results/2026-09-28-r14/README.md).

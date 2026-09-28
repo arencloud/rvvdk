@@ -60,9 +60,110 @@ pub enum ExecutionBackend {
     IoUring,
 }
 
+/// Why planning chose its backend. This is not a runtime readiness guarantee.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum ExecutionSelectionReason {
+    RequestedThreaded,
+    #[cfg(target_os = "linux")]
+    RequestedNative,
+    /// Auto through a portable API must preserve logical disk translation.
+    #[cfg(target_os = "linux")]
+    PortableApi,
+    /// The RAW descriptor capability evaluator accepted the pair.
+    #[cfg(target_os = "linux")]
+    RawDescriptorsCompatible,
+    #[cfg(target_os = "linux")]
+    RawDescriptorsIncompatible,
+}
+
+/// The planning-time request and decision; execution still performs live checks.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ExecutionSelection {
+    requested: ExecutionStrategy,
+    selected: ExecutionBackend,
+    reason: ExecutionSelectionReason,
+}
+
+impl ExecutionSelection {
+    pub const fn requested(&self) -> ExecutionStrategy {
+        self.requested
+    }
+
+    pub const fn selected(&self) -> ExecutionBackend {
+        self.selected
+    }
+
+    pub const fn reason(&self) -> ExecutionSelectionReason {
+        self.reason
+    }
+
+    pub(crate) fn portable(requested: ExecutionStrategy) -> rvvdk_core::Result<Self> {
+        let reason = match requested {
+            ExecutionStrategy::Threaded => ExecutionSelectionReason::RequestedThreaded,
+            #[cfg(target_os = "linux")]
+            ExecutionStrategy::Auto(_) => ExecutionSelectionReason::PortableApi,
+            #[cfg(target_os = "linux")]
+            ExecutionStrategy::IoUring(_) => {
+                return Err(rvvdk_core::Error::NativeExecutionUnsupported);
+            }
+        };
+        Ok(Self {
+            requested,
+            selected: ExecutionBackend::Threaded,
+            reason,
+        })
+    }
+
+    #[cfg(target_os = "linux")]
+    pub(crate) fn raw(requested: ExecutionStrategy, compatible: bool) -> rvvdk_core::Result<Self> {
+        let (selected, reason) = match requested {
+            ExecutionStrategy::Threaded => (
+                ExecutionBackend::Threaded,
+                ExecutionSelectionReason::RequestedThreaded,
+            ),
+            ExecutionStrategy::IoUring(_) if compatible => (
+                ExecutionBackend::IoUring,
+                ExecutionSelectionReason::RequestedNative,
+            ),
+            ExecutionStrategy::IoUring(_) => {
+                return Err(rvvdk_core::Error::NativeExecutionUnsupported);
+            }
+            ExecutionStrategy::Auto(_) if compatible => (
+                ExecutionBackend::IoUring,
+                ExecutionSelectionReason::RawDescriptorsCompatible,
+            ),
+            ExecutionStrategy::Auto(_) => (
+                ExecutionBackend::Threaded,
+                ExecutionSelectionReason::RawDescriptorsIncompatible,
+            ),
+        };
+        Ok(Self {
+            requested,
+            selected,
+            reason,
+        })
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn explicit_native_cannot_fallback_but_auto_records_incompatibility() {
+        let options = IoUringExecutionOptions::new(8).unwrap();
+        assert!(matches!(
+            ExecutionSelection::raw(ExecutionStrategy::IoUring(options), false),
+            Err(rvvdk_core::Error::NativeExecutionUnsupported)
+        ));
+        let selection = ExecutionSelection::raw(ExecutionStrategy::Auto(options), false).unwrap();
+        assert_eq!(selection.selected(), ExecutionBackend::Threaded);
+        assert_eq!(
+            selection.reason(),
+            ExecutionSelectionReason::RawDescriptorsIncompatible
+        );
+    }
 
     #[test]
     fn threaded_is_default() {

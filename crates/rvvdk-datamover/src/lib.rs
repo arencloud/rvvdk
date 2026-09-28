@@ -11,12 +11,15 @@ mod plan;
 mod planner;
 mod policy;
 mod preflight;
+mod preparation;
 mod progress;
 mod sequential;
 mod stats;
 mod work;
 
-pub use execution::{ExecutionBackend, ExecutionStrategy};
+pub use execution::{
+    ExecutionBackend, ExecutionSelection, ExecutionSelectionReason, ExecutionStrategy,
+};
 pub use mover::DataMover;
 pub use options::{
     CopyOptions, DEFAULT_BLOCK_SIZE, DEFAULT_BUFFER_ALIGNMENT, DEFAULT_BUFFER_COUNT,

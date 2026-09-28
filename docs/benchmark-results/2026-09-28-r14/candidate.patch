@@ -1,0 +1,1282 @@
+diff --git a/crates/rvvdk-datamover/src/execution.rs b/crates/rvvdk-datamover/src/execution.rs
+index 15c9da6..a06dbfb 100644
+--- a/crates/rvvdk-datamover/src/execution.rs
++++ b/crates/rvvdk-datamover/src/execution.rs
+@@ -60,10 +60,111 @@ pub enum ExecutionBackend {
+     IoUring,
+ }
+ 
++/// Why planning chose its backend. This is not a runtime readiness guarantee.
++#[derive(Debug, Clone, Copy, PartialEq, Eq)]
++#[non_exhaustive]
++pub enum ExecutionSelectionReason {
++    RequestedThreaded,
++    #[cfg(target_os = "linux")]
++    RequestedNative,
++    /// Auto through a portable API must preserve logical disk translation.
++    #[cfg(target_os = "linux")]
++    PortableApi,
++    /// The RAW descriptor capability evaluator accepted the pair.
++    #[cfg(target_os = "linux")]
++    RawDescriptorsCompatible,
++    #[cfg(target_os = "linux")]
++    RawDescriptorsIncompatible,
++}
++
++/// The planning-time request and decision; execution still performs live checks.
++#[derive(Debug, Clone, Copy, PartialEq, Eq)]
++pub struct ExecutionSelection {
++    requested: ExecutionStrategy,
++    selected: ExecutionBackend,
++    reason: ExecutionSelectionReason,
++}
++
++impl ExecutionSelection {
++    pub const fn requested(&self) -> ExecutionStrategy {
++        self.requested
++    }
++
++    pub const fn selected(&self) -> ExecutionBackend {
++        self.selected
++    }
++
++    pub const fn reason(&self) -> ExecutionSelectionReason {
++        self.reason
++    }
++
++    pub(crate) fn portable(requested: ExecutionStrategy) -> rvvdk_core::Result<Self> {
++        let reason = match requested {
++            ExecutionStrategy::Threaded => ExecutionSelectionReason::RequestedThreaded,
++            #[cfg(target_os = "linux")]
++            ExecutionStrategy::Auto(_) => ExecutionSelectionReason::PortableApi,
++            #[cfg(target_os = "linux")]
++            ExecutionStrategy::IoUring(_) => {
++                return Err(rvvdk_core::Error::NativeExecutionUnsupported);
++            }
++        };
++        Ok(Self {
++            requested,
++            selected: ExecutionBackend::Threaded,
++            reason,
++        })
++    }
++
++    #[cfg(target_os = "linux")]
++    pub(crate) fn raw(requested: ExecutionStrategy, compatible: bool) -> rvvdk_core::Result<Self> {
++        let (selected, reason) = match requested {
++            ExecutionStrategy::Threaded => (
++                ExecutionBackend::Threaded,
++                ExecutionSelectionReason::RequestedThreaded,
++            ),
++            ExecutionStrategy::IoUring(_) if compatible => (
++                ExecutionBackend::IoUring,
++                ExecutionSelectionReason::RequestedNative,
++            ),
++            ExecutionStrategy::IoUring(_) => {
++                return Err(rvvdk_core::Error::NativeExecutionUnsupported);
++            }
++            ExecutionStrategy::Auto(_) if compatible => (
++                ExecutionBackend::IoUring,
++                ExecutionSelectionReason::RawDescriptorsCompatible,
++            ),
++            ExecutionStrategy::Auto(_) => (
++                ExecutionBackend::Threaded,
++                ExecutionSelectionReason::RawDescriptorsIncompatible,
++            ),
++        };
++        Ok(Self {
++            requested,
++            selected,
++            reason,
++        })
++    }
++}
+ #[cfg(test)]
+ mod tests {
+     use super::*;
+ 
++    #[test]
++    #[cfg(target_os = "linux")]
++    fn explicit_native_cannot_fallback_but_auto_records_incompatibility() {
++        let options = IoUringExecutionOptions::new(8).unwrap();
++        assert!(matches!(
++            ExecutionSelection::raw(ExecutionStrategy::IoUring(options), false),
++            Err(rvvdk_core::Error::NativeExecutionUnsupported)
++        ));
++        let selection = ExecutionSelection::raw(ExecutionStrategy::Auto(options), false).unwrap();
++        assert_eq!(selection.selected(), ExecutionBackend::Threaded);
++        assert_eq!(
++            selection.reason(),
++            ExecutionSelectionReason::RawDescriptorsIncompatible
++        );
++    }
++
+     #[test]
+     fn threaded_is_default() {
+         assert_eq!(ExecutionStrategy::default(), ExecutionStrategy::Threaded,);
+diff --git a/crates/rvvdk-datamover/src/lib.rs b/crates/rvvdk-datamover/src/lib.rs
+index 68166a5..bfb94cb 100644
+--- a/crates/rvvdk-datamover/src/lib.rs
++++ b/crates/rvvdk-datamover/src/lib.rs
+@@ -11,12 +11,15 @@ mod plan;
+ mod planner;
+ mod policy;
+ mod preflight;
++mod preparation;
+ mod progress;
+ mod sequential;
+ mod stats;
+ mod work;
+ 
+-pub use execution::{ExecutionBackend, ExecutionStrategy};
++pub use execution::{
++    ExecutionBackend, ExecutionSelection, ExecutionSelectionReason, ExecutionStrategy,
++};
+ pub use mover::DataMover;
+ pub use options::{
+     CopyOptions, DEFAULT_BLOCK_SIZE, DEFAULT_BUFFER_ALIGNMENT, DEFAULT_BUFFER_COUNT,
+diff --git a/crates/rvvdk-datamover/src/mover.rs b/crates/rvvdk-datamover/src/mover.rs
+index 29831e7..9e13535 100644
+--- a/crates/rvvdk-datamover/src/mover.rs
++++ b/crates/rvvdk-datamover/src/mover.rs
+@@ -3,11 +3,13 @@ use std::time::Instant;
+ use rvvdk_core::{BufferPool, Error, Extent, Result, VirtualDisk};
+ 
+ use crate::planner::ExtentWorkIter;
++#[cfg(target_os = "linux")]
++use crate::preparation::{PreparedExecution, PreparedExecutor};
+ use crate::{concurrent, sequential};
+ 
+ use crate::{
+-    CopyOptions, CopyPlan, CopyReport, CopyStats, ExecutionBackend, ExecutionStrategy,
+-    ProgressCompleted, ProgressObserver, ProgressSnapshot, ProgressTotals,
++    CopyOptions, CopyPlan, CopyReport, CopyStats, ExecutionBackend, ExecutionSelection,
++    ExecutionStrategy, ProgressCompleted, ProgressObserver, ProgressSnapshot, ProgressTotals,
+ };
+ 
+ #[cfg(target_os = "linux")]
+@@ -24,7 +26,7 @@ use crate::io_uring::{
+ };
+ 
+ pub struct DataMover {
+-    options: CopyOptions,
++    pub(crate) options: CopyOptions,
+     execution_strategy: ExecutionStrategy,
+ }
+ 
+@@ -56,7 +58,7 @@ impl DataMover {
+     where
+         S: VirtualDisk + ?Sized,
+     {
+-        self.require_portable_execution()?;
++        let selection = ExecutionSelection::portable(self.execution_strategy)?;
+         let source_size = source.size();
+ 
+         let extents = source.extents(0, source_size)?;
+@@ -64,20 +66,12 @@ impl DataMover {
+         CopyPlan::new(
+             source_size,
+             extents,
+-            ExecutionBackend::Threaded,
++            selection,
+             self.options.block_size(),
+             self.options.buffer_alignment(),
+         )
+     }
+ 
+-    fn require_portable_execution(&self) -> Result<()> {
+-        #[cfg(target_os = "linux")]
+-        if matches!(self.execution_strategy, ExecutionStrategy::IoUring(_)) {
+-            return Err(Error::NativeExecutionUnsupported);
+-        }
+-        Ok(())
+-    }
+-
+     /// Plan a logical copy through VirtualDisk methods, including trait objects.
+     /// Auto uses threaded execution; no native descriptor can bypass translation.
+     pub fn plan_with_destination<S, D>(&self, source: &S, destination: &D) -> Result<CopyPlan>
+@@ -102,7 +96,8 @@ impl DataMover {
+         S: VirtualDisk + ?Sized,
+         D: VirtualDisk + ?Sized,
+     {
+-        self.validate_portable_plan(plan, source, destination)?;
++        let prepared = self.prepare_portable(plan, source, destination)?;
++        let (plan, source, destination, _) = prepared.parts();
+         self.execute_threaded_plan(plan, source, destination)
+     }
+ 
+@@ -118,7 +113,8 @@ impl DataMover {
+         D: VirtualDisk + ?Sized,
+         O: ProgressObserver + ?Sized,
+     {
+-        self.validate_portable_plan(plan, source, destination)?;
++        let prepared = self.prepare_portable(plan, source, destination)?;
++        let (plan, source, destination, _) = prepared.parts();
+         Self::observe_plan(plan, observer, || {
+             if self.options.concurrency() == 1 {
+                 self.execute_threaded_plan_with_observer(plan, source, destination, observer)
+@@ -137,50 +133,6 @@ impl DataMover {
+         self.execute_plan(&plan, source, destination)
+     }
+ 
+-    fn validate_portable_plan<S, D>(
+-        &self,
+-        plan: &CopyPlan,
+-        source: &S,
+-        destination: &D,
+-    ) -> Result<()>
+-    where
+-        S: VirtualDisk + ?Sized,
+-        D: VirtualDisk + ?Sized,
+-    {
+-        self.require_portable_execution()?;
+-        if plan.backend() != ExecutionBackend::Threaded {
+-            return Err(Error::NativeExecutionUnsupported);
+-        }
+-        self.validate_plan(plan, source, destination, || {
+-            crate::preflight::virtual_pair(source, destination, plan.logical_bytes()).map(|_| ())
+-        })
+-    }
+-
+-    #[cfg(target_os = "linux")]
+-    fn validate_raw_plan<S, D>(
+-        &self,
+-        plan: &CopyPlan,
+-        source: &RawDisk<S>,
+-        destination: &RawDisk<D>,
+-    ) -> Result<()>
+-    where
+-        S: BlockDevice + LinuxFdBackend,
+-        D: BlockDevice + LinuxFdBackend,
+-    {
+-        self.validate_plan(plan, source, destination, || {
+-            let endpoints = crate::preflight::raw_pair(source, destination, plan.logical_bytes())?;
+-            if plan.backend() == ExecutionBackend::IoUring
+-                && plan
+-                    .extents()
+-                    .iter()
+-                    .any(|extent| extent.kind() == ExtentKind::Data)
+-            {
+-                endpoints.validate_native_binding()?;
+-            }
+-            Ok(())
+-        })
+-    }
+-
+     /// Linux RAW adapter: permits FD execution only for explicitly exposed RAW backends.
+     #[cfg(target_os = "linux")]
+     pub fn plan_raw_with_destination<S, D>(
+@@ -214,36 +166,14 @@ impl DataMover {
+ 
+         let compatibility = evaluate_compatibility(source_backend, destination_backend);
+ 
+-        let (backend, alignment) = match self.execution_strategy {
+-            ExecutionStrategy::Threaded => {
+-                (ExecutionBackend::Threaded, self.options.buffer_alignment())
+-            }
+-
+-            ExecutionStrategy::IoUring(_) => {
+-                if !compatibility.compatible() {
+-                    return Err(Error::NativeExecutionUnsupported);
+-                }
+-
+-                (
+-                    ExecutionBackend::IoUring,
+-                    compatibility
+-                        .alignment()
+-                        .max(self.options.buffer_alignment()),
+-                )
+-            }
+-
+-            ExecutionStrategy::Auto(_) => {
+-                if compatibility.compatible() {
+-                    (
+-                        ExecutionBackend::IoUring,
+-                        compatibility
+-                            .alignment()
+-                            .max(self.options.buffer_alignment()),
+-                    )
+-                } else {
+-                    (ExecutionBackend::Threaded, self.options.buffer_alignment())
+-                }
+-            }
++        let selection =
++            ExecutionSelection::raw(self.execution_strategy, compatibility.compatible())?;
++        let backend = selection.selected();
++        let alignment = match backend {
++            ExecutionBackend::Threaded => self.options.buffer_alignment(),
++            ExecutionBackend::IoUring => compatibility
++                .alignment()
++                .max(self.options.buffer_alignment()),
+         };
+ 
+         if backend == ExecutionBackend::IoUring
+@@ -257,7 +187,7 @@ impl DataMover {
+         CopyPlan::new(
+             source_size,
+             extents,
+-            backend,
++            selection,
+             self.options.block_size(),
+             alignment,
+         )
+@@ -374,126 +304,27 @@ impl DataMover {
+         S: BlockDevice + LinuxFdBackend,
+         D: BlockDevice + LinuxFdBackend,
+     {
+-        self.validate_raw_plan(plan, source, destination)?;
+-        self.execute_validated_raw_plan(plan, source, destination)
++        let prepared = self.prepare_raw(plan, source, destination)?;
++        self.execute_prepared_raw_plan(&prepared)
+     }
+ 
+-    /// Validate structural plan invariants before any execution or observation.
+-    fn validate_plan<S, D>(
+-        &self,
+-        plan: &CopyPlan,
+-        source: &S,
+-        destination: &D,
+-        preflight: impl FnOnce() -> Result<()>,
+-    ) -> Result<()>
+-    where
+-        S: VirtualDisk + ?Sized,
+-        D: VirtualDisk + ?Sized,
+-    {
+-        let source_size = source.size();
+-
+-        let destination_size = destination.size();
+-
+-        /*
+-         * The source geometry must still match the geometry captured by
+-         * the plan.
+-         */
+-        if source_size != plan.logical_bytes() {
+-            return Err(Error::CorruptMetadata(format!(
+-                "copy plan source size mismatch: \
+-                     plan={}, source={source_size}",
+-                plan.logical_bytes(),
+-            )));
+-        }
+-
+-        /*
+-         * The destination must still be large enough for the complete
+-         * logical source.
+-         */
+-        if destination_size < plan.logical_bytes() {
+-            return Err(Error::OutOfBounds {
+-                offset: 0,
+-                length: plan.logical_bytes(),
+-                size: destination_size,
+-            });
+-        }
+-
+-        preflight()?;
+-
+-        /*
+-         * The DataMover configuration used for execution must match the
+-         * block size captured during planning.
+-         */
+-        if plan.block_size() != self.options.block_size() {
+-            return Err(Error::CorruptMetadata(format!(
+-                "copy plan block size mismatch: \
+-                     plan={}, mover={}",
+-                plan.block_size(),
+-                self.options.block_size(),
+-            )));
+-        }
+-
+-        /*
+-         * Re-read only the source extent metadata.
+-         *
+-         * We deliberately do not read or hash Data contents here.
+-         * CopyPlan represents a structural execution plan, not a snapshot
+-         * of the source payload.
+-         */
+-        let current_extents = source.extents(0, source_size)?;
+-
+-        crate::extent_validation::validate_extents(&current_extents, source_size)?;
+-
+-        let current_fingerprint = crate::plan::extent_fingerprint(&current_extents);
+-
+-        /*
+-         * Reject a stale plan when the source extent structure changed
+-         * between planning and execution.
+-         *
+-         * The fingerprint covers:
+-         *
+-         *     offset
+-         *     length
+-         *     ExtentKind
+-         */
+-        if current_fingerprint != plan.extent_fingerprint() {
+-            return Err(Error::CorruptMetadata(format!(
+-                "copy plan extent map changed: \
+-                     planned={:#018x}, current={:#018x}",
+-                plan.extent_fingerprint(),
+-                current_fingerprint,
+-            )));
+-        }
+-
+-        if plan.backend() == ExecutionBackend::Threaded
+-            && plan.alignment() != self.options.buffer_alignment()
+-        {
+-            return Err(Error::CorruptMetadata(format!(
+-                "copy plan alignment mismatch: plan={}, mover={}",
+-                plan.alignment(),
+-                self.options.buffer_alignment(),
+-            )));
+-        }
+-
+-        Ok(())
+-    }
+-
+-    /// Dispatch only after the caller has validated the structural plan.
++    /// Dispatch only a fresh preparation tied to this plan and endpoint borrows.
+     #[cfg(target_os = "linux")]
+-    fn execute_validated_raw_plan<S, D>(
++    fn execute_prepared_raw_plan<S, D>(
+         &self,
+-        plan: &CopyPlan,
+-        source: &RawDisk<S>,
+-        destination: &RawDisk<D>,
++        prepared: &PreparedExecution<'_, RawDisk<S>, RawDisk<D>>,
+     ) -> Result<CopyReport>
+     where
+         S: BlockDevice + LinuxFdBackend,
+         D: BlockDevice + LinuxFdBackend,
+     {
+-        match plan.backend() {
+-            ExecutionBackend::Threaded => self.execute_threaded_plan(plan, source, destination),
+-            // Native compatibility and runtime alignment are rechecked before native I/O.
+-            ExecutionBackend::IoUring => self.execute_io_uring_plan(plan, source, destination),
++        let (plan, source, destination, executor) = prepared.parts();
++        match executor {
++            PreparedExecutor::Threaded => self.execute_threaded_plan(plan, source, destination),
++            PreparedExecutor::IoUring {
++                native_plan,
++                options,
++            } => self.execute_io_uring_plan(plan, source, destination, native_plan, *options),
+         }
+     }
+ 
+@@ -510,12 +341,13 @@ impl DataMover {
+         D: BlockDevice + LinuxFdBackend,
+         O: ProgressObserver + ?Sized,
+     {
+-        self.validate_raw_plan(plan, source, destination)?;
++        let prepared = self.prepare_raw(plan, source, destination)?;
++        let (plan, source, destination, _) = prepared.parts();
+         Self::observe_plan(plan, observer, || {
+             if plan.backend() == ExecutionBackend::Threaded && self.options.concurrency() == 1 {
+                 self.execute_threaded_plan_with_observer(plan, source, destination, observer)
+             } else {
+-                self.execute_validated_raw_plan(plan, source, destination)
++                self.execute_prepared_raw_plan(&prepared)
+             }
+         })
+     }
+@@ -608,50 +440,23 @@ impl DataMover {
+         plan: &CopyPlan,
+         source: &RawDisk<S>,
+         destination: &RawDisk<D>,
++        native_plan: &NativeExtentPlan,
++        execution_options: crate::IoUringExecutionOptions,
+     ) -> Result<CopyReport>
+     where
+         S: BlockDevice + LinuxFdBackend,
+         D: BlockDevice + LinuxFdBackend,
+     {
+-        let execution_options = match self.execution_strategy {
+-            ExecutionStrategy::IoUring(options) | ExecutionStrategy::Auto(options) => options,
+-
+-            ExecutionStrategy::Threaded => {
+-                return Err(Error::NativeExecutionNotSelected);
+-            }
+-        };
+-
+-        let native_plan = NativeExtentPlan::new(plan.extents().to_vec(), plan.logical_bytes())?;
+-
+         let source_backend = source.device();
+-
+         let destination_backend = destination.device();
+ 
+-        let compatibility = evaluate_compatibility(source_backend, destination_backend);
+-
+-        if !compatibility.compatible() {
+-            return Err(Error::NativeExecutionUnsupported);
+-        }
+-
+-        let runtime_alignment = compatibility
+-            .alignment()
+-            .max(self.options.buffer_alignment());
+-
+-        if runtime_alignment != plan.alignment() {
+-            return Err(Error::CorruptMetadata(format!(
+-                "copy plan alignment mismatch: \
+-                     plan={}, runtime={runtime_alignment}",
+-                plan.alignment(),
+-            )));
+-        }
+-
+         let started = Instant::now();
+ 
+         let stats = copy_extent_plan_with_destination(
+             source_backend.as_fd(),
+             destination_backend.as_fd(),
+             destination,
+-            &native_plan,
++            native_plan,
+             plan.block_size(),
+             plan.alignment(),
+             execution_options,
+diff --git a/crates/rvvdk-datamover/src/plan.rs b/crates/rvvdk-datamover/src/plan.rs
+index b189413..7d3cd83 100644
+--- a/crates/rvvdk-datamover/src/plan.rs
++++ b/crates/rvvdk-datamover/src/plan.rs
+@@ -1,6 +1,6 @@
+ use rvvdk_core::{Error, Extent, ExtentKind, Result};
+ 
+-use crate::ExecutionBackend;
++use crate::{ExecutionBackend, ExecutionSelection};
+ 
+ #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+ pub struct CopyPlanSummary {
+@@ -99,12 +99,35 @@ impl CopyPlanSummary {
+     }
+ }
+ 
++/// Portable logical intent, independent of the executor and its configuration.
+ #[derive(Debug, Clone, PartialEq, Eq)]
+-pub struct CopyPlan {
++struct LogicalCopyPlan {
+     summary: CopyPlanSummary,
+     extents: Vec<Extent>,
+     extent_fingerprint: u64,
+-    backend: ExecutionBackend,
++}
++
++impl LogicalCopyPlan {
++    fn new(logical_bytes: u64, extents: Vec<Extent>) -> Result<Self> {
++        crate::extent_validation::validate_extents(&extents, logical_bytes)?;
++        let summary = CopyPlanSummary::from_extents(logical_bytes, &extents)?;
++        let extent_fingerprint = extent_fingerprint(&extents);
++        Ok(Self {
++            summary,
++            extents,
++            extent_fingerprint,
++        })
++    }
++}
++
++/// Structural logical plan plus planning-time execution selection.
++///
++/// This holds no prepared endpoints or runtime resources. Each execute call
++/// validates current state and prepares its executor again.
++#[derive(Debug, Clone, PartialEq, Eq)]
++pub struct CopyPlan {
++    logical: LogicalCopyPlan,
++    selection: ExecutionSelection,
+     block_size: usize,
+     alignment: usize,
+ }
+@@ -113,58 +136,57 @@ impl CopyPlan {
+     pub(crate) fn new(
+         logical_bytes: u64,
+         extents: Vec<Extent>,
+-        backend: ExecutionBackend,
++        selection: ExecutionSelection,
+         block_size: usize,
+         alignment: usize,
+     ) -> Result<Self> {
+-        crate::extent_validation::validate_extents(&extents, logical_bytes)?;
+-        let summary = CopyPlanSummary::from_extents(logical_bytes, &extents)?;
+-        let extent_fingerprint = extent_fingerprint(&extents);
+-
+         Ok(Self {
+-            summary,
+-            extent_fingerprint,
+-            extents,
+-            backend,
++            logical: LogicalCopyPlan::new(logical_bytes, extents)?,
++            selection,
+             block_size,
+             alignment,
+         })
+     }
+ 
++    /// Historical planning decision, not the executing mover's configuration.
++    pub const fn execution_selection(&self) -> &ExecutionSelection {
++        &self.selection
++    }
++
+     pub const fn extent_fingerprint(&self) -> u64 {
+-        self.extent_fingerprint
++        self.logical.extent_fingerprint
+     }
+ 
+     pub const fn summary(&self) -> &CopyPlanSummary {
+-        &self.summary
++        &self.logical.summary
+     }
+ 
+     pub const fn logical_bytes(&self) -> u64 {
+-        self.summary.logical_bytes()
++        self.logical.summary.logical_bytes()
+     }
+ 
+     pub const fn data_bytes(&self) -> u64 {
+-        self.summary.data_bytes()
++        self.logical.summary.data_bytes()
+     }
+ 
+     pub const fn zero_bytes(&self) -> u64 {
+-        self.summary.zero_bytes()
++        self.logical.summary.zero_bytes()
+     }
+ 
+     pub const fn hole_bytes(&self) -> u64 {
+-        self.summary.hole_bytes()
++        self.logical.summary.hole_bytes()
+     }
+ 
+     pub const fn extent_count(&self) -> usize {
+-        self.extents.len()
++        self.logical.extents.len()
+     }
+ 
+     pub fn extents(&self) -> &[Extent] {
+-        &self.extents
++        &self.logical.extents
+     }
+ 
+     pub const fn backend(&self) -> ExecutionBackend {
+-        self.backend
++        self.selection.selected()
+     }
+ 
+     pub const fn block_size(&self) -> usize {
+@@ -236,7 +258,13 @@ mod tests {
+             ],
+         ] {
+             assert!(matches!(
+-                CopyPlan::new(4096, extents, ExecutionBackend::Threaded, 1024, 4096),
++                CopyPlan::new(
++                    4096,
++                    extents,
++                    ExecutionSelection::portable(crate::ExecutionStrategy::Threaded).unwrap(),
++                    1024,
++                    4096
++                ),
+                 Err(Error::CorruptMetadata(_))
+             ));
+         }
+@@ -264,7 +292,7 @@ mod tests {
+         let plan = CopyPlan::new(
+             4 * MIB,
+             extents.clone(),
+-            ExecutionBackend::Threaded,
++            ExecutionSelection::portable(crate::ExecutionStrategy::Threaded).unwrap(),
+             64 * 1024,
+             4096,
+         )
+@@ -293,7 +321,14 @@ mod tests {
+ 
+     #[test]
+     fn supports_empty_plan() {
+-        let plan = CopyPlan::new(0, Vec::new(), ExecutionBackend::Threaded, 64 * 1024, 1).unwrap();
++        let plan = CopyPlan::new(
++            0,
++            Vec::new(),
++            ExecutionSelection::portable(crate::ExecutionStrategy::Threaded).unwrap(),
++            64 * 1024,
++            1,
++        )
++        .unwrap();
+ 
+         assert_eq!(plan.logical_bytes(), 0,);
+ 
+@@ -318,7 +353,13 @@ mod tests {
+     fn rejects_extent_bytes_that_do_not_match_logical_size() {
+         let extents = vec![Extent::new(0, 2 * MIB, ExtentKind::Data).unwrap()];
+ 
+-        let result = CopyPlan::new(4 * MIB, extents, ExecutionBackend::Threaded, 64 * 1024, 1);
++        let result = CopyPlan::new(
++            4 * MIB,
++            extents,
++            ExecutionSelection::portable(crate::ExecutionStrategy::Threaded).unwrap(),
++            64 * 1024,
++            1,
++        );
+ 
+         assert!(matches!(result, Err(Error::CorruptMetadata(_))));
+     }
+@@ -330,7 +371,13 @@ mod tests {
+             Extent::new(2 * MIB, 2 * MIB, ExtentKind::Zero).unwrap(),
+         ];
+ 
+-        let result = CopyPlan::new(3 * MIB, extents, ExecutionBackend::Threaded, 64 * 1024, 1);
++        let result = CopyPlan::new(
++            3 * MIB,
++            extents,
++            ExecutionSelection::portable(crate::ExecutionStrategy::Threaded).unwrap(),
++            64 * 1024,
++            1,
++        );
+ 
+         assert!(matches!(result, Err(Error::CorruptMetadata(_))));
+     }
+diff --git a/crates/rvvdk-datamover/src/preparation.rs b/crates/rvvdk-datamover/src/preparation.rs
+new file mode 100644
+index 0000000..5286d2a
+--- /dev/null
++++ b/crates/rvvdk-datamover/src/preparation.rs
+@@ -0,0 +1,268 @@
++use crate::{CopyPlan, DataMover, ExecutionBackend};
++use rvvdk_core::{Error, Result, VirtualDisk};
++
++#[cfg(target_os = "linux")]
++use crate::io_uring::{NativeExtentPlan, evaluate_compatibility};
++#[cfg(target_os = "linux")]
++use crate::{ExecutionStrategy, IoUringExecutionOptions};
++#[cfg(target_os = "linux")]
++use rvvdk_core::{BlockDevice, ExtentKind, RawDisk};
++#[cfg(target_os = "linux")]
++use rvvdk_platform::LinuxFdBackend;
++
++/// Invocation-scoped checked dispatch state, bound to the validated borrows.
++/// This does not claim runtime ring/buffer allocation or snapshot consistency.
++pub(crate) struct PreparedExecution<'a, S: ?Sized, D: ?Sized> {
++    plan: &'a CopyPlan,
++    source: &'a S,
++    destination: &'a D,
++    executor: PreparedExecutor,
++}
++
++pub(crate) enum PreparedExecutor {
++    Threaded,
++    #[cfg(target_os = "linux")]
++    IoUring {
++        native_plan: NativeExtentPlan,
++        options: IoUringExecutionOptions,
++    },
++}
++
++impl<'a, S: ?Sized, D: ?Sized> PreparedExecution<'a, S, D> {
++    pub(crate) fn parts(&self) -> (&'a CopyPlan, &'a S, &'a D, &PreparedExecutor) {
++        (self.plan, self.source, self.destination, &self.executor)
++    }
++}
++
++impl DataMover {
++    pub(crate) fn prepare_portable<'a, S, D>(
++        &self,
++        plan: &'a CopyPlan,
++        source: &'a S,
++        destination: &'a D,
++    ) -> Result<PreparedExecution<'a, S, D>>
++    where
++        S: VirtualDisk + ?Sized,
++        D: VirtualDisk + ?Sized,
++    {
++        self.validate_portable_plan(plan, source, destination)?;
++        Ok(PreparedExecution {
++            plan,
++            source,
++            destination,
++            executor: PreparedExecutor::Threaded,
++        })
++    }
++
++    #[cfg(target_os = "linux")]
++    pub(crate) fn prepare_raw<'a, S, D>(
++        &self,
++        plan: &'a CopyPlan,
++        source: &'a RawDisk<S>,
++        destination: &'a RawDisk<D>,
++    ) -> Result<PreparedExecution<'a, RawDisk<S>, RawDisk<D>>>
++    where
++        S: BlockDevice + LinuxFdBackend,
++        D: BlockDevice + LinuxFdBackend,
++    {
++        self.validate_raw_plan(plan, source, destination)?;
++        let executor = match plan.backend() {
++            ExecutionBackend::Threaded => PreparedExecutor::Threaded,
++            ExecutionBackend::IoUring => {
++                let execution_options = match self.execution_strategy() {
++                    ExecutionStrategy::IoUring(options) | ExecutionStrategy::Auto(options) => {
++                        options
++                    }
++
++                    ExecutionStrategy::Threaded => {
++                        return Err(Error::NativeExecutionNotSelected);
++                    }
++                };
++
++                let native_plan =
++                    NativeExtentPlan::new(plan.extents().to_vec(), plan.logical_bytes())?;
++
++                let source_backend = source.device();
++
++                let destination_backend = destination.device();
++
++                let compatibility = evaluate_compatibility(source_backend, destination_backend);
++
++                if !compatibility.compatible() {
++                    return Err(Error::NativeExecutionUnsupported);
++                }
++
++                let runtime_alignment = compatibility
++                    .alignment()
++                    .max(self.options.buffer_alignment());
++
++                if runtime_alignment != plan.alignment() {
++                    return Err(Error::CorruptMetadata(format!(
++                        "copy plan alignment mismatch: \
++                     plan={}, runtime={runtime_alignment}",
++                        plan.alignment(),
++                    )));
++                }
++
++                PreparedExecutor::IoUring {
++                    native_plan,
++                    options: execution_options,
++                }
++            }
++        };
++        Ok(PreparedExecution {
++            plan,
++            source,
++            destination,
++            executor,
++        })
++    }
++
++    pub(crate) fn require_portable_execution(&self) -> Result<()> {
++        crate::ExecutionSelection::portable(self.execution_strategy()).map(|_| ())
++    }
++
++    fn validate_portable_plan<S, D>(
++        &self,
++        plan: &CopyPlan,
++        source: &S,
++        destination: &D,
++    ) -> Result<()>
++    where
++        S: VirtualDisk + ?Sized,
++        D: VirtualDisk + ?Sized,
++    {
++        self.require_portable_execution()?;
++        if plan.backend() != ExecutionBackend::Threaded {
++            return Err(Error::NativeExecutionUnsupported);
++        }
++        self.validate_plan(plan, source, destination, || {
++            crate::preflight::virtual_pair(source, destination, plan.logical_bytes()).map(|_| ())
++        })
++    }
++
++    #[cfg(target_os = "linux")]
++    fn validate_raw_plan<S, D>(
++        &self,
++        plan: &CopyPlan,
++        source: &RawDisk<S>,
++        destination: &RawDisk<D>,
++    ) -> Result<()>
++    where
++        S: BlockDevice + LinuxFdBackend,
++        D: BlockDevice + LinuxFdBackend,
++    {
++        self.validate_plan(plan, source, destination, || {
++            let endpoints = crate::preflight::raw_pair(source, destination, plan.logical_bytes())?;
++            if plan.backend() == ExecutionBackend::IoUring
++                && plan
++                    .extents()
++                    .iter()
++                    .any(|extent| extent.kind() == ExtentKind::Data)
++            {
++                endpoints.validate_native_binding()?;
++            }
++            Ok(())
++        })
++    }
++
++    /// Validate structural plan invariants before any execution or observation.
++    fn validate_plan<S, D>(
++        &self,
++        plan: &CopyPlan,
++        source: &S,
++        destination: &D,
++        preflight: impl FnOnce() -> Result<()>,
++    ) -> Result<()>
++    where
++        S: VirtualDisk + ?Sized,
++        D: VirtualDisk + ?Sized,
++    {
++        let source_size = source.size();
++
++        let destination_size = destination.size();
++
++        /*
++         * The source geometry must still match the geometry captured by
++         * the plan.
++         */
++        if source_size != plan.logical_bytes() {
++            return Err(Error::CorruptMetadata(format!(
++                "copy plan source size mismatch: \
++                     plan={}, source={source_size}",
++                plan.logical_bytes(),
++            )));
++        }
++
++        /*
++         * The destination must still be large enough for the complete
++         * logical source.
++         */
++        if destination_size < plan.logical_bytes() {
++            return Err(Error::OutOfBounds {
++                offset: 0,
++                length: plan.logical_bytes(),
++                size: destination_size,
++            });
++        }
++
++        preflight()?;
++
++        /*
++         * The DataMover configuration used for execution must match the
++         * block size captured during planning.
++         */
++        if plan.block_size() != self.options.block_size() {
++            return Err(Error::CorruptMetadata(format!(
++                "copy plan block size mismatch: \
++                     plan={}, mover={}",
++                plan.block_size(),
++                self.options.block_size(),
++            )));
++        }
++
++        /*
++         * Re-read only the source extent metadata.
++         *
++         * We deliberately do not read or hash Data contents here.
++         * CopyPlan represents a structural execution plan, not a snapshot
++         * of the source payload.
++         */
++        let current_extents = source.extents(0, source_size)?;
++
++        crate::extent_validation::validate_extents(&current_extents, source_size)?;
++
++        let current_fingerprint = crate::plan::extent_fingerprint(&current_extents);
++
++        /*
++         * Reject a stale plan when the source extent structure changed
++         * between planning and execution.
++         *
++         * The fingerprint covers:
++         *
++         *     offset
++         *     length
++         *     ExtentKind
++         */
++        if current_fingerprint != plan.extent_fingerprint() {
++            return Err(Error::CorruptMetadata(format!(
++                "copy plan extent map changed: \
++                     planned={:#018x}, current={:#018x}",
++                plan.extent_fingerprint(),
++                current_fingerprint,
++            )));
++        }
++
++        if plan.backend() == ExecutionBackend::Threaded
++            && plan.alignment() != self.options.buffer_alignment()
++        {
++            return Err(Error::CorruptMetadata(format!(
++                "copy plan alignment mismatch: plan={}, mover={}",
++                plan.alignment(),
++                self.options.buffer_alignment(),
++            )));
++        }
++
++        Ok(())
++    }
++}
+diff --git a/crates/rvvdk-datamover/tests/execution_preparation.rs b/crates/rvvdk-datamover/tests/execution_preparation.rs
+new file mode 100644
+index 0000000..1832af8
+--- /dev/null
++++ b/crates/rvvdk-datamover/tests/execution_preparation.rs
+@@ -0,0 +1,165 @@
++#![cfg(target_os = "linux")]
++
++use rvvdk_core::{BlockDevice, Capabilities, CopyEndpoint, DiskGeometry, Extent, RawDisk, Result};
++use rvvdk_datamover::{
++    CopyOptions, DataMover, ExecutionStrategy, IoUringExecutionOptions, ProgressSnapshot,
++};
++use rvvdk_local::LocalFileBlockDevice;
++use rvvdk_platform::{LinuxFdBackend, LinuxFdCapabilities};
++use std::cell::Cell;
++use std::fs;
++use std::os::fd::{AsFd, BorrowedFd};
++use std::sync::atomic::{AtomicUsize, Ordering};
++
++struct ChangingAlignment {
++    inner: LocalFileBlockDevice,
++    alignment: AtomicUsize,
++}
++impl AsFd for ChangingAlignment {
++    fn as_fd(&self) -> BorrowedFd<'_> {
++        self.inner.as_fd()
++    }
++}
++impl LinuxFdBackend for ChangingAlignment {
++    fn linux_fd_capabilities(&self) -> LinuxFdCapabilities {
++        let alignment = self.alignment.load(Ordering::Relaxed);
++        LinuxFdCapabilities::new(false, alignment, alignment)
++    }
++}
++impl BlockDevice for ChangingAlignment {
++    fn geometry(&self) -> DiskGeometry {
++        self.inner.geometry()
++    }
++    fn capabilities(&self) -> Capabilities {
++        self.inner.capabilities()
++    }
++    fn copy_endpoint(&self) -> Result<CopyEndpoint> {
++        self.inner.copy_endpoint()
++    }
++    fn extents(&self, offset: u64, length: u64) -> Result<Vec<Extent>> {
++        self.inner.extents(offset, length)
++    }
++    fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
++        self.inner.read_at(offset, buffer)
++    }
++    fn write_at(&self, offset: u64, buffer: &[u8]) -> Result<usize> {
++        self.inner.write_at(offset, buffer)
++    }
++    fn flush(&self) -> Result<()> {
++        self.inner.flush()
++    }
++}
++
++fn fixture() -> (RawDisk<ChangingAlignment>, RawDisk<ChangingAlignment>) {
++    static NEXT: AtomicUsize = AtomicUsize::new(0);
++    let stem = std::env::temp_dir().join(format!(
++        "rvvdk-r14-{}-{}",
++        std::process::id(),
++        NEXT.fetch_add(1, Ordering::Relaxed),
++    ));
++    let src = stem.with_extension("source");
++    let dst = stem.with_extension("destination");
++    fs::write(&src, [0x5a; 16384]).unwrap();
++    fs::write(&dst, [0xa5; 16384]).unwrap();
++    let source = LocalFileBlockDevice::open_read_only(&src).unwrap();
++    let destination = LocalFileBlockDevice::open_read_write(&dst).unwrap();
++    fs::remove_file(src).unwrap();
++    fs::remove_file(dst).unwrap();
++    let wrap = |inner| {
++        RawDisk::new(ChangingAlignment {
++            inner,
++            alignment: AtomicUsize::new(1),
++        })
++    };
++    (wrap(source), wrap(destination))
++}
++fn native(options: CopyOptions) -> DataMover {
++    DataMover::with_execution_strategy(
++        options,
++        ExecutionStrategy::IoUring(IoUringExecutionOptions::new(2).unwrap()),
++    )
++}
++fn assert_rejected(
++    executor: &DataMover,
++    plan: &rvvdk_datamover::CopyPlan,
++    source: &RawDisk<ChangingAlignment>,
++    destination: &RawDisk<ChangingAlignment>,
++    message: &str,
++) {
++    let plain = executor
++        .execute_raw_plan(plan, source, destination)
++        .unwrap_err();
++    let callbacks = Cell::new(0);
++    let observed = executor
++        .execute_raw_plan_with_observer(plan, source, destination, &|_: &ProgressSnapshot| {
++            callbacks.set(callbacks.get() + 1)
++        })
++        .unwrap_err();
++    assert!(plain.to_string().contains(message), "{plain}");
++    assert_eq!(plain.to_string(), observed.to_string());
++    assert_eq!(
++        callbacks.get(),
++        0,
++        "preparation rejection must precede observation"
++    );
++    let mut actual = [0; 16384];
++    destination.device().read_exact_at(0, &mut actual).unwrap();
++    assert_eq!(actual, [0xa5; 16384]);
++}
++
++#[test]
++fn native_strategy_rejection_precedes_observation() {
++    let (source, destination) = fixture();
++    let planner = native(CopyOptions::new(4096).unwrap());
++    let plan = planner
++        .plan_raw_with_destination(&source, &destination)
++        .unwrap();
++    assert_rejected(
++        &DataMover::new(CopyOptions::new(4096).unwrap()),
++        &plan,
++        &source,
++        &destination,
++        "not selected",
++    );
++}
++
++#[test]
++fn native_configuration_alignment_rejection_precedes_observation() {
++    let (source, destination) = fixture();
++    let planner = native(CopyOptions::new(4096).unwrap());
++    let plan = planner
++        .plan_raw_with_destination(&source, &destination)
++        .unwrap();
++    assert_rejected(
++        &native(CopyOptions::with_alignment(4096, 8192).unwrap()),
++        &plan,
++        &source,
++        &destination,
++        "alignment mismatch",
++    );
++}
++
++#[test]
++fn native_preparation_refreshes_both_backend_alignments_on_every_execution() {
++    let (source, destination) = fixture();
++    let mover = native(CopyOptions::new(4096).unwrap());
++    let plan = mover
++        .plan_raw_with_destination(&source, &destination)
++        .unwrap();
++    for endpoint in [source.device(), destination.device()] {
++        endpoint.alignment.store(8192, Ordering::Relaxed);
++        assert_rejected(&mover, &plan, &source, &destination, "alignment mismatch");
++        endpoint.alignment.store(1, Ordering::Relaxed);
++    }
++    let callbacks = Cell::new(0);
++    let report = mover
++        .execute_raw_plan_with_observer(&plan, &source, &destination, &|_: &ProgressSnapshot| {
++            callbacks.set(callbacks.get() + 1)
++        })
++        .unwrap();
++    assert_eq!(callbacks.get(), 2);
++    assert_eq!(report.stats().bytes_written(), 16384);
++    let mut actual = [0; 16384];
++    destination.device().read_exact_at(0, &mut actual).unwrap();
++    assert_eq!(actual, [0x5a; 16384]);
++}
+diff --git a/crates/rvvdk-datamover/tests/execution_selection.rs b/crates/rvvdk-datamover/tests/execution_selection.rs
+new file mode 100644
+index 0000000..f1c255f
+--- /dev/null
++++ b/crates/rvvdk-datamover/tests/execution_selection.rs
+@@ -0,0 +1,104 @@
++use rvvdk_core::{MemoryBlockDevice, RawDisk};
++#[cfg(target_os = "linux")]
++use rvvdk_datamover::ExecutionBackend;
++use rvvdk_datamover::{CopyOptions, DataMover, ExecutionSelectionReason, ExecutionStrategy};
++
++#[test]
++fn portable_plan_records_explicit_threaded_selection() {
++    let source = RawDisk::new(MemoryBlockDevice::new(4096).unwrap());
++    let plan = DataMover::new(CopyOptions::new(4096).unwrap())
++        .plan(&source)
++        .unwrap();
++    let selection = plan.execution_selection();
++    assert_eq!(selection.requested(), ExecutionStrategy::Threaded);
++    assert_eq!(selection.selected(), plan.backend());
++    assert_eq!(
++        selection.reason(),
++        ExecutionSelectionReason::RequestedThreaded
++    );
++}
++
++#[cfg(target_os = "linux")]
++#[test]
++fn portable_auto_records_the_api_boundary_without_changing_logical_intent() {
++    use rvvdk_datamover::IoUringExecutionOptions;
++    let source = RawDisk::new(MemoryBlockDevice::new(4096).unwrap());
++    let destination = RawDisk::new(MemoryBlockDevice::new(4096).unwrap());
++    let options = CopyOptions::new(4096).unwrap();
++    let requested = ExecutionStrategy::Auto(IoUringExecutionOptions::new(8).unwrap());
++    let explicit = DataMover::new(options).plan(&source).unwrap();
++    let automatic = DataMover::with_execution_strategy(options, requested)
++        .plan_with_destination(&source, &destination)
++        .unwrap();
++    assert_eq!(automatic.extents(), explicit.extents());
++    assert_eq!(automatic.summary(), explicit.summary());
++    assert_eq!(
++        automatic.extent_fingerprint(),
++        explicit.extent_fingerprint()
++    );
++    assert_eq!(automatic.execution_selection().requested(), requested);
++    assert_eq!(
++        automatic.execution_selection().selected(),
++        ExecutionBackend::Threaded
++    );
++    assert_eq!(
++        automatic.execution_selection().reason(),
++        ExecutionSelectionReason::PortableApi
++    );
++    // Planning provenance is retained even when another mover executes the plan.
++    let before = *automatic.execution_selection();
++    let report = DataMover::new(options)
++        .execute_plan(&automatic, &source, &destination)
++        .unwrap();
++    assert_eq!(report.backend(), ExecutionBackend::Threaded);
++    assert_eq!(*automatic.execution_selection(), before);
++}
++
++#[cfg(target_os = "linux")]
++#[test]
++fn raw_planning_records_request_and_reason_separately_from_logical_intent() {
++    use rvvdk_datamover::IoUringExecutionOptions;
++    use rvvdk_local::LocalFileBlockDevice;
++    let stem = std::env::temp_dir().join(format!("rvvdk-r14-selection-{}", std::process::id()));
++    let src = stem.with_extension("source");
++    let dst = stem.with_extension("destination");
++    std::fs::write(&src, [0x5a; 4096]).unwrap();
++    std::fs::write(&dst, [0xa5; 4096]).unwrap();
++    let source = RawDisk::new(LocalFileBlockDevice::open_read_only(&src).unwrap());
++    let destination = RawDisk::new(LocalFileBlockDevice::open_read_write(&dst).unwrap());
++    std::fs::remove_file(src).unwrap();
++    std::fs::remove_file(dst).unwrap();
++    let options = CopyOptions::new(4096).unwrap();
++    let io = IoUringExecutionOptions::new(2).unwrap();
++    let threaded = DataMover::new(options)
++        .plan_raw_with_destination(&source, &destination)
++        .unwrap();
++    for (strategy, reason) in [
++        (
++            ExecutionStrategy::IoUring(io),
++            ExecutionSelectionReason::RequestedNative,
++        ),
++        (
++            ExecutionStrategy::Auto(io),
++            ExecutionSelectionReason::RawDescriptorsCompatible,
++        ),
++    ] {
++        let native = DataMover::with_execution_strategy(options, strategy)
++            .plan_raw_with_destination(&source, &destination)
++            .unwrap();
++        assert_eq!(native.extents(), threaded.extents());
++        assert_eq!(native.summary(), threaded.summary());
++        assert_eq!(native.extent_fingerprint(), threaded.extent_fingerprint());
++        assert_eq!(native.execution_selection().requested(), strategy);
++        assert_eq!(
++            native.execution_selection().selected(),
++            ExecutionBackend::IoUring
++        );
++        assert_eq!(native.execution_selection().reason(), reason);
++    }
++    // Existing dispatch policy keeps the plan's Threaded choice authoritative.
++    let report = DataMover::with_execution_strategy(options, ExecutionStrategy::IoUring(io))
++        .execute_raw_plan(&threaded, &source, &destination)
++        .unwrap();
++    assert_eq!(report.backend(), ExecutionBackend::Threaded);
++}

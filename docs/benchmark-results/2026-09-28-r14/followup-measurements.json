@@ -1,0 +1,878 @@
+[
+  {
+    "tag": "followup1-baseline",
+    "pair": 1,
+    "variant": "baseline",
+    "benchmark": "progress_plan/fragmented50/plan",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r14-994tr386/baseline-target/release/deps/progress-89ddd66446e24832",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "progress_plan/fragmented50/plan$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "progress_plan/fragmented50",
+        "function_id": "plan",
+        "value_str": null,
+        "throughput": {
+          "Elements": 256
+        },
+        "full_id": "progress_plan/fragmented50/plan",
+        "directory_name": "progress_plan_fragmented50/plan",
+        "title": "progress_plan/fragmented50/plan"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 209374.2366835937,
+            "upper_bound": 213823.05036458335
+          },
+          "point_estimate": 211432.73786458335,
+          "standard_error": 1131.660635050235
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 208990.27968749998,
+            "upper_bound": 213532.64453125
+          },
+          "point_estimate": 211935.51484375,
+          "standard_error": 1163.8156546630871
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2998.5943534830326,
+            "upper_bound": 7929.864334529291
+          },
+          "point_estimate": 5938.885463001224,
+          "standard_error": 1224.7622091478245
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3872.7161255365413,
+            "upper_bound": 8854.678726719667
+          },
+          "point_estimate": 6273.809142708374,
+          "standard_error": 1425.7836880391342
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0,
+          640.0
+        ],
+        "times": [
+          132833160.0,
+          133908311.0,
+          129938308.0,
+          130137126.0,
+          131234472.0,
+          130757636.0,
+          131757055.0,
+          131667092.0,
+          131260571.0,
+          130491154.0,
+          150287823.0,
+          135743854.0,
+          138059213.0,
+          138324015.0,
+          138619538.0,
+          138249236.0,
+          138256750.0,
+          137450674.0,
+          138155549.0,
+          138379945.0,
+          133599247.0,
+          137301258.0,
+          134681313.0,
+          135882725.0,
+          134734268.0,
+          136020527.0,
+          134633108.0,
+          135663520.0,
+          135613939.0,
+          135867180.0
+        ]
+      },
+      "tukey.json": [
+        178723.57851562495,
+        192507.165234375,
+        229263.39648437506,
+        243046.98320312507
+      ]
+    }
+  },
+  {
+    "tag": "followup1-candidate",
+    "pair": 1,
+    "variant": "candidate",
+    "benchmark": "progress_plan/fragmented50/plan",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r14-994tr386/candidate-target/release/deps/progress-89ddd66446e24832",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "progress_plan/fragmented50/plan$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "progress_plan/fragmented50",
+        "function_id": "plan",
+        "value_str": null,
+        "throughput": {
+          "Elements": 256
+        },
+        "full_id": "progress_plan/fragmented50/plan",
+        "directory_name": "progress_plan_fragmented50/plan",
+        "title": "progress_plan/fragmented50/plan"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 210270.58333333337,
+            "upper_bound": 219255.24760827847
+          },
+          "point_estimate": 214111.50005482454,
+          "standard_error": 2333.833805527838
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 209808.09046052632,
+            "upper_bound": 212307.08799342107
+          },
+          "point_estimate": 211153.07565789475,
+          "standard_error": 635.416414242575
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1498.457453331256,
+            "upper_bound": 5674.369754029552
+          },
+          "point_estimate": 3007.2760370706937,
+          "standard_error": 1045.6969591654502
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3688.659481001557,
+            "upper_bound": 19478.44525759626
+          },
+          "point_estimate": 12980.154032071836,
+          "standard_error": 4291.794357928175
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0,
+          608.0
+        ],
+        "times": [
+          163387100.0,
+          137254534.0,
+          128746816.0,
+          127260005.0,
+          125780990.0,
+          125980018.0,
+          122894374.0,
+          129186412.0,
+          135624246.0,
+          126092503.0,
+          127171945.0,
+          129300648.0,
+          125504786.0,
+          126790805.0,
+          127866633.0,
+          129902181.0,
+          127983102.0,
+          129770211.0,
+          128946891.0,
+          128107754.0,
+          128629027.0,
+          129638455.0,
+          125516328.0,
+          129045102.0,
+          129120317.0,
+          128300472.0,
+          128461668.0,
+          128232887.0,
+          125135394.0,
+          149762157.0
+        ]
+      },
+      "tukey.json": [
+        196921.20559210525,
+        202807.71628289472,
+        218505.078125,
+        224391.5888157895
+      ]
+    }
+  },
+  {
+    "tag": "followup2-candidate",
+    "pair": 2,
+    "variant": "candidate",
+    "benchmark": "progress_plan/fragmented50/plan",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r14-994tr386/candidate-target/release/deps/progress-89ddd66446e24832",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "progress_plan/fragmented50/plan$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "progress_plan/fragmented50",
+        "function_id": "plan",
+        "value_str": null,
+        "throughput": {
+          "Elements": 256
+        },
+        "full_id": "progress_plan/fragmented50/plan",
+        "directory_name": "progress_plan_fragmented50/plan",
+        "title": "progress_plan/fragmented50/plan"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 208678.90018390812,
+            "upper_bound": 212578.30692959775
+          },
+          "point_estimate": 210558.3618390805,
+          "standard_error": 998.0980598828829
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 206137.7844827586,
+            "upper_bound": 211725.6982758621
+          },
+          "point_estimate": 210291.92327586206,
+          "standard_error": 1357.9480736508435
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2288.1118766192853,
+            "upper_bound": 8704.500374084919
+          },
+          "point_estimate": 6826.805400868941,
+          "standard_error": 1709.8582690432127
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 4020.816013641608,
+            "upper_bound": 6771.947223611968
+          },
+          "point_estimate": 5571.638457818066,
+          "standard_error": 702.9342494302578
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0,
+          580.0
+        ],
+        "times": [
+          125726034.0,
+          121642315.0,
+          120491487.0,
+          119558174.0,
+          122108592.0,
+          122029632.0,
+          130362910.0,
+          119561656.0,
+          128471464.0,
+          118636622.0,
+          118590383.0,
+          118915552.0,
+          118547458.0,
+          118789138.0,
+          119229763.0,
+          118810276.0,
+          119093315.0,
+          121856959.0,
+          126762405.0,
+          126869997.0,
+          121908999.0,
+          118450024.0,
+          122683560.0,
+          122676376.0,
+          122918250.0,
+          123647199.0,
+          122981880.0,
+          122514712.0,
+          124571119.0,
+          125309245.0
+        ]
+      },
+      "tukey.json": [
+        182874.31077586205,
+        194133.21314655172,
+        224156.95280172417,
+        235415.85517241384
+      ]
+    }
+  },
+  {
+    "tag": "followup2-baseline",
+    "pair": 2,
+    "variant": "baseline",
+    "benchmark": "progress_plan/fragmented50/plan",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r14-994tr386/baseline-target/release/deps/progress-89ddd66446e24832",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "progress_plan/fragmented50/plan$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "progress_plan/fragmented50",
+        "function_id": "plan",
+        "value_str": null,
+        "throughput": {
+          "Elements": 256
+        },
+        "full_id": "progress_plan/fragmented50/plan",
+        "directory_name": "progress_plan_fragmented50/plan",
+        "title": "progress_plan/fragmented50/plan"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 207715.4399729938,
+            "upper_bound": 213570.37443415637
+          },
+          "point_estimate": 210518.2358024691,
+          "standard_error": 1501.118809148808
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 209287.59413580247,
+            "upper_bound": 212587.97530864197
+          },
+          "point_estimate": 210402.11188271607,
+          "standard_error": 738.1158200603764
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1500.1006020715868,
+            "upper_bound": 10117.563087506976
+          },
+          "point_estimate": 5756.332819563897,
+          "standard_error": 2244.4731728628126
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 5153.342643826131,
+            "upper_bound": 11478.046267586149
+          },
+          "point_estimate": 8378.52377550055,
+          "standard_error": 1712.8380830073534
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0,
+          648.0
+        ],
+        "times": [
+          136306905.0,
+          140552867.0,
+          136421468.0,
+          141578552.0,
+          138888171.0,
+          139976608.0,
+          138618538.0,
+          138824807.0,
+          140547361.0,
+          139064848.0,
+          132613003.0,
+          143097211.0,
+          155331628.0,
+          136069306.0,
+          136582584.0,
+          136724955.0,
+          135579001.0,
+          136100801.0,
+          134900101.0,
+          135543764.0,
+          135657721.0,
+          136895478.0,
+          136268192.0,
+          136374232.0,
+          128948255.0,
+          129859265.0,
+          130014517.0,
+          129479571.0,
+          128226866.0,
+          127427928.0
+        ]
+      },
+      "tukey.json": [
+        190782.5262345679,
+        199605.0106095679,
+        223131.6356095679,
+        231954.1199845679
+      ]
+    }
+  },
+  {
+    "tag": "followup3-baseline",
+    "pair": 3,
+    "variant": "baseline",
+    "benchmark": "progress_plan/fragmented50/plan",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r14-994tr386/baseline-target/release/deps/progress-89ddd66446e24832",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "progress_plan/fragmented50/plan$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "progress_plan/fragmented50",
+        "function_id": "plan",
+        "value_str": null,
+        "throughput": {
+          "Elements": 256
+        },
+        "full_id": "progress_plan/fragmented50/plan",
+        "directory_name": "progress_plan_fragmented50/plan",
+        "title": "progress_plan/fragmented50/plan"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 205236.88083067088,
+            "upper_bound": 220468.10702875396
+          },
+          "point_estimate": 211676.93040468576,
+          "standard_error": 3950.7631645122333
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 202609.75638977636,
+            "upper_bound": 207149.071086262
+          },
+          "point_estimate": 202875.02795527157,
+          "standard_error": 1341.6809224725337
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 433.84877776089405,
+            "upper_bound": 7143.280354970577
+          },
+          "point_estimate": 1376.4697361059077,
+          "standard_error": 2030.7934748417115
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 5531.665083784631,
+            "upper_bound": 33642.14155364559
+          },
+          "point_estimate": 22059.344192819073,
+          "standard_error": 7677.103363568361
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0,
+          626.0
+        ],
+        "times": [
+          191934831.0,
+          166822727.0,
+          142471175.0,
+          135772286.0,
+          139488403.0,
+          135756658.0,
+          130623402.0,
+          129606353.0,
+          129212512.0,
+          130425491.0,
+          129744284.0,
+          125541450.0,
+          124840451.0,
+          126792971.0,
+          126859339.0,
+          127713150.0,
+          126650523.0,
+          126950611.0,
+          133101690.0,
+          127017612.0,
+          126841479.0,
+          126971249.0,
+          126981923.0,
+          127063957.0,
+          126825936.0,
+          126733668.0,
+          126732297.0,
+          126550773.0,
+          126667882.0,
+          126597670.0
+        ]
+      },
+      "tukey.json": [
+        184140.8981629392,
+        193307.2651757188,
+        217750.91054313106,
+        226917.27755591064
+      ]
+    }
+  },
+  {
+    "tag": "followup3-candidate",
+    "pair": 3,
+    "variant": "candidate",
+    "benchmark": "progress_plan/fragmented50/plan",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r14-994tr386/candidate-target/release/deps/progress-89ddd66446e24832",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "progress_plan/fragmented50/plan$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "progress_plan/fragmented50",
+        "function_id": "plan",
+        "value_str": null,
+        "throughput": {
+          "Elements": 256
+        },
+        "full_id": "progress_plan/fragmented50/plan",
+        "directory_name": "progress_plan_fragmented50/plan",
+        "title": "progress_plan/fragmented50/plan"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 210133.4943683409,
+            "upper_bound": 224981.08198883812
+          },
+          "point_estimate": 216880.81577879252,
+          "standard_error": 3818.194038999827
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 204570.52891933027,
+            "upper_bound": 216193.0
+          },
+          "point_estimate": 209849.3203957382,
+          "standard_error": 2777.036273465673
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3668.334832134274,
+            "upper_bound": 15971.843035621177
+          },
+          "point_estimate": 10635.487326707469,
+          "standard_error": 2919.750304996683
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 9589.817295620649,
+            "upper_bound": 28978.37207408938
+          },
+          "point_estimate": 21404.360253855622,
+          "standard_error": 4835.923858961207
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0,
+          657.0
+        ],
+        "times": [
+          135599932.0,
+          138725883.0,
+          136502736.0,
+          147573841.0,
+          135022018.0,
+          133161712.0,
+          133783657.0,
+          132836096.0,
+          133445239.0,
+          132773381.0,
+          132781119.0,
+          133272459.0,
+          133139348.0,
+          132597721.0,
+          133085332.0,
+          136784265.0,
+          145956458.0,
+          189128800.0,
+          179254408.0,
+          140876639.0,
+          169682439.0,
+          159792525.0,
+          143483427.0,
+          143927809.0,
+          139126285.0,
+          141600355.0,
+          142477247.0,
+          142587741.0,
+          138059971.0,
+          137682036.0
+        ]
+      },
+      "tukey.json": [
+        157510.04490106553,
+        180212.90220700158,
+        240753.855022831,
+        263456.71232876705
+      ]
+    }
+  }
+]

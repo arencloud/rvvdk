@@ -1,0 +1,101 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.47
+   Compiling libc v0.2.189
+   Compiling serde_core v1.0.229
+   Compiling crossbeam-utils v0.8.23
+   Compiling zerocopy v0.8.57
+   Compiling thiserror v2.0.20
+   Compiling crossbeam-epoch v0.9.21
+   Compiling cfg-if v1.0.4
+   Compiling bitflags v2.13.2
+   Compiling serde v1.0.229
+   Compiling crossbeam-deque v0.8.8
+   Compiling zmij v1.0.23
+   Compiling autocfg v1.5.1
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.12
+   Compiling rayon-core v1.13.0
+   Compiling cc v1.4.6
+   Compiling serde_json v1.0.151
+   Compiling either v1.18.0
+   Compiling ciborium-io v0.2.2
+   Compiling regex-syntax v0.8.11
+   Compiling memchr v2.8.3
+   Compiling io-uring v0.7.15
+   Compiling plotters-backend v0.3.7
+   Compiling clap_lex v1.1.1
+   Compiling anstyle v1.0.14
+   Compiling itoa v1.0.18
+   Compiling cast v0.3.0
+   Compiling same-file v1.0.6
+   Compiling num-traits v0.2.19
+   Compiling clap_builder v4.6.7
+   Compiling walkdir v2.5.0
+   Compiling anes v0.1.6
+   Compiling oorandom v11.1.5
+   Compiling itertools v0.13.0
+   Compiling plotters-svg v0.3.7
+   Compiling syn v3.0.5
+   Compiling syn v2.0.119
+   Compiling plotters v0.3.7
+   Compiling rayon v1.12.0
+   Compiling page_size v0.6.0
+   Compiling regex-automata v0.4.18
+   Compiling alloca v0.4.0
+   Compiling thiserror-impl v2.0.20
+   Compiling serde_derive v1.0.229
+   Compiling criterion-plot v0.8.2
+   Compiling clap v4.6.7
+   Compiling rvvdk-core v0.1.0 (/tmp/rvvdk-r14-994tr386/baseline/crates/rvvdk-core)
+   Compiling rvvdk-platform v0.1.0 (/tmp/rvvdk-r14-994tr386/baseline/crates/rvvdk-platform)
+   Compiling regex v1.13.1
+   Compiling rvvdk-datamover v0.1.0 (/tmp/rvvdk-r14-994tr386/baseline/crates/rvvdk-datamover)
+   Compiling rvvdk-local v0.1.0 (/tmp/rvvdk-r14-994tr386/baseline/crates/rvvdk-local)
+   Compiling zerocopy-derive v0.8.57
+   Compiling tinytemplate v1.2.1
+   Compiling half v2.7.1
+   Compiling ciborium-ll v0.2.2
+   Compiling ciborium v0.2.2
+   Compiling criterion v0.8.2
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.05s
+     Running tests/execution_preparation.rs (/tmp/rvvdk-r14-994tr386/baseline-target/debug/deps/execution_preparation-b3005200276ddd4f)
+
+running 3 tests
+test native_strategy_rejection_precedes_observation ... FAILED
+test native_configuration_alignment_rejection_precedes_observation ... FAILED
+test native_preparation_refreshes_both_backend_alignments_on_every_execution ... FAILED
+
+failures:
+
+---- native_strategy_rejection_precedes_observation stdout ----
+
+thread 'native_strategy_rejection_precedes_observation' (3486276) panicked at crates/rvvdk-datamover/tests/execution_preparation.rs:100:5:
+assertion `left == right` failed: preparation rejection must precede observation
+  left: 1
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- native_configuration_alignment_rejection_precedes_observation stdout ----
+
+thread 'native_configuration_alignment_rejection_precedes_observation' (3486274) panicked at crates/rvvdk-datamover/tests/execution_preparation.rs:100:5:
+assertion `left == right` failed: preparation rejection must precede observation
+  left: 1
+ right: 0
+
+---- native_preparation_refreshes_both_backend_alignments_on_every_execution stdout ----
+
+thread 'native_preparation_refreshes_both_backend_alignments_on_every_execution' (3486275) panicked at crates/rvvdk-datamover/tests/execution_preparation.rs:100:5:
+assertion `left == right` failed: preparation rejection must precede observation
+  left: 1
+ right: 0
+
+
+failures:
+    native_configuration_alignment_rejection_precedes_observation
+    native_preparation_refreshes_both_backend_alignments_on_every_execution
+    native_strategy_rejection_precedes_observation
+
+test result: FAILED. 0 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p rvvdk-datamover --test execution_preparation`

@@ -543,14 +543,66 @@ This does not establish snapshot consistency, extend durability, or close PERF.0
 The R1.2 fragmented observer and sequential Hole/Zero follow-ups remain open.
 [ADR-0028](adr/0028-endpoint-inspection.md) records the accepted boundary.
 
+## R1.4 — Separate logical intent and invocation preparation
+
+Date: 2026-09-28. Baseline: `5e75d51` (R1.3). Scope: explicit logical intent,
+observable planning selection, and one fresh preparation boundary for both
+observed and unobserved plan execution.
+
+Implementation sequence:
+
+1. Split CopyPlan's private storage into LogicalCopyPlan (canonical extents,
+   accounting, and fingerprint) and execution selection/configuration. Retained
+   existing public getters and added `execution_selection()`, with requested
+   strategy/options, selected backend, and a non-exhaustive reason enum.
+2. Centralized portable/RAW selection policy. Portable Auto records the API
+   boundary; RAW records explicit native requests or descriptor compatibility.
+   Kept explicit native rejection and existing backend selection behavior.
+3. Moved shared structural and endpoint validation into the preparation module.
+   Each PreparedExecution borrows its checked plan and endpoints. Native
+   preparation resolves current native options, constructs the native extent
+   plan, and checks descriptor/buffer alignment before initial observation.
+4. Dispatch now uses prepared native configuration. This fixes native strategy
+   and alignment rejections emitting an initial callback: both APIs now reject
+   before observation. Preserved successful callbacks, flush ownership, payload
+   timer boundaries, and the direct portable copy fast path.
+5. Added seven tests for selection/provenance, identical logical intent across
+   choices, explicit-native versus Auto rejection policy, native strategy/config
+   changes, and live alignment changes on either endpoint. The three behavioral
+   regressions fail on baseline with one unexpected callback and pass on candidate.
+6. Ran an eight-profile matched benchmark matrix using unchanged harnesses and
+   isolated builds. Recorded all raw samples, source/binary fingerprints, resource
+   logs, and a longer targeted follow-up for fragmented planning.
+
+Validation: **284 workspace tests passed** (seven new), formatting, strict
+all-target Clippy, and core/datamover library compilation for
+`wasm32-unknown-unknown`. The latter is a portability compile check, not runtime
+qualification. The [R1.4 report](benchmark-results/2026-09-28-r14/README.md)
+contains exact commands, before/after regressions, and performance disposition.
+
+Performance disposition: accept the measured RAW planning cost of +57 ns/+3.35%
+(Threaded) and +28 ns/+1.55% (native). Complete RAW copy medians are −0.04%/+0.78%.
+Fragmented planning initially measured +5.01%; a longer unchanged-binary repeat
+measured −0.05%, with pairs −0.37%/−0.05%/+3.44%. Retain both. Fragmented no-op
+observation is +4.41% and dynamic memory −1.79% by aggregate, with conflicting
+pairs. This is not a clean performance qualification pass; PERF.0 remains open.
+
+Limits: planning reasons are historical provenance, not runtime readiness.
+The RAW compatibility evaluator still accepts descriptor pairs and combines
+alignment claims; full request checks and runtime io_uring fallback remain R2.
+Private preparation does not reserve a ring/buffers or stabilize source state.
+Later allocation/kernel failures can still follow initial observation. Native
+execution uses the executing mover's current native options; plans retain their
+selected backend. Low-level native APIs and copy/flush contracts are unchanged.
+PERF.0 and R1.2/R1.3 controlled-runner follow-ups remain open.
+
 ## Next session
 
-Start **R1.4**: separate logical copy intent from executor preparation. Introduce
-a clear internal preparation result and execution-selection reason without
-weakening current plan validation, endpoint checks, or callback ordering.
-Keep runtime io_uring readiness/unaligned native policy in the R2 scope.
-Continue recording benchmark baselines and commit each completed step.
+Start **R1.5**: define contextual copy failures with operation, range, backend,
+underlying cause, and partial progress. Distinguish invalid configuration and
+stale plans from corrupt source metadata. Preserve rejection-before-observation,
+existing success semantics, and performance measurement at public call boundaries.
+Then complete the total memory-budget contract before R2 native/sparse work.
 
-Carry the R1.2 fragmented no-op observer and sequential Hole/Zero performance
-qualification forward in PERF.0; do not declare those profiles qualified.
+Continue tracking benchmark evidence and committing each completed step.
 ESXi is still unnecessary; request the 60-day trial only when V0 is ready.
