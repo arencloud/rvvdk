@@ -654,7 +654,9 @@ allocation failure, or ring creation failure can still occur after earlier
 extents have completed. Endpoint access, capacity, identity, and durability
 preflight are implemented in R0.5 below; direct-I/O alignment/tail compatibility
 and logical discard semantics remain R2 work. The allocation layout check does not impose an
-aggregate memory budget or guarantee enough available memory.
+aggregate memory budget or guarantee enough available memory. DataMover adds
+the separate R1.6 payload budget described below; low-level native functions
+retain the original allocation contract.
 
 ## Copy endpoint preflight (R0.5)
 
@@ -966,3 +968,18 @@ Already-dispatched work can finish, and shutdown cannot interrupt a blocked
 synchronous backend call. R1.5 retains partial failure counters after joining workers. Public cancellation remains
 future work. The contract and tests are documented in
 [ADR-0008](adr/0008-streaming-work-scheduler.md#shutdown-contract--r02-2026-09-28).
+
+## Copy memory budget (R1.6)
+
+DataMover checks a configurable 256 MiB default budget for the total accounted
+buffer, queue/worker-entry, and extent storage. Preparation checks the retained
+plan and live revalidation Vec together, then releases the latter before
+executor allocation. Concurrent execution borrows extents; native execution
+charges its additional plan Vec and uses the executing queue depth.
+
+`execution_memory` exposes the execution breakdown without reserving resources.
+Checks precede payload execution and observation. The Vec backend query allocates
+before its returned capacity can be checked; allocator/container overhead,
+thread stacks, backend/observer memory, kernel resources, and previous native
+quarantine are external. This does not bound RSS or eliminate fragmentation
+costs. See the [complete accounting contract](copy-memory.md).

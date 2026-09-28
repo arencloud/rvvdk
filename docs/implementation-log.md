@@ -41,8 +41,9 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 | R0.5 | Complete | Endpoint capabilities/live capacity, known aliases, native binding, and contextual preflight errors | Required correctness cost accepted: planning +2.08–2.15 µs; final copy aggregates −1.93% to +2.37%; general qualification provisional |
 | V0 | Planned | Independent VMware access feasibility; licensed/evaluation host needed for representative API workflows | Pending — first transport baseline follows functional proof |
 
-R1–R9 remain planned in the roadmap. Add their individual work packages here as
-they are prepared; no implementation completion is implied by their omission.
+R1.1–R1.6 are complete within their documented scopes; their detailed records
+appear below. R2–R9 and V0 remain planned in the roadmap. Performance qualification
+remains provisional as recorded for each step.
 
 ## Per-step record template
 
@@ -657,16 +658,79 @@ full native runtime preparation are outside this step.
 [The error contract](copy-errors.md) records these boundaries. PERF.0 and prior
 controlled-runner performance follow-ups remain open.
 
+## R1.6 — Accounted copy memory budget
+
+Date: 2026-09-29. Status: **Complete within the payload-accounting scope**;
+process RSS and controlled-runner performance qualification are not claimed.
+Baseline: `67d245f` (R1.5), initially clean working tree. Candidate is committed
+with this record; [source patch, binary hashes, and measurements](benchmark-results/2026-09-29-r16/README.md)
+identify the implementation independently of the final documentation commit.
+
+Problem: bounded pools and channels alone did not constrain their aggregate
+storage or fragmentation-dependent extent metadata. Structural revalidation
+retained two extent Vecs; concurrent scheduling unnecessarily cloned the plan;
+native preparation owns another plan copy.
+
+Implementation:
+
+1. Added a configurable **256 MiB per-invocation default** in CopyOptions. This
+   is an admission policy, not a tuned optimum or reservation. All public
+   DataMover planning/copy/report/observed/RAW/native routes check their relevant
+   allocation phases. Existing low-level pool/native functions remain separate.
+2. Added CopyMemoryUsage and DataMover::execution_memory for the execution
+   breakdown using current mover settings. Charge buffer payload and pool
+   descriptors, bounded queue/worker entries, and extent **capacity**, including
+   unused slots. Native accounting uses executing queue depth and reserves sparse
+   fallback storage conservatively.
+3. Added typed MemoryBudgetExceeded (phase/required/budget) and
+   MemoryAccountingOverflow. Reject known execution excess before another live
+   extent query; check returned live capacity with the retained plan before
+   observation, payload operations, or flush. Exact limits are admitted.
+4. Charge peak phases separately: revalidation Vecs drop before executor
+   allocation; native fallback and Data pools do not coexist. Check native clone
+   requirements before allocation and actual clone capacity before dispatch.
+5. Removed the concurrent scheduling extent clone by borrowing the plan's slice
+   through scoped execution. No new per-block accounting or synchronization.
+6. Added five regression tests covering overallocated metadata, exact limits,
+   observed/unobserved/direct/report rejection without I/O, current metadata
+   growth, arithmetic overflow, executing native queue depth, native plan copies,
+   and exact-budget native readback. Existing failure/shutdown checks still pass.
+7. Recorded the accounting model and explicit exclusions in
+   [copy-memory.md](copy-memory.md), architecture, error contracts, ADR-0027,
+   README, and roadmap. Backend query allocation happens before capacity can be
+   checked; opaque allocator/container overhead, stacks, backend/observer memory,
+   kernel resources, other invocations, and prior native quarantine remain
+   external. Fragmentation-dependent total memory and resource availability are
+   not solved by this budget.
+
+Validation: **299 workspace tests passed**, formatting, strict all-target Clippy,
+and core/datamover library compilation for wasm32-unknown-unknown. The portable
+check is compilation only. All eleven benchmark profiles use unchanged harnesses
+and isolated optimized builds; byte/counter checks remain enabled. Raw results
+and resource logs are retained. Performance disposition follows below.
+
+Performance disposition: all eleven main aggregate changes fall between −4.91%
+and +1.90%; complete RAW copies are +1.48%/+0.95% Threaded/native. Four-worker
+mixed sparse pairs vary from −23.52% to +1.71%; no general speedup is claimed.
+Fragmented no-op observation includes a **+39.16% main pair** and **+16.94% longer
+repeat**, despite aggregates −3.28%/+0.78%. Accept functionality provisionally,
+retain these samples, and keep performance qualification open. The identical
+baseline-binary control also varies (+19.85%/−0.22%/+3.15%), demonstrating
+run-to-run variation without ruling out candidate effects. Full interpretation is in the
+[R1.6 report](benchmark-results/2026-09-29-r16/README.md). No buffer/queue tuning or
+ESXi work was needed for this local step.
+
 ## Next session
 
-Start **R1.6**: define and enforce a total copy memory budget covering buffer
-pools, worker/native queue entries, and extent metadata. Account for the logical
-plan, live extent revalidation, concurrent scheduling, and native plan copies;
-keep the Vec extent API without claiming fragmentation-independent total memory.
-Document what is budgeted versus external backend/kernel memory.
+Start **R2.1**: specify the logical Hole zero-read guarantee (ADR-0026), distinguish
+ordinary discard from zero-guaranteed deallocation, and update shared policy so
+copying onto nonzero-prefilled destinations always preserves logical bytes.
+Cover advertised capabilities, accelerated success/failure, and safe zero-write
+fallback across sequential, concurrent, and native paths. Local filesystem
+hole punching and native runtime/tail compatibility remain subsequent R2 work.
 
-Carry the R1.5 four-worker mixed sparse variability and prior PERF.0 issues into
-controlled-runner qualification. Preserve failure progress, rejection-before-observation where currently
-guaranteed, and measured success-path performance. Continue tracking benchmark
-evidence and committing each completed step. ESXi is still unnecessary; request
-the 60-day trial only when V0 is ready.
+Carry R1.5 four-worker mixed sparse variability and prior PERF.0 issues into
+controlled-runner qualification; retain the R1.6 disposition above. Preserve
+failure progress, rejection-before-observation where guaranteed, and measured
+success-path performance. Keep tracking evidence and committing each completed
+step. ESXi is still unnecessary; request the 60-day trial when V0 is ready.

@@ -1,0 +1,884 @@
+[
+  {
+    "tag": "control1-baseline",
+    "pair": 1,
+    "variant": "baseline",
+    "binary_variant": "baseline",
+    "benchmark": "progress_copy/fragmented50/noop",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r16-hryo5xdk/baseline-target/release/deps/progress-89ddd66446e24832",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "progress_copy/fragmented50/noop$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "progress_copy/fragmented50",
+        "function_id": "noop",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "progress_copy/fragmented50/noop",
+        "directory_name": "progress_copy_fragmented50/noop",
+        "title": "progress_copy/fragmented50/noop"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 13695459.4275,
+            "upper_bound": 14799870.489166666
+          },
+          "point_estimate": 14224688.925,
+          "standard_error": 281892.04190915497
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 13170069.875,
+            "upper_bound": 14721282.75
+          },
+          "point_estimate": 13374047.75,
+          "standard_error": 405081.7815025051
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 339279.66057658195,
+            "upper_bound": 2186954.125148803
+          },
+          "point_estimate": 664985.9330691397,
+          "standard_error": 409549.8641526843
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1207099.1596165162,
+            "upper_bound": 1800472.546228832
+          },
+          "point_estimate": 1579028.5041245504,
+          "standard_error": 150648.7132194839
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          64443072.0,
+          63030773.0,
+          63302860.0,
+          68175098.0,
+          68410346.0,
+          63881941.0,
+          51786770.0,
+          53686004.0,
+          52642429.0,
+          53750479.0,
+          51579376.0,
+          54923806.0,
+          54851613.0,
+          50894522.0,
+          52529914.0,
+          52728922.0,
+          50778124.0,
+          53983425.0,
+          52718130.0,
+          51846657.0,
+          53306378.0,
+          52921799.0,
+          52152697.0,
+          51617397.0,
+          51501109.0,
+          53248148.0,
+          69979487.0,
+          64919889.0,
+          62846456.0,
+          64525050.0
+        ]
+      },
+      "tukey.json": [
+        4820872.5625,
+        8941311.4375,
+        19929148.4375,
+        24049587.3125
+      ]
+    }
+  },
+  {
+    "tag": "control1-candidate",
+    "pair": 1,
+    "variant": "candidate",
+    "binary_variant": "baseline",
+    "benchmark": "progress_copy/fragmented50/noop",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r16-hryo5xdk/baseline-target/release/deps/progress-89ddd66446e24832",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "progress_copy/fragmented50/noop$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "progress_copy/fragmented50",
+        "function_id": "noop",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "progress_copy/fragmented50/noop",
+        "directory_name": "progress_copy_fragmented50/noop",
+        "title": "progress_copy/fragmented50/noop"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 16064729.599791668,
+            "upper_bound": 16371061.716666667
+          },
+          "point_estimate": 16209548.05,
+          "standard_error": 78428.25586530732
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 15946385.25,
+            "upper_bound": 16277474.875
+          },
+          "point_estimate": 16029362.375,
+          "standard_error": 79553.48326378476
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 143213.22705745697,
+            "upper_bound": 550904.8688694835
+          },
+          "point_estimate": 289677.05455720425,
+          "standard_error": 97231.54807052074
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 292649.06448490673,
+            "upper_bound": 542165.5365910481
+          },
+          "point_estimate": 435837.9073486781,
+          "standard_error": 63606.90479295262
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          69689426.0,
+          67191704.0,
+          64068367.0,
+          66007626.0,
+          67295319.0,
+          63758814.0,
+          65415503.0,
+          62894124.0,
+          63279262.0,
+          63812268.0,
+          64094032.0,
+          64140867.0,
+          63100778.0,
+          63631187.0,
+          64971831.0,
+          63350808.0,
+          63457500.0,
+          66067624.0,
+          63875282.0,
+          63425884.0,
+          66566495.0,
+          65247968.0,
+          68349887.0,
+          67508129.0,
+          64672634.0,
+          64148383.0,
+          63321015.0,
+          64256116.0,
+          63460978.0,
+          64085955.0
+        ]
+      },
+      "tukey.json": [
+        14108833.8125,
+        14992358.1875,
+        17348423.1875,
+        18231947.5625
+      ]
+    }
+  },
+  {
+    "tag": "control2-candidate",
+    "pair": 2,
+    "variant": "candidate",
+    "binary_variant": "baseline",
+    "benchmark": "progress_copy/fragmented50/noop",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r16-hryo5xdk/baseline-target/release/deps/progress-89ddd66446e24832",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "progress_copy/fragmented50/noop$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "progress_copy/fragmented50",
+        "function_id": "noop",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "progress_copy/fragmented50/noop",
+        "directory_name": "progress_copy_fragmented50/noop",
+        "title": "progress_copy/fragmented50/noop"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 16211684.520208335,
+            "upper_bound": 16493063.906666666
+          },
+          "point_estimate": 16348200.275,
+          "standard_error": 71930.73423355824
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 16149429.5,
+            "upper_bound": 16419227.25
+          },
+          "point_estimate": 16206718.625,
+          "standard_error": 70314.88771284644
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 87953.01953852177,
+            "upper_bound": 553558.5374973714
+          },
+          "point_estimate": 289758.04158076644,
+          "standard_error": 120147.07982092146
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 292816.0743561086,
+            "upper_bound": 474671.2050206815
+          },
+          "point_estimate": 401364.5397496303,
+          "standard_error": 46337.93715057859
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          66028805.0,
+          68527581.0,
+          64614752.0,
+          64874963.0,
+          63883855.0,
+          64778786.0,
+          64465106.0,
+          63135029.0,
+          63931902.0,
+          64520678.0,
+          62978327.0,
+          62978950.0,
+          64692912.0,
+          67395955.0,
+          64752558.0,
+          64580684.0,
+          64914964.0,
+          66743171.0,
+          64549099.0,
+          67438007.0,
+          68498141.0,
+          64734890.0,
+          65858403.0,
+          64400375.0,
+          66121990.0,
+          65495415.0,
+          65446293.0,
+          67916790.0,
+          65028819.0,
+          68496833.0
+        ]
+      },
+      "tukey.json": [
+        14953762.9375,
+        15542854.375,
+        17113764.875,
+        17702856.3125
+      ]
+    }
+  },
+  {
+    "tag": "control2-baseline",
+    "pair": 2,
+    "variant": "baseline",
+    "binary_variant": "baseline",
+    "benchmark": "progress_copy/fragmented50/noop",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r16-hryo5xdk/baseline-target/release/deps/progress-89ddd66446e24832",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "progress_copy/fragmented50/noop$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "progress_copy/fragmented50",
+        "function_id": "noop",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "progress_copy/fragmented50/noop",
+        "directory_name": "progress_copy_fragmented50/noop",
+        "title": "progress_copy/fragmented50/noop"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 16111906.7,
+            "upper_bound": 16461863.975
+          },
+          "point_estimate": 16280621.558333334,
+          "standard_error": 88677.20047734054
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 16036413.0,
+            "upper_bound": 16449018.875
+          },
+          "point_estimate": 16242399.25,
+          "standard_error": 96435.52070177108
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 268893.9681261778,
+            "upper_bound": 691973.144415021
+          },
+          "point_estimate": 480070.3192770481,
+          "standard_error": 107354.41923368187
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 352929.99963950604,
+            "upper_bound": 599565.246842291
+          },
+          "point_estimate": 492707.27987251146,
+          "standard_error": 62887.0451671561
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          63063965.0,
+          63013772.0,
+          63929279.0,
+          68392085.0,
+          65233008.0,
+          63048560.0,
+          64360528.0,
+          62254190.0,
+          63146381.0,
+          64618984.0,
+          62470024.0,
+          62282113.0,
+          66476268.0,
+          66493333.0,
+          67355224.0,
+          64396100.0,
+          66135813.0,
+          64793117.0,
+          63930776.0,
+          63831666.0,
+          65480750.0,
+          64912230.0,
+          65063731.0,
+          69672014.0,
+          66111401.0,
+          66393805.0,
+          65026964.0,
+          66880217.0,
+          65383764.0,
+          69524525.0
+        ]
+      },
+      "tukey.json": [
+        14109089.0,
+        15036553.15625,
+        17509790.90625,
+        18437255.0625
+      ]
+    }
+  },
+  {
+    "tag": "control3-baseline",
+    "pair": 3,
+    "variant": "baseline",
+    "binary_variant": "baseline",
+    "benchmark": "progress_copy/fragmented50/noop",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r16-hryo5xdk/baseline-target/release/deps/progress-89ddd66446e24832",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "progress_copy/fragmented50/noop$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "progress_copy/fragmented50",
+        "function_id": "noop",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "progress_copy/fragmented50/noop",
+        "directory_name": "progress_copy_fragmented50/noop",
+        "title": "progress_copy/fragmented50/noop"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 16142153.041666666,
+            "upper_bound": 16965878.222083334
+          },
+          "point_estimate": 16474382.35,
+          "standard_error": 217600.6658356428
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 15986393.75,
+            "upper_bound": 16489454.875
+          },
+          "point_estimate": 16197677.375,
+          "standard_error": 147019.35188711097
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 293735.30133515596,
+            "upper_bound": 796481.9872096181
+          },
+          "point_estimate": 564350.7533557713,
+          "standard_error": 134180.89760757334
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 412081.14480762865,
+            "upper_bound": 1930763.3445190168
+          },
+          "point_estimate": 1206904.872791356,
+          "standard_error": 498163.6435106728
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          63895892.0,
+          63328827.0,
+          64469060.0,
+          64265024.0,
+          63058798.0,
+          64787745.0,
+          63745764.0,
+          65963651.0,
+          66996840.0,
+          68565996.0,
+          67401240.0,
+          67687781.0,
+          67154803.0,
+          89270220.0,
+          62211394.0,
+          63193761.0,
+          67182649.0,
+          64793674.0,
+          65213377.0,
+          65851787.0,
+          69217232.0,
+          67863195.0,
+          65301230.0,
+          65951988.0,
+          61955585.0,
+          63207397.0,
+          64103792.0,
+          63995258.0,
+          63755346.0,
+          62536576.0
+        ]
+      },
+      "tukey.json": [
+        13411675.3125,
+        14674357.59375,
+        18041510.34375,
+        19304192.625
+      ]
+    }
+  },
+  {
+    "tag": "control3-candidate",
+    "pair": 3,
+    "variant": "candidate",
+    "binary_variant": "baseline",
+    "benchmark": "progress_copy/fragmented50/noop",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r16-hryo5xdk/baseline-target/release/deps/progress-89ddd66446e24832",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "progress_copy/fragmented50/noop$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "progress_copy/fragmented50",
+        "function_id": "noop",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "progress_copy/fragmented50/noop",
+        "directory_name": "progress_copy_fragmented50/noop",
+        "title": "progress_copy/fragmented50/noop"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 16597717.103125,
+            "upper_bound": 18532390.8
+          },
+          "point_estimate": 17340955.608333334,
+          "standard_error": 532646.450565794
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 16406389.5,
+            "upper_bound": 16864360.0
+          },
+          "point_estimate": 16708203.125,
+          "standard_error": 131310.69881679543
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 338881.58248364925,
+            "upper_bound": 1079554.244209081
+          },
+          "point_estimate": 676853.0339084566,
+          "standard_error": 179402.49977683957
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 605944.9082336045,
+            "upper_bound": 4877595.017838319
+          },
+          "point_estimate": 2978864.3782337178,
+          "standard_error": 1420572.8928307232
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          63775228.0,
+          62076336.0,
+          65254276.0,
+          67536567.0,
+          66984022.0,
+          65849153.0,
+          67709070.0,
+          64700138.0,
+          67378313.0,
+          64010786.0,
+          65084085.0,
+          66907754.0,
+          66757871.0,
+          64929291.0,
+          65841315.0,
+          65966782.0,
+          66654475.0,
+          77188756.0,
+          71639674.0,
+          71841197.0,
+          67332892.0,
+          68770752.0,
+          67092560.0,
+          68772663.0,
+          129835105.0,
+          71831799.0,
+          64201310.0,
+          75603175.0,
+          65409801.0,
+          63979527.0
+        ]
+      },
+      "tukey.json": [
+        13747634.125,
+        15014646.15625,
+        18393344.90625,
+        19660356.9375
+      ]
+    }
+  }
+]

@@ -62,6 +62,7 @@ impl DataMover {
         let source_size = source.size();
 
         let extents = source.extents(0, source_size)?;
+        self.check_extent_memory(0, extents.capacity(), "planning")?;
 
         CopyPlan::new(
             source_size,
@@ -159,6 +160,7 @@ impl DataMover {
         let endpoints = crate::preflight::raw_pair(source, destination, source_size)?;
 
         let extents = source.extents(0, source_size)?;
+        self.check_extent_memory(0, extents.capacity(), "planning")?;
 
         let source_backend = source.device();
 
@@ -220,6 +222,9 @@ impl DataMover {
                     .alignment()
                     .max(self.options.buffer_alignment());
 
+                self.native_memory(0, 0, length != 0, length != 0, execution_options)?
+                    .check(self.options.memory_budget(), "execution")?;
+
                 let stats = copy_file_range_with_options(
                     source.as_fd(),
                     destination.as_fd(),
@@ -277,10 +282,14 @@ impl DataMover {
         let started = Instant::now();
 
         let extents = source.extents(0, source_size)?;
+        self.check_extent_memory(0, extents.capacity(), "planning")?;
         crate::extent_validation::validate_extents(&extents, source_size)?;
 
+        self.threaded_memory(extents.capacity())?
+            .check(self.options.memory_budget(), "execution")?;
+
         if self.options.concurrency() > 1 {
-            return self.copy_concurrent(source, destination, extents, started);
+            return self.copy_concurrent(source, destination, &extents, started);
         }
 
         sequential::execute(
@@ -417,8 +426,7 @@ impl DataMover {
         let started = Instant::now();
 
         if self.options.concurrency() > 1 {
-            let stats =
-                self.copy_concurrent(source, destination, plan.extents().to_vec(), started)?;
+            let stats = self.copy_concurrent(source, destination, plan.extents(), started)?;
 
             return Ok(CopyReport::new(ExecutionBackend::Threaded, stats));
         }
@@ -491,7 +499,7 @@ impl DataMover {
         &self,
         source: &S,
         destination: &D,
-        extents: Vec<Extent>,
+        extents: &[Extent],
         started: Instant,
     ) -> Result<CopyStats>
     where
@@ -520,7 +528,7 @@ impl DataMover {
             self.options.queue_capacity(),
             &pool,
             |sender| {
-                for extent in &extents {
+                for extent in extents {
                     for work in ExtentWorkIter::new(*extent, self.options.block_size()) {
                         let work = work?;
 

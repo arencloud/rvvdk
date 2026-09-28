@@ -4,6 +4,16 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error("copy memory budget exceeded during {phase}: required={required}, budget={budget}")]
+    MemoryBudgetExceeded {
+        phase: &'static str,
+        required: usize,
+        budget: usize,
+    },
+
+    #[error("copy memory accounting overflow")]
+    MemoryAccountingOverflow,
+
     #[error("{0}")]
     CopyExecution(#[source] Box<crate::CopyFailure>),
 

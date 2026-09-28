@@ -120,6 +120,9 @@ qualification; see its [report](benchmark-results/2026-09-28-r13/README.md).
 R1.5 retains recurring +19.60%/+16.44% four-worker mixed sparse pairs despite
 small aggregate costs and a tighter same-binary control. Investigate on a
 controlled runner; [evidence](benchmark-results/2026-09-29-r15/README.md).
+R1.6 retains +39.16%/+16.94% fragmented no-op observer pairs despite small
+aggregate costs. The [report](benchmark-results/2026-09-29-r16/README.md) includes
+longer repeats and a same-binary control; performance qualification stays open.
 
 - [x] **R1.1:** Add destination-aware portable planning and execution for arbitrary `VirtualDisk` implementations, including trait objects where useful (`?Sized` or deliberate forwarding implementations).
 - [x] **R1.1:** Use one canonical extent topology validator at plan construction and execution boundaries.
@@ -128,14 +131,14 @@ controlled runner; [evidence](benchmark-results/2026-09-29-r15/README.md).
 - [x] **R1.3:** Share fresh local RAW descriptor inspections across logical and physical capacity/access/identity checks. Preserve custom logical checks and native binding. Measure against the preceding implementation of R0.5 preflight. [Evidence](benchmark-results/2026-09-28-r13/README.md); [ADR-0028](adr/0028-endpoint-inspection.md).
 - [x] **R1.1:** Treat existing `CopyPlan` as an in-memory structural plan. Avoid promising stable serialization until identity/versioning rules are settled.
 - [x] **R1.5:** Add copy operation/range/backend/cause context and confirmed partial counters across sequential, worker, and native copying. Distinguish configuration/stale/endpoint changes from corrupt metadata. [Contract](copy-errors.md); [evidence](benchmark-results/2026-09-29-r15/README.md).
-- [ ] **R1.6 (next):** Define a memory budget covering buffers, queue entries, and extent metadata. Keep the initial Vec extent API, but do not claim total memory is independent of fragmentation.
+- [x] **R1.6:** Enforce a configurable payload budget covering buffers, queue/worker entries, and extent Vec capacities, including revalidation and native plan copies. Concurrent execution now borrows extents. Backend-query allocations and external/opaque overhead remain outside a strict RSS cap; fragmentation still matters. [Contract](copy-memory.md); [evidence](benchmark-results/2026-09-29-r16/README.md).
 - [x] **R1.1:** Make portable/native entry points explicit; migrate Linux RAW callers to named adapters. [ADR-0027](adr/0027-portable-planning.md).
 
 Portable API acceptance **met by R1.1**: memory, local RAW, and a synthetic translated logical disk all use the same plan/execute/observer API without Linux FD requirements. A translated disk with physical offsets different from logical offsets copies correctly and cannot accidentally enter the RAW FD fast path.
 
 ### R2 — Complete local sparse semantics and native preflight
 
-- [ ] Introduce the zero-read guarantee required by F05 and update ADR-0003/0022 through a superseding ADR.
+- [ ] **R2.1 (next):** Introduce the zero-read guarantee required by F05 and update ADR-0003/0022 through a superseding ADR.
 - [ ] Implement local zeroing and hole punching, with range checks, read-only checks, partial filesystem block handling, and fallbacks on unsupported filesystems.
 - [ ] Add dense extent fallback when sparse discovery is unavailable; never invent Hole extents from unknown allocation state.
 - [x] Verify direct/buffered descriptors refer to the same underlying file (R0.5).
@@ -299,7 +302,7 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 
 ## First implementation session — R0.1 completed
 
-The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, and R1.5 contextual failures are also complete; continue with R1.6 total memory budgets next.
+The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete; continue with R2.1 logical Hole guarantees next.
 
 R0.1 was the bounded change directly related to the observer work:
 
@@ -314,7 +317,7 @@ R0.1 was the bounded change directly related to the observer work:
    tradeoff in the implementation log. Update this checklist and ADR-0025 with
    the implemented behavior and remaining limitations.
 
-R0 and R1.1–R1.5 are complete. Start **R1.6** with a total memory-budget contract covering buffers, queues, and extent metadata before R2 native/sparse qualification. Keep PERF.0 and the R1.2 performance follow-ups open.
+R0 and R1.1–R1.6 are complete within their documented scopes. Start **R2.1** with the logical Hole zero-read guarantee and safe deallocation selection. Keep PERF.0 and the prior performance follow-ups open.
 
 ## Decisions to record before their milestone
 

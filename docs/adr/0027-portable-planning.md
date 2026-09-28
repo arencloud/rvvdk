@@ -167,3 +167,20 @@ inspect the underlying cause inside execution context. Validation errors now
 separate stale/configuration/endpoint changes from malformed metadata.
 The [error contract](../copy-errors.md) defines the accepted scope. Failure
 counters do not imply durability, cancellation, resumability, or atomic rollback.
+
+## R1.6 — Copy payload admission, 2026-09-29
+
+Accept a configurable per-invocation budget, default 256 MiB, for accounted
+buffers, queue/worker entries, and extent Vec capacity. Check both retained and
+live revalidation maps, then release the latter before executor allocation.
+Borrow extents for concurrent scheduling; include the native preparation clone
+in execution accounting. Use the executing mover's settings and expose the
+execution breakdown through `DataMover::execution_memory`.
+
+Keep the Vec extent API for this phase. A backend allocates before returning
+metadata, so admission cannot prevent an oversized query's transient allocation.
+Opaque allocator/container overhead, stacks, backend/observer resources, kernel
+memory, and earlier native quarantines remain external. This is not a process
+RSS cap, a resource reservation, or a claim of fragmentation-independent memory.
+Zero is a valid budget; overflow and excess are typed pre-execution errors.
+The [accounting contract](../copy-memory.md) records phases and exclusions.

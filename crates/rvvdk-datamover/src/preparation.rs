@@ -79,8 +79,16 @@ impl DataMover {
                     }
                 };
 
-                let native_plan =
-                    NativeExtentPlan::new(plan.extents().to_vec(), plan.logical_bytes())?;
+                let native_extents = plan.extents().to_vec();
+                self.native_memory(
+                    plan.extent_capacity(),
+                    native_extents.capacity(),
+                    plan.data_bytes() != 0,
+                    plan.extent_count() != 0,
+                    execution_options,
+                )?
+                .check(self.options.memory_budget(), "native plan")?;
+                let native_plan = NativeExtentPlan::new(native_extents, plan.logical_bytes())?;
 
                 let source_backend = source.device();
 
@@ -228,7 +236,16 @@ impl DataMover {
          * CopyPlan represents a structural execution plan, not a snapshot
          * of the source payload.
          */
+        // Reject known execution requirements before querying another extent Vec,
+        // allocating executor resources, or notifying the observer.
+        self.execution_memory(plan)?
+            .check(self.options.memory_budget(), "execution")?;
         let current_extents = source.extents(0, source_size)?;
+        self.check_extent_memory(
+            plan.extent_capacity(),
+            current_extents.capacity(),
+            "revalidation",
+        )?;
 
         crate::extent_validation::validate_extents(&current_extents, source_size)?;
 

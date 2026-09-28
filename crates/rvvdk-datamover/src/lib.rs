@@ -4,6 +4,7 @@ mod extent_validation;
 mod failure;
 #[cfg(target_os = "linux")]
 pub mod io_uring;
+mod memory;
 mod mover;
 mod native;
 mod observer;
@@ -21,10 +22,11 @@ mod work;
 pub use execution::{
     ExecutionBackend, ExecutionSelection, ExecutionSelectionReason, ExecutionStrategy,
 };
+pub use memory::CopyMemoryUsage;
 pub use mover::DataMover;
 pub use options::{
     CopyOptions, DEFAULT_BLOCK_SIZE, DEFAULT_BUFFER_ALIGNMENT, DEFAULT_BUFFER_COUNT,
-    DEFAULT_CONCURRENCY, DEFAULT_QUEUE_CAPACITY,
+    DEFAULT_CONCURRENCY, DEFAULT_MEMORY_BUDGET, DEFAULT_QUEUE_CAPACITY,
 };
 pub use stats::{CopyReport, CopyStats};
 

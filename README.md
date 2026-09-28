@@ -50,6 +50,7 @@ VMware disk access and migration, extensible to other platforms.
 | **Progress reporting** | Intermediate updates on the single-worker threaded path |
 | **Copy failures** | Operation/range/cause context and confirmed partial counters; [contract](docs/copy-errors.md) |
 | **Sparse destination allocation** | Planned; local holes currently use zero-write fallback |
+| **Copy memory budget** | Configurable 256 MiB default for buffers, queue entries, and extent metadata; [scope and limits](docs/copy-memory.md) |
 | **VMDK and VMware access** | Planned; no VMware VDDK dependency in the current workspace |
 
 The [endpoint contract](docs/architecture.md#copy-endpoint-preflight-r05) describes

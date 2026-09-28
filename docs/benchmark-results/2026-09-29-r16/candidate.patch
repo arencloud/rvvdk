@@ -1,0 +1,699 @@
+diff --git a/crates/rvvdk-core/src/error.rs b/crates/rvvdk-core/src/error.rs
+index 1b75c5a..0e056ea 100644
+--- a/crates/rvvdk-core/src/error.rs
++++ b/crates/rvvdk-core/src/error.rs
+@@ -4,6 +4,16 @@ pub type Result<T> = std::result::Result<T, Error>;
+ 
+ #[derive(Debug, Error)]
+ pub enum Error {
++    #[error("copy memory budget exceeded during {phase}: required={required}, budget={budget}")]
++    MemoryBudgetExceeded {
++        phase: &'static str,
++        required: usize,
++        budget: usize,
++    },
++
++    #[error("copy memory accounting overflow")]
++    MemoryAccountingOverflow,
++
+     #[error("{0}")]
+     CopyExecution(#[source] Box<crate::CopyFailure>),
+ 
+diff --git a/crates/rvvdk-datamover/src/io_uring/mod.rs b/crates/rvvdk-datamover/src/io_uring/mod.rs
+index 13b96c0..fa6ff4a 100644
+--- a/crates/rvvdk-datamover/src/io_uring/mod.rs
++++ b/crates/rvvdk-datamover/src/io_uring/mod.rs
+@@ -22,3 +22,7 @@ pub use extent_copy::{
+     IoUringExtentCopyStats, copy_extent_plan, copy_extent_plan_with_destination,
+ };
+ pub use extent_plan::NativeExtentPlan;
++
++// Payload size used by the DataMover budget; hash-table overhead is external.
++pub(crate) const OPERATION_BYTES: usize =
++    std::mem::size_of::<(u64, operation::InFlightOperation)>();
+diff --git a/crates/rvvdk-datamover/src/lib.rs b/crates/rvvdk-datamover/src/lib.rs
+index 25dcf73..cb98bd5 100644
+--- a/crates/rvvdk-datamover/src/lib.rs
++++ b/crates/rvvdk-datamover/src/lib.rs
+@@ -4,6 +4,7 @@ mod extent_validation;
+ mod failure;
+ #[cfg(target_os = "linux")]
+ pub mod io_uring;
++mod memory;
+ mod mover;
+ mod native;
+ mod observer;
+@@ -21,10 +22,11 @@ mod work;
+ pub use execution::{
+     ExecutionBackend, ExecutionSelection, ExecutionSelectionReason, ExecutionStrategy,
+ };
++pub use memory::CopyMemoryUsage;
+ pub use mover::DataMover;
+ pub use options::{
+     CopyOptions, DEFAULT_BLOCK_SIZE, DEFAULT_BUFFER_ALIGNMENT, DEFAULT_BUFFER_COUNT,
+-    DEFAULT_CONCURRENCY, DEFAULT_QUEUE_CAPACITY,
++    DEFAULT_CONCURRENCY, DEFAULT_MEMORY_BUDGET, DEFAULT_QUEUE_CAPACITY,
+ };
+ pub use stats::{CopyReport, CopyStats};
+ 
+diff --git a/crates/rvvdk-datamover/src/mover.rs b/crates/rvvdk-datamover/src/mover.rs
+index 281a330..95b3ebe 100644
+--- a/crates/rvvdk-datamover/src/mover.rs
++++ b/crates/rvvdk-datamover/src/mover.rs
+@@ -62,6 +62,7 @@ impl DataMover {
+         let source_size = source.size();
+ 
+         let extents = source.extents(0, source_size)?;
++        self.check_extent_memory(0, extents.capacity(), "planning")?;
+ 
+         CopyPlan::new(
+             source_size,
+@@ -159,6 +160,7 @@ impl DataMover {
+         let endpoints = crate::preflight::raw_pair(source, destination, source_size)?;
+ 
+         let extents = source.extents(0, source_size)?;
++        self.check_extent_memory(0, extents.capacity(), "planning")?;
+ 
+         let source_backend = source.device();
+ 
+@@ -220,6 +222,9 @@ impl DataMover {
+                     .alignment()
+                     .max(self.options.buffer_alignment());
+ 
++                self.native_memory(0, 0, length != 0, length != 0, execution_options)?
++                    .check(self.options.memory_budget(), "execution")?;
++
+                 let stats = copy_file_range_with_options(
+                     source.as_fd(),
+                     destination.as_fd(),
+@@ -277,10 +282,14 @@ impl DataMover {
+         let started = Instant::now();
+ 
+         let extents = source.extents(0, source_size)?;
++        self.check_extent_memory(0, extents.capacity(), "planning")?;
+         crate::extent_validation::validate_extents(&extents, source_size)?;
+ 
++        self.threaded_memory(extents.capacity())?
++            .check(self.options.memory_budget(), "execution")?;
++
+         if self.options.concurrency() > 1 {
+-            return self.copy_concurrent(source, destination, extents, started);
++            return self.copy_concurrent(source, destination, &extents, started);
+         }
+ 
+         sequential::execute(
+@@ -417,8 +426,7 @@ impl DataMover {
+         let started = Instant::now();
+ 
+         if self.options.concurrency() > 1 {
+-            let stats =
+-                self.copy_concurrent(source, destination, plan.extents().to_vec(), started)?;
++            let stats = self.copy_concurrent(source, destination, plan.extents(), started)?;
+ 
+             return Ok(CopyReport::new(ExecutionBackend::Threaded, stats));
+         }
+@@ -491,7 +499,7 @@ impl DataMover {
+         &self,
+         source: &S,
+         destination: &D,
+-        extents: Vec<Extent>,
++        extents: &[Extent],
+         started: Instant,
+     ) -> Result<CopyStats>
+     where
+@@ -520,7 +528,7 @@ impl DataMover {
+             self.options.queue_capacity(),
+             &pool,
+             |sender| {
+-                for extent in &extents {
++                for extent in extents {
+                     for work in ExtentWorkIter::new(*extent, self.options.block_size()) {
+                         let work = work?;
+ 
+diff --git a/crates/rvvdk-datamover/src/options.rs b/crates/rvvdk-datamover/src/options.rs
+index 7e31428..7797c2b 100644
+--- a/crates/rvvdk-datamover/src/options.rs
++++ b/crates/rvvdk-datamover/src/options.rs
+@@ -1,5 +1,8 @@
+ use rvvdk_core::{Error, Result};
+ 
++/// Default per-copy payload budget (256 MiB); see `CopyMemoryUsage`.
++pub const DEFAULT_MEMORY_BUDGET: usize = 256 * 1024 * 1024;
++
+ pub const DEFAULT_BUFFER_COUNT: usize = 1;
+ pub const DEFAULT_BLOCK_SIZE: usize = 1024 * 1024;
+ pub const DEFAULT_BUFFER_ALIGNMENT: usize = 4096;
+@@ -13,6 +16,7 @@ pub struct CopyOptions {
+     buffer_count: usize,
+     concurrency: usize,
+     queue_capacity: usize,
++    memory_budget: usize,
+ }
+ 
+ impl Default for CopyOptions {
+@@ -23,11 +27,23 @@ impl Default for CopyOptions {
+             buffer_count: DEFAULT_BUFFER_COUNT,
+             concurrency: DEFAULT_CONCURRENCY,
+             queue_capacity: DEFAULT_QUEUE_CAPACITY,
++            memory_budget: DEFAULT_MEMORY_BUDGET,
+         }
+     }
+ }
+ 
+ impl CopyOptions {
++    /// Set the per-invocation payload budget in bytes, including extent storage.
++    /// Zero is allowed. This is not an RSS limit; see `crate::CopyMemoryUsage`.
++    pub const fn with_memory_budget(mut self, bytes: usize) -> Self {
++        self.memory_budget = bytes;
++        self
++    }
++
++    pub const fn memory_budget(&self) -> usize {
++        self.memory_budget
++    }
++
+     pub fn new(block_size: usize) -> Result<Self> {
+         if block_size == 0 {
+             return Err(Error::InvalidAlignment {
+@@ -42,6 +58,7 @@ impl CopyOptions {
+             buffer_count: DEFAULT_BUFFER_COUNT,
+             concurrency: DEFAULT_CONCURRENCY,
+             queue_capacity: DEFAULT_QUEUE_CAPACITY,
++            memory_budget: DEFAULT_MEMORY_BUDGET,
+         })
+     }
+ 
+@@ -68,6 +85,7 @@ impl CopyOptions {
+             buffer_count: DEFAULT_BUFFER_COUNT,
+             concurrency: DEFAULT_CONCURRENCY,
+             queue_capacity: DEFAULT_QUEUE_CAPACITY,
++            memory_budget: DEFAULT_MEMORY_BUDGET,
+         })
+     }
+     pub const fn buffer_alignment(&self) -> usize {
+@@ -102,6 +120,7 @@ impl CopyOptions {
+             buffer_count,
+             concurrency: DEFAULT_CONCURRENCY,
+             queue_capacity: DEFAULT_QUEUE_CAPACITY,
++            memory_budget: DEFAULT_MEMORY_BUDGET,
+         })
+     }
+     pub const fn buffer_count(&self) -> usize {
+@@ -135,6 +154,7 @@ impl CopyOptions {
+             buffer_count: concurrency,
+             concurrency,
+             queue_capacity: DEFAULT_QUEUE_CAPACITY,
++            memory_budget: DEFAULT_MEMORY_BUDGET,
+         })
+     }
+     pub const fn concurrency(&self) -> usize {
+@@ -178,6 +198,7 @@ impl CopyOptions {
+             buffer_count: concurrency,
+             concurrency,
+             queue_capacity,
++            memory_budget: DEFAULT_MEMORY_BUDGET,
+         })
+     }
+ }
+diff --git a/crates/rvvdk-datamover/src/plan.rs b/crates/rvvdk-datamover/src/plan.rs
+index 7d3cd83..d456199 100644
+--- a/crates/rvvdk-datamover/src/plan.rs
++++ b/crates/rvvdk-datamover/src/plan.rs
+@@ -181,6 +181,11 @@ impl CopyPlan {
+         self.logical.extents.len()
+     }
+ 
++    /// Allocated extent slots, including unused capacity charged to the budget.
++    pub const fn extent_capacity(&self) -> usize {
++        self.logical.extents.capacity()
++    }
++
+     pub fn extents(&self) -> &[Extent] {
+         &self.logical.extents
+     }
+diff --git a/crates/rvvdk-datamover/src/preparation.rs b/crates/rvvdk-datamover/src/preparation.rs
+index 4be1e46..e79d431 100644
+--- a/crates/rvvdk-datamover/src/preparation.rs
++++ b/crates/rvvdk-datamover/src/preparation.rs
+@@ -79,8 +79,16 @@ impl DataMover {
+                     }
+                 };
+ 
+-                let native_plan =
+-                    NativeExtentPlan::new(plan.extents().to_vec(), plan.logical_bytes())?;
++                let native_extents = plan.extents().to_vec();
++                self.native_memory(
++                    plan.extent_capacity(),
++                    native_extents.capacity(),
++                    plan.data_bytes() != 0,
++                    plan.extent_count() != 0,
++                    execution_options,
++                )?
++                .check(self.options.memory_budget(), "native plan")?;
++                let native_plan = NativeExtentPlan::new(native_extents, plan.logical_bytes())?;
+ 
+                 let source_backend = source.device();
+ 
+@@ -228,7 +236,16 @@ impl DataMover {
+          * CopyPlan represents a structural execution plan, not a snapshot
+          * of the source payload.
+          */
++        // Reject known execution requirements before querying another extent Vec,
++        // allocating executor resources, or notifying the observer.
++        self.execution_memory(plan)?
++            .check(self.options.memory_budget(), "execution")?;
+         let current_extents = source.extents(0, source_size)?;
++        self.check_extent_memory(
++            plan.extent_capacity(),
++            current_extents.capacity(),
++            "revalidation",
++        )?;
+ 
+         crate::extent_validation::validate_extents(&current_extents, source_size)?;
+ 
+diff --git a/crates/rvvdk-datamover/tests/execution_preparation.rs b/crates/rvvdk-datamover/tests/execution_preparation.rs
+index 84c3e70..438f694 100644
+--- a/crates/rvvdk-datamover/tests/execution_preparation.rs
++++ b/crates/rvvdk-datamover/tests/execution_preparation.rs
+@@ -201,3 +201,53 @@ fn native_flush_failure_keeps_completed_counts_and_suppresses_final_observation(
+     assert_eq!(callbacks.get(), 1);
+     assert!(matches!(&f.cause, rvvdk_core::Error::Io(e) if e.raw_os_error() == Some(5)));
+ }
++
++#[test]
++fn native_budget_uses_executing_queue_depth_and_rejects_all_entry_points() {
++    let (source, destination) = fixture();
++    let options = CopyOptions::new(4096).unwrap();
++    let planner = native(options);
++    let plan = planner
++        .plan_raw_with_destination(&source, &destination)
++        .unwrap();
++    let usage = planner.execution_memory(&plan).unwrap();
++    assert_eq!(
++        usage.extent_bytes(),
++        (plan.extent_capacity() + plan.extent_count()) * std::mem::size_of::<Extent>()
++    );
++    let larger_queue = DataMover::with_execution_strategy(
++        options.with_memory_budget(usage.total_bytes()),
++        ExecutionStrategy::IoUring(IoUringExecutionOptions::new(8).unwrap()),
++    );
++    assert!(larger_queue.execution_memory(&plan).unwrap().total_bytes() > usage.total_bytes());
++    assert_rejected(
++        &larger_queue,
++        &plan,
++        &source,
++        &destination,
++        "memory budget exceeded",
++    );
++    let limited = native(options.with_memory_budget(0));
++    assert!(matches!(
++        limited.copy_native(source.device(), destination.device(), 0, 16384),
++        Err(rvvdk_core::Error::MemoryBudgetExceeded {
++            phase: "execution",
++            ..
++        })
++    ));
++    assert!(matches!(
++        limited.copy_raw_with_report(&source, &destination),
++        Err(rvvdk_core::Error::MemoryBudgetExceeded {
++            phase: "planning",
++            ..
++        })
++    ));
++    // The exact requirement admits native execution and verifies bytes.
++    let exact = native(options.with_memory_budget(usage.total_bytes()));
++    exact
++        .execute_raw_plan(&plan, &source, &destination)
++        .unwrap();
++    let mut actual = [0; 16384];
++    destination.device().read_exact_at(0, &mut actual).unwrap();
++    assert_eq!(actual, [0x5a; 16384]);
++}
+diff --git a/crates/rvvdk-datamover/src/memory.rs b/crates/rvvdk-datamover/src/memory.rs
+new file mode 100644
+index 0000000..0f1d04c
+--- /dev/null
++++ b/crates/rvvdk-datamover/src/memory.rs
+@@ -0,0 +1,153 @@
++use std::mem::size_of;
++
++use rvvdk_core::{AlignedBuffer, Error, Extent, Result};
++
++use crate::{CopyPlan, DataMover, ExecutionBackend};
++
++/// Per-copy payload storage charged to the memory budget, in bytes.
++///
++/// Counts buffers, pool descriptors, queue/worker entries, and extent Vec
++/// capacity. Excludes allocator/container overhead, thread stacks, kernel ring
++/// mappings, backend/observer allocations, and previously quarantined native
++/// resources. This is not an RSS limit. Extent queries allocate inside backends
++/// before their returned capacity can be checked. See docs/copy-memory.md.
++#[derive(Debug, Clone, Copy, PartialEq, Eq)]
++pub struct CopyMemoryUsage {
++    extent_bytes: usize,
++    buffer_bytes: usize,
++    queue_bytes: usize,
++    total_bytes: usize,
++}
++
++impl CopyMemoryUsage {
++    fn new(extent_slots: usize, buffer_bytes: usize, queue_bytes: usize) -> Result<Self> {
++        let extent_bytes = mul(extent_slots, size_of::<Extent>())?;
++        let total_bytes = add(add(extent_bytes, buffer_bytes)?, queue_bytes)?;
++        Ok(Self {
++            extent_bytes,
++            buffer_bytes,
++            queue_bytes,
++            total_bytes,
++        })
++    }
++
++    pub const fn extent_bytes(&self) -> usize {
++        self.extent_bytes
++    }
++    /// Includes payload bytes and the pool's AlignedBuffer descriptors.
++    pub const fn buffer_bytes(&self) -> usize {
++        self.buffer_bytes
++    }
++    pub const fn queue_bytes(&self) -> usize {
++        self.queue_bytes
++    }
++    pub const fn total_bytes(&self) -> usize {
++        self.total_bytes
++    }
++
++    pub(crate) fn check(self, budget: usize, phase: &'static str) -> Result<()> {
++        if self.total_bytes > budget {
++            return Err(Error::MemoryBudgetExceeded {
++                phase,
++                required: self.total_bytes,
++                budget,
++            });
++        }
++        Ok(())
++    }
++}
++
++fn add(a: usize, b: usize) -> Result<usize> {
++    a.checked_add(b).ok_or(Error::MemoryAccountingOverflow)
++}
++fn mul(a: usize, b: usize) -> Result<usize> {
++    a.checked_mul(b).ok_or(Error::MemoryAccountingOverflow)
++}
++
++impl DataMover {
++    /// Execution payload requirement using this mover's current settings.
++    /// Does not reserve memory or validate endpoints. Live revalidation can need
++    /// more extent storage and is checked separately when executing the plan.
++    /// Native sparse extents reserve a fallback buffer even if accelerated.
++    pub fn execution_memory(&self, plan: &CopyPlan) -> Result<CopyMemoryUsage> {
++        match plan.backend() {
++            ExecutionBackend::Threaded => self.threaded_memory(plan.extent_capacity()),
++            #[cfg(target_os = "linux")]
++            ExecutionBackend::IoUring => {
++                let options = match self.execution_strategy() {
++                    crate::ExecutionStrategy::IoUring(options)
++                    | crate::ExecutionStrategy::Auto(options) => options,
++                    crate::ExecutionStrategy::Threaded => {
++                        return Err(Error::NativeExecutionNotSelected);
++                    }
++                };
++                self.native_memory(
++                    plan.extent_capacity(),
++                    plan.extent_count(),
++                    plan.data_bytes() != 0,
++                    plan.extent_count() != 0,
++                    options,
++                )
++            }
++        }
++    }
++
++    pub(crate) fn check_extent_memory(
++        &self,
++        resident: usize,
++        incoming: usize,
++        phase: &'static str,
++    ) -> Result<()> {
++        CopyMemoryUsage::new(add(resident, incoming)?, 0, 0)?
++            .check(self.options.memory_budget(), phase)
++    }
++
++    pub(crate) fn threaded_memory(&self, extent_capacity: usize) -> Result<CopyMemoryUsage> {
++        let buffers = mul(
++            self.options.buffer_count(),
++            add(self.options.block_size(), size_of::<AlignedBuffer>())?,
++        )?;
++        let workers = self.options.concurrency();
++        let queue = if workers > 1 {
++            // Bounded channel, one active item per worker, and one blocked producer item.
++            let entries = add(add(self.options.queue_capacity(), workers)?, 1)?;
++            add(
++                mul(entries, size_of::<crate::work::WorkItem>())?,
++                mul(workers, size_of::<crate::concurrent::WorkerStats>())?,
++            )?
++        } else {
++            0
++        };
++        CopyMemoryUsage::new(extent_capacity, buffers, queue)
++    }
++
++    #[cfg(target_os = "linux")]
++    pub(crate) fn native_memory(
++        &self,
++        resident: usize,
++        cloned: usize,
++        data: bool,
++        nonempty: bool,
++        options: crate::IoUringExecutionOptions,
++    ) -> Result<CopyMemoryUsage> {
++        let depth = options.queue_depth() as usize;
++        let (buffers, queue) = if data {
++            (
++                mul(
++                    depth,
++                    add(self.options.block_size(), size_of::<AlignedBuffer>())?,
++                )?,
++                add(
++                    mul(depth, crate::io_uring::OPERATION_BYTES)?,
++                    size_of::<crate::io_uring::CompletedOperation>(),
++                )?,
++            )
++        } else if nonempty {
++            (self.options.block_size(), 0)
++        } else {
++            (0, 0)
++        };
++        // Data pools and sparse fallback buffers have disjoint lifetimes.
++        CopyMemoryUsage::new(add(resident, cloned)?, buffers, queue)
++    }
++}
+diff --git a/crates/rvvdk-datamover/tests/memory_budget.rs b/crates/rvvdk-datamover/tests/memory_budget.rs
+new file mode 100644
+index 0000000..a2e5ca8
+--- /dev/null
++++ b/crates/rvvdk-datamover/tests/memory_budget.rs
+@@ -0,0 +1,203 @@
++use std::cell::Cell;
++use std::mem::size_of;
++use std::sync::atomic::{AtomicUsize, Ordering};
++
++use rvvdk_core::{
++    BlockDevice, Capabilities, DiskGeometry, Error, Extent, ExtentKind, MemoryBlockDevice, Result,
++    VirtualDisk,
++};
++use rvvdk_datamover::{CopyOptions, DEFAULT_MEMORY_BUDGET, DataMover, ProgressSnapshot};
++
++struct Disk {
++    inner: MemoryBlockDevice,
++    capacity: AtomicUsize,
++    queries: AtomicUsize,
++    io: AtomicUsize,
++}
++impl Disk {
++    fn new(capacity: usize) -> Self {
++        Self {
++            inner: MemoryBlockDevice::new(4096).unwrap(),
++            capacity: AtomicUsize::new(capacity),
++            queries: AtomicUsize::new(0),
++            io: AtomicUsize::new(0),
++        }
++    }
++}
++impl VirtualDisk for Disk {
++    fn geometry(&self) -> DiskGeometry {
++        self.inner.geometry()
++    }
++    fn capabilities(&self) -> Capabilities {
++        self.inner.capabilities()
++    }
++    fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
++        self.io.fetch_add(1, Ordering::Relaxed);
++        self.inner.read_at(offset, buffer)
++    }
++    fn write_at(&self, offset: u64, buffer: &[u8]) -> Result<usize> {
++        self.io.fetch_add(1, Ordering::Relaxed);
++        self.inner.write_at(offset, buffer)
++    }
++    fn write_zero_at(&self, offset: u64, length: u64) -> Result<()> {
++        self.io.fetch_add(1, Ordering::Relaxed);
++        self.inner.write_zero_at(offset, length)
++    }
++    fn discard(&self, offset: u64, length: u64) -> Result<()> {
++        self.io.fetch_add(1, Ordering::Relaxed);
++        self.inner.discard(offset, length)
++    }
++    fn flush(&self) -> Result<()> {
++        self.io.fetch_add(1, Ordering::Relaxed);
++        self.inner.flush()
++    }
++    fn extents(&self, _: u64, _: u64) -> Result<Vec<Extent>> {
++        self.queries.fetch_add(1, Ordering::Relaxed);
++        let mut extents = Vec::with_capacity(self.capacity.load(Ordering::Relaxed));
++        extents.push(Extent::new(0, 4096, ExtentKind::Data)?);
++        Ok(extents)
++    }
++}
++fn assert_budget(error: Error, phase: &str, expected: usize, limit: usize) {
++    assert!(error.copy_failure().is_none());
++    assert!(
++        matches!(error, Error::MemoryBudgetExceeded { phase: actual, required, budget }
++        if actual == phase && required == expected && budget == limit)
++    );
++}
++
++#[test]
++fn planning_charges_unused_extent_capacity_and_accepts_exact_limit() {
++    assert_eq!(
++        CopyOptions::default().memory_budget(),
++        DEFAULT_MEMORY_BUDGET
++    );
++    let source = Disk::new(128);
++    let required = 128 * size_of::<Extent>();
++    let options = CopyOptions::new(512).unwrap();
++    assert_budget(
++        DataMover::new(options.with_memory_budget(required - 1))
++            .plan(&source)
++            .unwrap_err(),
++        "planning",
++        required,
++        required - 1,
++    );
++    let plan = DataMover::new(options.with_memory_budget(required))
++        .plan(&source)
++        .unwrap();
++    assert_eq!(plan.extent_count(), 1);
++    assert_eq!(plan.extent_capacity(), 128);
++    assert_eq!(source.io.load(Ordering::Relaxed), 0);
++}
++
++#[test]
++fn execution_boundary_precedes_observation_and_io_for_all_portable_paths() {
++    for workers in [1, 4] {
++        let source = Disk::new(1);
++        let destination = Disk::new(1);
++        source.inner.write_all_at(0, &[0x5a; 4096]).unwrap();
++        let options = CopyOptions::with_execution(512, 512, workers, 3).unwrap();
++        let planner = DataMover::new(options);
++        let plan = planner.plan(&source).unwrap();
++        let usage = planner.execution_memory(&plan).unwrap();
++        assert_eq!(usage.extent_bytes(), size_of::<Extent>());
++        assert_eq!(usage.queue_bytes() == 0, workers == 1);
++        let required = usage.total_bytes();
++        let limited = DataMover::new(options.with_memory_budget(required - 1));
++        let callbacks = Cell::new(0);
++        let queries = source.queries.load(Ordering::Relaxed);
++        assert_budget(
++            limited
++                .execute_plan_with_observer(
++                    &plan,
++                    &source,
++                    &destination,
++                    &|_: &ProgressSnapshot| callbacks.set(callbacks.get() + 1),
++                )
++                .unwrap_err(),
++            "execution",
++            required,
++            required - 1,
++        );
++        assert_eq!(
++            source.queries.load(Ordering::Relaxed),
++            queries,
++            "known excess rejected before another extent query"
++        );
++        assert_budget(
++            limited
++                .execute_plan(&plan, &source, &destination)
++                .unwrap_err(),
++            "execution",
++            required,
++            required - 1,
++        );
++        assert_budget(
++            limited.copy(&source, &destination).unwrap_err(),
++            "execution",
++            required,
++            required - 1,
++        );
++        assert_budget(
++            limited.copy_with_report(&source, &destination).unwrap_err(),
++            "execution",
++            required,
++            required - 1,
++        );
++        assert_eq!(callbacks.get(), 0);
++        assert_eq!(source.io.load(Ordering::Relaxed), 0);
++        assert_eq!(destination.io.load(Ordering::Relaxed), 0);
++        let exact = DataMover::new(options.with_memory_budget(required));
++        exact.execute_plan(&plan, &source, &destination).unwrap();
++        exact.copy(&source, &destination).unwrap();
++        let mut bytes = [0; 4096];
++        destination.inner.read_exact_at(0, &mut bytes).unwrap();
++        assert_eq!(bytes, [0x5a; 4096]);
++    }
++}
++
++#[test]
++fn live_revalidation_charges_both_vecs_and_releases_them_before_execution() {
++    let source = Disk::new(128);
++    let destination = Disk::new(1);
++    let options = CopyOptions::new(512).unwrap();
++    let plan = DataMover::new(options).plan(&source).unwrap();
++    // Revalidation, not the buffer pool, determines the peak for this plan.
++    let limit = 256 * size_of::<Extent>();
++    let mover = DataMover::new(options.with_memory_budget(limit));
++    assert!(mover.execution_memory(&plan).unwrap().total_bytes() < limit);
++    mover.execute_plan(&plan, &source, &destination).unwrap();
++    source.capacity.store(129, Ordering::Relaxed);
++    let before = destination.io.load(Ordering::Relaxed);
++    assert_budget(
++        mover
++            .execute_plan_with_observer(&plan, &source, &destination, &|_: &ProgressSnapshot| {
++                panic!("budget rejection notified observer")
++            })
++            .unwrap_err(),
++        "revalidation",
++        257 * size_of::<Extent>(),
++        limit,
++    );
++    assert_eq!(destination.io.load(Ordering::Relaxed), before);
++}
++
++#[test]
++fn oversized_configuration_rejects_without_allocation_or_io() {
++    let source = Disk::new(1);
++    let destination = Disk::new(1);
++    for options in [
++        CopyOptions::new(usize::MAX).unwrap(),
++        CopyOptions::with_buffer_pool(4096, 4096, usize::MAX).unwrap(),
++        CopyOptions::with_execution(4096, 4096, 2, usize::MAX).unwrap(),
++    ] {
++        let mover = DataMover::new(options.with_memory_budget(usize::MAX));
++        assert!(matches!(
++            mover.copy(&source, &destination),
++            Err(Error::MemoryAccountingOverflow)
++        ));
++    }
++    assert_eq!(source.io.load(Ordering::Relaxed), 0);
++    assert_eq!(destination.io.load(Ordering::Relaxed), 0);
++}

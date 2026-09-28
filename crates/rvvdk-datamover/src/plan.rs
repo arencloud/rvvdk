@@ -181,6 +181,11 @@ impl CopyPlan {
         self.logical.extents.len()
     }
 
+    /// Allocated extent slots, including unused capacity charged to the budget.
+    pub const fn extent_capacity(&self) -> usize {
+        self.logical.extents.capacity()
+    }
+
     pub fn extents(&self) -> &[Extent] {
         &self.logical.extents
     }

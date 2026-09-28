@@ -201,3 +201,53 @@ fn native_flush_failure_keeps_completed_counts_and_suppresses_final_observation(
     assert_eq!(callbacks.get(), 1);
     assert!(matches!(&f.cause, rvvdk_core::Error::Io(e) if e.raw_os_error() == Some(5)));
 }
+
+#[test]
+fn native_budget_uses_executing_queue_depth_and_rejects_all_entry_points() {
+    let (source, destination) = fixture();
+    let options = CopyOptions::new(4096).unwrap();
+    let planner = native(options);
+    let plan = planner
+        .plan_raw_with_destination(&source, &destination)
+        .unwrap();
+    let usage = planner.execution_memory(&plan).unwrap();
+    assert_eq!(
+        usage.extent_bytes(),
+        (plan.extent_capacity() + plan.extent_count()) * std::mem::size_of::<Extent>()
+    );
+    let larger_queue = DataMover::with_execution_strategy(
+        options.with_memory_budget(usage.total_bytes()),
+        ExecutionStrategy::IoUring(IoUringExecutionOptions::new(8).unwrap()),
+    );
+    assert!(larger_queue.execution_memory(&plan).unwrap().total_bytes() > usage.total_bytes());
+    assert_rejected(
+        &larger_queue,
+        &plan,
+        &source,
+        &destination,
+        "memory budget exceeded",
+    );
+    let limited = native(options.with_memory_budget(0));
+    assert!(matches!(
+        limited.copy_native(source.device(), destination.device(), 0, 16384),
+        Err(rvvdk_core::Error::MemoryBudgetExceeded {
+            phase: "execution",
+            ..
+        })
+    ));
+    assert!(matches!(
+        limited.copy_raw_with_report(&source, &destination),
+        Err(rvvdk_core::Error::MemoryBudgetExceeded {
+            phase: "planning",
+            ..
+        })
+    ));
+    // The exact requirement admits native execution and verifies bytes.
+    let exact = native(options.with_memory_budget(usage.total_bytes()));
+    exact
+        .execute_raw_plan(&plan, &source, &destination)
+        .unwrap();
+    let mut actual = [0; 16384];
+    destination.device().read_exact_at(0, &mut actual).unwrap();
+    assert_eq!(actual, [0x5a; 16384]);
+}

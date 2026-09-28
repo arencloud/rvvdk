@@ -1,5 +1,8 @@
 use rvvdk_core::{Error, Result};
 
+/// Default per-copy payload budget (256 MiB); see `CopyMemoryUsage`.
+pub const DEFAULT_MEMORY_BUDGET: usize = 256 * 1024 * 1024;
+
 pub const DEFAULT_BUFFER_COUNT: usize = 1;
 pub const DEFAULT_BLOCK_SIZE: usize = 1024 * 1024;
 pub const DEFAULT_BUFFER_ALIGNMENT: usize = 4096;
@@ -13,6 +16,7 @@ pub struct CopyOptions {
     buffer_count: usize,
     concurrency: usize,
     queue_capacity: usize,
+    memory_budget: usize,
 }
 
 impl Default for CopyOptions {
@@ -23,11 +27,23 @@ impl Default for CopyOptions {
             buffer_count: DEFAULT_BUFFER_COUNT,
             concurrency: DEFAULT_CONCURRENCY,
             queue_capacity: DEFAULT_QUEUE_CAPACITY,
+            memory_budget: DEFAULT_MEMORY_BUDGET,
         }
     }
 }
 
 impl CopyOptions {
+    /// Set the per-invocation payload budget in bytes, including extent storage.
+    /// Zero is allowed. This is not an RSS limit; see `crate::CopyMemoryUsage`.
+    pub const fn with_memory_budget(mut self, bytes: usize) -> Self {
+        self.memory_budget = bytes;
+        self
+    }
+
+    pub const fn memory_budget(&self) -> usize {
+        self.memory_budget
+    }
+
     pub fn new(block_size: usize) -> Result<Self> {
         if block_size == 0 {
             return Err(Error::InvalidAlignment {
@@ -42,6 +58,7 @@ impl CopyOptions {
             buffer_count: DEFAULT_BUFFER_COUNT,
             concurrency: DEFAULT_CONCURRENCY,
             queue_capacity: DEFAULT_QUEUE_CAPACITY,
+            memory_budget: DEFAULT_MEMORY_BUDGET,
         })
     }
 
@@ -68,6 +85,7 @@ impl CopyOptions {
             buffer_count: DEFAULT_BUFFER_COUNT,
             concurrency: DEFAULT_CONCURRENCY,
             queue_capacity: DEFAULT_QUEUE_CAPACITY,
+            memory_budget: DEFAULT_MEMORY_BUDGET,
         })
     }
     pub const fn buffer_alignment(&self) -> usize {
@@ -102,6 +120,7 @@ impl CopyOptions {
             buffer_count,
             concurrency: DEFAULT_CONCURRENCY,
             queue_capacity: DEFAULT_QUEUE_CAPACITY,
+            memory_budget: DEFAULT_MEMORY_BUDGET,
         })
     }
     pub const fn buffer_count(&self) -> usize {
@@ -135,6 +154,7 @@ impl CopyOptions {
             buffer_count: concurrency,
             concurrency,
             queue_capacity: DEFAULT_QUEUE_CAPACITY,
+            memory_budget: DEFAULT_MEMORY_BUDGET,
         })
     }
     pub const fn concurrency(&self) -> usize {
@@ -178,6 +198,7 @@ impl CopyOptions {
             buffer_count: concurrency,
             concurrency,
             queue_capacity,
+            memory_budget: DEFAULT_MEMORY_BUDGET,
         })
     }
 }

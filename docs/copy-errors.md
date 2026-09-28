@@ -35,6 +35,11 @@ payload error directly as Error::Io or Error::Unsupported should inspect
 failure.cause or traverse the source chain. Planning/preflight errors generally
 keep their original outer variants.
 
+R1.6 adds `MemoryBudgetExceeded { phase, required, budget }` and
+`MemoryAccountingOverflow` as preparation rejections. They precede payload I/O,
+flush, and observation and carry no partial execution counters. The
+[memory contract](copy-memory.md) defines the accounted storage and exclusions.
+
 ## Operations and ranges
 
 CopyOperation distinguishes Allocate, Read, Write, WriteZero, Discard, Flush,
