@@ -1,0 +1,845 @@
+diff --git a/crates/rvvdk-datamover/Cargo.toml b/crates/rvvdk-datamover/Cargo.toml
+index a91596d..514f7fd 100644
+--- a/crates/rvvdk-datamover/Cargo.toml
++++ b/crates/rvvdk-datamover/Cargo.toml
+@@ -50,3 +50,7 @@ harness = false
+ [[bench]]
+ name = "native_lifetime"
+ harness = false
++
++[[bench]]
++name = "native_validation"
++harness = false
+diff --git a/crates/rvvdk-datamover/src/io_uring/copy.rs b/crates/rvvdk-datamover/src/io_uring/copy.rs
+index 113293b..4b3707f 100644
+--- a/crates/rvvdk-datamover/src/io_uring/copy.rs
++++ b/crates/rvvdk-datamover/src/io_uring/copy.rs
+@@ -2,6 +2,7 @@ use std::os::fd::BorrowedFd;
+ 
+ use rvvdk_core::{BufferPool, Error, Result};
+ 
++use super::validation::{validate_copy_configuration, validate_file_range};
+ use super::{CompletedOperation, IoUringEngine, IoUringFile, IoUringOperationKind};
+ 
+ #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+@@ -98,6 +99,8 @@ fn update_peaks(stats: &mut IoUringCopyStats, state: &PipelineState) {
+     }
+ }
+ 
++/// Copy an explicit file range. Configuration and range validation run before
++/// allocation or I/O, even for empty ranges. This function does not flush.
+ pub fn copy_file_range(
+     source_fd: BorrowedFd<'_>,
+     destination_fd: BorrowedFd<'_>,
+@@ -121,6 +124,9 @@ pub fn copy_file_range(
+     )
+ }
+ 
++/// Like [`copy_file_range`], with a validated queue depth and read window.
++/// Blocks must fit a u32 SQE length; alignment must describe a valid allocation.
++/// Offsets and the exclusive range end must fit the nonnegative i64 domain.
+ pub fn copy_file_range_with_options(
+     source_fd: BorrowedFd<'_>,
+     destination_fd: BorrowedFd<'_>,
+@@ -130,12 +136,8 @@ pub fn copy_file_range_with_options(
+     alignment: usize,
+     options: crate::IoUringExecutionOptions,
+ ) -> Result<IoUringCopyStats> {
+-    if block_size == 0 {
+-        return Err(Error::InvalidAlignment {
+-            value: 0,
+-            alignment: 1,
+-        });
+-    }
++    validate_copy_configuration(block_size, alignment)?;
++    validate_file_range(offset, length)?;
+ 
+     if length == 0 {
+         return Ok(IoUringCopyStats::default());
+diff --git a/crates/rvvdk-datamover/src/io_uring/engine.rs b/crates/rvvdk-datamover/src/io_uring/engine.rs
+index 16803e1..0dcf6d7 100644
+--- a/crates/rvvdk-datamover/src/io_uring/engine.rs
++++ b/crates/rvvdk-datamover/src/io_uring/engine.rs
+@@ -6,6 +6,7 @@ use rvvdk_core::{BufferGuard, Error, Result};
+ 
+ use super::IoUringFile;
+ use super::operation::{CompletedOperation, InFlightOperation, IoUringOperationKind};
++use super::validation::validate_file_range;
+ 
+ /// An owned-buffer engine. Every queued SQE retains both its buffer and file.
+ ///
+@@ -55,6 +56,8 @@ impl IoUringEngine {
+         self.quarantined
+     }
+ 
++    /// Queue an explicit-offset read. The offset and exclusive end must fit i64.
++    /// Invalid requests publish nothing and leave the engine available for reuse.
+     pub fn submit_owned_read(
+         &mut self,
+         file: &IoUringFile,
+@@ -65,6 +68,7 @@ impl IoUringEngine {
+         self.enqueue(file, offset, length, buffer, IoUringOperationKind::Read)
+     }
+ 
++    /// Queue an explicit-offset write, with the same range contract as reads.
+     pub fn submit_owned_write(
+         &mut self,
+         file: &IoUringFile,
+@@ -94,6 +98,7 @@ impl IoUringEngine {
+             offset,
+             length: length as u64,
+         })?;
++        validate_file_range(offset, length as u64)?;
+         if self.in_flight.len() >= self.queue_depth as usize {
+             return Err(Error::IoUringQueueFull {
+                 queue_depth: self.queue_depth,
+diff --git a/crates/rvvdk-datamover/src/io_uring/extent_copy.rs b/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
+index 7b3c6a7..82f61c9 100644
+--- a/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
++++ b/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
+@@ -4,6 +4,7 @@ use rvvdk_core::{Capabilities, Error, Extent, ExtentKind, Result, VirtualDisk};
+ 
+ use crate::IoUringExecutionOptions;
+ 
++use super::validation::{validate_copy_configuration, validate_file_range};
+ use super::{IoUringCopyStats, NativeExtentPlan, copy_file_range_with_options};
+ 
+ #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+@@ -126,6 +127,8 @@ impl IoUringExtentCopyStats {
+     }
+ }
+ 
++/// Copy a data-only plan. Validate configuration, range, and every extent kind
++/// before allocation or I/O; an unsupported later extent cannot cause a partial copy.
+ pub fn copy_extent_plan(
+     source_fd: BorrowedFd<'_>,
+     destination_fd: BorrowedFd<'_>,
+@@ -134,45 +137,41 @@ pub fn copy_extent_plan(
+     alignment: usize,
+     options: IoUringExecutionOptions,
+ ) -> Result<IoUringExtentCopyStats> {
+-    let mut aggregate = IoUringExtentCopyStats::default();
+-
++    validate_copy_configuration(block_size, alignment)?;
++    validate_file_range(0, plan.disk_size())?;
+     for extent in plan.extents() {
+-        match extent.kind() {
+-            ExtentKind::Data => {
+-                let stats = copy_file_range_with_options(
+-                    source_fd,
+-                    destination_fd,
+-                    extent.offset(),
+-                    extent.length(),
+-                    block_size,
+-                    alignment,
+-                    options,
+-                )?;
+-
+-                aggregate.add_data_extent(stats)?;
+-            }
+-
+-            ExtentKind::Zero => {
+-                return Err(Error::UnsupportedNativeExtent {
+-                    kind: "zero",
+-                    offset: extent.offset(),
+-                    length: extent.length(),
+-                });
+-            }
++        let kind = match extent.kind() {
++            ExtentKind::Data => continue,
++            ExtentKind::Zero => "zero",
++            ExtentKind::Hole => "hole",
++        };
++        return Err(Error::UnsupportedNativeExtent {
++            kind,
++            offset: extent.offset(),
++            length: extent.length(),
++        });
++    }
+ 
+-            ExtentKind::Hole => {
+-                return Err(Error::UnsupportedNativeExtent {
+-                    kind: "hole",
+-                    offset: extent.offset(),
+-                    length: extent.length(),
+-                });
+-            }
+-        }
++    let mut aggregate = IoUringExtentCopyStats::default();
++    for extent in plan.extents() {
++        let stats = copy_file_range_with_options(
++            source_fd,
++            destination_fd,
++            extent.offset(),
++            extent.length(),
++            block_size,
++            alignment,
++            options,
++        )?;
++        aggregate.add_data_extent(stats)?;
+     }
+ 
+     Ok(aggregate)
+ }
+ 
++/// Copy Data/Zero/Hole extents using destination capabilities. Configuration and
++/// range validation precede all backend calls, including for empty plans. Backend
++/// access, capacity, identity, and direct-I/O compatibility are separate preflight.
+ pub fn copy_extent_plan_with_destination<D>(
+     source_fd: BorrowedFd<'_>,
+     destination_fd: BorrowedFd<'_>,
+@@ -185,6 +184,9 @@ pub fn copy_extent_plan_with_destination<D>(
+ where
+     D: VirtualDisk,
+ {
++    validate_copy_configuration(block_size, alignment)?;
++    validate_file_range(0, plan.disk_size())?;
++
+     let mut aggregate = IoUringExtentCopyStats::default();
+ 
+     for extent in plan.extents() {
+diff --git a/crates/rvvdk-datamover/src/io_uring/mod.rs b/crates/rvvdk-datamover/src/io_uring/mod.rs
+index afb7b6c..13b96c0 100644
+--- a/crates/rvvdk-datamover/src/io_uring/mod.rs
++++ b/crates/rvvdk-datamover/src/io_uring/mod.rs
+@@ -6,6 +6,7 @@ mod extent_copy;
+ mod extent_plan;
+ mod file;
+ mod operation;
++mod validation;
+ 
+ pub use capabilities::{IoUringCapabilities, probe_io_uring};
+ 
+diff --git a/crates/rvvdk-datamover/src/io_uring/validation.rs b/crates/rvvdk-datamover/src/io_uring/validation.rs
+new file mode 100644
+index 0000000..5c4b796
+--- /dev/null
++++ b/crates/rvvdk-datamover/src/io_uring/validation.rs
+@@ -0,0 +1,38 @@
++use std::alloc::Layout;
++
++use rvvdk_core::{Error, Result};
++
++// Validate without allocating: every entry point, including empty and all-zero
++// plans, must have the same configuration contract before touching a backend.
++pub(super) fn validate_copy_configuration(block_size: usize, alignment: usize) -> Result<()> {
++    if block_size == 0 {
++        return Err(Error::InvalidAlignment {
++            value: 0,
++            alignment: 1,
++        });
++    }
++    if !alignment.is_power_of_two() {
++        return Err(Error::InvalidBufferAlignment { alignment });
++    }
++    // Read/Write SQEs encode length as u32. Reject before allocating the pool.
++    u32::try_from(block_size).map_err(|_| Error::RangeOverflow {
++        offset: 0,
++        length: block_size as u64,
++    })?;
++    Layout::from_size_align(block_size, alignment).map_err(|_| Error::BufferAllocation {
++        size: block_size,
++        alignment,
++    })?;
++    Ok(())
++}
++
++// This API addresses explicit file ranges in the nonnegative signed 64-bit
++// domain, including a representable exclusive end. In particular, u64::MAX
++// must never reach Read/Write: io_uring interprets it as the current-position
++// sentinel instead of the caller's absolute offset.
++pub(super) fn validate_file_range(offset: u64, length: u64) -> Result<u64> {
++    offset
++        .checked_add(length)
++        .filter(|end| *end <= i64::MAX as u64)
++        .ok_or(Error::RangeOverflow { offset, length })
++}
+diff --git a/crates/rvvdk-datamover/tests/native_validation.rs b/crates/rvvdk-datamover/tests/native_validation.rs
+new file mode 100644
+index 0000000..9696b38
+--- /dev/null
++++ b/crates/rvvdk-datamover/tests/native_validation.rs
+@@ -0,0 +1,401 @@
++#![cfg(target_os = "linux")]
++
++use std::fs::{File, OpenOptions};
++use std::os::fd::AsFd;
++use std::os::unix::fs::FileExt;
++use std::process::Command;
++use std::sync::atomic::{AtomicUsize, Ordering};
++use std::time::{Duration, Instant};
++
++use rvvdk_core::{
++    BufferPool, Capabilities, DiskGeometry, Error, Extent, ExtentKind, Result, VirtualDisk,
++};
++use rvvdk_datamover::IoUringExecutionOptions;
++use rvvdk_datamover::io_uring::{
++    IoUringEngine, IoUringFile, NativeExtentPlan, copy_extent_plan,
++    copy_extent_plan_with_destination, copy_file_range, copy_file_range_with_options,
++};
++
++const SIZE: usize = 8192;
++static NEXT: AtomicUsize = AtomicUsize::new(0);
++
++fn file(fill: u8) -> File {
++    let path = std::env::temp_dir().join(format!(
++        "rvvdk-r04-{}-{}",
++        std::process::id(),
++        NEXT.fetch_add(1, Ordering::Relaxed)
++    ));
++    let file = OpenOptions::new()
++        .read(true)
++        .write(true)
++        .create_new(true)
++        .open(&path)
++        .unwrap();
++    std::fs::remove_file(path).unwrap();
++    file.write_all_at(&[fill; SIZE], 0).unwrap();
++    file
++}
++
++fn unchanged(file: &File) {
++    let mut actual = [0; SIZE];
++    file.read_exact_at(&mut actual, 0).unwrap();
++    assert_eq!(actual, [0xff; SIZE]);
++}
++
++fn options() -> IoUringExecutionOptions {
++    IoUringExecutionOptions::new(2).unwrap()
++}
++
++fn bounded(name: &str, test: impl FnOnce()) {
++    const CHILD: &str = "RVVDK_VALIDATION_TEST_CHILD";
++    if std::env::var(CHILD).as_deref() == Ok(name) {
++        test();
++        return;
++    }
++    let mut child = Command::new(std::env::current_exe().unwrap())
++        .args(["--exact", name, "--nocapture"])
++        .env(CHILD, name)
++        .spawn()
++        .unwrap();
++    let deadline = Instant::now() + Duration::from_secs(5);
++    loop {
++        if let Some(status) = child.try_wait().unwrap() {
++            assert!(status.success(), "{name}: child failed");
++            return;
++        }
++        if Instant::now() >= deadline {
++            child.kill().unwrap();
++            child.wait().unwrap();
++            panic!("{name}: exceeded five-second deadline");
++        }
++        std::thread::sleep(Duration::from_millis(10));
++    }
++}
++
++// Counts every backend interaction, including querying capabilities. Invalid
++// public inputs must be rejected before entering destination-specific work.
++struct UntouchedDisk {
++    calls: AtomicUsize,
++    capabilities: Capabilities,
++}
++impl VirtualDisk for UntouchedDisk {
++    fn geometry(&self) -> DiskGeometry {
++        self.calls.fetch_add(1, Ordering::Relaxed);
++        DiskGeometry::new(SIZE as u64, 512, 4096).unwrap()
++    }
++    fn capabilities(&self) -> Capabilities {
++        self.calls.fetch_add(1, Ordering::Relaxed);
++        self.capabilities
++    }
++    fn read_at(&self, _: u64, _: &mut [u8]) -> Result<usize> {
++        panic!("unexpected read")
++    }
++    fn write_at(&self, _: u64, bytes: &[u8]) -> Result<usize> {
++        self.calls.fetch_add(1, Ordering::Relaxed);
++        Ok(bytes.len())
++    }
++    fn write_zero_at(&self, _: u64, _: u64) -> Result<()> {
++        self.calls.fetch_add(1, Ordering::Relaxed);
++        Ok(())
++    }
++    fn discard(&self, _: u64, _: u64) -> Result<()> {
++        self.calls.fetch_add(1, Ordering::Relaxed);
++        Ok(())
++    }
++    fn flush(&self) -> Result<()> {
++        panic!("unexpected flush")
++    }
++    fn extents(&self, _: u64, _: u64) -> Result<Vec<Extent>> {
++        panic!("unexpected extent query")
++    }
++}
++
++#[test]
++fn invalid_configuration_precedes_every_extent_path() {
++    bounded("invalid_configuration_precedes_every_extent_path", || {
++        let fd = file(0xff);
++        let empty = NativeExtentPlan::new(vec![], 0).unwrap();
++        for (block, alignment) in [
++            (0, 4096),
++            (4096, 0),
++            (4096, 3),
++            (usize::MAX, 4096),
++            (4096, 1usize << (usize::BITS - 1)),
++        ] {
++            assert!(
++                copy_extent_plan(fd.as_fd(), fd.as_fd(), &empty, block, alignment, options())
++                    .is_err()
++            );
++            for kind in [
++                None,
++                Some(ExtentKind::Zero),
++                Some(ExtentKind::Hole),
++                Some(ExtentKind::Data),
++            ] {
++                let plan = match kind {
++                    None => NativeExtentPlan::new(vec![], 0).unwrap(),
++                    Some(kind) => NativeExtentPlan::new(
++                        vec![Extent::new(0, SIZE as u64, kind).unwrap()],
++                        SIZE as u64,
++                    )
++                    .unwrap(),
++                };
++                for capabilities in [
++                    Capabilities::WRITE,
++                    Capabilities::WRITE | Capabilities::WRITE_ZERO,
++                    Capabilities::WRITE | Capabilities::DISCARD,
++                ] {
++                    let disk = UntouchedDisk {
++                        calls: AtomicUsize::new(0),
++                        capabilities,
++                    };
++                    assert!(
++                        copy_extent_plan_with_destination(
++                            fd.as_fd(),
++                            fd.as_fd(),
++                            &disk,
++                            &plan,
++                            block,
++                            alignment,
++                            options()
++                        )
++                        .is_err(),
++                        "block={block} alignment={alignment} kind={kind:?}"
++                    );
++                    assert_eq!(disk.calls.load(Ordering::Relaxed), 0);
++                    unchanged(&fd);
++                }
++            }
++        }
++    });
++}
++
++#[test]
++fn zero_block_fallback_is_bounded() {
++    bounded("zero_block_fallback_is_bounded", || {
++        let fd = file(0xff);
++        for kind in [ExtentKind::Zero, ExtentKind::Hole] {
++            let plan = NativeExtentPlan::new(
++                vec![Extent::new(0, SIZE as u64, kind).unwrap()],
++                SIZE as u64,
++            )
++            .unwrap();
++            let disk = UntouchedDisk {
++                calls: AtomicUsize::new(0),
++                capabilities: Capabilities::WRITE,
++            };
++            assert!(matches!(
++                copy_extent_plan_with_destination(
++                    fd.as_fd(),
++                    fd.as_fd(),
++                    &disk,
++                    &plan,
++                    0,
++                    4096,
++                    options()
++                ),
++                Err(Error::InvalidAlignment { value: 0, .. })
++            ));
++            assert_eq!(disk.calls.load(Ordering::Relaxed), 0);
++        }
++    });
++}
++
++#[test]
++fn unsupported_later_extent_precedes_data_writes() {
++    bounded("unsupported_later_extent_precedes_data_writes", || {
++        let source = file(0x5a);
++        let destination = file(0xff);
++        for (kind, label) in [(ExtentKind::Zero, "zero"), (ExtentKind::Hole, "hole")] {
++            let plan = NativeExtentPlan::new(
++                vec![
++                    Extent::new(0, 4096, ExtentKind::Data).unwrap(),
++                    Extent::new(4096, 4096, kind).unwrap(),
++                ],
++                SIZE as u64,
++            )
++            .unwrap();
++            assert!(
++                matches!(copy_extent_plan(source.as_fd(), destination.as_fd(), &plan, 4096, 4096, options()), Err(Error::UnsupportedNativeExtent { kind, offset: 4096, length: 4096 }) if kind == label)
++            );
++            unchanged(&destination);
++        }
++    });
++}
++
++#[test]
++fn invalid_alignment_precedes_zero_then_data() {
++    let fd = file(0xff);
++    let disk = UntouchedDisk {
++        calls: AtomicUsize::new(0),
++        capabilities: Capabilities::WRITE_ZERO,
++    };
++    let plan = NativeExtentPlan::new(
++        vec![
++            Extent::new(0, 4096, ExtentKind::Zero).unwrap(),
++            Extent::new(4096, 4096, ExtentKind::Data).unwrap(),
++        ],
++        SIZE as u64,
++    )
++    .unwrap();
++    assert!(matches!(
++        copy_extent_plan_with_destination(fd.as_fd(), fd.as_fd(), &disk, &plan, 4096, 3, options()),
++        Err(Error::InvalidBufferAlignment { alignment: 3 })
++    ));
++    assert_eq!(disk.calls.load(Ordering::Relaxed), 0);
++    unchanged(&fd);
++}
++
++#[test]
++fn range_validation_includes_empty_copies() {
++    let fd = file(0xff);
++    assert!(matches!(
++        copy_file_range(fd.as_fd(), fd.as_fd(), 0, 0, 4096, 0, 4096),
++        Err(Error::InvalidIoUringQueueDepth)
++    ));
++    for length in [0, 1] {
++        for (block, alignment) in [(0, 4096), (4096, 0), (4096, 3), (usize::MAX, 4096)] {
++            assert!(
++                copy_file_range_with_options(
++                    fd.as_fd(),
++                    fd.as_fd(),
++                    0,
++                    length,
++                    block,
++                    alignment,
++                    options()
++                )
++                .is_err()
++            );
++        }
++    }
++    for (offset, length) in [
++        (u64::MAX, 0),
++        (u64::MAX, 1),
++        (u64::MAX - 1, 4),
++        (i64::MAX as u64, 1),
++    ] {
++        assert!(matches!(
++            copy_file_range_with_options(
++                fd.as_fd(),
++                fd.as_fd(),
++                offset,
++                length,
++                4096,
++                4096,
++                options()
++            ),
++            Err(Error::RangeOverflow { .. })
++        ));
++    }
++    assert_eq!(
++        copy_file_range_with_options(
++            fd.as_fd(),
++            fd.as_fd(),
++            i64::MAX as u64,
++            0,
++            4096,
++            4096,
++            options()
++        )
++        .unwrap()
++        .bytes_written(),
++        0
++    );
++    unchanged(&fd);
++}
++
++#[test]
++fn empty_plans_are_valid_no_ops() {
++    let fd = file(0xff);
++    let disk = UntouchedDisk {
++        calls: AtomicUsize::new(0),
++        capabilities: Capabilities::WRITE,
++    };
++    let plan = NativeExtentPlan::new(vec![], 0).unwrap();
++    assert_eq!(
++        copy_extent_plan(fd.as_fd(), fd.as_fd(), &plan, 4096, 4096, options())
++            .unwrap()
++            .extents_processed(),
++        0
++    );
++    assert_eq!(
++        copy_extent_plan_with_destination(
++            fd.as_fd(),
++            fd.as_fd(),
++            &disk,
++            &plan,
++            4096,
++            4096,
++            options()
++        )
++        .unwrap()
++        .extents_processed(),
++        0
++    );
++    assert_eq!(disk.calls.load(Ordering::Relaxed), 0);
++}
++
++#[test]
++fn unrepresentable_plan_range_precedes_destination_calls() {
++    let fd = file(0xff);
++    let disk = UntouchedDisk {
++        calls: AtomicUsize::new(0),
++        capabilities: Capabilities::WRITE_ZERO,
++    };
++    let plan = NativeExtentPlan::new(
++        vec![
++            Extent::new(0, 4096, ExtentKind::Zero).unwrap(),
++            Extent::new(4096, i64::MAX as u64, ExtentKind::Data).unwrap(),
++        ],
++        i64::MAX as u64 + 4096,
++    )
++    .unwrap();
++    assert!(matches!(
++        copy_extent_plan_with_destination(
++            fd.as_fd(),
++            fd.as_fd(),
++            &disk,
++            &plan,
++            4096,
++            4096,
++            options()
++        ),
++        Err(Error::RangeOverflow { .. })
++    ));
++    assert_eq!(disk.calls.load(Ordering::Relaxed), 0);
++}
++
++#[test]
++fn engine_rejects_invalid_offsets_without_publishing_or_poisoning() {
++    bounded(
++        "engine_rejects_invalid_offsets_without_publishing_or_poisoning",
++        || {
++            let fd = file(0xff);
++            let endpoint = IoUringFile::new(fd.as_fd()).unwrap();
++            let pool = BufferPool::new(1, 4096, 4096).unwrap();
++            let mut engine = IoUringEngine::new(1).unwrap();
++            for offset in [u64::MAX, i64::MAX as u64, u64::MAX - 4095] {
++                assert!(matches!(
++                    engine.submit_owned_read(&endpoint, offset, 4096, pool.acquire()),
++                    Err(Error::RangeOverflow { .. })
++                ));
++                assert!(matches!(
++                    engine.submit_owned_write(&endpoint, offset, 4096, pool.acquire()),
++                    Err(Error::RangeOverflow { .. })
++                ));
++                assert_eq!(engine.in_flight(), 0);
++                assert_eq!(pool.available(), 1);
++            }
++            engine
++                .submit_owned_read(&endpoint, 0, 4096, pool.acquire())
++                .unwrap();
++            engine.submit().unwrap();
++            let completed = engine.wait_owned_completion().unwrap();
++            drop(completed);
++            engine.shutdown().unwrap();
++            assert_eq!(pool.available(), 1);
++            unchanged(&fd);
++        },
++    );
++}
+diff --git a/crates/rvvdk-datamover/benches/native_validation.rs b/crates/rvvdk-datamover/benches/native_validation.rs
+new file mode 100644
+index 0000000..e42e493
+--- /dev/null
++++ b/crates/rvvdk-datamover/benches/native_validation.rs
+@@ -0,0 +1,176 @@
++mod support;
++
++use std::fs::File;
++use std::hint::black_box;
++use std::os::fd::AsFd;
++use std::time::{Duration, Instant};
++
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use rvvdk_core::{Capabilities, Extent, ExtentKind, MemoryBlockDevice, RawDisk, VirtualDisk};
++use rvvdk_datamover::IoUringExecutionOptions;
++use rvvdk_datamover::io_uring::{
++    NativeExtentPlan, copy_extent_plan, copy_extent_plan_with_destination,
++    copy_file_range_with_options,
++};
++use support::MIB;
++
++fn native_validation(criterion: &mut Criterion) {
++    let fd = File::open("/dev/null").unwrap();
++    let options = IoUringExecutionOptions::new(8).unwrap();
++    let empty = NativeExtentPlan::new(vec![], 0).unwrap();
++    let mut group = criterion.benchmark_group("native_validation");
++    group.sampling_mode(SamplingMode::Flat);
++    group.bench_function("empty_range", |b| {
++        b.iter(|| {
++            black_box(
++                copy_file_range_with_options(
++                    fd.as_fd(),
++                    fd.as_fd(),
++                    black_box(0),
++                    black_box(0),
++                    black_box(65536),
++                    black_box(4096),
++                    black_box(options),
++                )
++                .unwrap(),
++            );
++        })
++    });
++    group.bench_function("empty_plan", |b| {
++        b.iter(|| {
++            black_box(
++                copy_extent_plan(
++                    fd.as_fd(),
++                    fd.as_fd(),
++                    black_box(&empty),
++                    black_box(65536),
++                    black_box(4096),
++                    black_box(options),
++                )
++                .unwrap(),
++            );
++        })
++    });
++    let unsupported = NativeExtentPlan::new(
++        vec![Extent::new(0, MIB as u64, ExtentKind::Zero).unwrap()],
++        MIB as u64,
++    )
++    .unwrap();
++    group.bench_function("unsupported_first_extent", |b| {
++        b.iter(|| {
++            black_box(
++                copy_extent_plan(
++                    fd.as_fd(),
++                    fd.as_fd(),
++                    black_box(&unsupported),
++                    black_box(65536),
++                    black_box(4096),
++                    black_box(options),
++                )
++                .unwrap_err(),
++            );
++        })
++    });
++    // Each iteration actually zeros nonzero bytes; setup/readback are untimed.
++    let disk = RawDisk::new(
++        MemoryBlockDevice::with_capabilities(
++            MIB,
++            Capabilities::READ | Capabilities::WRITE | Capabilities::FLUSH,
++        )
++        .unwrap(),
++    );
++    let reset = vec![0xff; MIB];
++    let mut actual = vec![0; MIB];
++    let plan = NativeExtentPlan::new(
++        (0..16)
++            .map(|i| Extent::new(i * 65536, 65536, ExtentKind::Zero).unwrap())
++            .collect(),
++        MIB as u64,
++    )
++    .unwrap();
++    group.bench_function("zero_fallback_1mib_16extents", |b| {
++        b.iter_custom(|iterations| {
++            let mut elapsed = Duration::ZERO;
++            for _ in 0..iterations {
++                disk.write_all_at(0, &reset).unwrap();
++                let start = Instant::now();
++                let stats = copy_extent_plan_with_destination(
++                    fd.as_fd(),
++                    fd.as_fd(),
++                    &disk,
++                    &plan,
++                    65536,
++                    4096,
++                    options,
++                )
++                .unwrap();
++                disk.flush().unwrap();
++                elapsed += start.elapsed();
++                assert_eq!(stats.bytes_written(), MIB as u64);
++                assert_eq!(stats.extents_processed(), 16);
++                disk.read_exact_at(0, &mut actual).unwrap();
++                assert!(actual.iter().all(|byte| *byte == 0));
++            }
++            elapsed
++        })
++    });
++    support::ensure_benchmark_directory();
++    let source_path = support::benchmark_path("validation-source");
++    let destination_path = support::benchmark_path("validation-destination");
++    support::create_incompressible_file(&source_path, MIB, 0x5256_04);
++    let expected = support::incompressible_buffer(MIB, 0x5256_04);
++    let reset = support::incompressible_buffer(MIB, 0x5256_05);
++    std::fs::write(&destination_path, &reset).unwrap();
++    let source = File::open(&source_path).unwrap();
++    let destination = std::fs::OpenOptions::new()
++        .read(true)
++        .write(true)
++        .open(&destination_path)
++        .unwrap();
++    let plan = NativeExtentPlan::new(
++        (0..16)
++            .map(|i| Extent::new(i * 65536, 65536, ExtentKind::Data).unwrap())
++            .collect(),
++        MIB as u64,
++    )
++    .unwrap();
++    group.bench_function("data_1mib_16extents", |b| {
++        b.iter_custom(|iterations| {
++            use std::os::unix::fs::FileExt;
++            let mut elapsed = Duration::ZERO;
++            for _ in 0..iterations {
++                destination.write_all_at(&reset, 0).unwrap();
++                destination.sync_all().unwrap();
++                let start = Instant::now();
++                let stats = copy_extent_plan(
++                    source.as_fd(),
++                    destination.as_fd(),
++                    &plan,
++                    65536,
++                    4096,
++                    options,
++                )
++                .unwrap();
++                destination.sync_all().unwrap();
++                elapsed += start.elapsed();
++                assert_eq!(stats.bytes_written(), MIB as u64);
++                assert_eq!(stats.extents_processed(), 16);
++                destination.read_exact_at(&mut actual, 0).unwrap();
++                assert_eq!(actual, expected);
++            }
++            elapsed
++        })
++    });
++    drop(source);
++    drop(destination);
++    support::remove_file(source_path);
++    support::remove_file(destination_path);
++    group.finish();
++}
++
++criterion_group! {
++    name = benches;
++    config = Criterion::default().sample_size(30).warm_up_time(Duration::from_millis(300)).measurement_time(Duration::from_secs(2));
++    targets = native_validation
++}
++criterion_main!(benches);

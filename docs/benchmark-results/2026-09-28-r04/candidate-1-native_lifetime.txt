@@ -1,0 +1,38 @@
+Gnuplot not found, using plotters backend
+Benchmarking native_lifetime/buffered/q8_b65536
+Benchmarking native_lifetime/buffered/q8_b65536: Warming up for 300.00 ms
+Benchmarking native_lifetime/buffered/q8_b65536: Collecting 20 samples in estimated 2.3972 s (80 iterations)
+Benchmarking native_lifetime/buffered/q8_b65536: Analyzing
+native_lifetime/buffered/q8_b65536
+                        time:   [13.673 ms 13.888 ms 14.115 ms]
+                        thrpt:  [1.1070 GiB/s 1.1250 GiB/s 1.1427 GiB/s]
+Benchmarking native_lifetime/buffered/threaded_control
+Benchmarking native_lifetime/buffered/threaded_control: Warming up for 300.00 ms
+Benchmarking native_lifetime/buffered/threaded_control: Collecting 20 samples in estimated 2.3168 s (80 iterations)
+Benchmarking native_lifetime/buffered/threaded_control: Analyzing
+native_lifetime/buffered/threaded_control
+                        time:   [12.906 ms 13.541 ms 14.237 ms]
+                        thrpt:  [1.0975 GiB/s 1.1539 GiB/s 1.2106 GiB/s]
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high mild
+
+Benchmarking native_lifetime/direct/q8_b65536
+Benchmarking native_lifetime/direct/q8_b65536: Warming up for 300.00 ms
+Benchmarking native_lifetime/direct/q8_b65536: Collecting 20 samples in estimated 2.8184 s (60 iterations)
+Benchmarking native_lifetime/direct/q8_b65536: Analyzing
+native_lifetime/direct/q8_b65536
+                        time:   [32.249 ms 33.614 ms 35.092 ms]
+                        thrpt:  [455.95 MiB/s 475.99 MiB/s 496.13 MiB/s]
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high mild
+Benchmarking native_lifetime/direct/threaded_control
+Benchmarking native_lifetime/direct/threaded_control: Warming up for 300.00 ms
+Benchmarking native_lifetime/direct/threaded_control: Collecting 20 samples in estimated 2.7358 s (60 iterations)
+Benchmarking native_lifetime/direct/threaded_control: Analyzing
+native_lifetime/direct/threaded_control
+                        time:   [24.510 ms 25.802 ms 27.462 ms]
+                        thrpt:  [582.62 MiB/s 620.11 MiB/s 652.80 MiB/s]
+Found 4 outliers among 20 measurements (20.00%)
+  2 (10.00%) high mild
+  2 (10.00%) high severe
+

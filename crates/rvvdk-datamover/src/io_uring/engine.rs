@@ -6,6 +6,7 @@ use rvvdk_core::{BufferGuard, Error, Result};
 
 use super::IoUringFile;
 use super::operation::{CompletedOperation, InFlightOperation, IoUringOperationKind};
+use super::validation::validate_file_range;
 
 /// An owned-buffer engine. Every queued SQE retains both its buffer and file.
 ///
@@ -55,6 +56,8 @@ impl IoUringEngine {
         self.quarantined
     }
 
+    /// Queue an explicit-offset read. The offset and exclusive end must fit i64.
+    /// Invalid requests publish nothing and leave the engine available for reuse.
     pub fn submit_owned_read(
         &mut self,
         file: &IoUringFile,
@@ -65,6 +68,7 @@ impl IoUringEngine {
         self.enqueue(file, offset, length, buffer, IoUringOperationKind::Read)
     }
 
+    /// Queue an explicit-offset write, with the same range contract as reads.
     pub fn submit_owned_write(
         &mut self,
         file: &IoUringFile,
@@ -94,6 +98,7 @@ impl IoUringEngine {
             offset,
             length: length as u64,
         })?;
+        validate_file_range(offset, length as u64)?;
         if self.in_flight.len() >= self.queue_depth as usize {
             return Err(Error::IoUringQueueFull {
                 queue_depth: self.queue_depth,

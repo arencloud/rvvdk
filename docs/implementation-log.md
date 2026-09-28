@@ -37,7 +37,7 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 | R0.1 | Complete | Shared structural validation before execution/notification; 8 regression cases; [ADR-0025](adr/0025-shared-plan-validation.md); committed with this step record | Required correctness fix accepted; [comparison and noise/overhead limits](benchmark-results/2026-09-28-r01/README.md) recorded; performance qualification provisional |
 | R0.2 | Complete | Worker failure termination and first-recorded-error preservation; 11 regressions; ADR-0008 shutdown contract; committed with this record | [Comparison and failure latency](benchmark-results/2026-09-28-r02/README.md) accepted for this fix; initial memory increases investigated with affinity repeat; broader PERF.0 qualification remains open |
 | R0.3 | Complete | Owned-only engine, retained descriptors, verified completion/shutdown rules; 18 lifetime/error regressions; ADR-0013 safety argument and API migration; committed with this record | [Native comparison and resource evidence](benchmark-results/2026-09-28-r03/README.md) recorded; mandatory safety fix accepted; performance qualification provisional because native/control timings drifted |
-| R0.4 | Planned | Public low-level configuration and preflight validation | Pending — relevant setup/copy overhead |
+| R0.4 | Complete | Native configuration/range validation and supported-plan precheck | Accepted correctness cost: ~1–2 ns empty-call overhead; copy aggregates below 5%; shared-host qualification provisional |
 | R0.5 | Planned | Access/durability preflight and endpoint identity checks | Pending — preflight overhead |
 | V0 | Planned | Independent VMware access feasibility; licensed/evaluation host needed for representative API workflows | Pending — first transport baseline follows functional proof |
 
@@ -241,10 +241,63 @@ logical identity, public cancellation/deadlines, and sustained-device qualificat
 remain separate work. The [benchmark report](benchmark-results/2026-09-28-r03/README.md)
 records the performance disposition and measurement limits.
 
+## R0.4 — Native entry-point validation
+
+Baseline: `2da7c8f` (clean worktree). Scope: validate exported native copy
+configuration and request ranges before I/O; reject unsupported data-only plans
+before any destination change. Findings covered: F08 plus native mutation ordering.
+
+Implementation sequence:
+
+1. Audited public entry points. `CopyOptions` already rejects zero blocks and
+   invalid alignment; `IoUringExecutionOptions` privately enforces queue depth
+   and read-window constraints. Native extent execution bypassed range-copy
+   validation on empty and Zero/Hole paths.
+2. Added eight regressions. Before the repair, seven failed and the valid-empty
+   case passed. The Zero fallback child hit its five-second kill/reap deadline;
+   other failures exposed partial writes, backend calls before rejection, invalid
+   empty-copy acceptance, and publication of invalid native offsets. Preserved
+   the original failure log in the benchmark evidence directory.
+3. Added allocation-free shared validation for nonzero/u32 block size,
+   power-of-two alignment and allocation layout, and representable signed file
+   ranges. All native range/extent entry points use it before any setup or I/O.
+4. Added a full supported-kind precheck to the data-only executor. Added request
+   range validation before owned SQE publication, including rejection of the
+   current-file-position sentinel. Invalid requests release their buffer and do
+   not poison the engine; the regression then performs a valid read.
+5. Added entry-point microbenchmarks, memory Zero fallback, and a fragmented
+   native Data-plan benchmark. Compared isolated baseline/candidate builds and
+   reused dense buffered/direct benchmarks with unchanged threaded controls.
+   Reset and readback are untimed; flush is timed for both source variants.
+6. Corrected Clippy's hexadecimal digit-grouping warning in benchmark seed
+   spelling; seed values and workloads are unchanged. Rebuilt validation
+   benchmark hashes changed, so retained the initial patch/results and repeated
+   both final variants. Dense benchmark hashes were unchanged. Also repeated
+   the full direct-I/O profile with longer sampling after pair-to-pair drift.
+
+Validation: 239 workspace tests passed (eight new); formatting and strict
+all-target Clippy passed. The [architecture contract](architecture.md#native-entry-point-validation-r04)
+records validation order and limits. Performance results and disposition are in
+[the R0.4 report](benchmark-results/2026-09-28-r04/README.md).
+
+Performance disposition: accept the mandatory validation repair. Final empty
+calls added 1.12–1.26 ns; fragmented native copy was +1.73%; repeated direct
+native aggregates were −3.01% to +0.95%. Initial buffered native was +2.19%.
+Individual direct pairs still varied widely (−12.35% to +11.55% for QD8/64 KiB),
+so general performance qualification remains provisional. The apparent −14.60%
+memory fallback improvement is not a tuning claim. All benchmark output checks
+passed; no defaults changed. Both saved patches passed `git apply --check`
+against the clean baseline, and the temporary worktree was removed.
+
+Remaining limits: these checks do not guarantee available memory, a supported
+kernel queue size, endpoint access, durability, identity, or direct-I/O alignment.
+Runtime failure can still leave completed extents written. R0.5 covers basic
+endpoint preflight; R2 covers native tail compatibility and sparse semantics.
+
 ## Next session
 
-Implement R0.4: validate all public low-level configurations before I/O, including
-zero block size and unsupported native extent plans. Continue PERF.0 qualification
-on controlled storage, including observer, scheduler, and native-lifetime results.
-ESXi is still unnecessary for these local steps; request the trial only when V0
-is ready.
+Implement R0.5: check endpoint access/durability requirements, destination size,
+and unsupported endpoint aliasing before execution, with contextual errors.
+Continue PERF.0 qualification on controlled storage, including observer,
+scheduler, native-lifetime, and validation results. ESXi is still unnecessary
+for these local steps; request the trial only when V0 is ready.

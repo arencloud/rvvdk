@@ -6,6 +6,7 @@ mod extent_copy;
 mod extent_plan;
 mod file;
 mod operation;
+mod validation;
 
 pub use capabilities::{IoUringCapabilities, probe_io_uring};
 

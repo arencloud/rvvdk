@@ -4,6 +4,7 @@ use rvvdk_core::{Capabilities, Error, Extent, ExtentKind, Result, VirtualDisk};
 
 use crate::IoUringExecutionOptions;
 
+use super::validation::{validate_copy_configuration, validate_file_range};
 use super::{IoUringCopyStats, NativeExtentPlan, copy_file_range_with_options};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -126,6 +127,8 @@ impl IoUringExtentCopyStats {
     }
 }
 
+/// Copy a data-only plan. Validate configuration, range, and every extent kind
+/// before allocation or I/O; an unsupported later extent cannot cause a partial copy.
 pub fn copy_extent_plan(
     source_fd: BorrowedFd<'_>,
     destination_fd: BorrowedFd<'_>,
@@ -134,45 +137,41 @@ pub fn copy_extent_plan(
     alignment: usize,
     options: IoUringExecutionOptions,
 ) -> Result<IoUringExtentCopyStats> {
-    let mut aggregate = IoUringExtentCopyStats::default();
-
+    validate_copy_configuration(block_size, alignment)?;
+    validate_file_range(0, plan.disk_size())?;
     for extent in plan.extents() {
-        match extent.kind() {
-            ExtentKind::Data => {
-                let stats = copy_file_range_with_options(
-                    source_fd,
-                    destination_fd,
-                    extent.offset(),
-                    extent.length(),
-                    block_size,
-                    alignment,
-                    options,
-                )?;
+        let kind = match extent.kind() {
+            ExtentKind::Data => continue,
+            ExtentKind::Zero => "zero",
+            ExtentKind::Hole => "hole",
+        };
+        return Err(Error::UnsupportedNativeExtent {
+            kind,
+            offset: extent.offset(),
+            length: extent.length(),
+        });
+    }
 
-                aggregate.add_data_extent(stats)?;
-            }
-
-            ExtentKind::Zero => {
-                return Err(Error::UnsupportedNativeExtent {
-                    kind: "zero",
-                    offset: extent.offset(),
-                    length: extent.length(),
-                });
-            }
-
-            ExtentKind::Hole => {
-                return Err(Error::UnsupportedNativeExtent {
-                    kind: "hole",
-                    offset: extent.offset(),
-                    length: extent.length(),
-                });
-            }
-        }
+    let mut aggregate = IoUringExtentCopyStats::default();
+    for extent in plan.extents() {
+        let stats = copy_file_range_with_options(
+            source_fd,
+            destination_fd,
+            extent.offset(),
+            extent.length(),
+            block_size,
+            alignment,
+            options,
+        )?;
+        aggregate.add_data_extent(stats)?;
     }
 
     Ok(aggregate)
 }
 
+/// Copy Data/Zero/Hole extents using destination capabilities. Configuration and
+/// range validation precede all backend calls, including for empty plans. Backend
+/// access, capacity, identity, and direct-I/O compatibility are separate preflight.
 pub fn copy_extent_plan_with_destination<D>(
     source_fd: BorrowedFd<'_>,
     destination_fd: BorrowedFd<'_>,
@@ -185,6 +184,9 @@ pub fn copy_extent_plan_with_destination<D>(
 where
     D: VirtualDisk,
 {
+    validate_copy_configuration(block_size, alignment)?;
+    validate_file_range(0, plan.disk_size())?;
+
     let mut aggregate = IoUringExtentCopyStats::default();
 
     for extent in plan.extents() {

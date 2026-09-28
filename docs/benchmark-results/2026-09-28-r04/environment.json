@@ -1,0 +1,234 @@
+{
+  "baseline_commit": "2da7c8f80bc4668b5f8517826cafbfad40bbd873",
+  "baseline_harness": "Baseline plus identical candidate Cargo.toml and benches/native_validation.rs; native_lifetime unchanged.",
+  "candidate_patch_sha256": "2e343b1792d19a161ee410617bd1b2b682a5c85c6c8d2a8b2c44e8f9644d9fa1",
+  "harness_sha256": {
+    "crates/rvvdk-datamover/Cargo.toml": "e7016b1db94b47c15f770ab11e9c432ab5013cf6fa26c0cef980741c954a164c",
+    "crates/rvvdk-datamover/benches/native_validation.rs": "bb4bf98fe460708552dcf152237c1f170ab6d73d0da8fb6fa822f45b68f0c6e9",
+    "crates/rvvdk-datamover/benches/native_lifetime.rs": "440a48c7563666500fdb7d12265ccf401c704ca1d149a9b058acfc6482367e69"
+  },
+  "binaries_sha256": {
+    "baseline": {
+      "native_validation": "a4288422648a760b4a3afd35756ce08bb7b87fdfbe6b9e504960f9003229ead2",
+      "native_lifetime": "14a57cb2c231de7a0899b5a8ab081f7496ca5a8c5efa2033ee255ae57d730967"
+    },
+    "candidate": {
+      "native_lifetime": "d6827dee19bbace522d938ada839e2e0492e56adaf1be7bc76b673e36442a9f9",
+      "native_validation": "d94dc5d3b68d06239323344ec1469a803d40e1acf80f21d58ac7eb2f28354344"
+    }
+  },
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)\nbinary: rustc\ncommit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860\ncommit-date: 2026-04-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.95.0\nLLVM version: 22.1.2",
+  "kernel": "Linux 7.2.5-200.fc44.x86_64 x86_64 GNU/Linux",
+  "cpu": {
+    "lscpu": [
+      {
+        "field": "Architecture:",
+        "data": "x86_64"
+      },
+      {
+        "field": "CPU op-mode(s):",
+        "data": "32-bit, 64-bit"
+      },
+      {
+        "field": "Address sizes:",
+        "data": "39 bits physical, 48 bits virtual"
+      },
+      {
+        "field": "Byte Order:",
+        "data": "Little Endian"
+      },
+      {
+        "field": "CPU(s):",
+        "data": "16"
+      },
+      {
+        "field": "On-line CPU(s) list:",
+        "data": "0-15"
+      },
+      {
+        "field": "Vendor ID:",
+        "data": "GenuineIntel"
+      },
+      {
+        "field": "Model name:",
+        "data": "11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz"
+      },
+      {
+        "field": "CPU family:",
+        "data": "6"
+      },
+      {
+        "field": "Model:",
+        "data": "141"
+      },
+      {
+        "field": "Thread(s) per core:",
+        "data": "2"
+      },
+      {
+        "field": "Core(s) per socket:",
+        "data": "8"
+      },
+      {
+        "field": "Socket(s):",
+        "data": "1"
+      },
+      {
+        "field": "Stepping:",
+        "data": "1"
+      },
+      {
+        "field": "CPU(s) scaling MHz:",
+        "data": "46%"
+      },
+      {
+        "field": "CPU max MHz:",
+        "data": "4800.0000"
+      },
+      {
+        "field": "CPU min MHz:",
+        "data": "800.0000"
+      },
+      {
+        "field": "BogoMIPS:",
+        "data": "4992.00"
+      },
+      {
+        "field": "Flags:",
+        "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb cat_l2 cdp_l2 ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb intel_pt avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves split_lock_detect user_shstk dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid movdiri movdir64b fsrm avx512_vp2intersect md_clear ibt flush_l1d arch_capabilities"
+      },
+      {
+        "field": "Virtualization:",
+        "data": "VT-x"
+      },
+      {
+        "field": "L1d cache:",
+        "data": "384 KiB (8 instances)"
+      },
+      {
+        "field": "L1i cache:",
+        "data": "256 KiB (8 instances)"
+      },
+      {
+        "field": "L2 cache:",
+        "data": "10 MiB (8 instances)"
+      },
+      {
+        "field": "L3 cache:",
+        "data": "24 MiB (1 instance)"
+      },
+      {
+        "field": "NUMA node(s):",
+        "data": "1"
+      },
+      {
+        "field": "NUMA node0 CPU(s):",
+        "data": "0-15"
+      },
+      {
+        "field": "Vulnerability Gather data sampling:",
+        "data": "Mitigation; Microcode"
+      },
+      {
+        "field": "Vulnerability Ghostwrite:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Indirect target selection:",
+        "data": "Mitigation; Aligned branch/return thunks"
+      },
+      {
+        "field": "Vulnerability Itlb multihit:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability L1tf:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Meltdown:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mmio stale data:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Old microcode:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Reg file data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Retbleed:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec rstack overflow:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec store bypass:",
+        "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+      },
+      {
+        "field": "Vulnerability Spectre v1:",
+        "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+      },
+      {
+        "field": "Vulnerability Spectre v2:",
+        "data": "Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW loop"
+      },
+      {
+        "field": "Vulnerability Srbds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsa:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsx async abort:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Vmscape:",
+        "data": "Not affected"
+      }
+    ]
+  },
+  "memory": "MemTotal:       65527436 kB",
+  "storage": "NAME    MODEL                        SIZE ROTA\nzram0                                  8G    0\nnvme0n1 SAMSUNG MZVL21T0HCLR-00BL7 953.9G    0",
+  "filesystem": "btrfs rw,relatime,seclabel,compress=zstd:1,ssd,discard=async,space_cache=v2,subvolid=256,subvol=/home",
+  "governor": "powersave",
+  "profile": "Optimized cargo bench; separate target/r04-{baseline,candidate}-build.",
+  "sampling": "All sequential, taskset -c 2-6. Three pairs: baseline/candidate, candidate/baseline, baseline/candidate. Validation 30 flat samples, native_lifetime 20; 300ms warmup, 2s target.",
+  "workload": "Empty valid range/plan, rejected first Zero; memory Zero fallback 1MiB/16extents with 64KiB blocks; buffered Data plan 1MiB/16extents q8/read_window4/64KiB blocks; dense16MiB buffered/direct q8/64KiB native and threaded4-worker control. Alignment4096; native8buffers (512KiB), zero1buffer (64KiB); no aggregate memory budget.",
+  "timing": "Copy setup/execution/cleanup and flush inside timing; reset/flush/readback verification outside each copy iteration. Microbench includes call and result checks. Plans constructed outside timing.",
+  "resources": "GNU time whole-process CPU/RSS recorded, includes untimed setup/readback/Criterion and unequal adaptive iteration counts; not per-copy metrics.",
+  "limits": "Shared laptop, powersave, background contention uncontrolled. Small warm buffered workloads, no cold device-cache or sustained throughput claim. Direct benchmarks retain default Btrfs compression settings.",
+  "final_binaries_sha256": {
+    "baseline": {
+      "native_lifetime": "14a57cb2c231de7a0899b5a8ab081f7496ca5a8c5efa2033ee255ae57d730967",
+      "native_validation": "da1d5a6c8b52e371c584767e0ccd49d7e8cce33b101c857be2e4e4fce43a0fd9"
+    },
+    "candidate": {
+      "native_lifetime": "d6827dee19bbace522d938ada839e2e0492e56adaf1be7bc76b673e36442a9f9",
+      "native_validation": "5cc41678a6cd86c958f0178d11a39bd10a62b2b44d4577495591e0993c5fad69"
+    }
+  },
+  "measured_candidate_patch_sha256": "3b8732069c643f0a1ac087fceadb20e56a9517fdf0520dfd3ac01e7ee507fcec",
+  "seed_spelling_cleanup": "Clippy required equal hex digit grouping. Numeric values unchanged, but rebuilt validation benchmark hashes changed. Retain initial results and source patch; repeat validation measurements for both final source variants. Native_lifetime binary hashes unchanged.",
+  "measured_harness_sha256": {
+    "crates/rvvdk-datamover/Cargo.toml": "e7016b1db94b47c15f770ab11e9c432ab5013cf6fa26c0cef980741c954a164c",
+    "crates/rvvdk-datamover/benches/native_validation.rs": "ab8d9bbc61aa92ccbe2e3aa47ed2b91c42f79a3d1b1b3b5704f2d2294fa7d095",
+    "crates/rvvdk-datamover/benches/native_lifetime.rs": "440a48c7563666500fdb7d12265ccf401c704ca1d149a9b058acfc6482367e69"
+  },
+  "final_sampling": "Reverse starting order: candidate/baseline, baseline/candidate, candidate/baseline. Final validation harness repeats initial sampling. Direct native_lifetime full five-case profile: 30 flat samples, 500ms warmup, 3s measurement target; affinity2-6. Buffered dense profile remains the initial three repeats (unchanged binary)."
+}

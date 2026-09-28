@@ -106,6 +106,15 @@ milestone boundaries. A dedicated benchmark runner should eventually execute the
 stable matrix on a schedule. Shared CI timing is smoke evidence, not a substitute
 for repeatable storage measurements.
 
+### R0.4 validation measurements
+
+The [R0.4 report](benchmark-results/2026-09-28-r04/README.md) records native
+entry-point overhead, Zero fallback, fragmented Data plans, and buffered/direct
+dense copies with threaded controls. The harness checks complete destination
+contents after every copy; setup and verification stay outside the timer and
+destination flush stays inside. Empty-call microbenchmarks report absolute
+nanoseconds as well as percentage changes because their baseline is very small.
+
 ### Result storage convention
 
 Use `docs/benchmark-results/<run-id>/` for concise tracked summaries, environment

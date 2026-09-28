@@ -1,0 +1,21 @@
+{
+  "baseline": "2da7c8f",
+  "before": {
+    "command": "cargo test -p rvvdk-datamover --test native_validation",
+    "exit_code": 101,
+    "passed": 1,
+    "failed": 7,
+    "evidence": "before-tests.txt",
+    "note": "Tests added before runtime changes; later rustfmt changed formatting only. Zero fallback child killed and reaped at five seconds."
+  },
+  "after": {
+    "workspace_command": "cargo test --workspace",
+    "workspace_exit_code": 0,
+    "workspace_tests": 239,
+    "new_regression_tests": 8,
+    "format_command": "cargo fmt --all -- --check",
+    "format_exit_code": 0,
+    "lint_command": "cargo clippy --workspace --all-targets -- -D warnings",
+    "lint_exit_code": 0
+  }
+}

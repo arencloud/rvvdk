@@ -1,0 +1,43 @@
+Gnuplot not found, using plotters backend
+Benchmarking native_validation/empty_range
+Benchmarking native_validation/empty_range: Warming up for 300.00 ms
+Benchmarking native_validation/empty_range: Collecting 30 samples in estimated 2.0000 s (216M iterations)
+Benchmarking native_validation/empty_range: Analyzing
+native_validation/empty_range
+                        time:   [10.109 ns 10.273 ns 10.437 ns]
+Benchmarking native_validation/empty_plan
+Benchmarking native_validation/empty_plan: Warming up for 300.00 ms
+Benchmarking native_validation/empty_plan: Collecting 30 samples in estimated 2.0000 s (236M iterations)
+Benchmarking native_validation/empty_plan: Analyzing
+native_validation/empty_plan
+                        time:   [8.0730 ns 8.2142 ns 8.3424 ns]
+Found 6 outliers among 30 measurements (20.00%)
+  3 (10.00%) low severe
+  1 (3.33%) low mild
+  1 (3.33%) high mild
+  1 (3.33%) high severe
+Benchmarking native_validation/unsupported_first_extent
+Benchmarking native_validation/unsupported_first_extent: Warming up for 300.00 ms
+Benchmarking native_validation/unsupported_first_extent: Collecting 30 samples in estimated 2.0000 s (167M iterations)
+Benchmarking native_validation/unsupported_first_extent: Analyzing
+native_validation/unsupported_first_extent
+                        time:   [11.708 ns 11.851 ns 12.008 ns]
+Found 1 outliers among 30 measurements (3.33%)
+  1 (3.33%) high mild
+Benchmarking native_validation/zero_fallback_1mib_16extents
+Benchmarking native_validation/zero_fallback_1mib_16extents: Warming up for 300.00 ms
+Benchmarking native_validation/zero_fallback_1mib_16extents: Collecting 30 samples in estimated 2.0107 s (3240 iterations)
+Benchmarking native_validation/zero_fallback_1mib_16extents: Analyzing
+native_validation/zero_fallback_1mib_16extents
+                        time:   [48.265 µs 48.775 µs 49.312 µs]
+Found 1 outliers among 30 measurements (3.33%)
+  1 (3.33%) high mild
+Benchmarking native_validation/data_1mib_16extents
+Benchmarking native_validation/data_1mib_16extents: Warming up for 300.00 ms
+Benchmarking native_validation/data_1mib_16extents: Collecting 30 samples in estimated 2.1753 s (150 iterations)
+Benchmarking native_validation/data_1mib_16extents: Analyzing
+native_validation/data_1mib_16extents
+                        time:   [7.4254 ms 7.4936 ms 7.5763 ms]
+Found 1 outliers among 30 measurements (3.33%)
+  1 (3.33%) high severe
+

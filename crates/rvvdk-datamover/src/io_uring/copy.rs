@@ -2,6 +2,7 @@ use std::os::fd::BorrowedFd;
 
 use rvvdk_core::{BufferPool, Error, Result};
 
+use super::validation::{validate_copy_configuration, validate_file_range};
 use super::{CompletedOperation, IoUringEngine, IoUringFile, IoUringOperationKind};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -98,6 +99,8 @@ fn update_peaks(stats: &mut IoUringCopyStats, state: &PipelineState) {
     }
 }
 
+/// Copy an explicit file range. Configuration and range validation run before
+/// allocation or I/O, even for empty ranges. This function does not flush.
 pub fn copy_file_range(
     source_fd: BorrowedFd<'_>,
     destination_fd: BorrowedFd<'_>,
@@ -121,6 +124,9 @@ pub fn copy_file_range(
     )
 }
 
+/// Like [`copy_file_range`], with a validated queue depth and read window.
+/// Blocks must fit a u32 SQE length; alignment must describe a valid allocation.
+/// Offsets and the exclusive range end must fit the nonnegative i64 domain.
 pub fn copy_file_range_with_options(
     source_fd: BorrowedFd<'_>,
     destination_fd: BorrowedFd<'_>,
@@ -130,12 +136,8 @@ pub fn copy_file_range_with_options(
     alignment: usize,
     options: crate::IoUringExecutionOptions,
 ) -> Result<IoUringCopyStats> {
-    if block_size == 0 {
-        return Err(Error::InvalidAlignment {
-            value: 0,
-            alignment: 1,
-        });
-    }
+    validate_copy_configuration(block_size, alignment)?;
+    validate_file_range(offset, length)?;
 
     if length == 0 {
         return Ok(IoUringCopyStats::default());

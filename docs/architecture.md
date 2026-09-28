@@ -627,6 +627,35 @@ Native Zero handling is therefore validated at the generic
 The capability remains relevant to VirtualDisk backends that can
 distinguish logical Zero extents from Data and Hole extents.
 
+## Native entry-point validation (R0.4)
+
+The exported native range and extent-copy functions validate block size and
+alignment before allocation, io_uring setup, FD duplication, or destination
+callbacks. This applies to empty ranges/plans and Zero/Hole-only plans too:
+
+- Block size must be nonzero and fit the SQE's `u32` length field.
+- Alignment must be a nonzero power of two, with a representable allocation
+  layout for the configured block size.
+- File offsets and the exclusive range end must fit the nonnegative `i64`
+  domain. `RangeOverflow` also reports failure to represent a native file range.
+  The owned engine validates each request before publishing its SQE; in
+  particular, `u64::MAX` cannot become io_uring's current-file-position sentinel.
+- The data-only `copy_extent_plan` scans for unsupported Zero/Hole extents
+  before copying any Data extent. The destination-aware variant accepts all
+  three kinds and validates the whole file range before calling the backend.
+
+Queue depth and read window remain private, constructor-validated options; raw
+queue depth arguments reject zero. Buffer capacity and request width checks in
+the owned engine also precede publication. Invalid requests return their buffer
+to the pool and leave a healthy engine available for subsequent valid requests.
+
+This is configuration validation, not transactional execution. Backend failures,
+allocation failure, or ring creation failure can still occur after earlier
+extents have completed. Endpoint access, capacity, identity, and durability
+preflight are R0.5; direct-I/O alignment/tail compatibility and logical discard
+semantics remain R2 work. The allocation layout check does not impose an
+aggregate memory budget or guarantee enough available memory.
+
 ## Native Zero extent execution
 
 The native extent executor supports Data and Zero extents while
