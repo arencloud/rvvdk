@@ -1296,15 +1296,43 @@ timers cover the whole invocation through cleanup, not signal reaction time.
 Sink/capture boundaries differ. No engine speedup or earlier qualification closure
 is claimed; PERF.0 and prior adverse results remain open.
 
+## R4.1 — Bounded descriptor parsing
+
+Date: 2026-09-29. Status: **Complete within the parser-only contract**.
+Baseline: `cde5a70`, initially clean. [Evidence](benchmark-results/2026-09-29-r41/README.md)
+retains source/harness/binary identities, raw samples, validation and reproducible
+SVG/PNG plots. The enclosing commit records this step.
+
+Added portable `rvvdk-vmdk` for version-1 hosted base descriptors: monolithicFlat,
+split flat, and custom FLAT/ZERO. Input/line/extent/metadata/name bounds, checked
+capacity/backing-offset arithmetic, strict feature/duplicate/order checks and typed
+line errors precede future backing I/O. Strings borrow input. Paths are explicitly
+untrusted metadata. Synthetic fixtures record provenance against VMware's format
+note; no third-party implementation or SDK is used. See the
+[contract](vmdk-descriptor.md) and [ADR-0033](adr/0033-bounded-vmdk-descriptors.md).
+
+Validation: **405 distinct passed, one unchanged gated allocation test** (406 total).
+Twelve parser tests cover grammar, limits, overflow, variant rejection and bounded
+mutation smoke coverage. Formatting, strict all-target Clippy and core/datamover/
+parser wasm32 checks pass (existing datamover dead-code warning retained). No
+backing-file validation, reference byte comparison or ESXi qualification is claimed.
+
+Performance: 12 matched runs show +1.33%, -0.74%
+for RAW planning and one-worker copy+flush. Every paired result is retained;
+none exceeded the adverse +5% threshold. Twelve parser runs establish
+1.044 µs, 105.812 µs, 104.596 µs, 7.85 ns for small, 1,024-extent,
+late extent-limit and early input-size rejection respectively. Input construction
+is excluded; parsing, vector allocation/drop are timed. No prior parser baseline,
+engine speedup claim, tuning-default change or earlier qualification closure.
+
 ## Next session
 
-Start **R4.1**: decide and document the first read-only VMDK descriptor subset,
-fixture provenance and bounded parsing/validation. Follow with backing resolution
-and FLAT/ZERO logical mapping as separate measured commits. Preserve RAW CLI,
-publication/cancellation contracts and independent Rust implementation. Reject
-unsupported variants explicitly; do not infer VMware live-access compatibility
-from local parsing. Keep architecture, roadmap, benchmarks and plots synchronized.
+Start **R4.2**: bounded descriptor acquisition and caller-supplied backing resolution;
+default local descriptor-relative confinement, regular-file/identity/live-length
+checks, explicit symlink/race policy and resource limits. Then R4.3 adds read-only
+FLAT/ZERO logical mapping and trusted-reference byte comparison. Preserve RAW CLI
+and native endpoint contracts. Each step gets tests, benchmarks, plots and a commit.
 
-Commit each completed step. ESXi remains unnecessary for local descriptor work;
-request the 60-day trial when V0's lab proof is ready. Keep PERF.0 and previous
-adverse timing pairs open for controlled-runner qualification.
+ESXi remains unnecessary for local work; request the 60-day trial when V0's lab
+proof is ready. Keep PERF.0 and earlier adverse timing pairs open for a controlled
+runner. Do not infer VMware live-access compatibility from descriptor parsing.

@@ -1113,3 +1113,19 @@ request. Publication followed by cancellation completes directory durability and
 reports the published state; no visible destination is removed. Blocking calls
 and callbacks can delay stopping. See [the lifecycle contract](cli-progress.md)
 and [ADR-0032](adr/0032-copy-lifecycle-cancellation.md).
+
+## Bounded VMDK descriptors (R4.1)
+
+`rvvdk-vmdk` now provides a portable descriptor-only layer. It has no local-storage
+dependency and does not implement `VirtualDisk` yet. Immutable parsed extents
+contain access flags, checked logical byte ranges, and either an untrusted borrowed
+filename/backing offset or ZERO. Header/metadata interpretation follows an explicit
+allowlist; unsupported format features fail. Limits bound text, line length,
+extents, metadata and filename bytes before collection growth.
+
+The [subset contract](vmdk-descriptor.md) and [ADR-0033](adr/0033-bounded-vmdk-descriptors.md)
+define accepted shapes and errors. Parsing validates offset arithmetic, not file
+lengths, path confinement, backing identity or decoded bytes. R4.2 resolves
+references through caller-supplied backing contracts; R4.3 maps logical reads over
+resolved FLAT/ZERO extents. Native RAW adapters cannot treat a VMDK container FD as
+logical disk data. The CLI remains RAW-only until reader integration is complete.

@@ -1,0 +1,16 @@
+[package]
+name = "rvvdk-vmdk"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+thiserror = "2"
+
+[dev-dependencies]
+criterion = "0.8.2"
+
+[[bench]]
+name = "descriptor"
+harness = false

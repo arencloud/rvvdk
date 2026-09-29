@@ -1,0 +1,14 @@
+{
+  "passed": 405,
+  "ignored": 1,
+  "checks": [
+    "cargo test --workspace",
+    "cargo clippy --workspace --all-targets -- -D warnings",
+    "cargo fmt --all --check",
+    "cargo check -p rvvdk-core -p rvvdk-datamover -p rvvdk-vmdk --target wasm32-unknown-unknown",
+    "cargo test --workspace -- --list"
+  ],
+  "portable_warning": "Existing rvvdk-datamover control::sum dead code warning",
+  "unique_tests": 406,
+  "note": "Distinct tests exclude isolated subprocess reruns already counted in their parent harness."
+}

@@ -1,0 +1,12 @@
+# Synthetic rvvdk fixture; no backing file is required for parsing.
+version=1
+encoding="UTF-8"
+CID=1234aBcD
+parentCID=ffffffff
+createType="monolithicFlat"
+RW 16 FLAT "disk-flat.vmdk" 0
+# Geometry is informational, not capacity.
+ddb.adapterType = "lsilogic"
+ddb.geometry.cylinders = "1"
+ddb.geometry.heads = "1"
+ddb.geometry.sectors = "16"

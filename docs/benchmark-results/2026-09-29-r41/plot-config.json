@@ -1,0 +1,37 @@
+{
+  "title": "R4.1 \u00b7 Bounded VMDK descriptors",
+  "candidate": "patch bcc2ada9",
+  "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 parser in memory \u00b7 RAW controls on warm Btrfs",
+  "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+  "candidate_only": {
+    "title": "Descriptor parser \u00b7 first cost baseline",
+    "note": "In-memory parse, allocations and drop included \u00b7 oversize is an early length guard \u00b7 no backing I/O.",
+    "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+  },
+  "workloads": {
+    "preflight/plan_threaded": {
+      "label": "RAW Threaded plan \u00b7 1 MiB",
+      "phase": "planning"
+    },
+    "preflight_copy/threaded": {
+      "label": "RAW Threaded copy + flush \u00b7 1 MiB",
+      "phase": "copy"
+    },
+    "descriptor/small": {
+      "label": "Small \u00b7 1 extent + 4 DDB",
+      "phase": "planning"
+    },
+    "descriptor/1024_extents": {
+      "label": "1,024 FLAT extents",
+      "phase": "planning"
+    },
+    "descriptor/late_extent_limit": {
+      "label": "Late extent-limit rejection",
+      "phase": "planning"
+    },
+    "descriptor/oversize": {
+      "label": "Early input-size rejection",
+      "phase": "planning"
+    }
+  }
+}

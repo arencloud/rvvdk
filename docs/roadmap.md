@@ -217,10 +217,19 @@ Acceptance: a user can inspect, dry-run, copy, cancel, and verify a sparse RAW i
 
 ### R4 — First real VMDK support: descriptor and flat extents
 
-Next bounded package **R4.1**: define the supported descriptor subset and fixture
-provenance, add bounded parsing and strict validation without writable VMDK support.
-Then add backing resolution and logical FLAT/ZERO mapping as separately tested,
-benchmarked and committed packages. Local fixtures do not require ESXi.
+**R4.1 complete**: `rvvdk-vmdk` parses a [bounded hosted descriptor subset](vmdk-descriptor.md),
+with checked capacities/offsets, strict feature rejection, synthetic fixture
+provenance, tests and [performance evidence](benchmark-results/2026-09-29-r41/README.md).
+No backing files are opened and no `VirtualDisk` is implemented yet.
+
+Next bounded package **R4.2**: caller-supplied backing resolution, default local
+confinement, regular-file/identity/live-length validation and bounded acquisition.
+Then **R4.3** adds read-only FLAT/ZERO mapping. Each package gets tests, benchmarks
+and a commit. Local fixtures do not require ESXi.
+
+- [x] R4.1 parser crate, explicit subset, input limits, checked arithmetic, fixture provenance.
+- [ ] R4.2 backing resolution and physical validation.
+- [ ] R4.3 logical mapping and reference byte comparisons.
 
 - [ ] Add `rvvdk-vmdk` with read-only `VirtualDisk` behavior and explicit supported create/extent types.
 - [ ] Parse descriptors with bounded sizes and precise errors. Validate access modes, capacities, sector-to-byte arithmetic, extent offsets, and referenced-file lengths.

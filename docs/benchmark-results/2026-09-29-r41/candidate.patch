@@ -1,0 +1,1056 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 464d743..9f128cd 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -475,6 +475,14 @@ dependencies = [
+  "rvvdk-core",
+ ]
+ 
++[[package]]
++name = "rvvdk-vmdk"
++version = "0.1.0"
++dependencies = [
++ "criterion",
++ "thiserror",
++]
++
+ [[package]]
+ name = "same-file"
+ version = "1.0.6"
+diff --git a/Cargo.toml b/Cargo.toml
+index 76b910a..bbce599 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -7,6 +7,7 @@ members = [
+     "crates/rvvdk-datamover",
+     "crates/rvvdk-local",
+     "crates/rvvdk-platform",
++    "crates/rvvdk-vmdk",
+ ]
+ 
+ [workspace.package]
+diff --git a/crates/rvvdk-vmdk/Cargo.toml b/crates/rvvdk-vmdk/Cargo.toml
+new file mode 100644
+index 0000000..68d2a82
+--- /dev/null
++++ b/crates/rvvdk-vmdk/Cargo.toml
+@@ -0,0 +1,16 @@
++[package]
++name = "rvvdk-vmdk"
++version.workspace = true
++edition.workspace = true
++license.workspace = true
++repository.workspace = true
++
++[dependencies]
++thiserror = "2"
++
++[dev-dependencies]
++criterion = "0.8.2"
++
++[[bench]]
++name = "descriptor"
++harness = false
+diff --git a/crates/rvvdk-vmdk/benches/descriptor.rs b/crates/rvvdk-vmdk/benches/descriptor.rs
+new file mode 100644
+index 0000000..3f7a186
+--- /dev/null
++++ b/crates/rvvdk-vmdk/benches/descriptor.rs
+@@ -0,0 +1,41 @@
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use rvvdk_vmdk::{Descriptor, ErrorKind, Limits};
++use std::hint::black_box;
++
++fn descriptor(c: &mut Criterion) {
++    let small = include_bytes!("../tests/fixtures/monolithic.vmdk");
++    let large = format!(
++        "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\n{}",
++        "RW 8 FLAT \"extent.vmdk\" 0\n".repeat(1024)
++    );
++    let late = format!("{large}RW 1 ZERO\n");
++    let oversize = vec![b'#'; Limits::default().descriptor_bytes + 1];
++    assert_eq!(Descriptor::parse(small).unwrap().size_bytes(), 8192);
++    assert_eq!(
++        Descriptor::parse(large.as_bytes()).unwrap().extents().len(),
++        1024
++    );
++    assert_eq!(
++        Descriptor::parse(late.as_bytes()).unwrap_err().kind,
++        ErrorKind::Limit("extents")
++    );
++    assert_eq!(
++        Descriptor::parse(&oversize).unwrap_err().kind,
++        ErrorKind::Limit("descriptor bytes")
++    );
++    let mut group = c.benchmark_group("descriptor");
++    group.sampling_mode(SamplingMode::Flat);
++    for (name, input) in [
++        ("small", small.as_slice()),
++        ("1024_extents", large.as_bytes()),
++        ("late_extent_limit", late.as_bytes()),
++        ("oversize", oversize.as_slice()),
++    ] {
++        group.bench_function(name, |b| {
++            b.iter(|| black_box(Descriptor::parse(black_box(input))))
++        });
++    }
++    group.finish();
++}
++criterion_group!(benches, descriptor);
++criterion_main!(benches);
+diff --git a/crates/rvvdk-vmdk/src/descriptor.rs b/crates/rvvdk-vmdk/src/descriptor.rs
+new file mode 100644
+index 0000000..968a770
+--- /dev/null
++++ b/crates/rvvdk-vmdk/src/descriptor.rs
+@@ -0,0 +1,452 @@
++use thiserror::Error;
++
++pub const SECTOR_BYTES: u64 = 512;
++
++/// Resource ceilings, checked before growing parser-owned collections.
++/// The input belongs to the caller; an eventual reader must bound acquisition too.
++#[derive(Clone, Copy, Debug)]
++pub struct Limits {
++    pub descriptor_bytes: usize,
++    pub line_bytes: usize,
++    pub extents: usize,
++    pub metadata_entries: usize,
++    pub filename_bytes: usize,
++}
++
++impl Default for Limits {
++    fn default() -> Self {
++        Self {
++            descriptor_bytes: 1024 * 1024,
++            line_bytes: 8192,
++            extents: 1024,
++            metadata_entries: 128,
++            filename_bytes: 4096,
++        }
++    }
++}
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum CreateType {
++    MonolithicFlat,
++    TwoGbMaxExtentFlat,
++    Custom,
++}
++
++/// Descriptor permissions; even RW does not authorize writes through this crate.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum Access {
++    ReadWrite,
++    ReadOnly,
++}
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum ExtentBacking<'a> {
++    /// A lexical reference, not a validated or opened filesystem path.
++    Flat {
++        file_name: &'a str,
++        offset_bytes: u64,
++    },
++    Zero,
++}
++
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub struct Extent<'a> {
++    access: Access,
++    logical_offset: u64,
++    size_bytes: u64,
++    backing: ExtentBacking<'a>,
++}
++
++impl<'a> Extent<'a> {
++    pub fn access(&self) -> Access {
++        self.access
++    }
++    pub fn logical_offset(&self) -> u64 {
++        self.logical_offset
++    }
++    pub fn size_bytes(&self) -> u64 {
++        self.size_bytes
++    }
++    pub fn backing(&self) -> ExtentBacking<'a> {
++        self.backing
++    }
++}
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub struct Metadata<'a> {
++    pub key: &'a str,
++    pub value: &'a str,
++}
++
++/// Validated layout metadata borrowing the input. This is not a VirtualDisk.
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub struct Descriptor<'a> {
++    cid: u32,
++    create_type: CreateType,
++    size_bytes: u64,
++    extents: Vec<Extent<'a>>,
++    metadata: Vec<Metadata<'a>>,
++}
++
++#[derive(Clone, Copy, Debug, Error, PartialEq, Eq)]
++pub enum ErrorKind {
++    #[error("resource limit exceeded: {0}")]
++    Limit(&'static str),
++    #[error("invalid UTF-8 or unsupported control character")]
++    Encoding,
++    #[error("invalid syntax: {0}")]
++    Syntax(&'static str),
++    #[error("duplicate field")]
++    Duplicate,
++    #[error("missing required field: {0}")]
++    Missing(&'static str),
++    #[error("unsupported feature: {0}")]
++    Unsupported(&'static str),
++    #[error("invalid unsigned integer or CID")]
++    Number,
++    #[error("sector/byte arithmetic overflow")]
++    Overflow,
++    #[error("invalid extent layout: {0}")]
++    Layout(&'static str),
++}
++
++/// One-based source line; zero means an input-wide or final validation error.
++/// Messages never echo untrusted filenames or descriptor content.
++#[derive(Clone, Copy, Debug, Error, PartialEq, Eq)]
++#[error("VMDK descriptor line {line}: {kind}")]
++pub struct DescriptorError {
++    pub line: usize,
++    pub kind: ErrorKind,
++}
++
++type Result<T> = std::result::Result<T, DescriptorError>;
++fn error(line: usize, kind: ErrorKind) -> DescriptorError {
++    DescriptorError { line, kind }
++}
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++enum Token<'a> {
++    Bare(&'a str),
++    Quoted(&'a str),
++    Equal,
++}
++
++// A fixed token buffer bounds malformed per-line work without token allocations.
++fn tokens(line: &str, number: usize) -> Result<([Token<'_>; 6], usize)> {
++    let mut out = [Token::Equal; 6];
++    let mut count = 0;
++    let mut rest = line.trim_matches([' ', '\t']);
++    while !rest.is_empty() && !rest.starts_with('#') {
++        if count == out.len() {
++            return Err(error(number, ErrorKind::Syntax("too many tokens")));
++        }
++        let (token, consumed) = if let Some(quoted) = rest.strip_prefix('"') {
++            let end = quoted
++                .find('"')
++                .ok_or(error(number, ErrorKind::Syntax("unterminated quote")))?;
++            let value = &quoted[..end];
++            if value.chars().any(char::is_control) {
++                return Err(error(number, ErrorKind::Encoding));
++            }
++            if value.contains('\\') {
++                return Err(error(
++                    number,
++                    ErrorKind::Unsupported("quoted backslash/escape"),
++                ));
++            }
++            (Token::Quoted(value), end + 2)
++        } else if rest.starts_with('=') {
++            (Token::Equal, 1)
++        } else {
++            let end = rest.find([' ', '\t', '=', '"', '#']).unwrap_or(rest.len());
++            (Token::Bare(&rest[..end]), end)
++        };
++        rest = &rest[consumed..];
++        if matches!(token, Token::Bare(_)) && rest.starts_with('"') {
++            return Err(error(number, ErrorKind::Syntax("missing token separator")));
++        }
++        if matches!(token, Token::Quoted(_))
++            && !rest.is_empty()
++            && !rest.starts_with([' ', '\t', '#'])
++        {
++            return Err(error(number, ErrorKind::Syntax("text after quote")));
++        }
++        out[count] = token;
++        count += 1;
++        rest = rest.trim_start_matches([' ', '\t']);
++    }
++    Ok((out, count))
++}
++
++fn number(value: &str, line: usize) -> Result<u64> {
++    if value.is_empty() || !value.bytes().all(|c| c.is_ascii_digit()) {
++        return Err(error(line, ErrorKind::Number));
++    }
++    value.parse().map_err(|_| error(line, ErrorKind::Number))
++}
++fn cid(value: &str, line: usize) -> Result<u32> {
++    if value.len() != 8 || !value.bytes().all(|c| c.is_ascii_hexdigit()) {
++        return Err(error(line, ErrorKind::Number));
++    }
++    u32::from_str_radix(value, 16).map_err(|_| error(line, ErrorKind::Number))
++}
++fn bytes(value: &str, line: usize) -> Result<u64> {
++    number(value, line)?
++        .checked_mul(SECTOR_BYTES)
++        .ok_or(error(line, ErrorKind::Overflow))
++}
++fn set<T>(slot: &mut Option<T>, value: T, line: usize) -> Result<()> {
++    if slot.is_some() {
++        return Err(error(line, ErrorKind::Duplicate));
++    }
++    *slot = Some(value);
++    Ok(())
++}
++fn eq(a: &str, b: &str) -> bool {
++    a.eq_ignore_ascii_case(b)
++}
++const DDB_KEYS: &[&str] = &[
++    "ddb.adapterType",
++    "ddb.geometry.cylinders",
++    "ddb.geometry.heads",
++    "ddb.geometry.sectors",
++    "ddb.virtualHWVersion",
++    "ddb.toolsVersion",
++    "ddb.uuid",
++    "ddb.longContentID",
++];
++
++impl<'a> Descriptor<'a> {
++    pub fn cid(&self) -> u32 {
++        self.cid
++    }
++    pub fn create_type(&self) -> CreateType {
++        self.create_type
++    }
++    pub fn size_bytes(&self) -> u64 {
++        self.size_bytes
++    }
++    pub fn extents(&self) -> &[Extent<'a>] {
++        &self.extents
++    }
++    /// Informational values only; never used to infer capacity or sector size.
++    pub fn metadata(&self) -> &[Metadata<'a>] {
++        &self.metadata
++    }
++
++    pub fn parse(input: &'a [u8]) -> Result<Self> {
++        Self::parse_with_limits(input, Limits::default())
++    }
++
++    pub fn parse_with_limits(input: &'a [u8], limits: Limits) -> Result<Self> {
++        if input.len() > limits.descriptor_bytes {
++            return Err(error(0, ErrorKind::Limit("descriptor bytes")));
++        }
++        let text = std::str::from_utf8(input).map_err(|_| error(0, ErrorKind::Encoding))?;
++        let mut version = None;
++        let mut content_id = None;
++        let mut parent = None;
++        let mut create_type = None;
++        let mut encoding = None;
++        let mut extents = Vec::new();
++        let mut metadata: Vec<Metadata<'a>> = Vec::new();
++        let mut size_bytes = 0_u64;
++        let mut section = 0; // header -> extents -> DDB, never backwards
++        for (i, raw) in text.split('\n').enumerate() {
++            let line = i + 1;
++            if raw.len() > limits.line_bytes {
++                return Err(error(line, ErrorKind::Limit("line bytes")));
++            }
++            let raw = raw.strip_suffix('\r').unwrap_or(raw);
++            if raw.chars().any(|c| c.is_control() && c != '\t') {
++                return Err(error(line, ErrorKind::Encoding));
++            }
++            let (buffer, count) = tokens(raw, line)?;
++            let t = &buffer[..count];
++            if t.is_empty() {
++                continue;
++            }
++            if let [Token::Bare(key), Token::Equal, value] = t {
++                if key.get(..4).is_some_and(|prefix| eq(prefix, "ddb.")) {
++                    if section == 0 {
++                        return Err(error(line, ErrorKind::Syntax("DDB before extents")));
++                    }
++                    section = 2;
++                    if !DDB_KEYS.iter().any(|allowed| eq(key, allowed)) {
++                        return Err(error(line, ErrorKind::Unsupported("DDB key")));
++                    }
++                    let Token::Quoted(value) = value else {
++                        return Err(error(line, ErrorKind::Syntax("DDB value must be quoted")));
++                    };
++                    if metadata.iter().any(|entry| eq(entry.key, key)) {
++                        return Err(error(line, ErrorKind::Duplicate));
++                    }
++                    if metadata.len() >= limits.metadata_entries {
++                        return Err(error(line, ErrorKind::Limit("metadata entries")));
++                    }
++                    metadata.push(Metadata { key, value });
++                    continue;
++                }
++                if section != 0 {
++                    return Err(error(line, ErrorKind::Syntax("header after extents")));
++                }
++                match (key, value) {
++                    (k, Token::Bare(v)) if eq(k, "version") => {
++                        if number(v, line)? != 1 {
++                            return Err(error(line, ErrorKind::Unsupported("descriptor version")));
++                        }
++                        set(&mut version, (), line)?;
++                    }
++                    (k, Token::Bare(v)) if eq(k, "CID") => {
++                        set(&mut content_id, cid(v, line)?, line)?
++                    }
++                    (k, Token::Bare(v)) if eq(k, "parentCID") => {
++                        if cid(v, line)? != u32::MAX {
++                            return Err(error(line, ErrorKind::Unsupported("parent chain")));
++                        }
++                        set(&mut parent, (), line)?;
++                    }
++                    (k, Token::Quoted(v)) if eq(k, "createType") => {
++                        let kind = if eq(v, "monolithicFlat") {
++                            CreateType::MonolithicFlat
++                        } else if eq(v, "twoGbMaxExtentFlat") || eq(v, "2GbMaxExtentFlat") {
++                            CreateType::TwoGbMaxExtentFlat
++                        } else if eq(v, "custom") {
++                            CreateType::Custom
++                        } else {
++                            return Err(error(line, ErrorKind::Unsupported("create type")));
++                        };
++                        set(&mut create_type, kind, line)?;
++                    }
++                    (k, Token::Quoted(v)) if eq(k, "encoding") => {
++                        if !eq(v, "UTF-8") {
++                            return Err(error(line, ErrorKind::Unsupported("encoding")));
++                        }
++                        set(&mut encoding, (), line)?;
++                    }
++                    (k, _) if eq(k, "parentFileNameHint") => {
++                        return Err(error(line, ErrorKind::Unsupported("parent chain")));
++                    }
++                    (k, _)
++                        if ["version", "CID", "parentCID", "createType", "encoding"]
++                            .iter()
++                            .any(|v| eq(k, v)) =>
++                    {
++                        return Err(error(line, ErrorKind::Syntax("header value quoting")));
++                    }
++                    _ => return Err(error(line, ErrorKind::Unsupported("header key"))),
++                }
++                continue;
++            }
++            if section == 2 {
++                return Err(error(line, ErrorKind::Syntax("extent after DDB")));
++            }
++            section = 1;
++            if extents.len() >= limits.extents {
++                return Err(error(line, ErrorKind::Limit("extents")));
++            }
++            let [
++                Token::Bare(access),
++                Token::Bare(sectors),
++                Token::Bare(kind),
++                tail @ ..,
++            ] = t
++            else {
++                return Err(error(line, ErrorKind::Syntax("extent fields")));
++            };
++            let access = if eq(access, "RW") {
++                Access::ReadWrite
++            } else if eq(access, "RDONLY") {
++                Access::ReadOnly
++            } else {
++                return Err(error(line, ErrorKind::Unsupported("extent access")));
++            };
++            let length = bytes(sectors, line)?;
++            if length == 0 {
++                return Err(error(line, ErrorKind::Layout("empty extent")));
++            }
++            let backing = if eq(kind, "FLAT") {
++                let [Token::Quoted(name), Token::Bare(offset)] = tail else {
++                    return Err(error(
++                        line,
++                        ErrorKind::Syntax("FLAT filename and offset required"),
++                    ));
++                };
++                if name.is_empty() {
++                    return Err(error(line, ErrorKind::Layout("empty filename")));
++                }
++                if name.len() > limits.filename_bytes {
++                    return Err(error(line, ErrorKind::Limit("filename bytes")));
++                }
++                let offset_bytes = bytes(offset, line)?;
++                offset_bytes
++                    .checked_add(length)
++                    .ok_or(error(line, ErrorKind::Overflow))?;
++                ExtentBacking::Flat {
++                    file_name: name,
++                    offset_bytes,
++                }
++            } else if eq(kind, "ZERO") {
++                if !tail.is_empty() {
++                    return Err(error(line, ErrorKind::Syntax("ZERO has no backing fields")));
++                }
++                ExtentBacking::Zero
++            } else {
++                return Err(error(line, ErrorKind::Unsupported("extent type")));
++            };
++            match create_type {
++                Some(CreateType::MonolithicFlat | CreateType::TwoGbMaxExtentFlat) => {
++                    if !matches!(
++                        backing,
++                        ExtentBacking::Flat {
++                            offset_bytes: 0,
++                            ..
++                        }
++                    ) {
++                        return Err(error(
++                            line,
++                            ErrorKind::Layout("hosted flat requires FLAT at offset zero"),
++                        ));
++                    }
++                    if create_type == Some(CreateType::MonolithicFlat) && !extents.is_empty() {
++                        return Err(error(
++                            line,
++                            ErrorKind::Layout("monolithic disk requires one extent"),
++                        ));
++                    }
++                    if create_type == Some(CreateType::TwoGbMaxExtentFlat)
++                        && length > 2 * 1024 * 1024 * 1024
++                    {
++                        return Err(error(line, ErrorKind::Layout("split extent exceeds 2 GiB")));
++                    }
++                }
++                Some(CreateType::Custom) => (),
++                None => return Err(error(line, ErrorKind::Missing("createType before extents"))),
++            }
++            let logical_offset = size_bytes;
++            size_bytes = size_bytes
++                .checked_add(length)
++                .ok_or(error(line, ErrorKind::Overflow))?;
++            extents.push(Extent {
++                access,
++                logical_offset,
++                size_bytes: length,
++                backing,
++            });
++        }
++        version.ok_or(error(0, ErrorKind::Missing("version")))?;
++        parent.ok_or(error(0, ErrorKind::Missing("parentCID")))?;
++        let cid = content_id.ok_or(error(0, ErrorKind::Missing("CID")))?;
++        let create_type = create_type.ok_or(error(0, ErrorKind::Missing("createType")))?;
++        if extents.is_empty() {
++            return Err(error(0, ErrorKind::Missing("extents")));
++        }
++        Ok(Self {
++            cid,
++            create_type,
++            size_bytes,
++            extents,
++            metadata,
++        })
++    }
++}
+diff --git a/crates/rvvdk-vmdk/src/lib.rs b/crates/rvvdk-vmdk/src/lib.rs
+new file mode 100644
+index 0000000..0f996ea
+--- /dev/null
++++ b/crates/rvvdk-vmdk/src/lib.rs
+@@ -0,0 +1,11 @@
++//! Bounded, read-only VMDK descriptor parsing. No backing files are opened.
++//!
++//! The supported subset and deliberately rejected syntax are documented in
++//! `docs/vmdk-descriptor.md`. Parsed filenames remain untrusted resolver inputs.
++
++mod descriptor;
++
++pub use descriptor::{
++    Access, CreateType, Descriptor, DescriptorError, ErrorKind, Extent, ExtentBacking, Limits,
++    Metadata, SECTOR_BYTES,
++};
+diff --git a/crates/rvvdk-vmdk/tests/descriptor.rs b/crates/rvvdk-vmdk/tests/descriptor.rs
+new file mode 100644
+index 0000000..89fc6ef
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/descriptor.rs
+@@ -0,0 +1,398 @@
++use rvvdk_vmdk::{Access, CreateType, Descriptor, ErrorKind, ExtentBacking, Limits};
++
++const MONO: &[u8] = include_bytes!("fixtures/monolithic.vmdk");
++fn disk(extents: &str) -> String {
++    format!("version=1\nCID=00112233\nparentCID=ffffffff\ncreateType=\"custom\"\n{extents}\n")
++}
++fn fails(text: &str, kind: ErrorKind) {
++    assert_eq!(
++        Descriptor::parse(text.as_bytes()).unwrap_err().kind,
++        kind,
++        "{text}"
++    );
++}
++
++#[test]
++fn fixtures_have_checked_contiguous_byte_ranges() {
++    let mono = Descriptor::parse(MONO).unwrap();
++    assert_eq!(mono.cid(), 0x1234abcd);
++    assert_eq!(mono.create_type(), CreateType::MonolithicFlat);
++    assert_eq!(mono.size_bytes(), 8192);
++    assert_eq!(mono.metadata().len(), 4);
++    assert_eq!(mono.extents()[0].access(), Access::ReadWrite);
++    let split = Descriptor::parse(include_bytes!("fixtures/split.vmdk")).unwrap();
++    assert_eq!(split.create_type(), CreateType::TwoGbMaxExtentFlat);
++    assert_eq!(split.size_bytes(), 11 * 512);
++    assert_eq!(split.extents()[1].logical_offset(), 8 * 512);
++    assert_eq!(split.extents()[1].access(), Access::ReadOnly);
++    let custom = Descriptor::parse(include_bytes!("fixtures/custom.vmdk")).unwrap();
++    assert_eq!(custom.size_bytes(), 7 * 512);
++    assert_eq!(
++        custom.extents()[0].backing(),
++        ExtentBacking::Flat {
++            file_name: "Data #1 = café.vmdk",
++            offset_bytes: 1536
++        }
++    );
++    assert_eq!(custom.extents()[1].backing(), ExtentBacking::Zero);
++    assert_eq!(custom.extents()[2].logical_offset(), 3072);
++    assert_eq!(custom.extents()[2].size_bytes(), 512);
++}
++
++#[test]
++fn lexical_variants_preserve_filename_case_and_borrow_input() {
++    let text = " # comment\r\nVeRsIoN = 1\r\ncId=ABCDEF01\r\npArEnTcId=FFFFFFFF\r\nCrEaTeTyPe=\"2gBmAxExTeNtFlAt\" # trailing\r\nrDoNlY\t1\tflat \"UPPER café.vmdk\" 0 # ok";
++    let d = Descriptor::parse(text.as_bytes()).unwrap();
++    let ExtentBacking::Flat { file_name, .. } = d.extents()[0].backing() else {
++        panic!()
++    };
++    assert_eq!(file_name, "UPPER café.vmdk");
++    assert!(
++        (text.as_ptr() as usize..text.as_ptr() as usize + text.len())
++            .contains(&(file_name.as_ptr() as usize))
++    );
++}
++
++#[test]
++fn syntax_and_quoting_fail_closed() {
++    for extent in [
++        "RW 1 FLAT file 0",
++        "RW 1 FLAT\"file\" 0",
++        "RW 1 FLAT \"file\"",
++        "RW 1 FLAT \"file\" 0 extra",
++        "RW 1 FLAT \"file\"junk 0",
++        "RW 1 ZERO \"file\"",
++        "RW 1 ZERO 0",
++        "RW 1 FLAT \"unterminated",
++        "RW 1 FLAT \"file\" 0 a b c",
++    ] {
++        assert!(
++            matches!(
++                Descriptor::parse(disk(extent).as_bytes()).unwrap_err().kind,
++                ErrorKind::Syntax(_)
++            ),
++            "{extent}"
++        );
++    }
++    fails(
++        &disk("RW 1 FLAT \"a\\b\" 0"),
++        ErrorKind::Unsupported("quoted backslash/escape"),
++    );
++    fails(
++        &disk("RW 1 FLAT \"\" 0"),
++        ErrorKind::Layout("empty filename"),
++    );
++    fails(
++        &disk("RW 1 ZERO").replace("version=1", "version=\"1\""),
++        ErrorKind::Syntax("header value quoting"),
++    );
++}
++
++#[test]
++fn rejects_unsupported_variants_and_parent_chains() {
++    for ty in [
++        "monolithicSparse",
++        "twoGbMaxExtentSparse",
++        "streamOptimized",
++        "vmfs",
++        "vmfsThin",
++        "vmfsSparse",
++        "vmfsSeSparse",
++        "fullDevice",
++        "partitionedDevice",
++        "unknown",
++    ] {
++        fails(
++            &disk("RW 1 ZERO").replace("\"custom\"", &format!("\"{ty}\"")),
++            ErrorKind::Unsupported("create type"),
++        );
++    }
++    for ty in [
++        "SPARSE",
++        "VMFS",
++        "VMFSSPARSE",
++        "VMFSRDM",
++        "VMFSRAW",
++        "SESPARSE",
++    ] {
++        fails(
++            &disk(&format!("RW 1 {ty} \"file\"")),
++            ErrorKind::Unsupported("extent type"),
++        );
++    }
++    for access in ["NOACCESS", "R", "WR"] {
++        fails(
++            &disk(&format!("{access} 1 ZERO")),
++            ErrorKind::Unsupported("extent access"),
++        );
++    }
++    fails(
++        &disk("RW 1 ZERO").replace("parentCID=ffffffff", "parentCID=00000000"),
++        ErrorKind::Unsupported("parent chain"),
++    );
++    fails(
++        &disk("RW 1 ZERO").replace("version=1", "parentFileNameHint=\"parent\"\nversion=1"),
++        ErrorKind::Unsupported("parent chain"),
++    );
++    fails(
++        &disk("RW 1 ZERO").replace("version=1", "version=2"),
++        ErrorKind::Unsupported("descriptor version"),
++    );
++}
++
++#[test]
++fn numbers_and_all_arithmetic_boundaries_are_checked() {
++    for n in ["-1", "+1", "0x1", "1.0", "18446744073709551616"] {
++        fails(&disk(&format!("RW {n} ZERO")), ErrorKind::Number);
++    }
++    fails(&disk("RW 0 ZERO"), ErrorKind::Layout("empty extent"));
++    fails(&disk("RW 36028797018963968 ZERO"), ErrorKind::Overflow);
++    fails(
++        &disk("RW 1 FLAT \"x\" 36028797018963968"),
++        ErrorKind::Overflow,
++    );
++    fails(
++        &disk("RW 1 FLAT \"x\" 36028797018963967"),
++        ErrorKind::Overflow,
++    );
++    fails(
++        &disk("RW 36028797018963967 ZERO\nRW 1 ZERO"),
++        ErrorKind::Overflow,
++    );
++    let max = disk("RW 36028797018963967 ZERO");
++    assert_eq!(
++        Descriptor::parse(max.as_bytes()).unwrap().size_bytes(),
++        u64::MAX - 511
++    );
++    for cid in ["1", "123456789", "zzzzzzzz", "-1234567"] {
++        fails(
++            &disk("RW 1 ZERO").replace("00112233", cid),
++            ErrorKind::Number,
++        );
++    }
++}
++
++#[test]
++fn duplicates_order_and_required_fields_are_validated() {
++    for field in [
++        "version=1",
++        "CID=00112233",
++        "parentCID=ffffffff",
++        "createType=\"custom\"",
++    ] {
++        let original = disk("RW 1 ZERO");
++        assert!(matches!(
++            Descriptor::parse(original.replace(&format!("{field}\n"), "").as_bytes())
++                .unwrap_err()
++                .kind,
++            ErrorKind::Missing(_)
++        ));
++        fails(
++            &original.replace(field, &format!("{field}\n{field}")),
++            ErrorKind::Duplicate,
++        );
++    }
++    fails(
++        &disk("RW 1 ZERO").replace("CID=00112233", "CID=00112233\ncid=00112233"),
++        ErrorKind::Duplicate,
++    );
++    fails(
++        &disk("RW 1 ZERO\nversion=1"),
++        ErrorKind::Syntax("header after extents"),
++    );
++    fails(
++        &disk("RW 1 ZERO\nddb.adapterType=\"ide\"\nRW 1 ZERO"),
++        ErrorKind::Syntax("extent after DDB"),
++    );
++    fails(
++        &disk("RW 1 ZERO").replace("version=1", "ddb.adapterType=\"ide\"\nversion=1"),
++        ErrorKind::Syntax("DDB before extents"),
++    );
++    fails(&disk(""), ErrorKind::Missing("extents"));
++}
++
++#[test]
++fn metadata_is_informational_and_unknown_features_rejected() {
++    fails(
++        &disk("RW 1 ZERO\nddb.adapterType=\"ide\"\nDDB.ADAPTERTYPE=\"ide\""),
++        ErrorKind::Duplicate,
++    );
++    fails(
++        &disk("RW 1 ZERO\nddb.adapterType=ide"),
++        ErrorKind::Syntax("DDB value must be quoted"),
++    );
++    for key in ["ddb.encryption", "ddb.logicalSectorSize", "ddb.unknown"] {
++        fails(
++            &disk(&format!("RW 1 ZERO\n{key}=\"value\"")),
++            ErrorKind::Unsupported("DDB key"),
++        );
++    }
++    for key in ["encryption.keySafe", "unknown", "isNativeSnapshot"] {
++        fails(
++            &disk("RW 1 ZERO").replace("version=1", &format!("{key}=\"value\"\nversion=1")),
++            ErrorKind::Unsupported("header key"),
++        );
++    }
++    let text = disk("RW 1 ZERO\nddb.geometry.sectors=\"garbage\"");
++    assert_eq!(
++        Descriptor::parse(text.as_bytes()).unwrap().size_bytes(),
++        512
++    );
++}
++
++#[test]
++fn supported_create_types_enforce_shape_and_split_capacity() {
++    for (extents, kind) in [
++        (
++            "RW 1 ZERO",
++            ErrorKind::Layout("hosted flat requires FLAT at offset zero"),
++        ),
++        (
++            "RW 1 FLAT \"x\" 1",
++            ErrorKind::Layout("hosted flat requires FLAT at offset zero"),
++        ),
++        (
++            "RW 1 FLAT \"x\" 0\nRW 1 FLAT \"y\" 0",
++            ErrorKind::Layout("monolithic disk requires one extent"),
++        ),
++    ] {
++        fails(
++            &disk(extents).replace("\"custom\"", "\"monolithicFlat\""),
++            kind,
++        );
++    }
++    let split = disk("RW 4194304 FLAT \"x\" 0").replace("\"custom\"", "\"twoGbMaxExtentFlat\"");
++    assert!(Descriptor::parse(split.as_bytes()).is_ok());
++    fails(
++        &split.replace("4194304", "4194305"),
++        ErrorKind::Layout("split extent exceeds 2 GiB"),
++    );
++}
++
++#[test]
++fn each_resource_limit_accepts_boundary_and_rejects_next_byte_or_entry() {
++    let text = disk("RW 1 FLAT \"abc\" 0\nRW 1 ZERO\nddb.uuid=\"x\"");
++    let limits = Limits {
++        descriptor_bytes: text.len(),
++        line_bytes: text.lines().map(str::len).max().unwrap(),
++        extents: 2,
++        metadata_entries: 1,
++        filename_bytes: 3,
++    };
++    assert!(Descriptor::parse_with_limits(text.as_bytes(), limits).is_ok());
++    for (limited, name) in [
++        (
++            Limits {
++                descriptor_bytes: text.len() - 1,
++                ..limits
++            },
++            "descriptor bytes",
++        ),
++        (
++            Limits {
++                line_bytes: limits.line_bytes - 1,
++                ..limits
++            },
++            "line bytes",
++        ),
++        (
++            Limits {
++                extents: 1,
++                ..limits
++            },
++            "extents",
++        ),
++        (
++            Limits {
++                metadata_entries: 0,
++                ..limits
++            },
++            "metadata entries",
++        ),
++        (
++            Limits {
++                filename_bytes: 2,
++                ..limits
++            },
++            "filename bytes",
++        ),
++    ] {
++        assert_eq!(
++            Descriptor::parse_with_limits(text.as_bytes(), limited)
++                .unwrap_err()
++                .kind,
++            ErrorKind::Limit(name)
++        );
++    }
++    let max = disk(&"RW 1 ZERO\n".repeat(1024));
++    assert_eq!(
++        Descriptor::parse(max.as_bytes()).unwrap().extents().len(),
++        1024
++    );
++    fails(&(max + "RW 1 ZERO"), ErrorKind::Limit("extents"));
++}
++
++#[test]
++fn encoding_controls_and_error_locations_are_precise() {
++    assert_eq!(
++        Descriptor::parse(b"\xff").unwrap_err().kind,
++        ErrorKind::Encoding
++    );
++    for control in ['\0', '\r', '\u{7f}', '\u{85}'] {
++        fails(
++            &disk(&format!("# comment{control}bad\nRW 1 ZERO")),
++            ErrorKind::Encoding,
++        );
++    }
++    fails(
++        &disk("RW 1 ZERO").replace("version=1", "encoding=\"windows-1252\"\nversion=1"),
++        ErrorKind::Unsupported("encoding"),
++    );
++    let e = Descriptor::parse(disk("RW 1 ZERO\nRW 0 ZERO").as_bytes()).unwrap_err();
++    assert_eq!(e.line, 6);
++    assert_eq!(
++        e.to_string(),
++        "VMDK descriptor line 6: invalid extent layout: empty extent"
++    );
++}
++
++#[test]
++fn path_policy_is_explicitly_deferred_without_any_file_access() {
++    for name in [
++        "/does/not/exist",
++        "../outside",
++        "dir/../../escape",
++        "scheme:object",
++    ] {
++        let text = disk(&format!("RW 1 FLAT \"{name}\" 0"));
++        assert_eq!(
++            Descriptor::parse(text.as_bytes()).unwrap().extents()[0].backing(),
++            ExtentBacking::Flat {
++                file_name: name,
++                offset_bytes: 0
++            }
++        );
++    }
++}
++
++#[test]
++fn deterministic_mutations_never_panic_or_escape_layout_invariants() {
++    // Repeatable smoke coverage; this does not replace a future fuzzing campaign.
++    let original = disk("RW 3 FLAT \"x\" 4\nRW 2 ZERO");
++    for i in 0..original.len() {
++        for byte in [0, b'\n', b'\r', b'"', b'=', b'#', b' ', b'9', 0xff] {
++            let mut input = original.as_bytes().to_vec();
++            input[i] = byte;
++            if let Ok(d) = Descriptor::parse(&input) {
++                let mut end = 0;
++                for e in d.extents() {
++                    assert_eq!(e.logical_offset(), end);
++                    assert!(e.size_bytes() > 0 && e.size_bytes() % 512 == 0);
++                    end = end.checked_add(e.size_bytes()).unwrap();
++                }
++                assert_eq!(end, d.size_bytes());
++            }
++        }
++        let _ = Descriptor::parse(&original.as_bytes()[..i]);
++    }
++}
+diff --git a/crates/rvvdk-vmdk/tests/fixtures/README.md b/crates/rvvdk-vmdk/tests/fixtures/README.md
+new file mode 100644
+index 0000000..e15f5cb
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/fixtures/README.md
+@@ -0,0 +1,26 @@
++# Descriptor fixture provenance
++
++These three text files were authored for rvvdk on 2026-09-29 under the repository's
++Apache-2.0 license. They contain invented CIDs/names and small sector counts; they
++are not copied from a guest, a VMware installation, or a specification example.
++No backing data is bundled. Tests only parse text.
++
++| File | Intended result |
++|---|---|
++| monolithic.vmdk | 8,192 bytes, one FLAT source, four informational DDB records |
++| split.vmdk | 5,632 bytes across two FLAT sources, including RDONLY |
++| custom.vmdk | 3,584 bytes across FLAT/ZERO/FLAT, nonzero backing offset and UTF-8 name |
++
++Format facts were checked against VMware's [Virtual Disk Format 5.0, pp. 3–5](https://github.com/vmware/open-vmdk/blob/master/vmdk_50_technote.pdf),
++downloaded from the VMware-owned repository on 2026-09-29. Only the PDF was read;
++no implementation code was used. The inspected PDF SHA-256 is recorded below.
++The original vmware.com URL linked by Broadcom returned 404; its VMware-owned
++GitHub copy supplied the reference. The PDF has its own license and is not vendored.
++
++The [subset contract](../../../../docs/vmdk-descriptor.md) documents intentional
++restrictions. Negative fixtures and deterministic byte mutations are built in test
++memory. They cover invalid input, not reference-decoder agreement. Once logical
++reads exist, generate deterministic backing bytes, compare decoded RAW with a
++recorded trusted tool/version, and retain commands and hashes. Do not label these
++synthetic parser examples as ESXi-tested or VMware-generated images.
++Inspected PDF SHA-256: `88ce1615a703d1d4e3df3c227846bb9ecda4d929129c191ea4ffe7df3294ad59`.
+diff --git a/crates/rvvdk-vmdk/tests/fixtures/custom.vmdk b/crates/rvvdk-vmdk/tests/fixtures/custom.vmdk
+new file mode 100644
+index 0000000..488a303
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/fixtures/custom.vmdk
+@@ -0,0 +1,8 @@
++# Synthetic custom base with a nonzero backing offset.
++version=1
++CID=44556677
++parentCID=ffffffff
++createType="custom"
++RDONLY 2 FLAT "Data #1 = café.vmdk" 3
++RW 4 ZERO
++RW 1 FLAT "tail.vmdk" 0
+diff --git a/crates/rvvdk-vmdk/tests/fixtures/monolithic.vmdk b/crates/rvvdk-vmdk/tests/fixtures/monolithic.vmdk
+new file mode 100644
+index 0000000..6c11044
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/fixtures/monolithic.vmdk
+@@ -0,0 +1,12 @@
++# Synthetic rvvdk fixture; no backing file is required for parsing.
++version=1
++encoding="UTF-8"
++CID=1234aBcD
++parentCID=ffffffff
++createType="monolithicFlat"
++RW 16 FLAT "disk-flat.vmdk" 0
++# Geometry is informational, not capacity.
++ddb.adapterType = "lsilogic"
++ddb.geometry.cylinders = "1"
++ddb.geometry.heads = "1"
++ddb.geometry.sectors = "16"
+diff --git a/crates/rvvdk-vmdk/tests/fixtures/split.vmdk b/crates/rvvdk-vmdk/tests/fixtures/split.vmdk
+new file mode 100644
+index 0000000..042ab28
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/fixtures/split.vmdk
+@@ -0,0 +1,7 @@
++# Synthetic split base; capacities intentionally small.
++version=1
++CID=00112233
++parentCID=ffffffff
++createType="twoGbMaxExtentFlat"
++RW 8 FLAT "disk-f001.vmdk" 0
++RDONLY 3 FLAT "disk-f002.vmdk" 0

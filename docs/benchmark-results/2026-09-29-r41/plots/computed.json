@@ -1,0 +1,99 @@
+{
+  "main": [
+    {
+      "benchmark": "preflight/plan_threaded",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          2382.111613936724,
+          2464.7396456601136,
+          2393.2896408195484
+        ],
+        "candidate": [
+          2346.130060444195,
+          2425.2233250178188,
+          2444.7476090039636
+        ]
+      },
+      "baseline_ns": 2393.2896408195484,
+      "candidate_ns": 2425.2233250178188,
+      "change_percent": 1.3343008574313364,
+      "paired_changes_percent": [
+        -1.5104898226437569,
+        -1.6032655096806958,
+        2.1500936329124753
+      ]
+    },
+    {
+      "benchmark": "preflight_copy/threaded",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          7606750.300000001,
+          7618380.3,
+          7611588.6
+        ],
+        "candidate": [
+          7554943.1,
+          7557272.199999999,
+          7550791.2
+        ]
+      },
+      "baseline_ns": 7611588.6,
+      "candidate_ns": 7554943.1,
+      "change_percent": -0.7442007572505904,
+      "paired_changes_percent": [
+        -0.6810687607295418,
+        -0.8021140661618187,
+        -0.798747846146064
+      ]
+    }
+  ],
+  "followup": null,
+  "candidate_only": [
+    {
+      "benchmark": "descriptor/small",
+      "candidate_ns": 1043.9180761922562,
+      "run_medians_ns": [
+        1043.9180761922562,
+        1018.5418874987686,
+        1070.9968531129975
+      ]
+    },
+    {
+      "benchmark": "descriptor/1024_extents",
+      "candidate_ns": 105812.32601880879,
+      "run_medians_ns": [
+        108202.9289099526,
+        105733.42063492064,
+        105812.32601880879
+      ]
+    },
+    {
+      "benchmark": "descriptor/late_extent_limit",
+      "candidate_ns": 104595.78828125,
+      "run_medians_ns": [
+        103468.5531587057,
+        104595.78828125,
+        104679.8031496063
+      ]
+    },
+    {
+      "benchmark": "descriptor/oversize",
+      "candidate_ns": 7.8458858663578415,
+      "run_medians_ns": [
+        8.033613093347748,
+        7.8458858663578415,
+        7.76592619244901
+      ]
+    }
+  ]
+}

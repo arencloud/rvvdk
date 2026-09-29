@@ -1,0 +1,40 @@
+[
+  {
+    "variant": "baseline",
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "-p",
+      "rvvdk-datamover",
+      "--bench",
+      "preflight",
+      "--target-dir",
+      "/tmp/rvvdk-r41-k0wlbz3y/baseline-target",
+      "--message-format=json"
+    ],
+    "cwd": "/tmp/rvvdk-r41-k0wlbz3y/baseline",
+    "exit_code": 0
+  },
+  {
+    "variant": "candidate",
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "-p",
+      "rvvdk-datamover",
+      "--bench",
+      "preflight",
+      "--target-dir",
+      "/tmp/rvvdk-r41-k0wlbz3y/candidate-target",
+      "--message-format=json",
+      "-p",
+      "rvvdk-vmdk",
+      "--bench",
+      "descriptor"
+    ],
+    "cwd": "/home/egevorky/RustroverProjects/rvvdk",
+    "exit_code": 0
+  }
+]

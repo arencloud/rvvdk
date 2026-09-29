@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R4.1 \u00b7 Bounded VMDK descriptors",
+    "candidate": "patch bcc2ada9",
+    "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 parser in memory \u00b7 RAW controls on warm Btrfs",
+    "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "candidate_only": {
+      "title": "Descriptor parser \u00b7 first cost baseline",
+      "note": "In-memory parse, allocations and drop included \u00b7 oversize is an early length guard \u00b7 no backing I/O.",
+      "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+    },
+    "workloads": {
+      "preflight/plan_threaded": {
+        "label": "RAW Threaded plan \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "preflight_copy/threaded": {
+        "label": "RAW Threaded copy + flush \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "descriptor/small": {
+        "label": "Small \u00b7 1 extent + 4 DDB",
+        "phase": "planning"
+      },
+      "descriptor/1024_extents": {
+        "label": "1,024 FLAT extents",
+        "phase": "planning"
+      },
+      "descriptor/late_extent_limit": {
+        "label": "Late extent-limit rejection",
+        "phase": "planning"
+      },
+      "descriptor/oversize": {
+        "label": "Early input-size rejection",
+        "phase": "planning"
+      }
+    }
+  },
+  "input_sha256": {
+    "plot-config.json": "aaa03d94d3052162b0161f388c61b7822dec9924d4220e3935a3dee05bc2b8ae",
+    "environment.json": "5f607c6e686bd3d9eed7011867722a62513f450da4196c9aa289a1b45daad7d8",
+    "measurements.json": "6c24e0fec9a2748c18f4aefde2aa7a97ef57b8f3e5c8d8f6f67bbe103ca33e40",
+    "summary.json": "8dcd568b03c3e93237e445fa6ab37a7d74ada2e23ed0ae6ea250dbb14d0a36cb",
+    "candidate-only-measurements.json": "e3d06ace95890e3fd2620a5102e274d422d460d7eb3d501132350ad9261a38b3"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "c0e66f361075b96704e2fd2ed5eec89c0f57d69a921555198809ed78fbe20407",
+    "planning-latency.png": "616090164771e0ab9e10175a468d5cb8084446b8d4b1834478e5a6773fb4d451",
+    "copy-latency.svg": "7ecc41fffeec8e1e705b541c3449c4aaf11ef2acac835f1ad76e2c3dc1c56372",
+    "copy-latency.png": "b5edab2320ef53a1427072d86251caa62986c1d73a1a222cd0d1c4f7864936b6",
+    "relative-change.svg": "0f613e2eb701cf44799b1eb081dc7c71fa561e57089d61582ceca3131b378a18",
+    "relative-change.png": "dbfd9ae641cd85c570a45d4227e05857dbb484af19e50741928d309d07dc7be4",
+    "sample-distributions.svg": "6774218b73a8adcb269b0a41e9755e64655ac320aae9736738ff4c4cd0ec2f01",
+    "sample-distributions.png": "1d1e0938a7fb073999b2c5055d6c9d7e9b8989e1c01e49c3830fbf5b8e282eae",
+    "candidate-only.svg": "0b98d71f7818e63cec018b5f08ff8d5fdb11891ca22ea7efc6c38c0c68dc8f34",
+    "candidate-only.png": "6ef789768e8d27c32b779eeaafefb2d0fd80752d10667ab5d69592e2f08fd343",
+    "computed.json": "4a3092337f083992efb2ebf47c30f76160963ef89121a5aa88045159ba6ff8c6"
+  }
+}
