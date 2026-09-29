@@ -1,12 +1,12 @@
 # rvvdk Benchmarks
 
-Latest step: [R4.4 CLI VMDK source benchmarks and plots](benchmark-results/2026-09-29-r44/README.md).
-Thirty matched RAW CLI runs, eighteen triggered longer repeats and fifteen new
-VMDK command runs retain exact source/binary/harness identities. RAW preview
-latency increases about 1–2 µs with stronger owned-source checks; copy/verify
-aggregate changes stay below 5% on this shared warm Btrfs host. See the report for
-every adverse pair and the accepted correctness cost; broader qualification and
-tuning remain open.
+Latest step: [R4.5 bounded descriptor padding benchmarks and plots](benchmark-results/2026-09-29-r45/README.md).
+Thirty matched controls, six triggered longer repeats and twelve padded-input cost
+runs retain source/binary/harness identities. The adverse +7.80% inspection pair
+remains recorded; longer repeats show -0.61% aggregate. Acquiring a worst-case
+1 MiB padded descriptor costs 365.609 µs; reparsing its cached prefix costs 0.372 µs.
+Prior [R4.4 preview overhead](benchmark-results/2026-09-29-r44/README.md) and broader
+qualification/tuning remain open.
 
 
 ## Performance policy — adopted 2026-09-28

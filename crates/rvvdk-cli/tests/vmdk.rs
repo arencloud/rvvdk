@@ -199,7 +199,7 @@ fn malformed_unsupported_and_unconfined_sources_fail_without_output() {
     for text in [
         "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"monolithicSparse\"\nRW 1 SPARSE \"a\"\n",
         "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\nRW 1 FLAT \"../a\" 0\n",
-        "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\nRW 1 ZERO\n\0",
+        "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\nRW 1 ZERO\n\0# hidden text",
     ] {
         let f = Fixture::new();
         fs::write(&f.source, text).unwrap();
@@ -303,4 +303,24 @@ fn cancellation_and_publication_collision_preserve_output_policy() {
         1
     );
     assert_eq!(fs::read(&f.destination).unwrap(), b"winner");
+}
+
+#[test]
+fn padded_sources_work_in_all_commands_without_rewriting_the_descriptor() {
+    let f = Fixture::new();
+    let mut original = fs::read(&f.source).unwrap();
+    original.resize(8192, 0);
+    fs::write(&f.source, &original).unwrap();
+    for command in ["inspect", "plan", "copy", "verify"] {
+        let extra = if command == "copy" {
+            vec!["--verify"]
+        } else {
+            vec![]
+        };
+        let (code, report) = f.run(command, &extra);
+        assert_eq!(code, 0, "{report}");
+        assert_eq!(report["format"], "vmdk");
+        assert_eq!(fs::read(&f.source).unwrap(), original);
+    }
+    assert_eq!(fs::read(&f.destination).unwrap(), f.expected);
 }

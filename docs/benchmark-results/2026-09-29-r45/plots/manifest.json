@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R4.5 \u00b7 Bounded descriptor padding",
+    "candidate": "patch d1255dec",
+    "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm memory / Btrfs",
+    "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "candidate_only": {
+      "title": "Padded descriptor acquisition and parsing",
+      "note": "Inputs prepared outside timing \u00b7 reparse excludes acquisition \u00b7 independent scales",
+      "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+    },
+    "workloads": {
+      "descriptor/small": {
+        "label": "Strict descriptor parsing",
+        "phase": "planning"
+      },
+      "resolution/load_descriptor": {
+        "label": "Unpadded local descriptor load",
+        "phase": "planning"
+      },
+      "cli_vmdk/inspect_mixed": {
+        "label": "VMDK inspect \u00b7 mixed 1 MiB",
+        "phase": "planning"
+      },
+      "cli_vmdk/copy_mixed_verify": {
+        "label": "VMDK mixed copy + verify \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/verify_only": {
+        "label": "RAW verify \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "padding/acquire_512": {
+        "label": "Acquire padded 512 B",
+        "phase": "planning"
+      },
+      "padding/acquire_1m": {
+        "label": "Acquire padded 1 MiB",
+        "phase": "planning"
+      },
+      "padding/reject_oversize": {
+        "label": "Reject padded 1 MiB + 1 B",
+        "phase": "planning"
+      },
+      "padding/reparse_1m": {
+        "label": "Reparse cached prefix of 1 MiB input",
+        "phase": "planning"
+      }
+    },
+    "repeat_sampling": "3 adjacent pairs \u00b7 40 flat samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+  },
+  "input_sha256": {
+    "plot-config.json": "d72ac5a4c5523c9c6691d0ca7e60526f90260e13fe8facbf2e93fb30f707e2c3",
+    "environment.json": "3e6af6d906a13a47a38119ce31cb847b14411e37a9769788484518232dddb53b",
+    "measurements.json": "da0b013954330979c09b8087ec469b74fa3f3588e878a3c21ef8b4e94977421d",
+    "summary.json": "a27fd357c554b87ab380eaacb7151f6c26b70812af71fdb9ac79c8571f7dd917",
+    "followup-measurements.json": "9f67b7b731eab48c0b2868d67a1d5ef5afcdc384ba870580733abe09184e6295",
+    "followup-summary.json": "f730f027187eda986ccf044e332e559b47cb1760fe4d3e53cf22a812c5cc0869",
+    "candidate-only-measurements.json": "ede4be5ec39b42195ef2adfbdd9e6a633c2a20e8dd391e6576d0818872231cfc"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "93ab14eb9682b03f0fe0fecebff237079e2fb5e5e5c9c36aad0358e1d5a5e12d",
+    "planning-latency.png": "f91639e874f4edf57391a70d581af18052ebdf2ddfd117e2574a07410fe4551c",
+    "copy-latency.svg": "595c213b143ad0d318aba7673c5e287f96dedacaad9b0458d5fd1c849ef4aff1",
+    "copy-latency.png": "dcae67d87cb1d4c3c8daeefaea1a83b63b0600462db17c6e0b17f4c413808066",
+    "relative-change.svg": "52e591a4de748aaf46e55be3fbef9b1a4e941d4c7e877b7abc6309373ef31b93",
+    "relative-change.png": "03961215bcdf14679940b5de0925bb76438235e30fadc9cc9acf730910b3c9f9",
+    "sample-distributions.svg": "d2fba5b4a7102061a631d9bbc0086f4090c5cbbc63c66f352d4e2fd337250076",
+    "sample-distributions.png": "a0ee35084117fcaf46b13d5742f74ba73723cb283494e7dff87262c12e6abae9",
+    "followup-change.svg": "46019872619942cce751ff8b1d29ff6c048ee36588625c4fcaa128544620dc78",
+    "followup-change.png": "68a12c73f6514efe360dc820883bbb5d802ac24273105e142e90e019f93fe91f",
+    "candidate-only.svg": "97ccc2bf1b74c06192f18b56e79527b2a7d7e541b961324c9ac894c7268d4915",
+    "candidate-only.png": "1d0c32a116280e2e51949c11870ca9c91e333ac9be80716a396582d19985824d",
+    "computed.json": "ae1a8d7f5cdf3f048be67a0eda07b5d51b67002457e9b658641389ecd2d0824a"
+  }
+}

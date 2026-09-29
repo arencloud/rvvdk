@@ -102,3 +102,10 @@ These are local parser tests, not a VMware compatibility qualification or fuzzin
 campaign. [Logical-reader qualification](vmdk-logical.md#reference-qualification)
 records hosted reference comparisons and the custom/NUL-padding limitations. ESXi
 is not needed; the 60-day trial remains reserved for V0's live-access proof.
+
+
+R4.5 keeps these text parser rules unchanged. The separate
+[DescriptorText acquisition API](vmdk-padding.md) accepts bounded terminal NUL
+padding, preserves original bytes and passes only the text prefix to this parser.
+LocalResolver and the CLI can therefore open supported padded descriptors without
+file normalization; direct Descriptor::parse calls still reject any NUL.

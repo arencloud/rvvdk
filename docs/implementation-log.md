@@ -43,8 +43,8 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 | V0 | Planned | Independent VMware access feasibility; licensed/evaluation host needed for representative API workflows | Pending — first transport baseline follows functional proof |
 
 R1.1–R1.6 and R2.1–R2.6 are complete within their documented scopes; their detailed
-records appear below. R3 local CLI and R4.1–R4.4 local FLAT/ZERO VMDK workflows are complete within their
-documented contracts; R4.5, later milestones and V0 remain planned. Performance qualification
+records appear below. R3 local CLI and R4.1–R4.5 local FLAT/ZERO VMDK workflows are complete within their
+documented contracts; R5 onward and V0 remain planned. Performance qualification
 remains provisional as recorded for each step.
 
 ## Per-step record template
@@ -1438,13 +1438,55 @@ Fifteen new-mode runs yield 53.367 µs / 61.726 µs for mixed VMDK inspect/plan,
 22.453 ms / 24.671 ms for 1 MiB FLAT/mixed copy+verify with full publication, and
 159.038 µs for mixed verification. These are distinct workloads, not engine speedups.
 
+## R4.5 — Bounded descriptor padding
+
+Date: 2026-09-29. Status: **Complete within the documented acquisition policy**.
+Baseline: `ce193cf`, initially clean. The enclosing commit records this step.
+[Evidence](benchmark-results/2026-09-29-r45/README.md) retains source/harness/binary
+identities, samples, reference commands/hashes, validation and SVG/PNG plots.
+
+DescriptorText now accepts a contiguous terminal NUL run after bounded acquisition
+reaches EOF. The unchanged total-byte limit includes padding; oversize input still
+uses only one extra probe. Original bytes remain intact through as_bytes(); new
+text_bytes()/padding_bytes() expose the cached prefix and padding count. Repeated
+parse() calls use that prefix without rescanning padding or allocating a normalized
+copy. Direct Descriptor parsers remain strict. Embedded NUL/nonzero suffixes,
+invalid/all-zero input and I/O failures after padding reject. Local loading and CLI
+inherit the policy with no source-file rewrites or logical mapping changes.
+[Contract](vmdk-padding.md); [ADR-0037](adr/0037-bounded-vmdk-padding.md).
+
+Validation: **447 distinct passed, one existing gated allocation test** (448 total).
+Six acquisition tests cover strict parsing, provenance, suffix/chunk boundaries,
+interruptions, errors after padding and exact/over-limit admission. A CLI test
+exercises all four commands on an unchanged padded source. The separate 83-test
+CLI/VMDK run passes with integration fixtures on Btrfs; five existing CLI unit
+fault tests retain system-temporary fixtures. Formatting, strict all-target Clippy
+and core/datamover/VMDK wasm32 checks pass (existing control::sum warning).
+
+The reference runner now requires direct acceptance of original QEMU-generated
+monolithicFlat and twoGbMaxExtentFlat descriptors, with 157 and 149 terminal NULs.
+Dump output and public CLI copy/verification equal the 1 MiB RAW oracle, QEMU
+comparison succeeds, and original descriptor hashes remain unchanged. Inspect/plan
+reports also pass and plan creates no output. Synthetic hosted reference cases
+still agree; custom remains byte-oracle-only because QEMU rejects its createType.
+Historical R4.3 normalization evidence remains immutable. No SDK or ESXi was used.
+
+Performance: 30 matched runs show +0.35%, +1.01%, +3.28%, +0.18%, -1.03% for strict
+small parsing, local unpadded acquisition, VMDK inspect, VMDK copy+verify and RAW
+verify. An initial +7.80% inspection pair triggered six longer runs: -0.61%
+aggregate, paired -0.61%, -1.62%, +0.06%. Every original/repeat pair remains saved.
+Twelve candidate-only runs yield 0.582 µs / 365.609 µs for acquiring 512 B / 1 MiB
+padded inputs, 47.373 µs for oversize rejection and 0.372 µs for reparsing a cached
+prefix. The one-time bounded scan is accepted; repeated parsing avoids that work.
+Different boundaries are not speedups, and prior performance follow-ups stay open.
+
 ## Next session
 
-Start **R4.5**: define and implement bounded trailing-NUL descriptor acquisition
-compatibility, with unmodified generated hosted descriptor reference comparisons.
-Keep parser/resource/error rules explicit and custom independent-decoder
-qualification separate; neither limitation is silently closed by CLI integration.
-Each step gets tests, benchmarks, plots and a commit.
+Start **R5.1**: bounded hosted sparse header parsing, checked resource/arithmetic
+validation and synthetic fixture provenance. Establish an explicit header subset
+before grain mapping or logical sparse reads; parent chains follow separately.
+Keep custom independent-decoder qualification open. Each step gets tests,
+benchmarks, plots and a commit.
 
 ESXi remains unnecessary for local work; request the 60-day trial when V0's lab
 proof is ready. Keep PERF.0, R4.4 preview overhead/tuning and earlier adverse timing

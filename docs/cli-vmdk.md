@@ -14,8 +14,8 @@ rvddk verify disk.vmdk output.raw --format vmdk --json
 The [descriptor subset](vmdk-descriptor.md) and [logical reader](vmdk-logical.md)
 remain the format contract: hosted base `monolithicFlat`, split flat, and custom
 FLAT/ZERO layouts only. Parent chains, sparse/compressed/encrypted images and
-managed variants reject. Terminal NUL padding still rejects; R4.3's QEMU-generated
-fixture normalization is not automatic CLI behavior. Custom layouts have byte
+managed variants reject. [Bounded terminal NUL padding](vmdk-padding.md) is accepted
+during acquisition; embedded NULs or nonzero suffixes reject. Files are never rewritten. Custom layouts have byte
 oracle coverage, but independent decoder qualification remains open.
 
 ## Opening and identity

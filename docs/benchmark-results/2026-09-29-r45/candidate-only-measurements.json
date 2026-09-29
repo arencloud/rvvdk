@@ -1,0 +1,1706 @@
+[
+  {
+    "tag": "padding1-0",
+    "benchmark": "padding/acquire_512",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/deps/padding-f13fc8a617f24a78",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "padding/acquire_512$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "padding",
+        "function_id": "acquire_512",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "padding/acquire_512",
+        "directory_name": "padding/acquire_512",
+        "title": "padding/acquire_512"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 582.698528319324,
+            "upper_bound": 596.621074689549
+          },
+          "point_estimate": 588.7077222290463,
+          "standard_error": 3.5910415873218082
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 579.4325635671294,
+            "upper_bound": 584.8619158755506
+          },
+          "point_estimate": 581.8857678066928,
+          "standard_error": 1.2975485868262273
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1.745587353851736,
+            "upper_bound": 8.350945263852603
+          },
+          "point_estimate": 4.087810171868656,
+          "standard_error": 1.6545346646090553
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 4.953265862594327,
+            "upper_bound": 29.500737309392765
+          },
+          "point_estimate": 20.081411102009778,
+          "standard_error": 6.4292798084108975
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0,
+          113974.0
+        ],
+        "times": [
+          67223672.0,
+          75701516.0,
+          74487366.0,
+          67346487.0,
+          66213533.0,
+          66805443.0,
+          66534559.0,
+          66234739.0,
+          66361144.0,
+          68940919.0,
+          67865000.0,
+          66696257.0,
+          67297287.0,
+          67510974.0,
+          66621847.0,
+          66347661.0,
+          66007504.0,
+          66292036.0,
+          65884657.0,
+          66025810.0,
+          65988422.0,
+          66013339.0,
+          66010235.0,
+          66054684.0,
+          65857027.0,
+          66003697.0,
+          66406575.0,
+          66188875.0,
+          66014914.0,
+          65985039.0
+        ]
+      },
+      "tukey.json": [
+        550.1042935230843,
+        564.6521114464703,
+        603.4462925754996,
+        617.9941104988856
+      ]
+    }
+  },
+  {
+    "tag": "padding1-1",
+    "benchmark": "padding/acquire_1m",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/deps/padding-f13fc8a617f24a78",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "padding/acquire_1m$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "padding",
+        "function_id": "acquire_1m",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "padding/acquire_1m",
+        "directory_name": "padding/acquire_1m",
+        "title": "padding/acquire_1m"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 365929.0086080587,
+            "upper_bound": 368982.151098901
+          },
+          "point_estimate": 367322.47307692305,
+          "standard_error": 778.5651369842427
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 364876.26373626373,
+            "upper_bound": 368132.35164835164
+          },
+          "point_estimate": 365609.3214285715,
+          "standard_error": 791.175014135752
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1232.578224271222,
+            "upper_bound": 4864.133544413624
+          },
+          "point_estimate": 2644.9909376574947,
+          "standard_error": 926.365348599911
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2465.5146155400716,
+            "upper_bound": 6045.952615530183
+          },
+          "point_estimate": 4327.763241087382,
+          "standard_error": 1011.7006945929018
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0,
+          182.0
+        ],
+        "times": [
+          69814638.0,
+          67732662.0,
+          67726337.0,
+          67241624.0,
+          67635205.0,
+          67520084.0,
+          67003808.0,
+          66996368.0,
+          67347410.0,
+          67016917.0,
+          68058754.0,
+          66088913.0,
+          66669672.0,
+          66523145.0,
+          66176377.0,
+          66383936.0,
+          66128905.0,
+          66256032.0,
+          66502168.0,
+          66355917.0,
+          66424249.0,
+          66329568.0,
+          66558648.0,
+          66510328.0,
+          66076801.0,
+          66406700.0,
+          66745745.0,
+          66679792.0,
+          66408260.0,
+          66261740.0
+        ]
+      },
+      "tukey.json": [
+        351073.32554945047,
+        357852.3818681318,
+        375929.8653846154,
+        382708.9217032967
+      ]
+    }
+  },
+  {
+    "tag": "padding1-2",
+    "benchmark": "padding/reject_oversize",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/deps/padding-f13fc8a617f24a78",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "padding/reject_oversize$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "padding",
+        "function_id": "reject_oversize",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "padding/reject_oversize",
+        "directory_name": "padding/reject_oversize",
+        "title": "padding/reject_oversize"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 47162.15036156779,
+            "upper_bound": 47669.70860138194
+          },
+          "point_estimate": 47415.4554920181,
+          "standard_error": 129.0326123221831
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 46960.06611865618,
+            "upper_bound": 47747.234810578986
+          },
+          "point_estimate": 47372.97641172266,
+          "standard_error": 188.07788870052056
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 441.88314647952063,
+            "upper_bound": 1081.874078005198
+          },
+          "point_estimate": 814.3564517324188,
+          "standard_error": 167.68006054813299
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 542.5282162073798,
+            "upper_bound": 871.4086928966314
+          },
+          "point_estimate": 720.00563792905,
+          "standard_error": 84.39427857801292
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0
+        ],
+        "times": [
+          67004282.0,
+          67602858.0,
+          66637398.0,
+          67642309.0,
+          67521903.0,
+          67589294.0,
+          66149220.0,
+          66289039.0,
+          66723389.0,
+          68516908.0,
+          67671279.0,
+          65462484.0,
+          65689668.0,
+          66873374.0,
+          67441320.0,
+          66342461.0,
+          66260549.0,
+          66938648.0,
+          63972006.0,
+          65278263.0,
+          66382268.0,
+          65389877.0,
+          65488963.0,
+          65315287.0,
+          65410134.0,
+          65242888.0,
+          65704597.0,
+          65523751.0,
+          65774469.0,
+          66187781.0
+        ]
+      },
+      "tukey.json": [
+        43621.88670478914,
+        45219.68531093639,
+        49480.481593995704,
+        51078.280200142945
+      ]
+    }
+  },
+  {
+    "tag": "padding1-3",
+    "benchmark": "padding/reparse_1m",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/deps/padding-f13fc8a617f24a78",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "padding/reparse_1m$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "padding",
+        "function_id": "reparse_1m",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "padding/reparse_1m",
+        "directory_name": "padding/reparse_1m",
+        "title": "padding/reparse_1m"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 365.66139187540136,
+            "upper_bound": 367.7277519313699
+          },
+          "point_estimate": 366.63102027708976,
+          "standard_error": 0.5278976821116778
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 364.80982108450314,
+            "upper_bound": 367.8734516928158
+          },
+          "point_estimate": 366.82642444260944,
+          "standard_error": 0.7175087671211253
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1.3256435255980734,
+            "upper_bound": 3.5587582142759793
+          },
+          "point_estimate": 2.7120724258395255,
+          "standard_error": 0.6228381135018995
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1.9153685819312325,
+            "upper_bound": 4.015868950884808
+          },
+          "point_estimate": 2.9303110104600183,
+          "standard_error": 0.5870330295001317
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0,
+          181650.0
+        ],
+        "times": [
+          65802466.0,
+          65899959.0,
+          66032154.0,
+          68461943.0,
+          67001205.0,
+          66906519.0,
+          66541208.0,
+          67012824.0,
+          66832138.0,
+          66628209.0,
+          66929537.0,
+          66930476.0,
+          66300097.0,
+          67243109.0,
+          66816287.0,
+          66938746.0,
+          66639831.0,
+          66726612.0,
+          66051431.0,
+          66106926.0,
+          66227704.0,
+          66806790.0,
+          66694841.0,
+          66158227.0,
+          66235311.0,
+          66527867.0,
+          66529426.0,
+          65968080.0,
+          66964670.0,
+          66041152.0
+        ]
+      },
+      "tukey.json": [
+        351.946256537297,
+        358.1245079823837,
+        374.59984516928154,
+        380.7780966143682
+      ]
+    }
+  },
+  {
+    "tag": "padding2-0",
+    "benchmark": "padding/acquire_512",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/deps/padding-f13fc8a617f24a78",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "padding/acquire_512$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "padding",
+        "function_id": "acquire_512",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "padding/acquire_512",
+        "directory_name": "padding/acquire_512",
+        "title": "padding/acquire_512"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 581.5349615381263,
+            "upper_bound": 584.8644476163081
+          },
+          "point_estimate": 583.2756113222457,
+          "standard_error": 0.8465159171503771
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 582.1632090931279,
+            "upper_bound": 584.8956669920854
+          },
+          "point_estimate": 583.8521843729297,
+          "standard_error": 0.8361736622708877
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1.7560546600826816,
+            "upper_bound": 4.626236857828097
+          },
+          "point_estimate": 2.9840613421968305,
+          "standard_error": 0.7464486238958313
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2.7610298659709573,
+            "upper_bound": 6.12204857715586
+          },
+          "point_estimate": 4.668722536136441,
+          "standard_error": 0.8640475211085749
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0,
+          114724.0
+        ],
+        "times": [
+          66776144.0,
+          66660309.0,
+          67068477.0,
+          66852601.0,
+          66800040.0,
+          66353614.0,
+          67087353.0,
+          66502754.0,
+          66751984.0,
+          65533195.0,
+          65362536.0,
+          67073053.0,
+          67115788.0,
+          67117309.0,
+          67010173.0,
+          67676151.0,
+          67239202.0,
+          67231769.0,
+          67446897.0,
+          66953543.0,
+          66598784.0,
+          66730938.0,
+          66594263.0,
+          66836939.0,
+          67861071.0,
+          67818922.0,
+          67193242.0,
+          66929537.0,
+          67213799.0,
+          67080950.0
+        ]
+      },
+      "tukey.json": [
+        570.2557594749138,
+        575.9833219291518,
+        591.2568218071196,
+        596.9843842613576
+      ]
+    }
+  },
+  {
+    "tag": "padding2-1",
+    "benchmark": "padding/acquire_1m",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/deps/padding-f13fc8a617f24a78",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "padding/acquire_1m$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "padding",
+        "function_id": "acquire_1m",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "padding/acquire_1m",
+        "directory_name": "padding/acquire_1m",
+        "title": "padding/acquire_1m"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 371628.13705163065,
+            "upper_bound": 378234.68122735515
+          },
+          "point_estimate": 374906.4871376811,
+          "standard_error": 1692.3280309861661
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 374096.0516304348,
+            "upper_bound": 377896.54076086957
+          },
+          "point_estimate": 376303.20108695654,
+          "standard_error": 1064.9706393219558
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2549.3588563701887,
+            "upper_bound": 13506.50187542909
+          },
+          "point_estimate": 4734.280135514904,
+          "standard_error": 2873.0945281828954
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 6550.443168937844,
+            "upper_bound": 11827.746773126773
+          },
+          "point_estimate": 9434.818717631972,
+          "standard_error": 1364.3845799382634
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0,
+          184.0
+        ],
+        "times": [
+          69042848.0,
+          69055723.0,
+          69213666.0,
+          70763811.0,
+          70155098.0,
+          69039562.0,
+          69289238.0,
+          72460161.0,
+          69593450.0,
+          70346594.0,
+          69646619.0,
+          70276026.0,
+          73577302.0,
+          69807505.0,
+          69265912.0,
+          69280181.0,
+          69472477.0,
+          68919773.0,
+          69327105.0,
+          68632397.0,
+          69790449.0,
+          65709550.0,
+          66017401.0,
+          66712389.0,
+          66975183.0,
+          68747574.0,
+          66834841.0,
+          67262076.0,
+          67096322.0,
+          67172576.0
+        ]
+      },
+      "tukey.json": [
+        332364.94836956525,
+        349890.77921195654,
+        396626.328125,
+        414152.1589673913
+      ]
+    }
+  },
+  {
+    "tag": "padding2-2",
+    "benchmark": "padding/reject_oversize",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/deps/padding-f13fc8a617f24a78",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "padding/reject_oversize$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "padding",
+        "function_id": "reject_oversize",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "padding/reject_oversize",
+        "directory_name": "padding/reject_oversize",
+        "title": "padding/reject_oversize"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 46526.80181192131,
+            "upper_bound": 48578.86618055557
+          },
+          "point_estimate": 47447.415185185186,
+          "standard_error": 528.2816643213102
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 45929.66076388889,
+            "upper_bound": 46741.08159722222
+          },
+          "point_estimate": 46299.059375,
+          "standard_error": 260.5560274332406
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 316.4429466736776,
+            "upper_bound": 1468.84731454774
+          },
+          "point_estimate": 767.0287590908508,
+          "standard_error": 291.4015761702486
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1288.396242736336,
+            "upper_bound": 4023.373427875614
+          },
+          "point_estimate": 2942.4668136900946,
+          "standard_error": 694.9594808365844
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0,
+          1440.0
+        ],
+        "times": [
+          67465096.0,
+          66335542.0,
+          66037188.0,
+          65772555.0,
+          66253380.0,
+          65874506.0,
+          65433255.0,
+          65637064.0,
+          65975117.0,
+          66094919.0,
+          71113179.0,
+          67478971.0,
+          68891999.0,
+          79826129.0,
+          74746663.0,
+          67149219.0,
+          66182504.0,
+          82672498.0,
+          67139180.0,
+          69680127.0,
+          74626198.0,
+          66872094.0,
+          66469197.0,
+          66090342.0,
+          66893886.0,
+          67135087.0,
+          67925949.0,
+          66232162.0,
+          65710491.0,
+          66013839.0
+        ]
+      },
+      "tukey.json": [
+        42193.95312499999,
+        44031.16979166666,
+        48930.414236111115,
+        50767.63090277779
+      ]
+    }
+  },
+  {
+    "tag": "padding2-3",
+    "benchmark": "padding/reparse_1m",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/deps/padding-f13fc8a617f24a78",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "padding/reparse_1m$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "padding",
+        "function_id": "reparse_1m",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "padding/reparse_1m",
+        "directory_name": "padding/reparse_1m",
+        "title": "padding/reparse_1m"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 369.9681310873332,
+            "upper_bound": 373.903104033031
+          },
+          "point_estimate": 372.00444794661945,
+          "standard_error": 1.002811899239948
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 369.67745797389955,
+            "upper_bound": 374.4130640345056
+          },
+          "point_estimate": 371.93409367396595,
+          "standard_error": 1.312195937092527
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1.8146231711682175,
+            "upper_bound": 6.536668014342442
+          },
+          "point_estimate": 3.811255083298909,
+          "standard_error": 1.2052578378912895
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3.5798046377501374,
+            "upper_bound": 7.2029148608228315
+          },
+          "point_estimate": 5.596765912192017,
+          "standard_error": 0.9415443158721031
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0,
+          180840.0
+        ],
+        "times": [
+          66881024.0,
+          66798314.0,
+          66973345.0,
+          66543967.0,
+          66445600.0,
+          66760130.0,
+          66801745.0,
+          64503967.0,
+          64621647.0,
+          68775581.0,
+          67534319.0,
+          68504652.0,
+          67202807.0,
+          68237353.0,
+          68383976.0,
+          68366378.0,
+          67856448.0,
+          67413701.0,
+          67719838.0,
+          68873465.0,
+          67026077.0,
+          66823919.0,
+          67318316.0,
+          67697879.0,
+          66799828.0,
+          68205333.0,
+          68048246.0,
+          67376073.0,
+          66793054.0,
+          66911549.0
+        ]
+      },
+      "tukey.json": [
+        349.4820808449459,
+        359.43554177726173,
+        385.9781042634372,
+        395.931565195753
+      ]
+    }
+  },
+  {
+    "tag": "padding3-0",
+    "benchmark": "padding/acquire_512",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/deps/padding-f13fc8a617f24a78",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "padding/acquire_512$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "padding",
+        "function_id": "acquire_512",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "padding/acquire_512",
+        "directory_name": "padding/acquire_512",
+        "title": "padding/acquire_512"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 574.2028083080422,
+            "upper_bound": 579.0293725030436
+          },
+          "point_estimate": 576.3120699805102,
+          "standard_error": 1.248493121925356
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 573.5606171019015,
+            "upper_bound": 576.2369043740678
+          },
+          "point_estimate": 575.2089341746541,
+          "standard_error": 0.6415425913547924
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1.9489868629139275,
+            "upper_bound": 5.801761385141351
+          },
+          "point_estimate": 2.927048819795923,
+          "standard_error": 1.0105054505442925
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3.0014432528548824,
+            "upper_bound": 10.39649423731803
+          },
+          "point_estimate": 6.953162015687058,
+          "standard_error": 2.133578597762121
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0,
+          116642.0
+        ],
+        "times": [
+          66924474.0,
+          67052456.0,
+          67668909.0,
+          67104679.0,
+          67579802.0,
+          67598968.0,
+          70677444.0,
+          66524022.0,
+          66842528.0,
+          67093139.0,
+          67093902.0,
+          67117731.0,
+          67144325.0,
+          66318394.0,
+          66668219.0,
+          66504492.0,
+          66658226.0,
+          67443239.0,
+          67275410.0,
+          67276419.0,
+          67303093.0,
+          67049109.0,
+          66884113.0,
+          66815103.0,
+          67151440.0,
+          68483706.0,
+          68229551.0,
+          66380366.0,
+          66914452.0,
+          66888063.0
+        ]
+      },
+      "tukey.json": [
+        561.7395406457366,
+        567.4428925687146,
+        582.6518310299891,
+        588.3551829529671
+      ]
+    }
+  },
+  {
+    "tag": "padding3-1",
+    "benchmark": "padding/acquire_1m",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/deps/padding-f13fc8a617f24a78",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "padding/acquire_1m$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "padding",
+        "function_id": "acquire_1m",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "padding/acquire_1m",
+        "directory_name": "padding/acquire_1m",
+        "title": "padding/acquire_1m"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 365724.05206928833,
+            "upper_bound": 375225.42325374536
+          },
+          "point_estimate": 369335.2543071161,
+          "standard_error": 2653.5329445313996
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 364623.6938202247,
+            "upper_bound": 366584.6011235955
+          },
+          "point_estimate": 364799.2724719101,
+          "standard_error": 513.6628760328878
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 602.0900962208591,
+            "upper_bound": 3752.5188378738917
+          },
+          "point_estimate": 1667.879159715074,
+          "standard_error": 800.107301546213
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2818.66218351584,
+            "upper_bound": 24239.166847411092
+          },
+          "point_estimate": 14751.218756986784,
+          "standard_error": 7261.809466008418
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0,
+          178.0
+        ],
+        "times": [
+          66367413.0,
+          66388444.0,
+          66016099.0,
+          64921424.0,
+          64925483.0,
+          64730348.0,
+          64932662.0,
+          64902148.0,
+          67126494.0,
+          66419266.0,
+          79166442.0,
+          66822660.0,
+          65434159.0,
+          65333481.0,
+          65035621.0,
+          64870506.0,
+          64985968.0,
+          65453003.0,
+          64903887.0,
+          64935879.0,
+          64691169.0,
+          64700177.0,
+          64831598.0,
+          64731769.0,
+          64836117.0,
+          65049821.0,
+          64901719.0,
+          65170637.0,
+          64929581.0,
+          64736283.0
+        ]
+      },
+      "tukey.json": [
+        354878.43258426955,
+        359681.6580056179,
+        372490.2591292135,
+        377293.4845505619
+      ]
+    }
+  },
+  {
+    "tag": "padding3-2",
+    "benchmark": "padding/reject_oversize",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/deps/padding-f13fc8a617f24a78",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "padding/reject_oversize$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "padding",
+        "function_id": "reject_oversize",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "padding/reject_oversize",
+        "directory_name": "padding/reject_oversize",
+        "title": "padding/reject_oversize"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 50989.341106147236,
+            "upper_bound": 53964.20899630688
+          },
+          "point_estimate": 52490.21543959972,
+          "standard_error": 759.8464410200935
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 52209.20979270908,
+            "upper_bound": 54641.81951393853
+          },
+          "point_estimate": 53465.178341672625,
+          "standard_error": 820.6251183482423
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1703.405633089451,
+            "upper_bound": 6805.370734863149
+          },
+          "point_estimate": 3327.263789964278,
+          "standard_error": 1449.5891599507797
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3290.7597587636583,
+            "upper_bound": 4987.552657450994
+          },
+          "point_estimate": 4235.152956085292,
+          "standard_error": 432.8991841487088
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0
+        ],
+        "times": [
+          65606010.0,
+          67190230.0,
+          66778662.0,
+          65726940.0,
+          65710214.0,
+          65074477.0,
+          64499881.0,
+          64629274.0,
+          64598710.0,
+          74046390.0,
+          77261100.0,
+          77363686.0,
+          86192861.0,
+          73475442.0,
+          75356501.0,
+          75655036.0,
+          76455778.0,
+          79621929.0,
+          74365623.0,
+          78511179.0,
+          77260822.0,
+          82694948.0,
+          78579602.0,
+          78847914.0,
+          76432033.0,
+          73028584.0,
+          75402162.0,
+          74553319.0,
+          73052785.0,
+          75042250.0
+        ]
+      },
+      "tukey.json": [
+        25549.052537526804,
+        36677.86937097927,
+        66354.71426018585,
+        77483.53109363832
+      ]
+    }
+  },
+  {
+    "tag": "padding3-3",
+    "benchmark": "padding/reparse_1m",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/deps/padding-f13fc8a617f24a78",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "padding/reparse_1m$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "padding",
+        "function_id": "reparse_1m",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "padding/reparse_1m",
+        "directory_name": "padding/reparse_1m",
+        "title": "padding/reparse_1m"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 382.7943656848376,
+            "upper_bound": 389.05325753440894
+          },
+          "point_estimate": 385.8368536496119,
+          "standard_error": 1.5986382176355045
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 381.59465053384275,
+            "upper_bound": 387.46631056708145
+          },
+          "point_estimate": 384.8874238791142,
+          "standard_error": 1.5510475395946792
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 4.14693476812547,
+            "upper_bound": 12.467003453319785
+          },
+          "point_estimate": 8.187886409525754,
+          "standard_error": 2.0529005124060196
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 6.251593598366907,
+            "upper_bound": 10.83862993205751
+          },
+          "point_estimate": 8.906385794647163,
+          "standard_error": 1.1640950830964676
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0,
+          163063.0
+        ],
+        "times": [
+          64937116.0,
+          64981891.0,
+          62386497.0,
+          63149665.0,
+          63445776.0,
+          62934896.0,
+          61433544.0,
+          61649039.0,
+          64011822.0,
+          65906781.0,
+          66460738.0,
+          65281194.0,
+          63213173.0,
+          63624003.0,
+          61552384.0,
+          60606937.0,
+          60926548.0,
+          61725916.0,
+          62455473.0,
+          62061440.0,
+          62843877.0,
+          62677919.0,
+          61541450.0,
+          61481088.0,
+          61822922.0,
+          63568223.0,
+          62873471.0,
+          62418654.0,
+          62918668.0,
+          62580341.0
+        ]
+      },
+      "tukey.json": [
+        345.80399140209613,
+        362.2465051851125,
+        406.0932086064895,
+        422.5357223895059
+      ]
+    }
+  }
+]

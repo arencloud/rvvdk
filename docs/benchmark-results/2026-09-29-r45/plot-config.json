@@ -1,0 +1,50 @@
+{
+  "title": "R4.5 \u00b7 Bounded descriptor padding",
+  "candidate": "patch d1255dec",
+  "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm memory / Btrfs",
+  "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+  "candidate_only": {
+    "title": "Padded descriptor acquisition and parsing",
+    "note": "Inputs prepared outside timing \u00b7 reparse excludes acquisition \u00b7 independent scales",
+    "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+  },
+  "workloads": {
+    "descriptor/small": {
+      "label": "Strict descriptor parsing",
+      "phase": "planning"
+    },
+    "resolution/load_descriptor": {
+      "label": "Unpadded local descriptor load",
+      "phase": "planning"
+    },
+    "cli_vmdk/inspect_mixed": {
+      "label": "VMDK inspect \u00b7 mixed 1 MiB",
+      "phase": "planning"
+    },
+    "cli_vmdk/copy_mixed_verify": {
+      "label": "VMDK mixed copy + verify \u00b7 1 MiB",
+      "phase": "copy"
+    },
+    "cli_transfer/verify_only": {
+      "label": "RAW verify \u00b7 16 MiB",
+      "phase": "copy"
+    },
+    "padding/acquire_512": {
+      "label": "Acquire padded 512 B",
+      "phase": "planning"
+    },
+    "padding/acquire_1m": {
+      "label": "Acquire padded 1 MiB",
+      "phase": "planning"
+    },
+    "padding/reject_oversize": {
+      "label": "Reject padded 1 MiB + 1 B",
+      "phase": "planning"
+    },
+    "padding/reparse_1m": {
+      "label": "Reparse cached prefix of 1 MiB input",
+      "phase": "planning"
+    }
+  },
+  "repeat_sampling": "3 adjacent pairs \u00b7 40 flat samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+}

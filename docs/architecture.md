@@ -1176,3 +1176,13 @@ source checks. LocalResolver exposes confined file acquisition without weakening
 its namespace policy. VMDK has no native FD endpoint; explicit io-uring rejects
 before destination opening. Existing publication, verification and cancellation
 remain in the shared lifecycle. See [ADR-0036](adr/0036-cli-vmdk-sources.md).
+
+
+## Bounded descriptor padding (R4.5)
+
+DescriptorText owns original acquired bytes, including a permitted terminal NUL
+run, under the existing total-byte ceiling. After EOF it caches the strict-text
+boundary once. Parsing borrows this prefix; original bytes remain available for
+provenance. Direct Descriptor parsers retain strict NUL rejection. LocalResolver
+and the CLI inherit the acquisition policy without format mapping or execution
+changes. See [ADR-0037](adr/0037-bounded-vmdk-padding.md).

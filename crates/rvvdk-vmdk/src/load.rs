@@ -5,9 +5,12 @@ use std::io::{self, Read};
 pub struct DescriptorText {
     bytes: Vec<u8>,
     limits: Limits,
+    text_len: usize,
 }
 impl DescriptorText {
     /// Read at most descriptor_bytes + one probe byte, without trusting size hints.
+    /// The bound includes terminal NUL padding. Only a contiguous NUL suffix is
+    /// excluded from text parsing; original bytes remain available via as_bytes.
     /// This bounds bytes/memory, not blocking time. Interrupted reads are retried.
     pub fn read_from(mut reader: impl Read, limits: Limits) -> Result<Self, BackingError> {
         let mut bytes = Vec::new();
@@ -32,14 +35,33 @@ impl DescriptorText {
             }
             bytes.extend_from_slice(&chunk[..n]);
         }
-        let text = Self { bytes, limits };
+        // Find the text boundary once, after EOF and total-byte admission. The
+        // unpadded case inspects only the last byte; parse() never rescans padding.
+        let text_len = bytes
+            .iter()
+            .rposition(|&byte| byte != 0)
+            .map_or(0, |i| i + 1);
+        let text = Self {
+            bytes,
+            limits,
+            text_len,
+        };
         text.parse()?;
         Ok(text)
     }
+    /// Original acquired bytes, including any terminal NUL padding.
     pub fn as_bytes(&self) -> &[u8] {
         &self.bytes
     }
+    /// Text prefix passed to the strict descriptor parser.
+    pub fn text_bytes(&self) -> &[u8] {
+        &self.bytes[..self.text_len]
+    }
+    /// Number of terminal NUL bytes, included in the acquisition byte limit.
+    pub fn padding_bytes(&self) -> usize {
+        self.bytes.len() - self.text_len
+    }
     pub fn parse(&self) -> Result<Descriptor<'_>, crate::DescriptorError> {
-        Descriptor::parse_with_limits(&self.bytes, self.limits)
+        Descriptor::parse_with_limits(self.text_bytes(), self.limits)
     }
 }

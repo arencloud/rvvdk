@@ -33,7 +33,8 @@ VMware disk access and migration, extensible to other platforms.
 > **Active development.** The project exposes Rust libraries and a local disk CLI.
 > A [bounded VMDK descriptor parser](docs/vmdk-descriptor.md) is available.
 > [Read-only FLAT/ZERO VMDK disks](docs/vmdk-logical.md) are available through Rust APIs
-> and [all four CLI commands](docs/cli-vmdk.md), with RAW output.
+> and [all four CLI commands](docs/cli-vmdk.md), with RAW output and
+> [bounded terminal-padding support](docs/vmdk-padding.md).
 > VMware remote access, CBT, and durable resume are planned.
 > The [roadmap](docs/roadmap.md) tracks completed fixes and remaining work;
 > the [dated review](docs/project-review-2026-09-28.md) records the starting assessment.
@@ -220,7 +221,7 @@ workloads. Measurements depend on the filesystem, page cache, hardware, and
 flush policy. See the [benchmark notes](docs/benchmarks.md) for historical results
 and the [review](docs/project-review-2026-09-28.md) for measurement gaps.
 
-Explore the [R4.4 benchmark charts](docs/benchmark-results/2026-09-29-r44/README.md)
+Explore the [R4.5 benchmark charts](docs/benchmark-results/2026-09-29-r45/README.md)
 for latency comparisons, paired changes, and sample distributions. A
 [reusable generator](scripts/benchmarks/README.md) exports SVG and PNG figures.
 

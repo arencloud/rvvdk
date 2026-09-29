@@ -1,0 +1,986 @@
+[
+  {
+    "tag": "followup1-0-baseline",
+    "benchmark": "cli_vmdk/inspect_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/baseline-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_vmdk/inspect_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "inspect_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/inspect_mixed",
+        "directory_name": "cli_vmdk/inspect_mixed",
+        "title": "cli_vmdk/inspect_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 51923.38283384472,
+            "upper_bound": 52195.81264174226
+          },
+          "point_estimate": 52049.58656616863,
+          "standard_error": 69.38295724388625
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 51844.487726787615,
+            "upper_bound": 52204.72011739595
+          },
+          "point_estimate": 52039.01680896478,
+          "standard_error": 74.85450741207606
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 235.1934414488168,
+            "upper_bound": 463.8947722337986
+          },
+          "point_estimate": 385.06657720852405,
+          "standard_error": 56.93257620080222
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 271.69299112144034,
+            "upper_bound": 628.7182754033448
+          },
+          "point_estimate": 447.50647294667715,
+          "standard_error": 99.78568700595808
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0,
+          1874.0
+        ],
+        "times": [
+          96589983.0,
+          96891395.0,
+          97101850.0,
+          96497862.0,
+          97211290.0,
+          97714232.0,
+          96248805.0,
+          96931251.0,
+          101088645.0,
+          99133196.0,
+          98166287.0,
+          98290796.0,
+          97847696.0,
+          98113599.0,
+          97058961.0,
+          97002139.0,
+          97867620.0,
+          97815595.0,
+          98064623.0,
+          96925392.0,
+          96462771.0,
+          96986160.0,
+          97531945.0,
+          97934359.0,
+          97519032.0,
+          97477756.0,
+          97025082.0,
+          97292869.0,
+          97885235.0,
+          97553456.0,
+          97523203.0,
+          97434702.0,
+          97679535.0,
+          97998527.0,
+          98137006.0,
+          97407406.0,
+          98017224.0,
+          96830953.0,
+          96441223.0,
+          97937348.0
+        ]
+      },
+      "tukey.json": [
+        50260.00973852721,
+        51009.979322305226,
+        53009.898212379936,
+        53759.86779615795
+      ]
+    },
+    "variant": "baseline",
+    "pair": 1
+  },
+  {
+    "tag": "followup1-0-candidate",
+    "benchmark": "cli_vmdk/inspect_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_vmdk/inspect_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "inspect_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/inspect_mixed",
+        "directory_name": "cli_vmdk/inspect_mixed",
+        "title": "cli_vmdk/inspect_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 51699.28075632421,
+            "upper_bound": 51899.91607221219
+          },
+          "point_estimate": 51796.306814661846,
+          "standard_error": 51.24218089323442
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 51627.64016520392,
+            "upper_bound": 51809.301755291686
+          },
+          "point_estimate": 51721.67062467734,
+          "standard_error": 47.17981349945202
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 164.20961959373398,
+            "upper_bound": 423.3668703360847
+          },
+          "point_estimate": 300.68153116158555,
+          "standard_error": 62.343712190049715
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 247.60143598641,
+            "upper_bound": 385.4044943928539
+          },
+          "point_estimate": 326.9506781033697,
+          "standard_error": 35.33483115151253
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0,
+          1937.0
+        ],
+        "times": [
+          101094306.0,
+          101304618.0,
+          100409583.0,
+          101219536.0,
+          100596377.0,
+          101595598.0,
+          100726646.0,
+          100275117.0,
+          100209572.0,
+          101319493.0,
+          101902807.0,
+          100506187.0,
+          100199191.0,
+          100029825.0,
+          99465989.0,
+          100060589.0,
+          99762467.0,
+          99620503.0,
+          99671765.0,
+          99787322.0,
+          99975653.0,
+          99670094.0,
+          99546067.0,
+          99658866.0,
+          99879167.0,
+          99878005.0,
+          99938489.0,
+          100107012.0,
+          100076592.0,
+          99796756.0,
+          100265276.0,
+          99756677.0,
+          100645692.0,
+          101621916.0,
+          101158162.0,
+          100130640.0,
+          100569957.0,
+          100170561.0,
+          100275127.0,
+          100299652.0
+        ]
+      },
+      "tukey.json": [
+        50389.5992514197,
+        50971.17875580794,
+        52522.057434176575,
+        53103.636938564814
+      ]
+    },
+    "variant": "candidate",
+    "pair": 1
+  },
+  {
+    "tag": "followup2-0-candidate",
+    "benchmark": "cli_vmdk/inspect_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_vmdk/inspect_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "inspect_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/inspect_mixed",
+        "directory_name": "cli_vmdk/inspect_mixed",
+        "title": "cli_vmdk/inspect_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 51451.43695822455,
+            "upper_bound": 51879.49362924285
+          },
+          "point_estimate": 51655.38325065274,
+          "standard_error": 109.59248755871403
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 51193.59608355092,
+            "upper_bound": 51718.60339425587
+          },
+          "point_estimate": 51310.89190600522,
+          "standard_error": 126.58107186870153
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 192.3416043137084,
+            "upper_bound": 926.962139557487
+          },
+          "point_estimate": 404.61895239882324,
+          "standard_error": 184.64660332494444
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 552.0546342066352,
+            "upper_bound": 820.2682919783554
+          },
+          "point_estimate": 703.3746581167662,
+          "standard_error": 67.63673863229528
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0,
+          1915.0
+        ],
+        "times": [
+          101032015.0,
+          100904092.0,
+          100675000.0,
+          100365757.0,
+          100335353.0,
+          101080764.0,
+          100631906.0,
+          99901734.0,
+          100619492.0,
+          99944538.0,
+          102388053.0,
+          101308884.0,
+          99734999.0,
+          99292652.0,
+          98789599.0,
+          98569629.0,
+          98289724.0,
+          97532909.0,
+          97744347.0,
+          97102623.0,
+          97614554.0,
+          97943478.0,
+          97870752.0,
+          98219664.0,
+          97972598.0,
+          97637398.0,
+          97882634.0,
+          97618788.0,
+          98060886.0,
+          98179495.0,
+          98010587.0,
+          98442381.0,
+          97895440.0,
+          97970981.0,
+          98230992.0,
+          98196402.0,
+          98122041.0,
+          98368871.0,
+          98327835.0,
+          97992510.0
+        ]
+      },
+      "tukey.json": [
+        47900.624412532656,
+        49528.40757180158,
+        53869.16266318537,
+        55496.94582245429
+      ]
+    },
+    "variant": "candidate",
+    "pair": 2
+  },
+  {
+    "tag": "followup2-0-baseline",
+    "benchmark": "cli_vmdk/inspect_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/baseline-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_vmdk/inspect_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "inspect_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/inspect_mixed",
+        "directory_name": "cli_vmdk/inspect_mixed",
+        "title": "cli_vmdk/inspect_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 52184.67491780822,
+            "upper_bound": 52559.57479452055
+          },
+          "point_estimate": 52363.53746575343,
+          "standard_error": 95.93339614858742
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 52047.28904109589,
+            "upper_bound": 52269.82767123288
+          },
+          "point_estimate": 52157.624657534245,
+          "standard_error": 57.63709919008632
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 181.26186039839578,
+            "upper_bound": 602.1492461864307
+          },
+          "point_estimate": 363.92467622397885,
+          "standard_error": 116.55662866465651
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 448.5975058549068,
+            "upper_bound": 746.8285272260345
+          },
+          "point_estimate": 617.0384668146112,
+          "standard_error": 76.47919878637208
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0,
+          1825.0
+        ],
+        "times": [
+          97253870.0,
+          97989212.0,
+          97054619.0,
+          96984350.0,
+          97135768.0,
+          96721243.0,
+          95768552.0,
+          96011225.0,
+          95187555.0,
+          95397965.0,
+          95386906.0,
+          95328223.0,
+          98672094.0,
+          97765185.0,
+          97117533.0,
+          94516142.0,
+          93548819.0,
+          94417681.0,
+          95000310.0,
+          94880627.0,
+          94500059.0,
+          95552591.0,
+          95135383.0,
+          94945839.0,
+          94500219.0,
+          94637676.0,
+          95187775.0,
+          94656648.0,
+          94645797.0,
+          94876820.0,
+          95265029.0,
+          95087900.0,
+          95377500.0,
+          94972295.0,
+          94943962.0,
+          95119601.0,
+          94925139.0,
+          95230346.0,
+          95722189.0,
+          95117588.0
+        ]
+      },
+      "tukey.json": [
+        50503.22369863014,
+        51255.45047945206,
+        53261.388561643835,
+        54013.615342465746
+      ]
+    },
+    "variant": "baseline",
+    "pair": 2
+  },
+  {
+    "tag": "followup3-0-baseline",
+    "benchmark": "cli_vmdk/inspect_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/baseline-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_vmdk/inspect_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "inspect_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/inspect_mixed",
+        "directory_name": "cli_vmdk/inspect_mixed",
+        "title": "cli_vmdk/inspect_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 51858.832422760046,
+            "upper_bound": 52856.73148815654
+          },
+          "point_estimate": 52303.321446961905,
+          "standard_error": 255.86769807674784
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 51832.818228630276,
+            "upper_bound": 52084.37641606591
+          },
+          "point_estimate": 51957.176107106076,
+          "standard_error": 70.38149202046529
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 210.68684656851775,
+            "upper_bound": 1309.561776132717
+          },
+          "point_estimate": 679.7331525049299,
+          "standard_error": 314.1212021925736
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 782.3379850076466,
+            "upper_bound": 2398.6730213010383
+          },
+          "point_estimate": 1636.3190154906972,
+          "standard_error": 449.41676646120453
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0,
+          1942.0
+        ],
+        "times": [
+          98744642.0,
+          99646685.0,
+          98841771.0,
+          102606744.0,
+          116318151.0,
+          99301482.0,
+          98764530.0,
+          102139128.0,
+          104233168.0,
+          99164297.0,
+          101166516.0,
+          101788211.0,
+          102907778.0,
+          102638681.0,
+          104099622.0,
+          102703457.0,
+          101384550.0,
+          102697717.0,
+          101129202.0,
+          100613743.0,
+          101065354.0,
+          100691532.0,
+          100619807.0,
+          100994537.0,
+          100813600.0,
+          100085240.0,
+          100460451.0,
+          97268049.0,
+          97967570.0,
+          100007499.0,
+          100840391.0,
+          100630768.0,
+          100687898.0,
+          100877035.0,
+          101077565.0,
+          100901258.0,
+          100985243.0,
+          100900414.0,
+          107794352.0,
+          107363372.0
+        ]
+      },
+      "tukey.json": [
+        48763.386714727116,
+        50222.745944902184,
+        54114.37055870236,
+        55573.72978887742
+      ]
+    },
+    "variant": "baseline",
+    "pair": 3
+  },
+  {
+    "tag": "followup3-0-candidate",
+    "benchmark": "cli_vmdk/inspect_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_vmdk/inspect_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "inspect_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/inspect_mixed",
+        "directory_name": "cli_vmdk/inspect_mixed",
+        "title": "cli_vmdk/inspect_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 51934.0739553939,
+            "upper_bound": 52791.81650499705
+          },
+          "point_estimate": 52325.039344503224,
+          "standard_error": 219.85015908020767
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 51868.85273368607,
+            "upper_bound": 52252.554967666074
+          },
+          "point_estimate": 51990.353321575545,
+          "standard_error": 108.49842305484327
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 361.4680713604301,
+            "upper_bound": 957.9190866972344
+          },
+          "point_estimate": 589.4995302750332,
+          "standard_error": 142.8351406810434
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 665.8891898974442,
+            "upper_bound": 1981.5313033031405
+          },
+          "point_estimate": 1402.77224358756,
+          "standard_error": 341.43402595887596
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0,
+          1701.0
+        ],
+        "times": [
+          98667702.0,
+          92405926.0,
+          91002948.0,
+          90300328.0,
+          90052330.0,
+          90044009.0,
+          88996614.0,
+          88800781.0,
+          88380430.0,
+          88347528.0,
+          88323923.0,
+          88617006.0,
+          89183781.0,
+          88391701.0,
+          88106881.0,
+          96350694.0,
+          91039824.0,
+          86436674.0,
+          87810885.0,
+          87495261.0,
+          87094854.0,
+          88330605.0,
+          87635115.0,
+          87871589.0,
+          87707621.0,
+          88935137.0,
+          88138325.0,
+          87520343.0,
+          89282134.0,
+          88479481.0,
+          88919915.0,
+          88607882.0,
+          88810852.0,
+          89253829.0,
+          88843277.0,
+          88319512.0,
+          87932783.0,
+          87613661.0,
+          87630423.0,
+          84513113.0
+        ]
+      },
+      "tukey.json": [
+        49277.93827160493,
+        50463.899470899465,
+        53626.46266901823,
+        54812.42386831276
+      ]
+    },
+    "variant": "candidate",
+    "pair": 3
+  }
+]

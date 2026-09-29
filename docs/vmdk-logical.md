@@ -89,11 +89,11 @@ hashes. Qualification is intentionally stated per case:
 | QEMU-generated monolithic/split flat | RAW content and QEMU compare agree after explicitly recorded fixture-only removal of trailing NUL padding |
 | custom FLAT/ZERO with offsets/repeated source | rvvdk matches an independently assembled byte oracle; QEMU rejects createType custom |
 
-The strict parser still rejects NUL padding, embedded NUL and unsupported create
-names. Generated originals are preserved; normalized copies retain all text and
-remove only terminal zero bytes. This does not qualify unmodified padded input.
-The runner records the original rejection and does not count it as reference
-agreement. Custom ZERO/offset behavior has oracle/test coverage, not independent
+The direct text parser rejects NUL padding, embedded NUL and unsupported create
+names. In R4.3, generated originals were preserved; normalized copies retained all
+text and removed only terminal zero bytes. That evidence did not qualify unmodified
+padded input. The R4.3 runner recorded the original rejection without counting it
+as agreement. R4.5 acquisition and reference results below supersede that limitation. Custom ZERO/offset behavior has oracle/test coverage, not independent
 reference-decoder qualification. Further interoperability work may extend these
 limits explicitly; changing createType to obtain a reference decode is not a valid
 substitute for validating the same descriptor.
@@ -123,6 +123,12 @@ final flush. Existing planning, copy, verification, parser and resolver controls
 remain separately recorded; adverse pairs trigger longer repeats.
 
 R4.4 provides [explicit CLI VMDK source selection](cli-vmdk.md) for inspect/plan/copy/verify while
-destination remains RAW, reusing these contracts. Padded-descriptor acceptance and
-additional custom-layout reference qualification remain explicit follow-up items.
+destination remains RAW, reusing these contracts. Padded-descriptor acceptance is implemented by R4.5 below;
+additional custom-layout reference qualification remains open.
 No ESXi trial is needed for this local stage.
+
+
+R4.5 update: [bounded acquisition](vmdk-padding.md) now accepts terminal NUL padding
+while the direct text parser remains strict. [New reference evidence](benchmark-results/2026-09-29-r45/README.md)
+qualifies unaltered generated hosted descriptors through both the dump helper and
+CLI. The R4.3 results above remain historical; custom decoder qualification is open.

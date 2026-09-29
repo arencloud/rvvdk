@@ -34,3 +34,11 @@ an independently assembled byte oracle. QEMU rejects createType custom; this is
 recorded as a reference-tool limitation, never counted as reference agreement.
 Version, commands, complete descriptor text and file hashes are saved in the
 R4.3 evidence report. Generated disk data stays outside version control.
+
+
+R4.5 updates the same runner to require success on the original generated hosted
+descriptors: no fixture normalization or fallback. It records terminal padding
+lengths and verifies descriptor bytes remain unchanged. Optional `--cli` also runs
+inspect/plan/copy/verify on these originals. The R4.5 report records tool/executable
+hashes and bytes; R4.3's earlier normalization evidence remains immutable. Unit
+padding fixtures are synthesized in memory, including hostile suffixes and limits.

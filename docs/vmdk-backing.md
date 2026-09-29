@@ -125,3 +125,9 @@ ESXi, cold-storage, race-stress or hostile-kernel qualification is claimed.
 cross-extent reads and scoped reference byte comparisons. R4.4 adds CLI source
 integration. Unsupported formats and native RAW acceleration remain separate.
 No ESXi trial is needed yet.
+
+
+R4.5 adds [bounded terminal NUL acquisition](vmdk-padding.md): the existing total
+byte ceiling includes padding, original bytes remain available, and parse() uses
+a cached strict-text prefix. LocalResolver and the CLI inherit this behavior;
+confinement, backing resolution and source identity rules are unchanged.

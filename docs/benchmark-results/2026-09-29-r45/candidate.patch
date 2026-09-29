@@ -1,0 +1,338 @@
+diff --git a/crates/rvvdk-cli/tests/vmdk.rs b/crates/rvvdk-cli/tests/vmdk.rs
+index 41a0798..a217ff0 100644
+--- a/crates/rvvdk-cli/tests/vmdk.rs
++++ b/crates/rvvdk-cli/tests/vmdk.rs
+@@ -199,7 +199,7 @@ fn malformed_unsupported_and_unconfined_sources_fail_without_output() {
+     for text in [
+         "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"monolithicSparse\"\nRW 1 SPARSE \"a\"\n",
+         "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\nRW 1 FLAT \"../a\" 0\n",
+-        "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\nRW 1 ZERO\n\0",
++        "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\nRW 1 ZERO\n\0# hidden text",
+     ] {
+         let f = Fixture::new();
+         fs::write(&f.source, text).unwrap();
+@@ -304,3 +304,23 @@ fn cancellation_and_publication_collision_preserve_output_policy() {
+     );
+     assert_eq!(fs::read(&f.destination).unwrap(), b"winner");
+ }
++
++#[test]
++fn padded_sources_work_in_all_commands_without_rewriting_the_descriptor() {
++    let f = Fixture::new();
++    let mut original = fs::read(&f.source).unwrap();
++    original.resize(8192, 0);
++    fs::write(&f.source, &original).unwrap();
++    for command in ["inspect", "plan", "copy", "verify"] {
++        let extra = if command == "copy" {
++            vec!["--verify"]
++        } else {
++            vec![]
++        };
++        let (code, report) = f.run(command, &extra);
++        assert_eq!(code, 0, "{report}");
++        assert_eq!(report["format"], "vmdk");
++        assert_eq!(fs::read(&f.source).unwrap(), original);
++    }
++    assert_eq!(fs::read(&f.destination).unwrap(), f.expected);
++}
+diff --git a/crates/rvvdk-vmdk/Cargo.toml b/crates/rvvdk-vmdk/Cargo.toml
+index 052cc5b..32006e3 100644
+--- a/crates/rvvdk-vmdk/Cargo.toml
++++ b/crates/rvvdk-vmdk/Cargo.toml
+@@ -28,3 +28,7 @@ harness = false
+ [[bench]]
+ name = "logical"
+ harness = false
++
++[[bench]]
++name = "padding"
++harness = false
+diff --git a/crates/rvvdk-vmdk/src/load.rs b/crates/rvvdk-vmdk/src/load.rs
+index 105eba2..64a80b7 100644
+--- a/crates/rvvdk-vmdk/src/load.rs
++++ b/crates/rvvdk-vmdk/src/load.rs
+@@ -5,9 +5,12 @@ use std::io::{self, Read};
+ pub struct DescriptorText {
+     bytes: Vec<u8>,
+     limits: Limits,
++    text_len: usize,
+ }
+ impl DescriptorText {
+     /// Read at most descriptor_bytes + one probe byte, without trusting size hints.
++    /// The bound includes terminal NUL padding. Only a contiguous NUL suffix is
++    /// excluded from text parsing; original bytes remain available via as_bytes.
+     /// This bounds bytes/memory, not blocking time. Interrupted reads are retried.
+     pub fn read_from(mut reader: impl Read, limits: Limits) -> Result<Self, BackingError> {
+         let mut bytes = Vec::new();
+@@ -32,14 +35,33 @@ impl DescriptorText {
+             }
+             bytes.extend_from_slice(&chunk[..n]);
+         }
+-        let text = Self { bytes, limits };
++        // Find the text boundary once, after EOF and total-byte admission. The
++        // unpadded case inspects only the last byte; parse() never rescans padding.
++        let text_len = bytes
++            .iter()
++            .rposition(|&byte| byte != 0)
++            .map_or(0, |i| i + 1);
++        let text = Self {
++            bytes,
++            limits,
++            text_len,
++        };
+         text.parse()?;
+         Ok(text)
+     }
++    /// Original acquired bytes, including any terminal NUL padding.
+     pub fn as_bytes(&self) -> &[u8] {
+         &self.bytes
+     }
++    /// Text prefix passed to the strict descriptor parser.
++    pub fn text_bytes(&self) -> &[u8] {
++        &self.bytes[..self.text_len]
++    }
++    /// Number of terminal NUL bytes, included in the acquisition byte limit.
++    pub fn padding_bytes(&self) -> usize {
++        self.bytes.len() - self.text_len
++    }
+     pub fn parse(&self) -> Result<Descriptor<'_>, crate::DescriptorError> {
+-        Descriptor::parse_with_limits(&self.bytes, self.limits)
++        Descriptor::parse_with_limits(self.text_bytes(), self.limits)
+     }
+ }
+diff --git a/crates/rvvdk-vmdk/tests/fixtures/README.md b/crates/rvvdk-vmdk/tests/fixtures/README.md
+index dbe3228..d2a770f 100644
+--- a/crates/rvvdk-vmdk/tests/fixtures/README.md
++++ b/crates/rvvdk-vmdk/tests/fixtures/README.md
+@@ -34,3 +34,11 @@ an independently assembled byte oracle. QEMU rejects createType custom; this is
+ recorded as a reference-tool limitation, never counted as reference agreement.
+ Version, commands, complete descriptor text and file hashes are saved in the
+ R4.3 evidence report. Generated disk data stays outside version control.
++
++
++R4.5 updates the same runner to require success on the original generated hosted
++descriptors: no fixture normalization or fallback. It records terminal padding
++lengths and verifies descriptor bytes remain unchanged. Optional `--cli` also runs
++inspect/plan/copy/verify on these originals. The R4.5 report records tool/executable
++hashes and bytes; R4.3's earlier normalization evidence remains immutable. Unit
++padding fixtures are synthesized in memory, including hostile suffixes and limits.
+diff --git a/crates/rvvdk-vmdk/benches/padding.rs b/crates/rvvdk-vmdk/benches/padding.rs
+new file mode 100644
+index 0000000..56e0bb9
+--- /dev/null
++++ b/crates/rvvdk-vmdk/benches/padding.rs
+@@ -0,0 +1,38 @@
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use rvvdk_vmdk::{DescriptorText, Limits};
++use std::hint::black_box;
++fn padding(c: &mut Criterion) {
++    let text = b"version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\nRW 1 ZERO\n";
++    let limit = Limits::default().descriptor_bytes;
++    let mut small = text.to_vec();
++    small.resize(512, 0);
++    let mut maximum = text.to_vec();
++    maximum.resize(limit, 0);
++    let mut oversize = maximum.clone();
++    oversize.push(0);
++    let loaded = DescriptorText::read_from(maximum.as_slice(), Limits::default()).unwrap();
++    assert_eq!(loaded.padding_bytes(), limit - text.len());
++    assert!(DescriptorText::read_from(oversize.as_slice(), Limits::default()).is_err());
++    let mut group = c.benchmark_group("padding");
++    group.sampling_mode(SamplingMode::Flat);
++    for (name, bytes) in [
++        ("acquire_512", small.as_slice()),
++        ("acquire_1m", maximum.as_slice()),
++        ("reject_oversize", oversize.as_slice()),
++    ] {
++        group.bench_function(name, |b| {
++            b.iter(|| {
++                black_box(DescriptorText::read_from(
++                    black_box(bytes),
++                    Limits::default(),
++                ))
++            })
++        });
++    }
++    group.bench_function("reparse_1m", |b| {
++        b.iter(|| black_box(loaded.parse().unwrap()))
++    });
++    group.finish();
++}
++criterion_group!(benches, padding);
++criterion_main!(benches);
+diff --git a/crates/rvvdk-vmdk/tests/padding.rs b/crates/rvvdk-vmdk/tests/padding.rs
+new file mode 100644
+index 0000000..48fb7ca
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/padding.rs
+@@ -0,0 +1,170 @@
++use rvvdk_vmdk::{BackingError, Descriptor, DescriptorText, ErrorKind, Limits};
++use std::io::{self, Read};
++const TEXT: &[u8] =
++    b"version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\nRW 1 ZERO\n";
++fn acquire(bytes: &[u8], limit: usize) -> Result<DescriptorText, BackingError> {
++    DescriptorText::read_from(
++        bytes,
++        Limits {
++            descriptor_bytes: limit,
++            ..Limits::default()
++        },
++    )
++}
++#[test]
++fn original_bytes_and_strict_text_view_are_distinct() {
++    for padding in [0, 1, 149, 157, 4096, 8192] {
++        let mut bytes = TEXT.to_vec();
++        bytes.resize(bytes.len() + padding, 0);
++        let owned = acquire(&bytes, bytes.len()).unwrap();
++        assert_eq!(owned.as_bytes(), bytes);
++        assert_eq!(owned.text_bytes(), TEXT);
++        assert_eq!(owned.padding_bytes(), padding);
++        assert_eq!(owned.parse().unwrap(), Descriptor::parse(TEXT).unwrap());
++        // Repeated parsing borrows the cached prefix, without modifying provenance.
++        assert_eq!(owned.parse().unwrap().size_bytes(), 512);
++        assert_eq!(owned.as_bytes(), bytes);
++        if padding > 0 {
++            assert_eq!(
++                Descriptor::parse(&bytes).unwrap_err().kind,
++                ErrorKind::Encoding
++            );
++        }
++    }
++}
++#[test]
++fn suffix_policy_does_not_require_a_final_newline_or_sector_alignment() {
++    for text in [TEXT, TEXT.strip_suffix(b"\n").unwrap()] {
++        let mut bytes = text.to_vec();
++        bytes.extend([0; 7]);
++        let owned = acquire(&bytes, bytes.len()).unwrap();
++        assert_eq!(owned.text_bytes(), text);
++        assert_eq!(owned.padding_bytes(), 7);
++    }
++}
++#[test]
++fn embedded_nuls_and_nonzero_suffixes_cannot_hide_text() {
++    for tail in [
++        b"\0 ".as_slice(),
++        b"\0\n",
++        b"\0# comment\n",
++        b"\0RW 1 ZERO\n",
++        b"\0\xff",
++        b"\0\0x\0",
++    ] {
++        let mut bytes = TEXT.to_vec();
++        bytes.extend(tail);
++        assert!(
++            matches!(acquire(&bytes,bytes.len()),Err(BackingError::Descriptor(e)) if e.kind == ErrorKind::Encoding)
++        );
++    }
++    let mut bytes = TEXT.to_vec();
++    bytes.insert(10, 0);
++    bytes.extend([0; 100]);
++    assert!(
++        matches!(acquire(&bytes,bytes.len()),Err(BackingError::Descriptor(e)) if e.kind == ErrorKind::Encoding)
++    );
++}
++#[test]
++fn empty_all_nul_and_invalid_prefixes_still_fail_validation() {
++    for bytes in [
++        b"".as_slice(),
++        b"\0",
++        b"\0\0\0",
++        b"invalid\0\0",
++        b"version=1\n\0\0",
++    ] {
++        assert!(matches!(
++            acquire(bytes, bytes.len()),
++            Err(BackingError::Descriptor(_))
++        ));
++    }
++    let mut bytes = TEXT.to_vec();
++    bytes.extend([0; 100]);
++    assert!(
++        matches!(DescriptorText::read_from(bytes.as_slice(), Limits { line_bytes: 4, ..Limits::default() }), Err(BackingError::Descriptor(e)) if e.kind == ErrorKind::Limit("line bytes"))
++    );
++}
++struct Chunked {
++    bytes: Vec<u8>,
++    offset: usize,
++    chunk: usize,
++    interrupt: bool,
++    fail_at_end: bool,
++}
++impl Read for Chunked {
++    fn read(&mut self, out: &mut [u8]) -> io::Result<usize> {
++        if self.interrupt {
++            self.interrupt = false;
++            return Err(io::ErrorKind::Interrupted.into());
++        }
++        if self.offset == self.bytes.len() && self.fail_at_end {
++            return Err(io::ErrorKind::Other.into());
++        }
++        let n = out
++            .len()
++            .min(self.chunk)
++            .min(self.bytes.len() - self.offset);
++        out[..n].copy_from_slice(&self.bytes[self.offset..self.offset + n]);
++        self.offset += n;
++        Ok(n)
++    }
++}
++#[test]
++fn limit_includes_padding_and_oversize_consumes_only_one_probe() {
++    let limit = Limits::default().descriptor_bytes;
++    let mut bytes = TEXT.to_vec();
++    bytes.resize(limit, 0);
++    assert_eq!(
++        acquire(&bytes, limit).unwrap().padding_bytes(),
++        limit - TEXT.len()
++    );
++    bytes.extend([0; 64]);
++    let mut reader = Chunked {
++        bytes,
++        offset: 0,
++        chunk: 4096,
++        interrupt: true,
++        fail_at_end: false,
++    };
++    assert!(matches!(
++        DescriptorText::read_from(&mut reader, Limits::default()),
++        Err(BackingError::Limit("descriptor acquisition bytes"))
++    ));
++    assert_eq!(reader.offset, limit + 1);
++    reader.offset = 0;
++    assert!(matches!(
++        DescriptorText::read_from(
++            &mut reader,
++            Limits {
++                descriptor_bytes: 0,
++                ..Limits::default()
++            }
++        ),
++        Err(BackingError::Limit(_))
++    ));
++    assert_eq!(reader.offset, 1);
++}
++#[test]
++fn chunk_boundaries_and_interruptions_preserve_padding_and_require_eof() {
++    for chunk in [1, 3, TEXT.len() - 1, TEXT.len(), 4096] {
++        let mut bytes = TEXT.to_vec();
++        bytes.resize(8192, 0);
++        let mut reader = Chunked {
++            bytes: bytes.clone(),
++            offset: 0,
++            chunk,
++            interrupt: true,
++            fail_at_end: false,
++        };
++        let owned = DescriptorText::read_from(&mut reader, Limits::default()).unwrap();
++        assert_eq!(owned.as_bytes(), bytes);
++        assert_eq!(owned.text_bytes(), TEXT);
++        reader.offset = 0;
++        reader.fail_at_end = true;
++        assert!(matches!(
++            DescriptorText::read_from(&mut reader, Limits::default()),
++            Err(BackingError::Io { .. })
++        ));
++    }
++}

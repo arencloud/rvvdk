@@ -1,0 +1,760 @@
+{
+  "qemu_version": "qemu-img version 10.2.2 (qemu-10.2.2-1.fc44)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+  "qemu_sha256": "4362e911c13bb90e39b69479462cd4adb840749b582f4892ca114eb7e94dcf2e",
+  "dump_sha256": "30e49a9e3a231ecb9c6bc97bbabd2dc217af75c658735bb5eef51d06c7d56379",
+  "generator_sha256": "a3551689acbe98ae3d6832ef5e54ee6d98c59e91272838fa14462ae51e4a584c",
+  "cli_sha256": "ee82749898e10d7b05bd2606edce895ab40bfc69922e3e4c66d60e45af0f002c",
+  "directory": "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals",
+  "cases": [
+    {
+      "name": "monolithic",
+      "status": "rvvdk, QEMU and byte oracle agree",
+      "bytes": 65536,
+      "output_sha256": "0c40af5f687c7eaee6fca0d0ef0d46183d3dd9c55ddaa6d89f19371f5eab411d",
+      "descriptor": "# Disk DescriptorFile\nversion=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"monolithicFlat\"\nRW 128 FLAT \"data.bin\" 0\n",
+      "descriptor_sha256": "4575129e810dc7d2e8c51454a4273f1283ab89efcd7ca46049f538240ac65773"
+    },
+    {
+      "name": "split",
+      "status": "rvvdk, QEMU and byte oracle agree",
+      "bytes": 11776,
+      "output_sha256": "3818b063e272834146049d7d08444f0d3a8d8a635582e98313d050b298c4ac16",
+      "descriptor": "# Disk DescriptorFile\nversion=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"twoGbMaxExtentFlat\"\nRW 5 FLAT \"data.bin\" 0\nRW 7 FLAT \"other.bin\" 0\nRW 11 FLAT \"data.bin\" 0\n",
+      "descriptor_sha256": "3e2e906a596e653954e2189682d4cdcac976fdec9629f9b0e6487d58c5692edd"
+    },
+    {
+      "name": "custom",
+      "status": "QEMU rejects custom; rvvdk matches independently constructed byte oracle only",
+      "bytes": 3584,
+      "output_sha256": "d6b2241c2274c39b68a8bc0ce6351e7c69292f18633d12a9f2b153c2af92220e",
+      "descriptor": "# Disk DescriptorFile\nversion=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\nRW 2 FLAT \"data.bin\" 3\nRW 4 ZERO\nRW 1 FLAT \"data.bin\" 0\n",
+      "descriptor_sha256": "3bf724ffc703263edde9d63e994fef04e1b6f78d1fa2741915d31f1e6bff2157"
+    },
+    {
+      "name": "qemu-monolithicFlat",
+      "status": "unaltered generated hosted descriptor matches source RAW and QEMU compare",
+      "bytes": 1048576,
+      "output_sha256": "b79062c191b31e2d5e5d972238a6333409277ba1c29093f9748c0a119785110a",
+      "descriptor": "# Disk DescriptorFile\nversion=1\nCID=bf84b38a\nparentCID=ffffffff\ncreateType=\"monolithicFlat\"\n\n# Extent description\nRW 2048 FLAT \"qemu-monolithicFlat-flat.vmdk\" 0\n\n# The Disk Data Base\n#DDB\n\nddb.virtualHWVersion = \"4\"\nddb.geometry.cylinders = \"2\"\nddb.geometry.heads = \"16\"\nddb.geometry.sectors = \"63\"\nddb.adapterType = \"ide\"\nddb.toolsVersion = \"2147483647\"\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "descriptor_sha256": "1e3e3e0b8a0f2064d60551cb606a5eba393397faa6710ee665c48d478ea236ae",
+      "trailing_nul_padding_bytes": 157,
+      "descriptor_unchanged": true,
+      "cli_reports": {
+        "inspect": {
+          "schema_version": 1,
+          "command": "inspect",
+          "format": "vmdk",
+          "status": "inspected",
+          "source": {
+            "path": {
+              "display": "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.vmdk"
+            },
+            "logical_bytes": 1048576,
+            "logical_block_size": 512,
+            "physical_block_size": 512,
+            "vmdk": {
+              "backing_file_count": 1,
+              "backing_identities": [
+                {
+                  "device": 38,
+                  "inode": 122256943
+                }
+              ],
+              "cid": "bf84b38a",
+              "descriptor_extent_count": 1,
+              "descriptor_identity": {
+                "device": 38,
+                "inode": 122256942
+              }
+            }
+          },
+          "summary": {
+            "logical_bytes": 1048576,
+            "data_bytes": 1048576,
+            "zero_bytes": 0,
+            "hole_bytes": 0,
+            "extent_count": 1
+          }
+        },
+        "plan": {
+          "schema_version": 1,
+          "command": "plan",
+          "format": "vmdk",
+          "status": "preview",
+          "source": {
+            "path": {
+              "display": "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.vmdk"
+            },
+            "logical_bytes": 1048576,
+            "logical_block_size": 512,
+            "physical_block_size": 512,
+            "vmdk": {
+              "backing_file_count": 1,
+              "backing_identities": [
+                {
+                  "device": 38,
+                  "inode": 122256943
+                }
+              ],
+              "cid": "bf84b38a",
+              "descriptor_extent_count": 1,
+              "descriptor_identity": {
+                "device": 38,
+                "inode": 122256942
+              }
+            }
+          },
+          "summary": {
+            "logical_bytes": 1048576,
+            "data_bytes": 1048576,
+            "zero_bytes": 0,
+            "hole_bytes": 0,
+            "extent_count": 1
+          },
+          "destination": {
+            "path": {
+              "display": "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.cli.raw"
+            },
+            "state": "new",
+            "policy": "create_new_no_clobber",
+            "existing_bytes": null,
+            "copy_range_bytes": 1048576,
+            "preserved_tail_bytes": 0,
+            "write_access_checked": false
+          },
+          "execution": {
+            "requested_backend": "auto",
+            "selected_backend": "threaded",
+            "selection_reason": "portable_api",
+            "runtime_prepared": false,
+            "block_size": 1048576,
+            "buffer_alignment": 4096,
+            "workers": 4,
+            "work_queue_capacity": 4,
+            "native_queue_depth": 8,
+            "native_read_window": 4,
+            "memory_budget_bytes": 268435456,
+            "threaded_payload_estimate_bytes": 4194872,
+            "threaded_payload_fits_budget": true
+          }
+        },
+        "copy": {
+          "backend": "threaded",
+          "command": "copy",
+          "copy_memory_budget_bytes": 266338304,
+          "destination": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.cli.raw"
+          },
+          "destination_policy": "create_new_no_clobber",
+          "destination_tail_bytes": 0,
+          "durability": "file_and_directory_synced",
+          "elapsed_seconds": 0.027722881,
+          "format": "vmdk",
+          "logical_bytes": 1048576,
+          "planned_backend": "threaded",
+          "requested_backend": "auto",
+          "runtime_fallback": null,
+          "schema_version": 1,
+          "selection_reason": "portable_api",
+          "source": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.vmdk"
+          },
+          "stats": {
+            "blocks_copied": 1,
+            "bytes_discarded": 0,
+            "bytes_read": 1048576,
+            "bytes_written": 1048576,
+            "bytes_zeroed": 0,
+            "extents_processed": 1
+          },
+          "status": "completed",
+          "verification": {
+            "bytes_verified": 1048576,
+            "elapsed_seconds": 0.000550761
+          },
+          "verification_payload_bytes": 2097152
+        },
+        "verify": {
+          "command": "verify",
+          "destination": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.cli.raw"
+          },
+          "destination_tail_bytes": 0,
+          "elapsed_seconds": 0.0029934,
+          "format": "vmdk",
+          "logical_bytes": 1048576,
+          "schema_version": 1,
+          "source": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.vmdk"
+          },
+          "status": "verified",
+          "verification_payload_bytes": 2097152
+        }
+      }
+    },
+    {
+      "name": "qemu-twoGbMaxExtentFlat",
+      "status": "unaltered generated hosted descriptor matches source RAW and QEMU compare",
+      "bytes": 1048576,
+      "output_sha256": "b79062c191b31e2d5e5d972238a6333409277ba1c29093f9748c0a119785110a",
+      "descriptor": "# Disk DescriptorFile\nversion=1\nCID=2219f897\nparentCID=ffffffff\ncreateType=\"twoGbMaxExtentFlat\"\n\n# Extent description\nRW 2048 FLAT \"qemu-twoGbMaxExtentFlat-f001.vmdk\" 0\n\n# The Disk Data Base\n#DDB\n\nddb.virtualHWVersion = \"4\"\nddb.geometry.cylinders = \"2\"\nddb.geometry.heads = \"16\"\nddb.geometry.sectors = \"63\"\nddb.adapterType = \"ide\"\nddb.toolsVersion = \"2147483647\"\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "descriptor_sha256": "81f085865307dcaeeeb4f37cb2508cc4062ce2f36c01d30f535b74826a821d67",
+      "trailing_nul_padding_bytes": 149,
+      "descriptor_unchanged": true,
+      "cli_reports": {
+        "inspect": {
+          "schema_version": 1,
+          "command": "inspect",
+          "format": "vmdk",
+          "status": "inspected",
+          "source": {
+            "path": {
+              "display": "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.vmdk"
+            },
+            "logical_bytes": 1048576,
+            "logical_block_size": 512,
+            "physical_block_size": 512,
+            "vmdk": {
+              "backing_file_count": 1,
+              "backing_identities": [
+                {
+                  "device": 38,
+                  "inode": 122256947
+                }
+              ],
+              "cid": "2219f897",
+              "descriptor_extent_count": 1,
+              "descriptor_identity": {
+                "device": 38,
+                "inode": 122256946
+              }
+            }
+          },
+          "summary": {
+            "logical_bytes": 1048576,
+            "data_bytes": 1048576,
+            "zero_bytes": 0,
+            "hole_bytes": 0,
+            "extent_count": 1
+          }
+        },
+        "plan": {
+          "schema_version": 1,
+          "command": "plan",
+          "format": "vmdk",
+          "status": "preview",
+          "source": {
+            "path": {
+              "display": "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.vmdk"
+            },
+            "logical_bytes": 1048576,
+            "logical_block_size": 512,
+            "physical_block_size": 512,
+            "vmdk": {
+              "backing_file_count": 1,
+              "backing_identities": [
+                {
+                  "device": 38,
+                  "inode": 122256947
+                }
+              ],
+              "cid": "2219f897",
+              "descriptor_extent_count": 1,
+              "descriptor_identity": {
+                "device": 38,
+                "inode": 122256946
+              }
+            }
+          },
+          "summary": {
+            "logical_bytes": 1048576,
+            "data_bytes": 1048576,
+            "zero_bytes": 0,
+            "hole_bytes": 0,
+            "extent_count": 1
+          },
+          "destination": {
+            "path": {
+              "display": "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.cli.raw"
+            },
+            "state": "new",
+            "policy": "create_new_no_clobber",
+            "existing_bytes": null,
+            "copy_range_bytes": 1048576,
+            "preserved_tail_bytes": 0,
+            "write_access_checked": false
+          },
+          "execution": {
+            "requested_backend": "auto",
+            "selected_backend": "threaded",
+            "selection_reason": "portable_api",
+            "runtime_prepared": false,
+            "block_size": 1048576,
+            "buffer_alignment": 4096,
+            "workers": 4,
+            "work_queue_capacity": 4,
+            "native_queue_depth": 8,
+            "native_read_window": 4,
+            "memory_budget_bytes": 268435456,
+            "threaded_payload_estimate_bytes": 4194872,
+            "threaded_payload_fits_budget": true
+          }
+        },
+        "copy": {
+          "backend": "threaded",
+          "command": "copy",
+          "copy_memory_budget_bytes": 266338304,
+          "destination": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.cli.raw"
+          },
+          "destination_policy": "create_new_no_clobber",
+          "destination_tail_bytes": 0,
+          "durability": "file_and_directory_synced",
+          "elapsed_seconds": 0.027006392,
+          "format": "vmdk",
+          "logical_bytes": 1048576,
+          "planned_backend": "threaded",
+          "requested_backend": "auto",
+          "runtime_fallback": null,
+          "schema_version": 1,
+          "selection_reason": "portable_api",
+          "source": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.vmdk"
+          },
+          "stats": {
+            "blocks_copied": 1,
+            "bytes_discarded": 0,
+            "bytes_read": 1048576,
+            "bytes_written": 1048576,
+            "bytes_zeroed": 0,
+            "extents_processed": 1
+          },
+          "status": "completed",
+          "verification": {
+            "bytes_verified": 1048576,
+            "elapsed_seconds": 0.000629231
+          },
+          "verification_payload_bytes": 2097152
+        },
+        "verify": {
+          "command": "verify",
+          "destination": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.cli.raw"
+          },
+          "destination_tail_bytes": 0,
+          "elapsed_seconds": 0.002682332,
+          "format": "vmdk",
+          "logical_bytes": 1048576,
+          "schema_version": 1,
+          "source": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.vmdk"
+          },
+          "status": "verified",
+          "verification_payload_bytes": 2097152
+        }
+      }
+    }
+  ],
+  "commands": [
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "qemu-img version 10.2.2 (qemu-10.2.2-1.fc44)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/examples/dump_logical",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/monolithic.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/monolithic.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "vmdk",
+        "-O",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/monolithic.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/monolithic.qemu.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/monolithic.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/monolithic.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/examples/dump_logical",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/split.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/split.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "vmdk",
+        "-O",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/split.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/split.qemu.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/split.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/split.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/examples/dump_logical",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/custom.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/custom.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "vmdk",
+        "-O",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/custom.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/custom.qemu.raw"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "qemu-img: Could not open '/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/custom.vmdk': Unsupported image type 'custom'\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=monolithicFlat",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/data.bin",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/examples/dump_logical",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/rvddk",
+        "inspect",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"inspect\",\n  \"format\": \"vmdk\",\n  \"status\": \"inspected\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.vmdk\"\n    },\n    \"logical_bytes\": 1048576,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 1,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122256943\n        }\n      ],\n      \"cid\": \"bf84b38a\",\n      \"descriptor_extent_count\": 1,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122256942\n      }\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 1048576,\n    \"data_bytes\": 1048576,\n    \"zero_bytes\": 0,\n    \"hole_bytes\": 0,\n    \"extent_count\": 1\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/rvddk",
+        "plan",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.cli.raw",
+        "--format",
+        "vmdk",
+        "--json",
+        "--backend",
+        "auto",
+        "--workers",
+        "4"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"plan\",\n  \"format\": \"vmdk\",\n  \"status\": \"preview\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.vmdk\"\n    },\n    \"logical_bytes\": 1048576,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 1,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122256943\n        }\n      ],\n      \"cid\": \"bf84b38a\",\n      \"descriptor_extent_count\": 1,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122256942\n      }\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 1048576,\n    \"data_bytes\": 1048576,\n    \"zero_bytes\": 0,\n    \"hole_bytes\": 0,\n    \"extent_count\": 1\n  },\n  \"destination\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.cli.raw\"\n    },\n    \"state\": \"new\",\n    \"policy\": \"create_new_no_clobber\",\n    \"existing_bytes\": null,\n    \"copy_range_bytes\": 1048576,\n    \"preserved_tail_bytes\": 0,\n    \"write_access_checked\": false\n  },\n  \"execution\": {\n    \"requested_backend\": \"auto\",\n    \"selected_backend\": \"threaded\",\n    \"selection_reason\": \"portable_api\",\n    \"runtime_prepared\": false,\n    \"block_size\": 1048576,\n    \"buffer_alignment\": 4096,\n    \"workers\": 4,\n    \"work_queue_capacity\": 4,\n    \"native_queue_depth\": 8,\n    \"native_read_window\": 4,\n    \"memory_budget_bytes\": 268435456,\n    \"threaded_payload_estimate_bytes\": 4194872,\n    \"threaded_payload_fits_budget\": true\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/rvddk",
+        "copy",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.cli.raw",
+        "--format",
+        "vmdk",
+        "--json",
+        "--backend",
+        "auto",
+        "--workers",
+        "4",
+        "--verify"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"backend\": \"threaded\",\n  \"command\": \"copy\",\n  \"copy_memory_budget_bytes\": 266338304,\n  \"destination\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.cli.raw\"\n  },\n  \"destination_policy\": \"create_new_no_clobber\",\n  \"destination_tail_bytes\": 0,\n  \"durability\": \"file_and_directory_synced\",\n  \"elapsed_seconds\": 0.027722881,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 1048576,\n  \"planned_backend\": \"threaded\",\n  \"requested_backend\": \"auto\",\n  \"runtime_fallback\": null,\n  \"schema_version\": 1,\n  \"selection_reason\": \"portable_api\",\n  \"source\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.vmdk\"\n  },\n  \"stats\": {\n    \"blocks_copied\": 1,\n    \"bytes_discarded\": 0,\n    \"bytes_read\": 1048576,\n    \"bytes_written\": 1048576,\n    \"bytes_zeroed\": 0,\n    \"extents_processed\": 1\n  },\n  \"status\": \"completed\",\n  \"verification\": {\n    \"bytes_verified\": 1048576,\n    \"elapsed_seconds\": 0.000550761\n  },\n  \"verification_payload_bytes\": 2097152\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/rvddk",
+        "verify",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.cli.raw",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"command\": \"verify\",\n  \"destination\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.cli.raw\"\n  },\n  \"destination_tail_bytes\": 0,\n  \"elapsed_seconds\": 0.0029934,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 1048576,\n  \"schema_version\": 1,\n  \"source\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-monolithicFlat.vmdk\"\n  },\n  \"status\": \"verified\",\n  \"verification_payload_bytes\": 2097152\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentFlat",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/data.bin",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/examples/dump_logical",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/rvddk",
+        "inspect",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"inspect\",\n  \"format\": \"vmdk\",\n  \"status\": \"inspected\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.vmdk\"\n    },\n    \"logical_bytes\": 1048576,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 1,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122256947\n        }\n      ],\n      \"cid\": \"2219f897\",\n      \"descriptor_extent_count\": 1,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122256946\n      }\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 1048576,\n    \"data_bytes\": 1048576,\n    \"zero_bytes\": 0,\n    \"hole_bytes\": 0,\n    \"extent_count\": 1\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/rvddk",
+        "plan",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.cli.raw",
+        "--format",
+        "vmdk",
+        "--json",
+        "--backend",
+        "auto",
+        "--workers",
+        "4"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"plan\",\n  \"format\": \"vmdk\",\n  \"status\": \"preview\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.vmdk\"\n    },\n    \"logical_bytes\": 1048576,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 1,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122256947\n        }\n      ],\n      \"cid\": \"2219f897\",\n      \"descriptor_extent_count\": 1,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122256946\n      }\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 1048576,\n    \"data_bytes\": 1048576,\n    \"zero_bytes\": 0,\n    \"hole_bytes\": 0,\n    \"extent_count\": 1\n  },\n  \"destination\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.cli.raw\"\n    },\n    \"state\": \"new\",\n    \"policy\": \"create_new_no_clobber\",\n    \"existing_bytes\": null,\n    \"copy_range_bytes\": 1048576,\n    \"preserved_tail_bytes\": 0,\n    \"write_access_checked\": false\n  },\n  \"execution\": {\n    \"requested_backend\": \"auto\",\n    \"selected_backend\": \"threaded\",\n    \"selection_reason\": \"portable_api\",\n    \"runtime_prepared\": false,\n    \"block_size\": 1048576,\n    \"buffer_alignment\": 4096,\n    \"workers\": 4,\n    \"work_queue_capacity\": 4,\n    \"native_queue_depth\": 8,\n    \"native_read_window\": 4,\n    \"memory_budget_bytes\": 268435456,\n    \"threaded_payload_estimate_bytes\": 4194872,\n    \"threaded_payload_fits_budget\": true\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/rvddk",
+        "copy",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.cli.raw",
+        "--format",
+        "vmdk",
+        "--json",
+        "--backend",
+        "auto",
+        "--workers",
+        "4",
+        "--verify"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"backend\": \"threaded\",\n  \"command\": \"copy\",\n  \"copy_memory_budget_bytes\": 266338304,\n  \"destination\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.cli.raw\"\n  },\n  \"destination_policy\": \"create_new_no_clobber\",\n  \"destination_tail_bytes\": 0,\n  \"durability\": \"file_and_directory_synced\",\n  \"elapsed_seconds\": 0.027006392,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 1048576,\n  \"planned_backend\": \"threaded\",\n  \"requested_backend\": \"auto\",\n  \"runtime_fallback\": null,\n  \"schema_version\": 1,\n  \"selection_reason\": \"portable_api\",\n  \"source\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.vmdk\"\n  },\n  \"stats\": {\n    \"blocks_copied\": 1,\n    \"bytes_discarded\": 0,\n    \"bytes_read\": 1048576,\n    \"bytes_written\": 1048576,\n    \"bytes_zeroed\": 0,\n    \"extents_processed\": 1\n  },\n  \"status\": \"completed\",\n  \"verification\": {\n    \"bytes_verified\": 1048576,\n    \"elapsed_seconds\": 0.000629231\n  },\n  \"verification_payload_bytes\": 2097152\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r45-jonlsxme/candidate-target/release/rvddk",
+        "verify",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.cli.raw",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"command\": \"verify\",\n  \"destination\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.cli.raw\"\n  },\n  \"destination_tail_bytes\": 0,\n  \"elapsed_seconds\": 0.002682332,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 1048576,\n  \"schema_version\": 1,\n  \"source\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r45-benchmark-storage/reference-originals/qemu-twoGbMaxExtentFlat.vmdk\"\n  },\n  \"status\": \"verified\",\n  \"verification_payload_bytes\": 2097152\n}\n",
+      "stderr": ""
+    }
+  ],
+  "files": {
+    "custom.rvvdk.raw": {
+      "bytes": 3584,
+      "sha256": "d6b2241c2274c39b68a8bc0ce6351e7c69292f18633d12a9f2b153c2af92220e"
+    },
+    "custom.vmdk": {
+      "bytes": 140,
+      "sha256": "3bf724ffc703263edde9d63e994fef04e1b6f78d1fa2741915d31f1e6bff2157"
+    },
+    "data.bin": {
+      "bytes": 1048576,
+      "sha256": "b79062c191b31e2d5e5d972238a6333409277ba1c29093f9748c0a119785110a"
+    },
+    "monolithic.qemu.raw": {
+      "bytes": 65536,
+      "sha256": "0c40af5f687c7eaee6fca0d0ef0d46183d3dd9c55ddaa6d89f19371f5eab411d"
+    },
+    "monolithic.rvvdk.raw": {
+      "bytes": 65536,
+      "sha256": "0c40af5f687c7eaee6fca0d0ef0d46183d3dd9c55ddaa6d89f19371f5eab411d"
+    },
+    "monolithic.vmdk": {
+      "bytes": 117,
+      "sha256": "4575129e810dc7d2e8c51454a4273f1283ab89efcd7ca46049f538240ac65773"
+    },
+    "other.bin": {
+      "bytes": 1048576,
+      "sha256": "a80bb131f679903d6eb5b5b39357bf6d5fa3b2f895e99e9252122d67a59823db"
+    },
+    "qemu-monolithicFlat-flat.vmdk": {
+      "bytes": 1048576,
+      "sha256": "b79062c191b31e2d5e5d972238a6333409277ba1c29093f9748c0a119785110a"
+    },
+    "qemu-monolithicFlat.cli.raw": {
+      "bytes": 1048576,
+      "sha256": "b79062c191b31e2d5e5d972238a6333409277ba1c29093f9748c0a119785110a"
+    },
+    "qemu-monolithicFlat.rvvdk.raw": {
+      "bytes": 1048576,
+      "sha256": "b79062c191b31e2d5e5d972238a6333409277ba1c29093f9748c0a119785110a"
+    },
+    "qemu-monolithicFlat.vmdk": {
+      "bytes": 512,
+      "sha256": "1e3e3e0b8a0f2064d60551cb606a5eba393397faa6710ee665c48d478ea236ae"
+    },
+    "qemu-twoGbMaxExtentFlat-f001.vmdk": {
+      "bytes": 1048576,
+      "sha256": "b79062c191b31e2d5e5d972238a6333409277ba1c29093f9748c0a119785110a"
+    },
+    "qemu-twoGbMaxExtentFlat.cli.raw": {
+      "bytes": 1048576,
+      "sha256": "b79062c191b31e2d5e5d972238a6333409277ba1c29093f9748c0a119785110a"
+    },
+    "qemu-twoGbMaxExtentFlat.rvvdk.raw": {
+      "bytes": 1048576,
+      "sha256": "b79062c191b31e2d5e5d972238a6333409277ba1c29093f9748c0a119785110a"
+    },
+    "qemu-twoGbMaxExtentFlat.vmdk": {
+      "bytes": 512,
+      "sha256": "81f085865307dcaeeeb4f37cb2508cc4062ce2f36c01d30f535b74826a821d67"
+    },
+    "split.qemu.raw": {
+      "bytes": 11776,
+      "sha256": "3818b063e272834146049d7d08444f0d3a8d8a635582e98313d050b298c4ac16"
+    },
+    "split.rvvdk.raw": {
+      "bytes": 11776,
+      "sha256": "3818b063e272834146049d7d08444f0d3a8d8a635582e98313d050b298c4ac16"
+    },
+    "split.vmdk": {
+      "bytes": 167,
+      "sha256": "3e2e906a596e653954e2189682d4cdcac976fdec9629f9b0e6487d58c5692edd"
+    }
+  }
+}
