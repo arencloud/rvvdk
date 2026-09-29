@@ -1,0 +1,42 @@
+{
+  "title": "R4.2 \u00b7 Bounded backing resolution",
+  "candidate": "patch ff3fb5df",
+  "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 parser in memory \u00b7 warm Btrfs files/metadata",
+  "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+  "candidate_only": {
+    "title": "Backing resolution and loading \u00b7 first cost baseline",
+    "note": "Resolution includes opening, validation and closing sources \u00b7 load includes descriptor parsing \u00b7 no logical disk reads.",
+    "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+  },
+  "workloads": {
+    "descriptor/small": {
+      "label": "Descriptor \u00b7 small",
+      "phase": "planning"
+    },
+    "descriptor/1024_extents": {
+      "label": "Descriptor \u00b7 1,024 extents",
+      "phase": "planning"
+    },
+    "preflight_copy/threaded": {
+      "label": "RAW Threaded copy + flush \u00b7 1 MiB",
+      "phase": "copy"
+    },
+    "resolution/one_file": {
+      "label": "Resolve one source",
+      "phase": "planning"
+    },
+    "resolution/32_files": {
+      "label": "Resolve 32 distinct sources",
+      "phase": "planning"
+    },
+    "resolution/1024_shared": {
+      "label": "1,024 extents sharing one source",
+      "phase": "planning"
+    },
+    "resolution/load_descriptor": {
+      "label": "Load and validate descriptor",
+      "phase": "planning"
+    }
+  },
+  "repeat_sampling": "3 adjacent pairs \u00b7 40 samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+}

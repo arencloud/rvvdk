@@ -13,11 +13,10 @@ the direct io_uring comparison. The harness correction is committed, but those
 historical results still need replacement measurements. Do not derive engine
 defaults or performance claims from an unmatched comparison.
 
-Latest measured step: [R4.1 bounded VMDK descriptors](benchmark-results/2026-09-29-r41/README.md)
-includes SVG/PNG charts, unchanged RAW planning/copy controls, and candidate-only
-parser costs for small/1,024-extent descriptors and early/late limit rejection.
-All adverse aggregates/pairs trigger longer repeats; shared-host and earlier
-qualification limits remain explicit.
+Latest measured step: [R4.2 bounded backing resolution](benchmark-results/2026-09-29-r42/README.md)
+includes SVG/PNG charts, matched parser/RAW controls, and initial costs for confined
+source resolution and descriptor acquisition. Every adverse aggregate or pair
+above +5% triggers longer repeats; prior qualification limits remain explicit.
 
 ### PERF.0 — Establish a reproducible baseline
 

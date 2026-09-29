@@ -75,15 +75,18 @@ do not reproduce descriptor contents or paths.
 
 ## Boundary with backing storage
 
+R4.2 now provides [bounded acquisition and backing resolution](vmdk-backing.md).
+The parser itself retains the metadata-only guarantees below.
+
 A parsed filename is **untrusted lexical metadata**. Parsing can accept `../name`,
 absolute names or URI-like strings without accessing them. No file length,
 existence, confinement, symlink, alias or identity guarantee exists at this stage.
 Never open a parsed name directly in application code.
 
-R4.2 introduces caller-supplied `BackingResolver` contracts and a local resolver
-that defaults to descriptor-relative confined regular files. It must reject
-absolute/traversal escapes, handle symlinks and races deliberately, bound resource
-use, validate backing offset/end against live file length, and retain identities.
+R4.2 provides caller-supplied `BackingResolver` contracts and a local resolver
+that defaults to descriptor-relative confined regular files. It rejects
+absolute/traversal escapes and symlinks, bounds resource use, validates backing
+offset/end against live file length, and retains identities.
 Transport-neutral references must remain possible. R4.3 builds read-only FLAT/ZERO
 logical mapping and cross-extent reads on the resolved objects; CLI integration
 and reference byte comparisons follow. Container descriptors must not be offered

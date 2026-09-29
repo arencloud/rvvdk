@@ -1325,14 +1325,47 @@ late extent-limit and early input-size rejection respectively. Input constructio
 is excluded; parsing, vector allocation/drop are timed. No prior parser baseline,
 engine speedup claim, tuning-default change or earlier qualification closure.
 
+## R4.2 — Bounded backing resolution
+
+Date: 2026-09-29. Status: **Complete within the owned-source contract**.
+Baseline: `380acc2`, initially clean. [Evidence](benchmark-results/2026-09-29-r42/README.md)
+retains source/harness/binary identities, raw samples, validation and reproducible
+SVG/PNG plots. The enclosing commit records this step.
+
+Added bounded owned descriptor acquisition and portable caller-supplied backing
+resolution. Count limits precede resolver calls; repeated exact references share
+sources. Retained read-only wrappers validate live access/physical ends and support
+identity/size/access revalidation. Linux pins the descriptor parent and uses
+openat2 beneath/no-symlink/no-mount-crossing lookup, O_PATH regular-file inspection
+and procfs reopen with identity comparison. Existing buffered local I/O admission
+is reused. No weaker fallback; no snapshot guarantee. See the
+[contract](vmdk-backing.md) and [ADR-0034](adr/0034-confined-vmdk-backing-resolution.md).
+
+Validation: **420 distinct passed, one existing gated allocation test** (421 total).
+Fifteen new tests cover portable resource/ownership/live-state contracts and Linux
+path/object/reopen/truncation behavior. All 27 VMDK tests pass on Btrfs. Formatting,
+strict all-target Clippy and core/datamover/VMDK wasm32 checks pass (unchanged
+control::sum warning). Dependency versions, parser implementation and RAW execution
+remain unchanged.
+
+Performance: 18 matched runs show -0.80%, +0.90%, +0.01%
+for small parser, 1,024-extent parser and RAW Threaded copy+flush respectively.
+Longer repeats: -0.98%. Every main and repeat pair remains in the report.
+The RAW control executable is byte-identical across builds; its timing variation
+cannot be attributed to a changed RAW implementation. Twelve new-mode runs yield
+8.998 µs, 286.475 µs, 26.421 µs, 11.685 µs for one source,
+32 sources, 1,024 references sharing one source and descriptor load/parse/drop.
+Resolution includes open/check/close, excludes parsing; loading has a different
+boundary. No engine speedup or prior performance-qualification closure is claimed.
+
 ## Next session
 
-Start **R4.2**: bounded descriptor acquisition and caller-supplied backing resolution;
-default local descriptor-relative confinement, regular-file/identity/live-length
-checks, explicit symlink/race policy and resource limits. Then R4.3 adds read-only
-FLAT/ZERO logical mapping and trusted-reference byte comparison. Preserve RAW CLI
-and native endpoint contracts. Each step gets tests, benchmarks, plots and a commit.
+Start **R4.3**: read-only FLAT/ZERO `VirtualDisk`, logical range/cross-extent mapping,
+revalidation before execution and short-read/error handling. Compare deterministic
+logical bytes with a recorded trusted reference tool. Keep VMDK containers out of
+native RAW endpoints. CLI VMDK integration follows as a separate bounded package.
+Each step gets tests, benchmarks, plots and a commit.
 
 ESXi remains unnecessary for local work; request the 60-day trial when V0's lab
 proof is ready. Keep PERF.0 and earlier adverse timing pairs open for a controlled
-runner. Do not infer VMware live-access compatibility from descriptor parsing.
+runner. Do not infer VMware live-access compatibility from local format support.

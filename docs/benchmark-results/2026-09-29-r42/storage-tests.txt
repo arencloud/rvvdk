@@ -1,0 +1,59 @@
+   Compiling rvvdk-vmdk v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-vmdk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+     Running unittests src/lib.rs (target/debug/deps/rvvdk_vmdk-c208def53b468655)
+
+running 1 test
+test local::tests::replacement_between_pin_and_reopen_cannot_redirect_reads ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/backing.rs (target/debug/deps/backing-d6726233bdea3b6e)
+
+running 7 tests
+test loading_propagates_io_and_parser_failures ... ok
+test bounded_loading_handles_short_reads_interrupts_exact_limit_and_one_probe ... ok
+test resource_limits_fail_before_any_resolver_call ... ok
+test opaque_references_deduplicate_and_outlive_input_and_resolver ... ok
+test zero_extents_resolve_without_sources ... ok
+test revalidation_uses_live_capacity_access_and_known_identity ... ok
+test truncation_and_read_permissions_are_checked_and_failures_drop_sources ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/descriptor.rs (target/debug/deps/descriptor-8ab29180065b7893)
+
+running 12 tests
+test duplicates_order_and_required_fields_are_validated ... ok
+test encoding_controls_and_error_locations_are_precise ... ok
+test lexical_variants_preserve_filename_case_and_borrow_input ... ok
+test fixtures_have_checked_contiguous_byte_ranges ... ok
+test path_policy_is_explicitly_deferred_without_any_file_access ... ok
+test metadata_is_informational_and_unknown_features_rejected ... ok
+test numbers_and_all_arithmetic_boundaries_are_checked ... ok
+test supported_create_types_enforce_shape_and_split_capacity ... ok
+test syntax_and_quoting_fail_closed ... ok
+test rejects_unsupported_variants_and_parent_chains ... ok
+test each_resource_limit_accepts_boundary_and_rejects_next_byte_or_entry ... ok
+test deterministic_mutations_never_panic_or_escape_layout_invariants ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/local_resolution.rs (target/debug/deps/local_resolution-0fb627578543973c)
+
+running 7 tests
+test mounted_namespaces_and_magic_links_are_not_followed ... ok
+test descriptor_acquisition_ignores_untrusted_file_size_and_obeys_bound ... ok
+test descriptor_parent_and_nested_regular_files_are_used_read_only ... ok
+test dangerous_lexical_names_and_symlink_components_fail ... ok
+test nonregular_files_reject_without_opening_a_fifo_for_io ... ok
+test live_truncation_is_detected_and_failed_resolution_leaks_no_file_handles ... ok
+test pinned_anchor_and_backings_survive_path_replacement_and_hardlinks_have_identity ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests rvvdk_vmdk
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

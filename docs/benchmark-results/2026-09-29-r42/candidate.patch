@@ -1,0 +1,1189 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 9f128cd..424c556 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -480,6 +480,9 @@ name = "rvvdk-vmdk"
+ version = "0.1.0"
+ dependencies = [
+  "criterion",
++ "libc",
++ "rvvdk-core",
++ "rvvdk-local",
+  "thiserror",
+ ]
+ 
+diff --git a/crates/rvvdk-vmdk/Cargo.toml b/crates/rvvdk-vmdk/Cargo.toml
+index 68d2a82..0caccf5 100644
+--- a/crates/rvvdk-vmdk/Cargo.toml
++++ b/crates/rvvdk-vmdk/Cargo.toml
+@@ -7,6 +7,11 @@ repository.workspace = true
+ 
+ [dependencies]
+ thiserror = "2"
++rvvdk-core = { path = "../rvvdk-core" }
++
++[target.'cfg(target_os = "linux")'.dependencies]
++rvvdk-local = { path = "../rvvdk-local" }
++libc = "0.2.189"
+ 
+ [dev-dependencies]
+ criterion = "0.8.2"
+@@ -14,3 +19,7 @@ criterion = "0.8.2"
+ [[bench]]
+ name = "descriptor"
+ harness = false
++
++[[bench]]
++name = "resolution"
++harness = false
+diff --git a/crates/rvvdk-vmdk/src/lib.rs b/crates/rvvdk-vmdk/src/lib.rs
+index 0f996ea..fd5ca66 100644
+--- a/crates/rvvdk-vmdk/src/lib.rs
++++ b/crates/rvvdk-vmdk/src/lib.rs
+@@ -1,4 +1,5 @@
+-//! Bounded, read-only VMDK descriptor parsing. No backing files are opened.
++//! Bounded VMDK metadata and read-only backing resolution.
++//! Parsing alone opens no files; logical disk mapping is a separate layer.
+ //!
+ //! The supported subset and deliberately rejected syntax are documented in
+ //! `docs/vmdk-descriptor.md`. Parsed filenames remain untrusted resolver inputs.
+@@ -9,3 +10,16 @@ pub use descriptor::{
+     Access, CreateType, Descriptor, DescriptorError, ErrorKind, Extent, ExtentBacking, Limits,
+     Metadata, SECTOR_BYTES,
+ };
++
++mod backing;
++mod load;
++#[cfg(target_os = "linux")]
++mod local;
++
++pub use backing::{
++    BackingError, BackingResolver, ResolutionLimits, ResolvedBacking, ResolvedDescriptor,
++    ResolvedExtent, ResolvedExtentBacking,
++};
++pub use load::DescriptorText;
++#[cfg(target_os = "linux")]
++pub use local::LocalResolver;
+diff --git a/crates/rvvdk-vmdk/benches/resolution.rs b/crates/rvvdk-vmdk/benches/resolution.rs
+new file mode 100644
+index 0000000..1cfb8a2
+--- /dev/null
++++ b/crates/rvvdk-vmdk/benches/resolution.rs
+@@ -0,0 +1,73 @@
++#[cfg(target_os = "linux")]
++fn main() {
++    use criterion::{Criterion, SamplingMode};
++    use rvvdk_vmdk::{Descriptor, Limits, LocalResolver, ResolutionLimits, ResolvedDescriptor};
++    use std::{
++        fs::{self, File},
++        hint::black_box,
++        path::PathBuf,
++    };
++    let root = std::env::var_os("RVVDK_BENCH_DIR")
++        .map(PathBuf::from)
++        .unwrap_or_else(std::env::temp_dir);
++    let path = root.join(format!("rvvdk-resolution-{}", std::process::id()));
++    fs::create_dir(&path).unwrap();
++    let header = "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\n";
++    let small = format!("{header}RW 8 FLAT \"data0\" 0\n");
++    let many = format!(
++        "{header}{}",
++        (0..32)
++            .map(|i| format!("RW 8 FLAT \"data{i}\" 0\n"))
++            .collect::<String>()
++    );
++    let repeated = format!("{header}{}", "RW 8 FLAT \"data0\" 0\n".repeat(1024));
++    for i in 0..32 {
++        fs::write(path.join(format!("data{i}")), [7; 4096]).unwrap();
++    }
++    fs::write(path.join("disk.vmdk"), &small).unwrap();
++    let resolver = LocalResolver::from_directory(File::open(&path).unwrap()).unwrap();
++    let mut c = Criterion::default().configure_from_args();
++    let mut group = c.benchmark_group("resolution");
++    group.sampling_mode(SamplingMode::Flat);
++    for (name, input, count) in [
++        ("one_file", small.as_bytes(), 1),
++        ("32_files", many.as_bytes(), 32),
++        ("1024_shared", repeated.as_bytes(), 1),
++    ] {
++        let d = Descriptor::parse(input).unwrap();
++        let check =
++            ResolvedDescriptor::resolve(&d, &resolver, ResolutionLimits::default()).unwrap();
++        assert_eq!(check.backings().len(), count);
++        check.revalidate().unwrap();
++        drop(check);
++        group.bench_function(name, |b| {
++            b.iter(|| {
++                black_box(
++                    ResolvedDescriptor::resolve(
++                        black_box(&d),
++                        black_box(&resolver),
++                        ResolutionLimits::default(),
++                    )
++                    .unwrap(),
++                )
++            })
++        });
++    }
++    group.bench_function("load_descriptor", |b| {
++        b.iter(|| {
++            black_box(
++                LocalResolver::open_descriptor(
++                    black_box(path.join("disk.vmdk")),
++                    Limits::default(),
++                )
++                .unwrap(),
++            )
++        })
++    });
++    group.finish();
++    c.final_summary();
++    drop(resolver);
++    fs::remove_dir_all(path).unwrap();
++}
++#[cfg(not(target_os = "linux"))]
++fn main() {}
+diff --git a/crates/rvvdk-vmdk/src/backing.rs b/crates/rvvdk-vmdk/src/backing.rs
+new file mode 100644
+index 0000000..1313582
+--- /dev/null
++++ b/crates/rvvdk-vmdk/src/backing.rs
+@@ -0,0 +1,257 @@
++use crate::{Access, CreateType, Descriptor, DescriptorError, ExtentBacking};
++use rvvdk_core::{BlockDevice, Capabilities, CopyEndpoint};
++use std::{collections::HashMap, sync::Arc};
++use thiserror::Error;
++
++#[derive(Debug, Error)]
++pub enum BackingError {
++    #[error("{0}")]
++    Descriptor(#[from] DescriptorError),
++    #[error("backing resource limit exceeded: {0}")]
++    Limit(&'static str),
++    #[error("unsafe or unsupported local reference")]
++    UnsafeReference,
++    #[error("local backing is not a regular file")]
++    NotRegular,
++    #[error("resolver anchor is not a directory")]
++    NotDirectory,
++    #[error("{operation}: {source}")]
++    Io {
++        operation: &'static str,
++        #[source]
++        source: std::io::Error,
++    },
++    #[error("adopting local backing: {0}")]
++    Adopt(#[source] rvvdk_core::Error),
++    #[error("backing {index}: {source}")]
++    Device {
++        index: usize,
++        #[source]
++        source: rvvdk_core::Error,
++    },
++    #[error("resolving backing {index}: {source}")]
++    Resolve {
++        index: usize,
++        #[source]
++        source: Box<BackingError>,
++    },
++    #[error("backing {index} is not readable")]
++    Unreadable { index: usize },
++    #[error("backing {index} is truncated: need {required} bytes, have {actual}")]
++    Truncated {
++        index: usize,
++        required: u64,
++        actual: u64,
++    },
++    #[error("backing {index} identity changed or became unknown")]
++    Changed { index: usize },
++    #[error("opened local object does not match pinned identity")]
++    LocalIdentityChanged,
++}
++impl BackingError {
++    pub(crate) fn io(operation: &'static str, source: std::io::Error) -> Self {
++        Self::Io { operation, source }
++    }
++}
++
++/// Caller-provided namespace and authorization policy. Implementations return a
++/// stable owned source; endpoint size/access must be refreshed by copy_endpoint.
++/// References are opaque here. Local path policy belongs to LocalResolver.
++pub trait BackingResolver: Send + Sync {
++    fn resolve(&self, reference: &str) -> Result<Arc<dyn BlockDevice>, BackingError>;
++}
++
++#[derive(Clone, Copy, Debug)]
++pub struct ResolutionLimits {
++    pub extents: usize,
++    pub backing_files: usize,
++}
++impl Default for ResolutionLimits {
++    fn default() -> Self {
++        Self {
++            extents: 1024,
++            backing_files: 128,
++        }
++    }
++}
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum ResolvedExtentBacking {
++    Flat {
++        backing_index: usize,
++        offset_bytes: u64,
++    },
++    Zero,
++}
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub struct ResolvedExtent {
++    access: Access,
++    logical_offset: u64,
++    size_bytes: u64,
++    backing: ResolvedExtentBacking,
++}
++impl ResolvedExtent {
++    pub fn access(&self) -> Access {
++        self.access
++    }
++    pub fn logical_offset(&self) -> u64 {
++        self.logical_offset
++    }
++    pub fn size_bytes(&self) -> u64 {
++        self.size_bytes
++    }
++    pub fn backing(&self) -> ResolvedExtentBacking {
++        self.backing
++    }
++}
++
++/// Owns the resolved object, exposing only reads and endpoint observations.
++/// Validation is not a snapshot or a lease against other writers.
++pub struct ResolvedBacking {
++    device: Arc<dyn BlockDevice>,
++    initial: CopyEndpoint,
++    required_len: u64,
++}
++impl ResolvedBacking {
++    pub fn initial_endpoint(&self) -> CopyEndpoint {
++        self.initial
++    }
++    pub fn required_len(&self) -> u64 {
++        self.required_len
++    }
++    pub fn copy_endpoint(&self) -> rvvdk_core::Result<CopyEndpoint> {
++        self.device.copy_endpoint()
++    }
++    /// Physical I/O only. The future logical reader must translate its own ranges.
++    pub fn read_exact_at(&self, offset: u64, buffer: &mut [u8]) -> rvvdk_core::Result<()> {
++        self.device.read_exact_at(offset, buffer)
++    }
++}
++
++/// Owned validated metadata and sources; input text and resolver may be dropped.
++/// No logical disk read/write API or native RAW endpoint is implemented here.
++pub struct ResolvedDescriptor {
++    cid: u32,
++    create_type: CreateType,
++    size_bytes: u64,
++    extents: Vec<ResolvedExtent>,
++    backings: Vec<ResolvedBacking>,
++}
++impl ResolvedDescriptor {
++    pub fn cid(&self) -> u32 {
++        self.cid
++    }
++    pub fn create_type(&self) -> CreateType {
++        self.create_type
++    }
++    pub fn size_bytes(&self) -> u64 {
++        self.size_bytes
++    }
++    pub fn extents(&self) -> &[ResolvedExtent] {
++        &self.extents
++    }
++    pub fn backings(&self) -> &[ResolvedBacking] {
++        &self.backings
++    }
++
++    pub fn resolve(
++        descriptor: &Descriptor<'_>,
++        resolver: &dyn BackingResolver,
++        limits: ResolutionLimits,
++    ) -> Result<Self, BackingError> {
++        if descriptor.extents().len() > limits.extents {
++            return Err(BackingError::Limit("resolved extents"));
++        }
++        let mut names = HashMap::new();
++        let mut pending: Vec<(&str, u64)> = Vec::new();
++        let mut extents = Vec::new();
++        // Count and compute every physical requirement before invoking a resolver.
++        for extent in descriptor.extents() {
++            let backing = match extent.backing() {
++                ExtentBacking::Zero => ResolvedExtentBacking::Zero,
++                ExtentBacking::Flat {
++                    file_name,
++                    offset_bytes,
++                } => {
++                    // Parser already checked this sum; fields cannot be mutated.
++                    let required = offset_bytes + extent.size_bytes();
++                    let index = if let Some(&index) = names.get(file_name) {
++                        index
++                    } else {
++                        if pending.len() >= limits.backing_files {
++                            return Err(BackingError::Limit("backing files"));
++                        }
++                        let index = pending.len();
++                        pending.push((file_name, required));
++                        names.insert(file_name, index);
++                        index
++                    };
++                    pending[index].1 = pending[index].1.max(required);
++                    ResolvedExtentBacking::Flat {
++                        backing_index: index,
++                        offset_bytes,
++                    }
++                }
++            };
++            extents.push(ResolvedExtent {
++                access: extent.access(),
++                logical_offset: extent.logical_offset(),
++                size_bytes: extent.size_bytes(),
++                backing,
++            });
++        }
++        let mut backings = Vec::new();
++        for (index, (reference, required_len)) in pending.into_iter().enumerate() {
++            let device = resolver
++                .resolve(reference)
++                .map_err(|source| BackingError::Resolve {
++                    index,
++                    source: Box::new(source),
++                })?;
++            let initial = device
++                .copy_endpoint()
++                .map_err(|source| BackingError::Device { index, source })?;
++            validate(index, initial, required_len)?;
++            backings.push(ResolvedBacking {
++                device,
++                initial,
++                required_len,
++            });
++        }
++        Ok(Self {
++            cid: descriptor.cid(),
++            create_type: descriptor.create_type(),
++            size_bytes: descriptor.size_bytes(),
++            extents,
++            backings,
++        })
++    }
++
++    /// Reinspect retained objects, never reopen names. Unknown initial identities
++    /// stay explicitly unqualified; known identities must remain known and equal.
++    pub fn revalidate(&self) -> Result<(), BackingError> {
++        for (index, backing) in self.backings.iter().enumerate() {
++            let current = backing
++                .copy_endpoint()
++                .map_err(|source| BackingError::Device { index, source })?;
++            if backing.initial.identity.is_some() && current.identity != backing.initial.identity {
++                return Err(BackingError::Changed { index });
++            }
++            validate(index, current, backing.required_len)?;
++        }
++        Ok(())
++    }
++}
++fn validate(index: usize, endpoint: CopyEndpoint, required: u64) -> Result<(), BackingError> {
++    if !endpoint.capabilities.contains(Capabilities::READ) {
++        return Err(BackingError::Unreadable { index });
++    }
++    if endpoint.size < required {
++        return Err(BackingError::Truncated {
++            index,
++            required,
++            actual: endpoint.size,
++        });
++    }
++    Ok(())
++}
+diff --git a/crates/rvvdk-vmdk/src/load.rs b/crates/rvvdk-vmdk/src/load.rs
+new file mode 100644
+index 0000000..105eba2
+--- /dev/null
++++ b/crates/rvvdk-vmdk/src/load.rs
+@@ -0,0 +1,45 @@
++use crate::{BackingError, Descriptor, Limits};
++use std::io::{self, Read};
++
++/// Owned bounded bytes; parse results borrow this object, not a self-reference.
++pub struct DescriptorText {
++    bytes: Vec<u8>,
++    limits: Limits,
++}
++impl DescriptorText {
++    /// Read at most descriptor_bytes + one probe byte, without trusting size hints.
++    /// This bounds bytes/memory, not blocking time. Interrupted reads are retried.
++    pub fn read_from(mut reader: impl Read, limits: Limits) -> Result<Self, BackingError> {
++        let mut bytes = Vec::new();
++        let mut chunk = [0_u8; 4096];
++        loop {
++            let remaining = limits.descriptor_bytes - bytes.len();
++            let count = if remaining == 0 {
++                1
++            } else {
++                remaining.min(chunk.len())
++            };
++            let n = match reader.read(&mut chunk[..count]) {
++                Ok(n) => n,
++                Err(e) if e.kind() == io::ErrorKind::Interrupted => continue,
++                Err(e) => return Err(BackingError::io("reading descriptor", e)),
++            };
++            if n == 0 {
++                break;
++            }
++            if remaining == 0 {
++                return Err(BackingError::Limit("descriptor acquisition bytes"));
++            }
++            bytes.extend_from_slice(&chunk[..n]);
++        }
++        let text = Self { bytes, limits };
++        text.parse()?;
++        Ok(text)
++    }
++    pub fn as_bytes(&self) -> &[u8] {
++        &self.bytes
++    }
++    pub fn parse(&self) -> Result<Descriptor<'_>, crate::DescriptorError> {
++        Descriptor::parse_with_limits(&self.bytes, self.limits)
++    }
++}
+diff --git a/crates/rvvdk-vmdk/src/local.rs b/crates/rvvdk-vmdk/src/local.rs
+new file mode 100644
+index 0000000..a07aedf
+--- /dev/null
++++ b/crates/rvvdk-vmdk/src/local.rs
+@@ -0,0 +1,172 @@
++use crate::{BackingError, BackingResolver, DescriptorText, Limits};
++use rvvdk_core::BlockDevice;
++use rvvdk_local::LocalFileBlockDevice;
++use std::{
++    ffi::CString,
++    fs::File,
++    os::{
++        fd::{AsRawFd, FromRawFd},
++        unix::fs::{MetadataExt, OpenOptionsExt},
++    },
++    path::Path,
++    sync::Arc,
++};
++
++/// Linux confined namespace rooted at a retained directory. Requires openat2 and
++/// trusted procfs at /proc/self/fd; unsupported confinement never falls back.
++pub struct LocalResolver {
++    directory: File,
++}
++impl LocalResolver {
++    /// The caller selects and authorizes this directory, including any hard links
++    /// already present. Every subsequent reference is resolved beneath its FD.
++    pub fn from_directory(directory: File) -> Result<Self, BackingError> {
++        if !directory
++            .metadata()
++            .map_err(|e| BackingError::io("inspecting anchor", e))?
++            .is_dir()
++        {
++            return Err(BackingError::NotDirectory);
++        }
++        Ok(Self { directory })
++    }
++
++    /// The path/parent are trusted caller input. The descriptor basename and its
++    /// references use confined lookup; reference paths are descriptor-relative.
++    pub fn open_descriptor(
++        path: impl AsRef<Path>,
++        limits: Limits,
++    ) -> Result<(DescriptorText, Self), BackingError> {
++        let path = path.as_ref();
++        let name = path
++            .file_name()
++            .and_then(|s| s.to_str())
++            .ok_or(BackingError::UnsafeReference)?;
++        let parent = path
++            .parent()
++            .filter(|p| !p.as_os_str().is_empty())
++            .unwrap_or(Path::new("."));
++        let directory = File::options()
++            .read(true)
++            .custom_flags(libc::O_PATH | libc::O_DIRECTORY | libc::O_CLOEXEC)
++            .open(parent)
++            .map_err(|e| BackingError::io("opening trusted descriptor directory", e))?;
++        let resolver = Self::from_directory(directory)?;
++        let file = resolver.open_regular(name)?;
++        let text = DescriptorText::read_from(file, limits)?;
++        Ok((text, resolver))
++    }
++
++    fn open_regular(&self, reference: &str) -> Result<File, BackingError> {
++        let name = local_name(reference)?;
++        // O_PATH obtains an object identity without opening a FIFO/device for I/O.
++        // SAFETY: open_how consists solely of integer fields; zero is valid.
++        let mut how: libc::open_how = unsafe { std::mem::zeroed() };
++        how.flags = (libc::O_PATH | libc::O_CLOEXEC) as u64;
++        how.resolve = libc::RESOLVE_BENEATH | libc::RESOLVE_NO_SYMLINKS | libc::RESOLVE_NO_XDEV;
++        // SAFETY: valid NUL-terminated name, live directory FD and fully initialized
++        // open_how with its ABI size. A successful FD is immediately owned below.
++        let fd = unsafe {
++            libc::syscall(
++                libc::SYS_openat2,
++                self.directory.as_raw_fd(),
++                name.as_ptr(),
++                &how,
++                std::mem::size_of::<libc::open_how>(),
++            )
++        };
++        if fd < 0 {
++            return Err(BackingError::io(
++                "confined lookup (openat2 required)",
++                std::io::Error::last_os_error(),
++            ));
++        }
++        // SAFETY: syscall returned a new owned FD, not adopted anywhere else.
++        let pinned = unsafe { File::from_raw_fd(fd as i32) };
++        reopen_regular(pinned)
++    }
++}
++impl BackingResolver for LocalResolver {
++    fn resolve(&self, reference: &str) -> Result<Arc<dyn BlockDevice>, BackingError> {
++        let file = self.open_regular(reference)?;
++        let device = LocalFileBlockDevice::from_buffered_file(file).map_err(BackingError::Adopt)?;
++        Ok(Arc::new(device))
++    }
++}
++fn local_name(reference: &str) -> Result<CString, BackingError> {
++    // Reject other-platform/URI syntax too, even where Unix would treat it literally.
++    if reference.is_empty()
++        || reference.len() > 4096
++        || reference.chars().any(|c| c.is_control())
++        || reference.contains(['\\', ':'])
++        || reference
++            .split('/')
++            .any(|part| part.is_empty() || part == "." || part == "..")
++    {
++        return Err(BackingError::UnsafeReference);
++    }
++    CString::new(reference).map_err(|_| BackingError::UnsafeReference)
++}
++fn reopen_regular(pinned: File) -> Result<File, BackingError> {
++    let before = pinned
++        .metadata()
++        .map_err(|e| BackingError::io("inspecting pinned backing", e))?;
++    if !before.is_file() {
++        return Err(BackingError::NotRegular);
++    }
++    // This is our live FD, not an untrusted descriptor pathname. Holding O_PATH
++    // pins the inode across rename/unlink; the original name is never reopened.
++    let file = File::options()
++        .read(true)
++        .custom_flags(libc::O_CLOEXEC)
++        .open(format!("/proc/self/fd/{}", pinned.as_raw_fd()))
++        .map_err(|e| BackingError::io("opening pinned regular backing through procfs", e))?;
++    let after = file
++        .metadata()
++        .map_err(|e| BackingError::io("inspecting opened backing", e))?;
++    if !after.is_file() || (before.dev(), before.ino()) != (after.dev(), after.ino()) {
++        return Err(BackingError::LocalIdentityChanged);
++    }
++    Ok(file)
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use std::io::Read;
++    use std::os::unix::fs::symlink;
++
++    #[test]
++    fn replacement_between_pin_and_reopen_cannot_redirect_reads() {
++        let root = std::env::var_os("RVVDK_TEST_DIR")
++            .map(std::path::PathBuf::from)
++            .unwrap_or_else(std::env::temp_dir);
++        let path = root.join(format!("rvvdk-pin-reopen-{}", std::process::id()));
++        std::fs::create_dir(&path).unwrap();
++        let original = path.join("original");
++        std::fs::write(&original, b"pinned").unwrap();
++        let pinned = File::options()
++            .read(true)
++            .custom_flags(libc::O_PATH | libc::O_CLOEXEC)
++            .open(&original)
++            .unwrap();
++        std::fs::remove_file(&original).unwrap();
++        symlink("/etc/passwd", &original).unwrap();
++        let mut file = reopen_regular(pinned).unwrap();
++        let mut bytes = Vec::new();
++        file.read_to_end(&mut bytes).unwrap();
++        assert_eq!(bytes, b"pinned");
++        // SAFETY: F_GETFL/F_GETFD inspect this live file descriptor.
++        assert_eq!(
++            unsafe { libc::fcntl(file.as_raw_fd(), libc::F_GETFL) } & libc::O_ACCMODE,
++            libc::O_RDONLY
++        );
++        // SAFETY: same live FD, read-only flag query.
++        assert_ne!(
++            unsafe { libc::fcntl(file.as_raw_fd(), libc::F_GETFD) } & libc::FD_CLOEXEC,
++            0
++        );
++        drop(file);
++        std::fs::remove_dir_all(path).unwrap();
++    }
++}
+diff --git a/crates/rvvdk-vmdk/tests/backing.rs b/crates/rvvdk-vmdk/tests/backing.rs
+new file mode 100644
+index 0000000..415a7fe
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/backing.rs
+@@ -0,0 +1,321 @@
++use rvvdk_core::{
++    BlockDevice, Capabilities, CopyEndpoint, DiskGeometry, EndpointIdentity, MemoryBlockDevice,
++};
++use rvvdk_vmdk::{
++    BackingError, BackingResolver, Descriptor, DescriptorText, Limits, ResolutionLimits,
++    ResolvedDescriptor, ResolvedExtentBacking,
++};
++use std::{
++    io::{self, Read},
++    sync::{
++        Arc, Mutex,
++        atomic::{AtomicUsize, Ordering},
++    },
++};
++fn text(extents: &str) -> String {
++    format!("version=1\nCID=00112233\nparentCID=ffffffff\ncreateType=\"custom\"\n{extents}\n")
++}
++struct Resolver {
++    calls: AtomicUsize,
++    device: Arc<dyn BlockDevice>,
++}
++impl BackingResolver for Resolver {
++    fn resolve(&self, name: &str) -> Result<Arc<dyn BlockDevice>, BackingError> {
++        self.calls.fetch_add(1, Ordering::SeqCst);
++        if name == "missing" {
++            return Err(BackingError::UnsafeReference);
++        }
++        Ok(self.device.clone())
++    }
++}
++fn resolver(size: usize) -> Resolver {
++    Resolver {
++        calls: AtomicUsize::new(0),
++        device: Arc::new(MemoryBlockDevice::read_only(size).unwrap()),
++    }
++}
++
++#[test]
++fn opaque_references_deduplicate_and_outlive_input_and_resolver() {
++    let r = resolver(4096);
++    let t = text("RDONLY 1 FLAT \"memory:object\" 1\nRW 2 ZERO\nRW 2 FLAT \"memory:object\" 4");
++    let result = ResolvedDescriptor::resolve(
++        &Descriptor::parse(t.as_bytes()).unwrap(),
++        &r,
++        ResolutionLimits::default(),
++    )
++    .unwrap();
++    assert_eq!(r.calls.load(Ordering::SeqCst), 1);
++    assert_eq!(result.backings().len(), 1);
++    assert_eq!(result.backings()[0].required_len(), 3072);
++    assert_eq!(result.extents()[2].logical_offset(), 1536);
++    assert_eq!(
++        result.extents()[2].backing(),
++        ResolvedExtentBacking::Flat {
++            backing_index: 0,
++            offset_bytes: 2048
++        }
++    );
++    assert_eq!(result.extents()[1].backing(), ResolvedExtentBacking::Zero);
++    assert_eq!(result.size_bytes(), 2560);
++    drop(t);
++    drop(r);
++    result.revalidate().unwrap();
++    let mut bytes = [1; 512];
++    result.backings()[0]
++        .read_exact_at(2048, &mut bytes)
++        .unwrap();
++    assert_eq!(bytes, [0; 512]);
++}
++
++#[test]
++fn resource_limits_fail_before_any_resolver_call() {
++    let r = resolver(4096);
++    let t = text("RW 1 FLAT \"a\" 0\nRW 1 FLAT \"b\" 0");
++    let d = Descriptor::parse(t.as_bytes()).unwrap();
++    for limits in [
++        ResolutionLimits {
++            extents: 1,
++            backing_files: 2,
++        },
++        ResolutionLimits {
++            extents: 2,
++            backing_files: 1,
++        },
++    ] {
++        assert!(matches!(
++            ResolvedDescriptor::resolve(&d, &r, limits),
++            Err(BackingError::Limit(_))
++        ));
++        assert_eq!(r.calls.load(Ordering::SeqCst), 0);
++    }
++    let d = ResolvedDescriptor::resolve(
++        &d,
++        &r,
++        ResolutionLimits {
++            extents: 2,
++            backing_files: 2,
++        },
++    )
++    .unwrap();
++    assert_eq!(d.backings().len(), 2);
++}
++#[test]
++fn zero_extents_resolve_without_sources() {
++    let t = text("RW 8 ZERO");
++    let r = resolver(0);
++    let d = ResolvedDescriptor::resolve(
++        &Descriptor::parse(t.as_bytes()).unwrap(),
++        &r,
++        ResolutionLimits {
++            extents: 1,
++            backing_files: 0,
++        },
++    )
++    .unwrap();
++    assert_eq!(d.size_bytes(), 4096);
++    assert!(d.backings().is_empty());
++    d.revalidate().unwrap();
++    assert_eq!(r.calls.load(Ordering::SeqCst), 0);
++}
++#[test]
++fn truncation_and_read_permissions_are_checked_and_failures_drop_sources() {
++    let t = text("RW 1 FLAT \"a\" 0\nRW 1 FLAT \"b\" 2");
++    let r = resolver(1024);
++    assert!(matches!(
++        ResolvedDescriptor::resolve(
++            &Descriptor::parse(t.as_bytes()).unwrap(),
++            &r,
++            ResolutionLimits::default()
++        ),
++        Err(BackingError::Truncated {
++            index: 1,
++            required: 1536,
++            actual: 1024
++        })
++    ));
++    assert_eq!(Arc::strong_count(&r.device), 1);
++    let t = text("RW 1 FLAT \"a\" 0\nRW 1 FLAT \"missing\" 0");
++    assert!(matches!(
++        ResolvedDescriptor::resolve(
++            &Descriptor::parse(t.as_bytes()).unwrap(),
++            &r,
++            ResolutionLimits::default()
++        ),
++        Err(BackingError::Resolve { index: 1, .. })
++    ));
++    assert_eq!(Arc::strong_count(&r.device), 1);
++    let r = Resolver {
++        calls: AtomicUsize::new(0),
++        device: Arc::new(MemoryBlockDevice::with_capabilities(4096, Capabilities::WRITE).unwrap()),
++    };
++    assert!(matches!(
++        ResolvedDescriptor::resolve(
++            &Descriptor::parse(text("RW 1 FLAT \"a\" 0").as_bytes()).unwrap(),
++            &r,
++            ResolutionLimits::default()
++        ),
++        Err(BackingError::Unreadable { index: 0 })
++    ));
++}
++struct Mutable {
++    endpoint: Mutex<CopyEndpoint>,
++}
++impl BlockDevice for Mutable {
++    fn geometry(&self) -> DiskGeometry {
++        DiskGeometry::new(4096, 512, 4096).unwrap()
++    }
++    fn capabilities(&self) -> Capabilities {
++        Capabilities::READ
++    }
++    fn copy_endpoint(&self) -> rvvdk_core::Result<CopyEndpoint> {
++        Ok(*self.endpoint.lock().unwrap())
++    }
++    fn read_at(&self, _: u64, _: &mut [u8]) -> rvvdk_core::Result<usize> {
++        unreachable!()
++    }
++    fn write_at(&self, _: u64, _: &[u8]) -> rvvdk_core::Result<usize> {
++        unreachable!()
++    }
++    fn flush(&self) -> rvvdk_core::Result<()> {
++        unreachable!()
++    }
++}
++#[test]
++fn revalidation_uses_live_capacity_access_and_known_identity() {
++    let initial = CopyEndpoint {
++        size: 4096,
++        capabilities: Capabilities::READ,
++        identity: Some(EndpointIdentity::Memory { address: 1 }),
++    };
++    let device = Arc::new(Mutable {
++        endpoint: Mutex::new(initial),
++    });
++    let r = Resolver {
++        calls: AtomicUsize::new(0),
++        device: device.clone(),
++    };
++    let t = text("RW 1 FLAT \"a\" 1");
++    let d = ResolvedDescriptor::resolve(
++        &Descriptor::parse(t.as_bytes()).unwrap(),
++        &r,
++        ResolutionLimits::default(),
++    )
++    .unwrap();
++    *device.endpoint.lock().unwrap() = CopyEndpoint {
++        size: 1023,
++        ..initial
++    };
++    assert!(matches!(
++        d.revalidate(),
++        Err(BackingError::Truncated { .. })
++    ));
++    *device.endpoint.lock().unwrap() = CopyEndpoint {
++        capabilities: Capabilities::empty(),
++        ..initial
++    };
++    assert!(matches!(
++        d.revalidate(),
++        Err(BackingError::Unreadable { .. })
++    ));
++    for identity in [None, Some(EndpointIdentity::Memory { address: 2 })] {
++        *device.endpoint.lock().unwrap() = CopyEndpoint {
++            identity,
++            ..initial
++        };
++        assert!(matches!(d.revalidate(), Err(BackingError::Changed { .. })));
++    }
++    *device.endpoint.lock().unwrap() = CopyEndpoint {
++        size: 8192,
++        ..initial
++    };
++    d.revalidate().unwrap();
++    assert_eq!(r.calls.load(Ordering::SeqCst), 1);
++    *device.endpoint.lock().unwrap() = CopyEndpoint {
++        identity: None,
++        ..initial
++    };
++    let unknown = ResolvedDescriptor::resolve(
++        &Descriptor::parse(t.as_bytes()).unwrap(),
++        &r,
++        ResolutionLimits::default(),
++    )
++    .unwrap();
++    assert_eq!(unknown.backings()[0].initial_endpoint().identity, None);
++    unknown.revalidate().unwrap();
++}
++
++struct ShortReader {
++    bytes: Vec<u8>,
++    position: usize,
++    interrupt: bool,
++    fail: bool,
++}
++impl Read for ShortReader {
++    fn read(&mut self, out: &mut [u8]) -> io::Result<usize> {
++        if self.interrupt {
++            self.interrupt = false;
++            return Err(io::ErrorKind::Interrupted.into());
++        }
++        if self.fail {
++            return Err(io::ErrorKind::PermissionDenied.into());
++        }
++        let count = out.len().min(3).min(self.bytes.len() - self.position);
++        out[..count].copy_from_slice(&self.bytes[self.position..self.position + count]);
++        self.position += count;
++        Ok(count)
++    }
++}
++#[test]
++fn bounded_loading_handles_short_reads_interrupts_exact_limit_and_one_probe() {
++    let t = text("RW 1 ZERO");
++    let limits = Limits {
++        descriptor_bytes: t.len(),
++        ..Limits::default()
++    };
++    let mut input = ShortReader {
++        bytes: t.as_bytes().to_vec(),
++        position: 0,
++        interrupt: true,
++        fail: false,
++    };
++    let owned = DescriptorText::read_from(&mut input, limits).unwrap();
++    assert_eq!(owned.as_bytes(), t.as_bytes());
++    assert_eq!(owned.parse().unwrap().size_bytes(), 512);
++    input.position = 0;
++    input.bytes.extend_from_slice(&[b' '; 100]);
++    assert!(matches!(
++        DescriptorText::read_from(&mut input, limits),
++        Err(BackingError::Limit("descriptor acquisition bytes"))
++    ));
++    assert_eq!(input.position, t.len() + 1);
++    input.position = 0;
++    assert!(matches!(
++        DescriptorText::read_from(
++            &mut input,
++            Limits {
++                descriptor_bytes: 0,
++                ..limits
++            }
++        ),
++        Err(BackingError::Limit(_))
++    ));
++    assert_eq!(input.position, 1);
++}
++#[test]
++fn loading_propagates_io_and_parser_failures() {
++    let mut input = ShortReader {
++        bytes: vec![],
++        position: 0,
++        interrupt: false,
++        fail: true,
++    };
++    assert!(matches!(
++        DescriptorText::read_from(&mut input, Limits::default()),
++        Err(BackingError::Io { .. })
++    ));
++    assert!(matches!(
++        DescriptorText::read_from(&b"invalid"[..], Limits::default()),
++        Err(BackingError::Descriptor(_))
++    ));
++}
+diff --git a/crates/rvvdk-vmdk/tests/local_resolution.rs b/crates/rvvdk-vmdk/tests/local_resolution.rs
+new file mode 100644
+index 0000000..1044b9c
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/local_resolution.rs
+@@ -0,0 +1,219 @@
++#![cfg(target_os = "linux")]
++use rvvdk_vmdk::{
++    BackingError, BackingResolver, Descriptor, Limits, LocalResolver, ResolutionLimits,
++    ResolvedDescriptor,
++};
++use std::{
++    fs::{self, File},
++    os::unix::fs::{MetadataExt, symlink},
++    path::PathBuf,
++    sync::atomic::{AtomicUsize, Ordering},
++};
++static NEXT: AtomicUsize = AtomicUsize::new(0);
++struct Fixture(PathBuf);
++impl Fixture {
++    fn new() -> Self {
++        let root = std::env::var_os("RVVDK_TEST_DIR")
++            .map(PathBuf::from)
++            .unwrap_or_else(std::env::temp_dir);
++        let path = root.join(format!(
++            "rvvdk-r42-{}-{}",
++            std::process::id(),
++            NEXT.fetch_add(1, Ordering::SeqCst)
++        ));
++        fs::create_dir(&path).unwrap();
++        Self(path)
++    }
++    fn resolver(&self) -> LocalResolver {
++        LocalResolver::from_directory(File::open(&self.0).unwrap()).unwrap()
++    }
++    fn write(&self, name: &str, bytes: &[u8]) {
++        fs::write(self.0.join(name), bytes).unwrap();
++    }
++}
++impl Drop for Fixture {
++    fn drop(&mut self) {
++        fs::remove_dir_all(&self.0).unwrap();
++    }
++}
++fn text(extents: &str) -> String {
++    format!("version=1\nCID=00112233\nparentCID=ffffffff\ncreateType=\"custom\"\n{extents}\n")
++}
++
++#[test]
++fn descriptor_parent_and_nested_regular_files_are_used_read_only() {
++    let f = Fixture::new();
++    fs::create_dir(f.0.join("nested")).unwrap();
++    f.write("nested/Data café", &[7; 2048]);
++    f.write(
++        "disk.vmdk",
++        text("RW 1 FLAT \"nested/Data café\" 1\nRW 1 ZERO").as_bytes(),
++    );
++    let (owned, r) =
++        LocalResolver::open_descriptor(f.0.join("disk.vmdk"), Limits::default()).unwrap();
++    let d = ResolvedDescriptor::resolve(&owned.parse().unwrap(), &r, ResolutionLimits::default())
++        .unwrap();
++    assert!(
++        !d.backings()[0]
++            .initial_endpoint()
++            .capabilities
++            .contains(rvvdk_core::Capabilities::WRITE)
++    );
++    assert!(d.backings()[0].initial_endpoint().identity.is_some());
++    let mut bytes = [0; 512];
++    d.backings()[0].read_exact_at(512, &mut bytes).unwrap();
++    assert_eq!(bytes, [7; 512]);
++    assert_eq!(fs::read(f.0.join("nested/Data café")).unwrap(), [7; 2048]);
++}
++#[test]
++fn dangerous_lexical_names_and_symlink_components_fail() {
++    let f = Fixture::new();
++    f.write("data", &[1; 512]);
++    fs::create_dir(f.0.join("dir")).unwrap();
++    symlink("data", f.0.join("link")).unwrap();
++    symlink("dir", f.0.join("linkdir")).unwrap();
++    symlink("/etc/passwd", f.0.join("outside")).unwrap();
++    let r = f.resolver();
++    for name in [
++        "",
++        "/etc/passwd",
++        "../data",
++        "dir/../../data",
++        "./data",
++        "dir/../data",
++        "dir//data",
++        "data/",
++        "C:disk",
++        "x\\y",
++        "x\0y",
++        "x\ny",
++    ] {
++        assert!(
++            matches!(r.resolve(name), Err(BackingError::UnsafeReference)),
++            "{name:?}"
++        );
++    }
++    for name in ["link", "linkdir/data", "outside"] {
++        assert!(
++            matches!(r.resolve(name), Err(BackingError::Io { .. })),
++            "{name}"
++        );
++    }
++    symlink("data", f.0.join("descriptor")).unwrap();
++    assert!(LocalResolver::open_descriptor(f.0.join("descriptor"), Limits::default()).is_err());
++}
++#[test]
++fn nonregular_files_reject_without_opening_a_fifo_for_io() {
++    let f = Fixture::new();
++    let fifo = std::ffi::CString::new(f.0.join("fifo").as_os_str().as_encoded_bytes()).unwrap();
++    // SAFETY: live C string; creates a FIFO in this test's owned directory.
++    assert_eq!(unsafe { libc::mkfifo(fifo.as_ptr(), 0o600) }, 0);
++    let _socket = std::os::unix::net::UnixListener::bind(f.0.join("socket")).unwrap();
++    let r = f.resolver();
++    for name in ["fifo", "socket"] {
++        assert!(matches!(r.resolve(name), Err(BackingError::NotRegular)));
++    }
++    fs::create_dir(f.0.join("directory")).unwrap();
++    assert!(matches!(
++        r.resolve("directory"),
++        Err(BackingError::NotRegular)
++    ));
++    f.write("regular", &[0; 512]);
++    assert!(matches!(
++        LocalResolver::from_directory(File::open(f.0.join("regular")).unwrap()),
++        Err(BackingError::NotDirectory)
++    ));
++}
++#[test]
++fn mounted_namespaces_and_magic_links_are_not_followed() {
++    let r = LocalResolver::from_directory(File::open("/").unwrap()).unwrap();
++    assert!(
++        matches!(r.resolve("proc/version"), Err(BackingError::Io { source, .. }) if source.raw_os_error() == Some(libc::EXDEV))
++    );
++    let r = LocalResolver::from_directory(File::open("/proc/self/fd").unwrap()).unwrap();
++    let f = File::open("/etc/hosts").unwrap();
++    use std::os::fd::AsRawFd;
++    assert!(
++        matches!(r.resolve(&f.as_raw_fd().to_string()), Err(BackingError::Io { source, .. }) if source.raw_os_error() == Some(libc::ELOOP))
++    );
++}
++#[test]
++fn pinned_anchor_and_backings_survive_path_replacement_and_hardlinks_have_identity() {
++    let f = Fixture::new();
++    fs::create_dir(f.0.join("anchor")).unwrap();
++    f.write("anchor/data", &[3; 1024]);
++    fs::hard_link(f.0.join("anchor/data"), f.0.join("anchor/alias")).unwrap();
++    let r = LocalResolver::from_directory(File::open(f.0.join("anchor")).unwrap()).unwrap();
++    fs::rename(f.0.join("anchor"), f.0.join("moved")).unwrap();
++    fs::create_dir(f.0.join("anchor")).unwrap();
++    f.write("anchor/data", &[9; 1024]);
++    let t = text("RW 1 FLAT \"data\" 0\nRW 1 FLAT \"alias\" 1");
++    let d = ResolvedDescriptor::resolve(
++        &Descriptor::parse(t.as_bytes()).unwrap(),
++        &r,
++        ResolutionLimits::default(),
++    )
++    .unwrap();
++    assert_eq!(
++        d.backings()[0].initial_endpoint().identity,
++        d.backings()[1].initial_endpoint().identity
++    );
++    fs::remove_file(f.0.join("moved/data")).unwrap();
++    symlink("/etc/passwd", f.0.join("moved/data")).unwrap();
++    d.revalidate().unwrap();
++    let mut bytes = [0; 512];
++    d.backings()[0].read_exact_at(0, &mut bytes).unwrap();
++    assert_eq!(bytes, [3; 512]);
++}
++#[test]
++fn live_truncation_is_detected_and_failed_resolution_leaks_no_file_handles() {
++    let f = Fixture::new();
++    f.write("data", &[3; 1024]);
++    let r = f.resolver();
++    let t = text("RW 1 FLAT \"data\" 1");
++    let parsed = Descriptor::parse(t.as_bytes()).unwrap();
++    let d = ResolvedDescriptor::resolve(&parsed, &r, ResolutionLimits::default()).unwrap();
++    File::options()
++        .write(true)
++        .open(f.0.join("data"))
++        .unwrap()
++        .set_len(1023)
++        .unwrap();
++    assert!(matches!(
++        d.revalidate(),
++        Err(BackingError::Truncated {
++            required: 1024,
++            actual: 1023,
++            ..
++        })
++    ));
++    assert!(d.backings()[0].read_exact_at(512, &mut [0; 512]).is_err());
++    drop(d);
++    let metadata = fs::metadata(f.0.join("data")).unwrap();
++    for _ in 0..30 {
++        assert!(ResolvedDescriptor::resolve(&parsed, &r, ResolutionLimits::default()).is_err());
++    }
++    let retained = fs::read_dir("/proc/self/fd")
++        .unwrap()
++        .filter_map(Result::ok)
++        .filter_map(|e| fs::metadata(e.path()).ok())
++        .filter(|m| (m.dev(), m.ino()) == (metadata.dev(), metadata.ino()))
++        .count();
++    assert_eq!(retained, 0);
++}
++#[test]
++fn descriptor_acquisition_ignores_untrusted_file_size_and_obeys_bound() {
++    let f = Fixture::new();
++    let t = text("RW 1 ZERO");
++    f.write("disk", t.as_bytes());
++    let limits = Limits {
++        descriptor_bytes: t.len(),
++        ..Limits::default()
++    };
++    assert!(LocalResolver::open_descriptor(f.0.join("disk"), limits).is_ok());
++    f.write("disk", &[b' '; 8192]);
++    assert!(matches!(
++        LocalResolver::open_descriptor(f.0.join("disk"), limits),
++        Err(BackingError::Limit(_))
++    ));
++}

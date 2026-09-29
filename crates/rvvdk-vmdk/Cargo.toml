@@ -7,10 +7,19 @@ repository.workspace = true
 
 [dependencies]
 thiserror = "2"
+rvvdk-core = { path = "../rvvdk-core" }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+rvvdk-local = { path = "../rvvdk-local" }
+libc = "0.2.189"
 
 [dev-dependencies]
 criterion = "0.8.2"
 
 [[bench]]
 name = "descriptor"
+harness = false
+
+[[bench]]
+name = "resolution"
 harness = false

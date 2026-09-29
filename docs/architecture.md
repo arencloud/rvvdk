@@ -1129,3 +1129,21 @@ lengths, path confinement, backing identity or decoded bytes. R4.2 resolves
 references through caller-supplied backing contracts; R4.3 maps logical reads over
 resolved FLAT/ZERO extents. Native RAW adapters cannot treat a VMDK container FD as
 logical disk data. The CLI remains RAW-only until reader integration is complete.
+
+## Owned VMDK backing resolution (R4.2)
+
+The format crate now depends on core BlockDevice contracts; its Linux-only local
+resolver also uses rvvdk-local and libc. Portable descriptor loading and resolver
+interfaces remain available without local filesystem dependencies on other targets.
+`DescriptorText` owns bounded validated bytes; borrowed parsing avoids self-references.
+`ResolvedDescriptor` owns extents and read-only source wrappers, deduplicates exact
+references, and bounds source count before resolver calls. Live endpoint checks
+validate physical ends/read access and retain known identities for revalidation.
+
+The Linux local resolver pins the descriptor parent directory, confines lookup with
+openat2, rejects nonregular O_PATH objects before I/O adoption, and reopens retained
+regular objects through procfs with identity comparison. Existing local cooperative
+admission remains in use. Directory/entry rename cannot redirect a retained source;
+content stability is not promised. [Contract](vmdk-backing.md) and
+[ADR-0034](adr/0034-confined-vmdk-backing-resolution.md) define limits and trust boundaries.
+R4.3 still supplies the logical `VirtualDisk`; CLI and native RAW behavior are unchanged.

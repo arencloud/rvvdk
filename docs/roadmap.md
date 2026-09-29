@@ -220,22 +220,25 @@ Acceptance: a user can inspect, dry-run, copy, cancel, and verify a sparse RAW i
 **R4.1 complete**: `rvvdk-vmdk` parses a [bounded hosted descriptor subset](vmdk-descriptor.md),
 with checked capacities/offsets, strict feature rejection, synthetic fixture
 provenance, tests and [performance evidence](benchmark-results/2026-09-29-r41/README.md).
-No backing files are opened and no `VirtualDisk` is implemented yet.
+R4.1 parsing opens no backing files; logical `VirtualDisk` support remains pending.
 
-Next bounded package **R4.2**: caller-supplied backing resolution, default local
-confinement, regular-file/identity/live-length validation and bounded acquisition.
-Then **R4.3** adds read-only FLAT/ZERO mapping. Each package gets tests, benchmarks
-and a commit. Local fixtures do not require ESXi.
+**R4.2 complete**: [bounded acquisition and backing resolution](vmdk-backing.md),
+portable resolver contracts, Linux confinement, retained read-only sources and
+live physical validation, with [measured evidence](benchmark-results/2026-09-29-r42/README.md).
+
+Next bounded package **R4.3**: read-only FLAT/ZERO `VirtualDisk`, cross-extent reads,
+physical revalidation and reference byte comparisons. CLI VMDK integration follows
+separately. Each package gets tests, benchmarks and a commit. No ESXi needed yet.
 
 - [x] R4.1 parser crate, explicit subset, input limits, checked arithmetic, fixture provenance.
-- [ ] R4.2 backing resolution and physical validation.
+- [x] R4.2 backing resolution and physical validation.
 - [ ] R4.3 logical mapping and reference byte comparisons.
 
 - [ ] Add `rvvdk-vmdk` with read-only `VirtualDisk` behavior and explicit supported create/extent types.
-- [ ] Parse descriptors with bounded sizes and precise errors. Validate access modes, capacities, sector-to-byte arithmetic, extent offsets, and referenced-file lengths.
-- [ ] Introduce a `BackingResolver` supplied by the caller. Local resolution must handle descriptor-relative paths and reject unintended escapes/absolute-path access by default; it must not assume all backends are local files.
+- [x] Parse descriptors with bounded sizes and precise errors. Validate access modes, capacities, sector-to-byte arithmetic, extent offsets, and referenced-file lengths.
+- [x] Introduce a `BackingResolver` supplied by the caller. Local resolution must handle descriptor-relative paths and reject unintended escapes/absolute-path access by default; it must not assume all backends are local files.
 - [ ] Implement logical mapping across supported FLAT extents and ZERO extents, including reads crossing extent boundaries.
-- [ ] Reject unsupported sparse/encrypted/managed variants clearly rather than guessing at their layout.
+- [x] Reject unsupported sparse/encrypted/managed variants clearly rather than guessing at their layout.
 - [ ] Extend inspect/plan/copy to the supported VMDK subset; destination remains RAW.
 - [ ] Add fixtures with documented provenance and compare decoded logical bytes against a trusted reference implementation.
 

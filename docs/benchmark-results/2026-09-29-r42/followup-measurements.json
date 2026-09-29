@@ -1,0 +1,986 @@
+[
+  {
+    "tag": "followup1-0-baseline",
+    "benchmark": "preflight_copy/threaded",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r42-coqo_zgv/baseline-target/release/deps/preflight-df94444c3cf5a6bc",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "preflight_copy/threaded$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "threaded",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/threaded",
+        "directory_name": "preflight_copy/threaded",
+        "title": "preflight_copy/threaded"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7574016.348482145,
+            "upper_bound": 7702646.278571429
+          },
+          "point_estimate": 7629638.407142857,
+          "standard_error": 33375.30218756361
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7558066.071428571,
+            "upper_bound": 7619944.642857144
+          },
+          "point_estimate": 7586228.714285715,
+          "standard_error": 14058.485441775441
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 48464.92233957612,
+            "upper_bound": 112307.90110613461
+          },
+          "point_estimate": 77109.07153104122,
+          "standard_error": 16954.203390566476
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 69464.38569372734,
+            "upper_bound": 326008.4145167952
+          },
+          "point_estimate": 213352.4307061694,
+          "standard_error": 69950.79598635931
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0
+        ],
+        "times": [
+          53869867.0,
+          53241274.0,
+          52625208.0,
+          51778664.0,
+          60607467.0,
+          53312719.0,
+          53235004.0,
+          53026991.0,
+          53580695.0,
+          53484639.0,
+          52914101.0,
+          52601414.0,
+          53059513.0,
+          52869476.0,
+          53067213.0,
+          52162693.0,
+          52974093.0,
+          52334047.0,
+          52898824.0,
+          52745122.0,
+          53142317.0,
+          53366506.0,
+          52651301.0,
+          53373866.0,
+          53071752.0,
+          52569667.0,
+          53135450.0,
+          52222392.0,
+          53711924.0,
+          52829224.0,
+          53192260.0,
+          53834381.0,
+          53909658.0,
+          52826113.0,
+          54434367.0,
+          53627723.0,
+          53987390.0,
+          52733949.0,
+          57917151.0,
+          53372339.0
+        ]
+      },
+      "tukey.json": [
+        7242500.285714285,
+        7393097.660714285,
+        7794690.660714285,
+        7945288.035714285
+      ]
+    },
+    "variant": "baseline",
+    "pair": 1
+  },
+  {
+    "tag": "followup1-0-candidate",
+    "benchmark": "preflight_copy/threaded",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r42-coqo_zgv/candidate-target/release/deps/preflight-df94444c3cf5a6bc",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "preflight_copy/threaded$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "threaded",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/threaded",
+        "directory_name": "preflight_copy/threaded",
+        "title": "preflight_copy/threaded"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7519951.8737499975,
+            "upper_bound": 7641091.2
+          },
+          "point_estimate": 7577406.139285715,
+          "standard_error": 30898.127736604067
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7504147.714285715,
+            "upper_bound": 7597529.142857143
+          },
+          "point_estimate": 7540519.571428571,
+          "standard_error": 22646.951337617433
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 69958.91545798078,
+            "upper_bound": 186622.4834867898
+          },
+          "point_estimate": 106507.86410910802,
+          "standard_error": 31369.744402643428
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 123512.5947062542,
+            "upper_bound": 259008.2916528427
+          },
+          "point_estimate": 197990.20535338073,
+          "standard_error": 34613.44193728181
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0
+        ],
+        "times": [
+          54186331.0,
+          51903003.0,
+          52877955.0,
+          52763619.0,
+          52286181.0,
+          53576462.0,
+          52350246.0,
+          53208810.0,
+          52954231.0,
+          54295542.0,
+          54950696.0,
+          53537147.0,
+          52644736.0,
+          52584682.0,
+          53618380.0,
+          52942766.0,
+          50735531.0,
+          50195121.0,
+          53166324.0,
+          57559566.0,
+          51913180.0,
+          51667591.0,
+          52365289.0,
+          52661099.0,
+          53291921.0,
+          57068120.0,
+          52396855.0,
+          52777231.0,
+          52500321.0,
+          52398995.0,
+          51952873.0,
+          51534577.0,
+          53057468.0,
+          52790043.0,
+          52265560.0,
+          53980980.0,
+          54783944.0,
+          54173512.0,
+          53199084.0,
+          52557747.0
+        ]
+      },
+      "tukey.json": [
+        6972169.392857144,
+        7226193.857142858,
+        7903592.428571429,
+        8157616.892857143
+      ]
+    },
+    "variant": "candidate",
+    "pair": 1
+  },
+  {
+    "tag": "followup2-0-candidate",
+    "benchmark": "preflight_copy/threaded",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r42-coqo_zgv/candidate-target/release/deps/preflight-df94444c3cf5a6bc",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "preflight_copy/threaded$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "threaded",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/threaded",
+        "directory_name": "preflight_copy/threaded",
+        "title": "preflight_copy/threaded"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7604642.828660713,
+            "upper_bound": 7699075.37142857
+          },
+          "point_estimate": 7647809.017857144,
+          "standard_error": 24208.652647553055
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7579954.857142856,
+            "upper_bound": 7648104.285714285
+          },
+          "point_estimate": 7609868.928571429,
+          "standard_error": 19509.509409495844
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 51469.89303122663,
+            "upper_bound": 106524.29449381605
+          },
+          "point_estimate": 83009.1840262925,
+          "standard_error": 13814.759238788587
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 67074.23516816211,
+            "upper_bound": 212215.19777049936
+          },
+          "point_estimate": 156316.1299490699,
+          "standard_error": 35077.629730917266
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0
+        ],
+        "times": [
+          52836790.0,
+          54331429.0,
+          52905228.0,
+          53734795.0,
+          53553932.0,
+          52680204.0,
+          53528166.0,
+          53545294.0,
+          54077099.0,
+          52992559.0,
+          53233321.0,
+          53088209.0,
+          53048287.0,
+          57163517.0,
+          53053177.0,
+          53457764.0,
+          53196151.0,
+          53469819.0,
+          53066191.0,
+          53304844.0,
+          52296626.0,
+          52808864.0,
+          53172176.0,
+          53492007.0,
+          53689073.0,
+          53807656.0,
+          52844664.0,
+          53939368.0,
+          53157093.0,
+          52667305.0,
+          52484340.0,
+          52947103.0,
+          56400805.0,
+          53014395.0,
+          53355086.0,
+          53784323.0,
+          52487376.0,
+          53742555.0,
+          53689601.0,
+          57339333.0
+        ]
+      },
+      "tukey.json": [
+        7260297.357142862,
+        7414519.750000003,
+        7825779.464285712,
+        7980001.857142853
+      ]
+    },
+    "variant": "candidate",
+    "pair": 2
+  },
+  {
+    "tag": "followup2-0-baseline",
+    "benchmark": "preflight_copy/threaded",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r42-coqo_zgv/baseline-target/release/deps/preflight-df94444c3cf5a6bc",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "preflight_copy/threaded$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "threaded",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/threaded",
+        "directory_name": "preflight_copy/threaded",
+        "title": "preflight_copy/threaded"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7598829.610714288,
+            "upper_bound": 7716560.724732145
+          },
+          "point_estimate": 7655767.185714288,
+          "standard_error": 29920.481765024946
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7615113.571428572,
+            "upper_bound": 7676160.214285715
+          },
+          "point_estimate": 7646253.642857144,
+          "standard_error": 15196.515819741324
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 50275.388707433034,
+            "upper_bound": 121741.68473865285
+          },
+          "point_estimate": 78904.07649917252,
+          "standard_error": 18923.707144632277
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 79259.2134079545,
+            "upper_bound": 268189.7517729453
+          },
+          "point_estimate": 191303.7454400628,
+          "standard_error": 45853.482299198404
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0
+        ],
+        "times": [
+          53271054.0,
+          49305648.0,
+          52919868.0,
+          52443863.0,
+          52353455.0,
+          53603721.0,
+          54161540.0,
+          52661153.0,
+          53751892.0,
+          53111015.0,
+          58526551.0,
+          54172230.0,
+          53533708.0,
+          53662805.0,
+          53171105.0,
+          53931227.0,
+          53772391.0,
+          53627044.0,
+          53081431.0,
+          53227517.0,
+          53489246.0,
+          53832193.0,
+          53714351.0,
+          52330042.0,
+          54188199.0,
+          53066149.0,
+          52521504.0,
+          53611554.0,
+          53221520.0,
+          53503009.0,
+          53366270.0,
+          53340536.0,
+          53767928.0,
+          54383005.0,
+          54194203.0,
+          53916186.0,
+          54476485.0,
+          57542778.0,
+          53346593.0,
+          53513843.0
+        ]
+      },
+      "tukey.json": [
+        7294965.178571427,
+        7444345.624999999,
+        7842693.482142857,
+        7992073.928571429
+      ]
+    },
+    "variant": "baseline",
+    "pair": 2
+  },
+  {
+    "tag": "followup3-0-baseline",
+    "benchmark": "preflight_copy/threaded",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r42-coqo_zgv/baseline-target/release/deps/preflight-df94444c3cf5a6bc",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "preflight_copy/threaded$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "threaded",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/threaded",
+        "directory_name": "preflight_copy/threaded",
+        "title": "preflight_copy/threaded"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7629619.525,
+            "upper_bound": 7934446.908124999
+          },
+          "point_estimate": 7775961.6000000015,
+          "standard_error": 78075.20112071156
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7531982.071428572,
+            "upper_bound": 7682750.5
+          },
+          "point_estimate": 7615414.785714285,
+          "standard_error": 43658.60141771911
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 121991.92643421116,
+            "upper_bound": 475594.2440565144
+          },
+          "point_estimate": 254231.68978648537,
+          "standard_error": 97790.99318524572
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 362853.4399319199,
+            "upper_bound": 596010.2684439322
+          },
+          "point_estimate": 501246.9375932177,
+          "standard_error": 59918.25455301765
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0,
+          7.0
+        ],
+        "times": [
+          52839757.0,
+          52903724.0,
+          53278075.0,
+          51861098.0,
+          52630782.0,
+          53216346.0,
+          53709086.0,
+          52771709.0,
+          50395738.0,
+          50523312.0,
+          53797064.0,
+          49137767.0,
+          52676040.0,
+          51468918.0,
+          51055168.0,
+          52317140.0,
+          52675094.0,
+          53536269.0,
+          52855847.0,
+          51477400.0,
+          51615815.0,
+          58510352.0,
+          62421670.0,
+          54717817.0,
+          56808348.0,
+          61215414.0,
+          55968375.0,
+          52390073.0,
+          53516942.0,
+          61687481.0,
+          62712712.0,
+          58436356.0,
+          59483740.0,
+          60657126.0,
+          55185945.0,
+          53766184.0,
+          53456451.0,
+          53337732.0,
+          53792323.0,
+          52462058.0
+        ]
+      },
+      "tukey.json": [
+        6233084.214285718,
+        6862546.5178571455,
+        8541112.660714284,
+        9170574.964285709
+      ]
+    },
+    "variant": "baseline",
+    "pair": 3
+  },
+  {
+    "tag": "followup3-0-candidate",
+    "benchmark": "preflight_copy/threaded",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r42-coqo_zgv/candidate-target/release/deps/preflight-df94444c3cf5a6bc",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "preflight_copy/threaded$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "threaded",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/threaded",
+        "directory_name": "preflight_copy/threaded",
+        "title": "preflight_copy/threaded"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7461458.045729167,
+            "upper_bound": 8044544.390000002
+          },
+          "point_estimate": 7719243.974999999,
+          "standard_error": 148912.0207280669
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7505413.833333334,
+            "upper_bound": 7588896.25
+          },
+          "point_estimate": 7538959.916666667,
+          "standard_error": 23659.94078186088
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 67156.09550774144,
+            "upper_bound": 156286.9171753528
+          },
+          "point_estimate": 94950.02656429914,
+          "standard_error": 27804.808112840823
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 297038.3399463703,
+            "upper_bound": 1320867.8228506574
+          },
+          "point_estimate": 953828.5524896551,
+          "standard_error": 238946.20985848698
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0
+        ],
+        "times": [
+          41210460.0,
+          41384222.0,
+          41786247.0,
+          40893891.0,
+          40853342.0,
+          41779769.0,
+          64672138.0,
+          66192881.0,
+          64958971.0,
+          49686552.0,
+          44660728.0,
+          45528386.0,
+          45600758.0,
+          46339011.0,
+          45043950.0,
+          45241732.0,
+          45534815.0,
+          45805015.0,
+          45377702.0,
+          45217486.0,
+          45797905.0,
+          45635276.0,
+          45365019.0,
+          45224360.0,
+          45524311.0,
+          44524534.0,
+          44560004.0,
+          44993874.0,
+          45531940.0,
+          45649479.0,
+          45104641.0,
+          45889367.0,
+          45081478.0,
+          45225787.0,
+          45543470.0,
+          44790825.0,
+          44875985.0,
+          44925801.0,
+          45585426.0,
+          45021016.0
+        ]
+      },
+      "tukey.json": [
+        7098436.250000001,
+        7287109.375,
+        7790237.708333332,
+        7978910.833333332
+      ]
+    },
+    "variant": "candidate",
+    "pair": 3
+  }
+]

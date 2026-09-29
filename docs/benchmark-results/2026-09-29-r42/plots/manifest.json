@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R4.2 \u00b7 Bounded backing resolution",
+    "candidate": "patch ff3fb5df",
+    "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 parser in memory \u00b7 warm Btrfs files/metadata",
+    "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "candidate_only": {
+      "title": "Backing resolution and loading \u00b7 first cost baseline",
+      "note": "Resolution includes opening, validation and closing sources \u00b7 load includes descriptor parsing \u00b7 no logical disk reads.",
+      "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+    },
+    "workloads": {
+      "descriptor/small": {
+        "label": "Descriptor \u00b7 small",
+        "phase": "planning"
+      },
+      "descriptor/1024_extents": {
+        "label": "Descriptor \u00b7 1,024 extents",
+        "phase": "planning"
+      },
+      "preflight_copy/threaded": {
+        "label": "RAW Threaded copy + flush \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "resolution/one_file": {
+        "label": "Resolve one source",
+        "phase": "planning"
+      },
+      "resolution/32_files": {
+        "label": "Resolve 32 distinct sources",
+        "phase": "planning"
+      },
+      "resolution/1024_shared": {
+        "label": "1,024 extents sharing one source",
+        "phase": "planning"
+      },
+      "resolution/load_descriptor": {
+        "label": "Load and validate descriptor",
+        "phase": "planning"
+      }
+    },
+    "repeat_sampling": "3 adjacent pairs \u00b7 40 samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+  },
+  "input_sha256": {
+    "plot-config.json": "5196ffb036c99f194a09c0e87d022117df223d20d908399be8ce0e66bb3145a9",
+    "environment.json": "cbe924378c86ce05ecc73a9c75ce08042f9b5d5aa84540b399e975357df6a878",
+    "measurements.json": "96dd757fe0f50096f40f005835d3f268289ca0f8bb2b0dbc9fc6608335af3db3",
+    "summary.json": "b0c8ffa4ffd5b1aab73b5d8b5728ffc22cf1c996cff2362ab8ba4e8b5e2af8d7",
+    "followup-measurements.json": "eaf0c7ca5de8eb030c7ad812c1793978323b087a659d64f73cb710d7e2dc6d71",
+    "followup-summary.json": "c9c6456693a8773a291213611c1524cf02ed84a973f7ff38f86e213fc727859a",
+    "candidate-only-measurements.json": "98ac9792d7a7c7d7657dd725954062810f2afda574f24ceb38d152e6393cf13f"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "bc7562d2f2eec3d6eccaf88f0085a4119848d71196ce9674d43a93014a2d44dd",
+    "planning-latency.png": "cafc223c461e893eeab898c2efa7dc068796a8599cfeeaa3442a7b17ae05f404",
+    "copy-latency.svg": "382fb3470903f805c0bd5613097c0be2cdf7082ab21f23208b7835c6b3faa560",
+    "copy-latency.png": "5efadc0a508fa19ef8e7c2e2cc157ff0db69c2929ec362a1675fa1a1d20f0c49",
+    "relative-change.svg": "134594ada94498611e12e448cdbc7708e06c2567f5cf98ca7044ab9e394b553b",
+    "relative-change.png": "f132ceddef722ca5969a014ad20302a07eb706dc4d66c3e4f2a8275f3454a1da",
+    "sample-distributions.svg": "4ee22fb5221bfca51472a53c2e30f4ccdf901c735b7895c7377801b469e874b3",
+    "sample-distributions.png": "948238a8e881889737f0b1a9789dc5725bd56684c4cde4c3ebfb85fc3ea07731",
+    "followup-change.svg": "985fffe01a16951df36c8e7df44c58858628138b97fffa6d285387b732e36fff",
+    "followup-change.png": "4431fb8515268080c9b823c3fd61f338f3694b993430b1eb0a83a75723474fbe",
+    "candidate-only.svg": "cca240e74dff9de1178e135e380923fd0ab8b36bc1d73d1daba6aed7460aed2a",
+    "candidate-only.png": "80c92c788456f101ac78550ad38df4ce1eab120f9381427e8177900f269e1647",
+    "computed.json": "7aebfc0b2fc97a9946460559e191d84ed05b7f5c430cd4b2641a904797760d9b"
+  }
+}
