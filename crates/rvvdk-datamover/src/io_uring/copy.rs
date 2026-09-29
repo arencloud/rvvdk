@@ -647,6 +647,7 @@ mod tests {
         let pool = BufferPool::new(1, 4096, 4096).unwrap();
         let completed = InFlightOperation::new(
             file,
+            None,
             1,
             IoUringOperationKind::Write,
             4096,

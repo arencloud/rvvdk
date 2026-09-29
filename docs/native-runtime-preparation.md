@@ -102,7 +102,7 @@ not by the Threaded executor's own elapsed counter.
 Kernel operation failures can still occur during execution, including a denied
 `io_uring_enter` or an unsupported request on a particular endpoint. Preparation
 is not a guarantee that future I/O succeeds. Concurrent descriptor/content
-mutation, general buffered/direct alias policy, cross-job resource caching,
+mutation outside [cooperative alias admission](local-file-concurrency.md), cross-job resource caching,
 and controlled-runner performance qualification remain separate work.
 
 ## Validation and evidence
@@ -115,3 +115,9 @@ cleanup, and no retry after a sparse prefix plus submission failure.
 All existing engine ownership, shutdown, partial-I/O, and lifetime tests remain
 required. See the [R2.5 benchmark report](benchmark-results/2026-09-29-r25/README.md)
 for matched raw measurements, plots, and the injected unavailable-ring fallback.
+
+R2.6 attaches per-file admission to every owned regular-file request. Known final
+CQEs release it; unconfirmed shutdown retains it with quarantined resources.
+A new admission conflict propagates through the existing failure context and
+never authorizes an Auto retry. Resource preparation alone does not reserve
+file ranges for the entire job.

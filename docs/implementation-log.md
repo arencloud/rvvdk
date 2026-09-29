@@ -42,8 +42,8 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 | R0.5 | Complete | Endpoint capabilities/live capacity, known aliases, native binding, and contextual preflight errors | Required correctness cost accepted: planning +2.08–2.15 µs; final copy aggregates −1.93% to +2.37%; general qualification provisional |
 | V0 | Planned | Independent VMware access feasibility; licensed/evaluation host needed for representative API workflows | Pending — first transport baseline follows functional proof |
 
-R1.1–R1.6 and R2.1–R2.5 are complete within their documented scopes; their detailed
-records appear below. R2.6 onward and V0 remain planned in the roadmap. Performance qualification
+R1.1–R1.6 and R2.1–R2.6 are complete within their documented scopes; their detailed
+records appear below. R3 onward and V0 remain planned in the roadmap. Performance qualification
 remains provisional as recorded for each step.
 
 ## Per-step record template
@@ -1096,13 +1096,74 @@ to +2.10%). Separate syscall traces show flush dominates their measured cycles;
 tracing perturbs timing and does not attribute the earlier regression. Both
 longer-repeat and main adverse results remain open.
 
+## R2.6 — Cooperative concurrent local alias admission
+
+Date: 2026-09-29. Status: **Complete within the documented cooperative contract**.
+Baseline: `2d5c68c`, initially clean. Exact source patch, unchanged benchmark
+harness hashes, and separately built executable identities are retained with
+[the evidence](benchmark-results/2026-09-29-r26/README.md).
+
+Added per-file admission shared by Linux local backend calls and native requests,
+keyed by device/inode across independent opens and hard links. Admission fails
+before I/O for overlapping writers, page-overlapping mixed buffered/direct modes,
+and whole-file flush conflicts. Extent inspection takes read intent; sparse
+operations take one buffered-write intent across syscall and all fallback chunks.
+Same-mode readers and disjoint direct subpage requests remain concurrent.
+
+Native operations own admission before SQE publication and retain it until a
+known final CQE or quarantine. Completed buffers do not retain admission.
+Negative completions, successful shutdown, and unwinding release confirmed
+requests; uncertain shutdown retains the range with buffer and descriptor owners.
+There is no automatic copy retry or executor fallback for admission conflicts.
+
+The registry is consulted at registration; short per-file mutex sections scan
+active ranges without holding a lock across I/O. Shared registry/vector allocations
+remain backend metadata outside the payload budget, while the owned native guard
+is charged in operation entries. File modes are inspected once per IoUringFile;
+infallible OwnedFd conversion remains available with lazy first-enqueue inspection.
+No native scheduling, worker, buffer, or queue defaults changed.
+
+Added 14 tests: five coordinator tests, three bounded native lifetime tests,
+four real local/native integration tests, and two sparse/inspection lifetime tests.
+The first two development compilations caught wrong sparse method names in the
+new integration test (`punch_hole`, then `deallocate_at`); corrected to the existing
+`discard` API. Their diagnostics are retained. Production admission compiled on
+its first check; the initial full executable suite then passed. Existing fixtures
+and correctness assertions were not weakened to accommodate the new policy.
+
+[ADR-0029](adr/0029-local-file-admission.md) and the
+[contract](local-file-concurrency.md) record fail-fast rationale, migration,
+page granularity, quarantine behavior, and external-writer responsibility.
+This is request-level cooperation; raw FDs, mmap, external processes, stable
+source snapshots, and copy-wide scheduling remain caller responsibilities.
+Updated ownership/planning ADRs, runtime/request/memory/sparse contracts,
+architecture, README, and the R3 implementation sequence.
+
+Validation: **356 workspace tests pass**, one unchanged allocation test remains
+gated (357 distinct tests). Formatting, strict all-target Clippy, and the
+core/datamover wasm32 library check pass. Four new concurrency, six request,
+and eight runtime integration tests also pass on Btrfs. Exact commands and raw
+outputs are retained in the report; no new allocation qualification is claimed.
+
+Performance: 54 matched runs show native planning **+6.72%** (about 0.171 µs).
+Six longer-repeat runs yield **+2.20%** (about 0.053 µs), retaining **+5.71%/+5.32%**
+pairs. Accept the observed planning cost for admission correctness; attribution
+and broader qualification remain open. Eight copy aggregates range **−5.06% to
++4.89%**, with no adverse pair above +5%; these shared-host observations do not
+establish a speedup. Small-block buffered/direct native and four-worker controls,
+fragmented native, and sparse output are included. Five reproducible SVG/PNG
+charts and exact source/harness/binary identities accompany all samples.
+Prior R2.5 adverse results and PERF.0 remain open. Registration scaling and
+heavily contended multi-job costs are explicitly unmeasured.
+
 ## Next session
 
-Start **R2.6**: define and enforce the supported in-process policy for concurrent
-buffered/direct local aliases, including overlapping aligned/unaligned ranges and
-sparse operations. State external-writer responsibility explicitly. Preserve
-runtime preparation, request validation, memory admission, and owned shutdown.
-Measure the cost of the chosen policy with raw evidence and plots.
+Start **R3.1**: introduce a thin CLI for local RAW `inspect` and read-only `plan`,
+with human/JSON output, explicit format/backend options, and documented naming.
+Define new-output planning and no-clobber behavior before copy creation. Follow
+with R3.2 copy/verify and R3.3 progress lifecycle/cancellation as tracked in the
+roadmap. Existing request, runtime, failure, memory, and alias contracts remain
+mandatory.
 
 Keep PERF.0 and earlier adverse timing pairs open for controlled-runner
 qualification. Commit each completed step. ESXi remains unnecessary; request the

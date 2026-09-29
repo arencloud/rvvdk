@@ -380,3 +380,66 @@ fault_test!(
         assert_eq!(pool.available(), 2);
     }
 );
+
+fn admission(endpoint: &IoUringFile) -> rvvdk_platform::FileAccess {
+    let state = rvvdk_platform::inspect_file(endpoint.as_fd()).unwrap();
+    rvvdk_platform::FileAccess::for_identity(state.device, state.inode)
+}
+
+fault_test!(
+    admission_lasts_from_enqueue_until_confirmation_not_buffer_drop,
+    {
+        use rvvdk_platform::FileAccessKind::BufferedWrite;
+        let (mut engine, pool, endpoint) = setup(1);
+        let access = admission(&endpoint);
+        assert!(matches!(
+            access.try_acquire(0, BLOCK as u64, BufferedWrite),
+            Err(Error::ConcurrentFileAccess { .. })
+        ));
+        engine.submit().unwrap();
+        assert!(access.try_acquire(0, BLOCK as u64, BufferedWrite).is_err());
+        let completed = engine.wait_owned_completion().unwrap();
+        assert_eq!(pool.available(), 0);
+        assert!(access.try_acquire(0, BLOCK as u64, BufferedWrite).is_ok());
+        drop(completed);
+        assert_eq!(pool.available(), 1);
+    }
+);
+
+fault_test!(unconfirmed_shutdown_quarantines_admission_with_owners, {
+    use rvvdk_platform::FileAccessKind::BufferedWrite;
+    let (mut engine, _, endpoint) = setup(1);
+    let access = admission(&endpoint);
+    engine.faults.hide_completions = true;
+    assert!(engine.shutdown().is_err());
+    drop(engine);
+    drop(endpoint);
+    assert!(matches!(
+        access.try_acquire(0, BLOCK as u64, BufferedWrite),
+        Err(Error::ConcurrentFileAccess { .. })
+    ));
+    assert!(
+        access
+            .try_acquire(BLOCK as u64, BLOCK as u64, BufferedWrite)
+            .is_ok()
+    );
+});
+
+fault_test!(regular_file_negative_completion_releases_admission, {
+    use rvvdk_platform::FileAccessKind::Flush;
+    let writable = file();
+    let read_only = File::open(format!("/proc/self/fd/{}", writable.as_raw_fd())).unwrap();
+    // Exercise infallible OwnedFd conversion and lazy registration too.
+    let endpoint = IoUringFile::from(std::os::fd::OwnedFd::from(read_only));
+    let access = admission(&endpoint);
+    let pool = BufferPool::new(1, BLOCK, BLOCK).unwrap();
+    let mut engine = IoUringEngine::new(1).unwrap();
+    engine
+        .submit_owned_write(&endpoint, 0, BLOCK, pool.acquire())
+        .unwrap();
+    assert!(access.try_acquire(0, 0, Flush).is_err());
+    assert!(matches!(engine.wait_owned_completion(), Err(Error::Io(_))));
+    assert!(access.try_acquire(0, 0, Flush).is_ok());
+    assert_eq!(pool.available(), 1);
+    engine.shutdown().unwrap();
+});

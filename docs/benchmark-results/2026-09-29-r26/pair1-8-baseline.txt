@@ -1,0 +1,15 @@
+Gnuplot not found, using plotters backend
+local_sparse: logical=33554432, data=8388608, zero=4194304, hole=20971520, block=65536, flush=included, expected_zeroed=4194304, expected_discarded=20971520
+threaded1: allocated_bytes_after_copy=33554432
+threaded4: allocated_bytes_after_copy=33554432
+Benchmarking local_sparse/native
+Benchmarking local_sparse/native: Warming up for 300.00 ms
+Benchmarking local_sparse/native: Collecting 30 samples in estimated 2.4753 s (60 iterations)
+Benchmarking local_sparse/native: Analyzing
+local_sparse/native     time:   [11.523 ms 11.801 ms 12.129 ms]
+                        thrpt:  [2.5764 GiB/s 2.6480 GiB/s 2.7119 GiB/s]
+Found 5 outliers among 30 measurements (16.67%)
+  2 (6.67%) high mild
+  3 (10.00%) high severe
+native: allocated_bytes_after_copy=12582912
+

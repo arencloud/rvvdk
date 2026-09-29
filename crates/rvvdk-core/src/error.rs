@@ -4,6 +4,11 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error(
+        "concurrent file access conflicts with offset={offset}, length={length}; no request admitted"
+    )]
+    ConcurrentFileAccess { offset: u64, length: u64 },
+
     #[error("native request is incompatible: {0}")]
     NativeRequestIncompatible(#[source] Box<crate::NativeRequestIssue>),
 

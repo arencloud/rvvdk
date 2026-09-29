@@ -97,9 +97,10 @@ prevent concurrent endpoint/content/status changes during copying.
   after mutation is permitted.
 - Threaded fallback invokes logical backend methods; custom backends must
   support those requests or propagate their usual errors. Local fallback uses
-  existing aligned/direct or unaligned/buffered backend methods. This step exercises one/four-worker nonoverlapping requests;
-  it does not establish a general policy for concurrent buffered/direct aliases
-  or external writers to the same file.
+  existing aligned/direct or unaligned/buffered backend methods. R2.6 adds
+  [cooperative alias admission](local-file-concurrency.md): conflicts can reject
+  an otherwise aligned request at execution time. External writers still require
+  caller coordination. Admission does not add low-level tail fallback.
 
 ## Evidence
 

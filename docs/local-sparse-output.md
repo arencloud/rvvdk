@@ -15,8 +15,8 @@ exact byte range instead of rounding into neighboring data. See the primary
 [fallocate manual](https://man7.org/linux/man-pages/man2/fallocate.2.html).
 
 The backend handles EOPNOTSUPP and ENOSYS with ordinary positional zero writes
-of at most 64 KiB. A shared immutable zero array supplies the bytes, with no
-per-operation heap allocation. Unsupported acceleration is cached independently
+of at most 64 KiB. A shared immutable zero array supplies the bytes without a
+per-operation zero buffer. Admission bookkeeping may grow its range vector. Unsupported acceleration is cached independently
 for zeroing and punching on each open device using atomic flags. Concurrent first
 calls may each probe; later calls use the fallback. Reopening probes again.
 Capabilities describe logical support, so they remain advertised after fallback.
@@ -39,10 +39,12 @@ alias. Its current append/access flags are checked as well as the primary
 handle's. Construction already verifies that both descriptors refer to the same
 inode. Tests cover buffered and direct-open operations, partial filesystem-block
 edges, and mixed native/threaded copies with aligned Data requests. They do not
-qualify arbitrary overlapping buffered/direct I/O or native unaligned Data tails.
+qualify arbitrary buffered/direct I/O or native unaligned Data tails. R2.6 now
+[admits participating alias requests](local-file-concurrency.md), holding one
+buffered-write intent across each sparse syscall and all fallback chunks.
 
 As with existing preflight, inspection is not a lock. Callers must stabilize file
-size, status flags, and overlapping writes during operations. Concurrent external
+size, status flags, and nonparticipating writes during operations. Concurrent external
 truncation or flag changes after inspection are outside this contract.
 
 ## Contents, allocation, and statistics
@@ -91,6 +93,7 @@ allocation behavior. Forced-error tests separately validate fallback when kernel
 acceleration is unavailable. [R2.2 evidence](benchmark-results/2026-09-29-r22/README.md)
 contains commands, raw output, matched timings, and performance limitations.
 
-[Sparse source discovery fallback](local-sparse-discovery.md) is implemented by R2.3. Native runtime availability/request
-compatibility and persistent per-job ring reuse remain subsequent R2 work.
+[Sparse source discovery fallback](local-sparse-discovery.md) is implemented by R2.3. Native request
+compatibility and runtime resource reuse are implemented by R2.4/R2.5. R2.6
+covers cooperative concurrent alias admission.
 The [logical Hole contract](adr/0026-logical-hole-guarantee.md) remains authoritative.

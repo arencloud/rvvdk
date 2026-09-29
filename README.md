@@ -44,6 +44,7 @@ VMware disk access and migration, extensible to other platforms.
 | **Sparse source discovery** | Linux Data/Hole extents with [safe dense fallback](docs/local-sparse-discovery.md) when discovery is unavailable |
 | **Copy execution** | Sequential and bounded threaded execution; Linux io_uring path |
 | **Memory management** | Aligned allocations and reusable buffer pools |
+| **Concurrent file aliases** | [Cooperative admission](docs/local-file-concurrency.md) across local and native requests, including hard links and buffered fallbacks |
 | **Direct I/O** | Local `O_DIRECT`, runtime alignment discovery, buffered fallback for unaligned backend requests |
 | **Copy planning** | Portable plans with selection reasons, fresh execution preparation, and explicit Linux RAW adapters |
 | **Copy preflight** | Access, flush support, live capacity, alias and native binding checks; shared fresh local FD inspections |
@@ -211,7 +212,7 @@ workloads. Measurements depend on the filesystem, page cache, hardware, and
 flush policy. See the [benchmark notes](docs/benchmarks.md) for historical results
 and the [review](docs/project-review-2026-09-28.md) for measurement gaps.
 
-Explore the [R2.5 benchmark charts](docs/benchmark-results/2026-09-29-r25/README.md#final-comparison)
+Explore the [R2.6 benchmark charts](docs/benchmark-results/2026-09-29-r26/README.md#final-comparison)
 for latency comparisons, paired changes, and sample distributions. A
 [reusable generator](scripts/benchmarks/README.md) exports SVG and PNG figures.
 

@@ -104,6 +104,7 @@ impl IoUringEngine {
                 queue_depth: self.queue_depth,
             });
         }
+        let access = file.admit(offset, length, kind == IoUringOperationKind::Write)?;
         let user_data = self.next_user_data();
         let fd = types::Fd(file.as_fd().as_raw_fd());
         let entry = match kind {
@@ -122,8 +123,15 @@ impl IoUringEngine {
 
         // Own every resource BEFORE publishing its pointer in the SQ. A panic
         // or subsequent error cannot leave a published pointer without an owner.
-        let operation =
-            InFlightOperation::new(file.clone(), user_data, kind, offset, length, buffer);
+        let operation = InFlightOperation::new(
+            file.clone(),
+            access,
+            user_data,
+            kind,
+            offset,
+            length,
+            buffer,
+        );
         let previous = self.in_flight.insert(user_data, operation);
         debug_assert!(previous.is_none());
         let queue_depth = self.queue_depth;

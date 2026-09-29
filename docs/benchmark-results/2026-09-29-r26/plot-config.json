@@ -1,0 +1,45 @@
+{
+  "title": "R2.6 \u00b7 Concurrent local alias admission",
+  "candidate": "patch 41ac4d12",
+  "conditions": "Btrfs \u00b7 CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 copy flush included",
+  "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+  "repeat_sampling": "3 adjacent pairs \u00b7 40 samples/run \u00b7 0.5 s warmup \u00b7 4 s target",
+  "workloads": {
+    "preflight/plan_native": {
+      "label": "Native planning \u00b7 1 MiB \u00b7 buffered",
+      "phase": "planning"
+    },
+    "preflight_copy/native": {
+      "label": "Native RAW copy \u00b7 1 MiB \u00b7 buffered",
+      "phase": "copy"
+    },
+    "preflight_copy/threaded": {
+      "label": "Threaded RAW copy \u00b7 1 MiB \u00b7 buffered",
+      "phase": "copy"
+    },
+    "native_lifetime/buffered/q8_b4096": {
+      "label": "Native QD8 \u00b7 16 MiB \u00b7 buffered \u00b7 4 KiB",
+      "phase": "copy"
+    },
+    "native_lifetime/direct/q8_b4096": {
+      "label": "Native QD8 \u00b7 16 MiB \u00b7 direct \u00b7 4 KiB",
+      "phase": "copy"
+    },
+    "native_lifetime/buffered/threaded_control": {
+      "label": "4 workers \u00b7 16 MiB \u00b7 buffered \u00b7 64 KiB",
+      "phase": "copy"
+    },
+    "native_lifetime/direct/threaded_control": {
+      "label": "4 workers \u00b7 16 MiB \u00b7 direct \u00b7 64 KiB",
+      "phase": "copy"
+    },
+    "native_runtime/fragmented_unobserved": {
+      "label": "256 extents \u00b7 16 MiB \u00b7 buffered",
+      "phase": "copy"
+    },
+    "local_sparse/native": {
+      "label": "Data/Zero/Hole \u00b7 32 MiB \u00b7 buffered",
+      "phase": "copy"
+    }
+  }
+}

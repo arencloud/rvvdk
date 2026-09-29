@@ -122,3 +122,11 @@ interruptions, partial submission, fatal errors, malformed CQEs, unwinding,
 descriptor reuse, capacity rejection, shutdown, and deliberate retention.
 See the [R0.3 evidence](../benchmark-results/2026-09-28-r03/README.md) for correctness,
 resource measurements, and performance disposition.
+
+## R2.6 — Owned file admission, 2026-09-29
+
+InFlightOperation additionally owns regular-file range admission before SQE
+publication. Final confirmed completion releases the range even while the caller
+retains CompletedOperation's buffer. All existing unconfirmed shutdown paths
+quarantine the admission with file/buffer ownership. This avoids reusing a range
+whose kernel access cannot be ruled out. See [ADR-0029](0029-local-file-admission.md).

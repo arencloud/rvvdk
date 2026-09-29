@@ -217,3 +217,10 @@ explains the change, and all progress identifies the actual backend. This is a
 runtime selection stage distinct from R2.4's request compatibility/replan rule.
 Prepared resources are consumed exactly once; shutdown and ownership quarantine
 remain mandatory, with no retry after mutation. [Contract](../native-runtime-preparation.md).
+
+## R2.6 — Execution-time file admission, 2026-09-29
+
+[Cooperative local alias admission](0029-local-file-admission.md) now applies to
+local methods and owned native requests. Plans and preparation do not reserve
+file ranges. A later conflict is an execution error preserving confirmed partial
+progress, not a reason to replan automatically or switch to Threaded.

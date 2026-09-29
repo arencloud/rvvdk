@@ -14,6 +14,7 @@ use rvvdk_core::{BlockDevice, Capabilities, DiskGeometry, Error, Extent, Result}
 use rvvdk_platform::{LinuxFdBackend, LinuxFdCapabilities};
 
 pub struct LocalFileBlockDevice {
+    access: rvvdk_platform::FileAccess,
     file: File,
     buffered_file: Option<File>,
     geometry: DiskGeometry,
@@ -167,7 +168,9 @@ impl LocalFileBlockDevice {
             capabilities
         };
 
+        use std::os::unix::fs::MetadataExt;
         Ok(Self {
+            access: rvvdk_platform::FileAccess::for_identity(metadata.dev(), metadata.ino()),
             #[cfg(target_os = "linux")]
             sparse_unsupported: std::sync::atomic::AtomicU8::new(0),
             file,
@@ -202,10 +205,16 @@ impl BlockDevice for LocalFileBlockDevice {
 
         self.validate_range(offset, buffer.len())?;
 
-        if self.is_direct_io_compatible(offset, buffer) {
+        let direct = self.is_direct_io_compatible(offset, buffer);
+        let kind = if direct {
+            rvvdk_platform::FileAccessKind::DirectRead
+        } else {
+            rvvdk_platform::FileAccessKind::BufferedRead
+        };
+        let _access = self.access.try_acquire(offset, buffer.len() as u64, kind)?;
+        if direct {
             return Ok(self.file.read_at(buffer, offset)?);
         }
-
         Ok(self.buffered_file().read_at(buffer, offset)?)
     }
 
@@ -216,10 +225,16 @@ impl BlockDevice for LocalFileBlockDevice {
 
         self.validate_range(offset, buffer.len())?;
 
-        if self.is_direct_io_compatible(offset, buffer) {
+        let direct = self.is_direct_io_compatible(offset, buffer);
+        let kind = if direct {
+            rvvdk_platform::FileAccessKind::DirectWrite
+        } else {
+            rvvdk_platform::FileAccessKind::BufferedWrite
+        };
+        let _access = self.access.try_acquire(offset, buffer.len() as u64, kind)?;
+        if direct {
             return Ok(self.file.write_at(buffer, offset)?);
         }
-
         Ok(self.buffered_file().write_at(buffer, offset)?)
     }
 
@@ -244,6 +259,9 @@ impl BlockDevice for LocalFileBlockDevice {
             return Err(Error::Unsupported);
         }
 
+        let _access = self
+            .access
+            .try_acquire(0, 0, rvvdk_platform::FileAccessKind::Flush)?;
         self.file.sync_data()?;
 
         if let Some(buffered_file) = &self.buffered_file {

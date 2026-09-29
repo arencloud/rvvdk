@@ -9,6 +9,7 @@ pub enum IoUringOperationKind {
 
 pub(crate) struct InFlightOperation {
     _file: IoUringFile,
+    _access: Option<rvvdk_platform::FileAccessGuard>,
     user_data: u64,
     kind: IoUringOperationKind,
     offset: u64,
@@ -19,6 +20,7 @@ pub(crate) struct InFlightOperation {
 impl InFlightOperation {
     pub(crate) fn new(
         file: IoUringFile,
+        access: Option<rvvdk_platform::FileAccessGuard>,
         user_data: u64,
         kind: IoUringOperationKind,
         offset: u64,
@@ -27,6 +29,7 @@ impl InFlightOperation {
     ) -> Self {
         Self {
             _file: file,
+            _access: access,
             user_data,
             kind,
             offset,

@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R2.6 \u00b7 Concurrent local alias admission",
+    "candidate": "patch 41ac4d12",
+    "conditions": "Btrfs \u00b7 CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 copy flush included",
+    "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "repeat_sampling": "3 adjacent pairs \u00b7 40 samples/run \u00b7 0.5 s warmup \u00b7 4 s target",
+    "workloads": {
+      "preflight/plan_native": {
+        "label": "Native planning \u00b7 1 MiB \u00b7 buffered",
+        "phase": "planning"
+      },
+      "preflight_copy/native": {
+        "label": "Native RAW copy \u00b7 1 MiB \u00b7 buffered",
+        "phase": "copy"
+      },
+      "preflight_copy/threaded": {
+        "label": "Threaded RAW copy \u00b7 1 MiB \u00b7 buffered",
+        "phase": "copy"
+      },
+      "native_lifetime/buffered/q8_b4096": {
+        "label": "Native QD8 \u00b7 16 MiB \u00b7 buffered \u00b7 4 KiB",
+        "phase": "copy"
+      },
+      "native_lifetime/direct/q8_b4096": {
+        "label": "Native QD8 \u00b7 16 MiB \u00b7 direct \u00b7 4 KiB",
+        "phase": "copy"
+      },
+      "native_lifetime/buffered/threaded_control": {
+        "label": "4 workers \u00b7 16 MiB \u00b7 buffered \u00b7 64 KiB",
+        "phase": "copy"
+      },
+      "native_lifetime/direct/threaded_control": {
+        "label": "4 workers \u00b7 16 MiB \u00b7 direct \u00b7 64 KiB",
+        "phase": "copy"
+      },
+      "native_runtime/fragmented_unobserved": {
+        "label": "256 extents \u00b7 16 MiB \u00b7 buffered",
+        "phase": "copy"
+      },
+      "local_sparse/native": {
+        "label": "Data/Zero/Hole \u00b7 32 MiB \u00b7 buffered",
+        "phase": "copy"
+      }
+    }
+  },
+  "input_sha256": {
+    "plot-config.json": "ab1c7fcb53320146490e9c4331b7a10f7f0ba636e2e0c5d58522a1f28b178887",
+    "environment.json": "d6967b985423d806e31ead62a7bb5cad015a4b0c3924b1052c425658945be228",
+    "measurements.json": "a6e468b3053c2f41a245998457593b048164149c2622918daf2bedb61bc36dbc",
+    "summary.json": "2f653b558296d8fc9d2dffae0bd1e8a2b115b31029941dbc8b5e8052ee0ed541",
+    "followup-measurements.json": "c51ad9d2aa9a062116b1e6bb289e479a925cb7a6add2370934dfce7f3eb9a5f4",
+    "followup-summary.json": "b600909b6b9e7055a465aeba742f408fd845ed661072d2dfb85b752a40c2189a"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "b1b76d79b8c71034d5cec53f518e15dd1f1abef2e00c5f13907779c94a62ba8e",
+    "planning-latency.png": "726f9f8d795aea5a903312bc7ce0a73cc37044fb19d4292b00cb8838d142366a",
+    "copy-latency.svg": "f7c0ad1da7c8560ca48bfefc0013220ccc395cc8fc07b68f321fba429984bfc0",
+    "copy-latency.png": "5ccd3b955f2d738af6262402b4c7eb35d8f731f73e823677dc821e1b69ac4ae8",
+    "relative-change.svg": "21993e1386874d7fa5f4240b5605441d2b77e87c4b0f576637f7d68c47739722",
+    "relative-change.png": "18e8a8f24699d0749b76281b7e9a07b1a7f610061631b60df9263db12254a267",
+    "sample-distributions.svg": "4b749cc1088bdecc8ce61d5523ded28123fd3c0172bcfa572e4b5ddceb95860a",
+    "sample-distributions.png": "b179819d10af872e4333e6f956ac50c6da17bd328931db30ed7eeb25874943f0",
+    "followup-change.svg": "cd04ec1b80d99d8fdd33d42ff2e674be4e18f14e3276373623208316b0a4ecfb",
+    "followup-change.png": "88c09e0208d37c7dab06880fd9cc06c7da5703dc2dc01073c474de51f020ba89",
+    "computed.json": "563e96517bb923a156e2c58c7e7ab37ab5ab2e95c6ce0c06e7762fff7741a024"
+  }
+}

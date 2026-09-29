@@ -245,3 +245,21 @@ fn unsupported_discovery_does_not_hide_later_errors_or_map_changes() {
         .unwrap();
     assert_eq!(map, vec![Extent::new(0, 8192, ExtentKind::Hole).unwrap()]);
 }
+
+#[test]
+fn discovery_holds_admission_across_seeks_and_releases_after_error() {
+    use rvvdk_platform::FileAccessKind::BufferedWrite;
+    let device = device();
+    assert!(
+        device
+            .discover_extents(0, 4096, |_, _| {
+                assert!(matches!(
+                    device.access.try_acquire(0, 1, BufferedWrite),
+                    Err(Error::ConcurrentFileAccess { .. })
+                ));
+                errno(libc::EIO)
+            })
+            .is_err()
+    );
+    assert!(device.access.try_acquire(0, 1, BufferedWrite).is_ok());
+}

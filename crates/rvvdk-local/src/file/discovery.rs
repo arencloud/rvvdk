@@ -16,6 +16,9 @@ impl LocalFileBlockDevice {
         check_size(offset, length, end, self.geometry.size())?;
         // Validate the complete range before interpreting EINVAL as unsupported.
         libc::off_t::try_from(end).map_err(|_| Error::RangeOverflow { offset, length })?;
+        let _access =
+            self.access
+                .try_acquire(offset, length, rvvdk_platform::FileAccessKind::Inspect)?;
         let size = self.file.metadata()?.len();
         check_size(offset, length, end, size)?;
         if length == 0 {

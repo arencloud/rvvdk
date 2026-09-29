@@ -71,6 +71,11 @@ impl LocalFileBlockDevice {
                 size: self.geometry.size(),
             });
         }
+        let _access = self.access.try_acquire(
+            offset,
+            length,
+            rvvdk_platform::FileAccessKind::BufferedWrite,
+        )?;
         // Range/access checks apply even to empty requests. Neither KEEP_SIZE nor
         // cached geometry alone protects against a file truncated since open.
         let endpoint = self.copy_endpoint()?;
@@ -209,6 +214,38 @@ mod tests {
             assert_eq!(disk.sparse_unsupported.load(Ordering::Relaxed), 0);
             check(&disk, 3, 4);
         }
+    }
+
+    #[test]
+    fn sparse_guard_covers_syscall_fallback_and_error_unwinding() {
+        for outcome in [libc::EOPNOTSUPP, libc::EIO] {
+            let disk = fixture();
+            let result = disk.sparse_with(Operation::Zero, 3, 199_997, |_, _, _| {
+                assert!(matches!(
+                    disk.read_at(3, &mut [0; 1]),
+                    Err(Error::ConcurrentFileAccess { .. })
+                ));
+                assert!(matches!(
+                    disk.flush(),
+                    Err(Error::ConcurrentFileAccess { .. })
+                ));
+                Err(std::io::Error::from_raw_os_error(outcome))
+            });
+            assert_eq!(result.is_ok(), outcome == libc::EOPNOTSUPP);
+            disk.flush().unwrap();
+            if outcome == libc::EOPNOTSUPP {
+                check(&disk, 3, 200_000);
+            }
+        }
+        let disk = fixture();
+        assert!(
+            std::panic::catch_unwind(|| {
+                let _ =
+                    disk.sparse_with(Operation::Punch, 0, 4096, |_, _, _| panic!("syscall panic"));
+            })
+            .is_err()
+        );
+        disk.flush().unwrap();
     }
 
     #[test]

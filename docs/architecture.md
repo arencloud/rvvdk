@@ -1050,3 +1050,18 @@ backend, with CopyReport::runtime_fallback() explaining runtime fallback.
 Explicit native and all non-eligible setup errors reject before observation;
 no post-mutation retry occurs. See the [runtime contract](native-runtime-preparation.md)
 and [performance evidence](benchmark-results/2026-09-29-r25/README.md).
+
+## Local concurrent aliases (R2.6)
+
+A cooperative per-file coordinator in rvvdk-platform joins local backend calls and
+native owned requests by device/inode identity. Short metadata locks admit
+nonconflicting ranges without holding a mutex during I/O. Overlapping writers,
+page-overlapping mixed payload modes, and whole-file flush conflicts fail before
+submission with ConcurrentFileAccess. Sparse operations and extent discovery
+retain admission for their complete call. A native operation owns its guard until
+confirmed CQE or quarantines it with its descriptor and buffer on uncertain
+shutdown. Completion-buffer lifetime does not extend the admission.
+
+This preserves disjoint same-mode pipelines while bounding supported alias use.
+It does not provide snapshots or coordinate raw FDs, mmap, or external processes.
+See the [policy matrix, caller responsibilities, and costs](local-file-concurrency.md).

@@ -1,0 +1,857 @@
+diff --git a/crates/rvvdk-core/src/error.rs b/crates/rvvdk-core/src/error.rs
+index 83878a0..b6bf03a 100644
+--- a/crates/rvvdk-core/src/error.rs
++++ b/crates/rvvdk-core/src/error.rs
+@@ -4,6 +4,11 @@ pub type Result<T> = std::result::Result<T, Error>;
+ 
+ #[derive(Debug, Error)]
+ pub enum Error {
++    #[error(
++        "concurrent file access conflicts with offset={offset}, length={length}; no request admitted"
++    )]
++    ConcurrentFileAccess { offset: u64, length: u64 },
++
+     #[error("native request is incompatible: {0}")]
+     NativeRequestIncompatible(#[source] Box<crate::NativeRequestIssue>),
+ 
+diff --git a/crates/rvvdk-datamover/src/io_uring/copy.rs b/crates/rvvdk-datamover/src/io_uring/copy.rs
+index b85a3e9..97880b0 100644
+--- a/crates/rvvdk-datamover/src/io_uring/copy.rs
++++ b/crates/rvvdk-datamover/src/io_uring/copy.rs
+@@ -647,6 +647,7 @@ mod tests {
+         let pool = BufferPool::new(1, 4096, 4096).unwrap();
+         let completed = InFlightOperation::new(
+             file,
++            None,
+             1,
+             IoUringOperationKind::Write,
+             4096,
+diff --git a/crates/rvvdk-datamover/src/io_uring/engine.rs b/crates/rvvdk-datamover/src/io_uring/engine.rs
+index 0dcf6d7..3cabcbc 100644
+--- a/crates/rvvdk-datamover/src/io_uring/engine.rs
++++ b/crates/rvvdk-datamover/src/io_uring/engine.rs
+@@ -104,6 +104,7 @@ impl IoUringEngine {
+                 queue_depth: self.queue_depth,
+             });
+         }
++        let access = file.admit(offset, length, kind == IoUringOperationKind::Write)?;
+         let user_data = self.next_user_data();
+         let fd = types::Fd(file.as_fd().as_raw_fd());
+         let entry = match kind {
+@@ -122,8 +123,15 @@ impl IoUringEngine {
+ 
+         // Own every resource BEFORE publishing its pointer in the SQ. A panic
+         // or subsequent error cannot leave a published pointer without an owner.
+-        let operation =
+-            InFlightOperation::new(file.clone(), user_data, kind, offset, length, buffer);
++        let operation = InFlightOperation::new(
++            file.clone(),
++            access,
++            user_data,
++            kind,
++            offset,
++            length,
++            buffer,
++        );
+         let previous = self.in_flight.insert(user_data, operation);
+         debug_assert!(previous.is_none());
+         let queue_depth = self.queue_depth;
+diff --git a/crates/rvvdk-datamover/src/io_uring/engine/tests.rs b/crates/rvvdk-datamover/src/io_uring/engine/tests.rs
+index a54d491..6e05ac3 100644
+--- a/crates/rvvdk-datamover/src/io_uring/engine/tests.rs
++++ b/crates/rvvdk-datamover/src/io_uring/engine/tests.rs
+@@ -380,3 +380,66 @@ fault_test!(
+         assert_eq!(pool.available(), 2);
+     }
+ );
++
++fn admission(endpoint: &IoUringFile) -> rvvdk_platform::FileAccess {
++    let state = rvvdk_platform::inspect_file(endpoint.as_fd()).unwrap();
++    rvvdk_platform::FileAccess::for_identity(state.device, state.inode)
++}
++
++fault_test!(
++    admission_lasts_from_enqueue_until_confirmation_not_buffer_drop,
++    {
++        use rvvdk_platform::FileAccessKind::BufferedWrite;
++        let (mut engine, pool, endpoint) = setup(1);
++        let access = admission(&endpoint);
++        assert!(matches!(
++            access.try_acquire(0, BLOCK as u64, BufferedWrite),
++            Err(Error::ConcurrentFileAccess { .. })
++        ));
++        engine.submit().unwrap();
++        assert!(access.try_acquire(0, BLOCK as u64, BufferedWrite).is_err());
++        let completed = engine.wait_owned_completion().unwrap();
++        assert_eq!(pool.available(), 0);
++        assert!(access.try_acquire(0, BLOCK as u64, BufferedWrite).is_ok());
++        drop(completed);
++        assert_eq!(pool.available(), 1);
++    }
++);
++
++fault_test!(unconfirmed_shutdown_quarantines_admission_with_owners, {
++    use rvvdk_platform::FileAccessKind::BufferedWrite;
++    let (mut engine, _, endpoint) = setup(1);
++    let access = admission(&endpoint);
++    engine.faults.hide_completions = true;
++    assert!(engine.shutdown().is_err());
++    drop(engine);
++    drop(endpoint);
++    assert!(matches!(
++        access.try_acquire(0, BLOCK as u64, BufferedWrite),
++        Err(Error::ConcurrentFileAccess { .. })
++    ));
++    assert!(
++        access
++            .try_acquire(BLOCK as u64, BLOCK as u64, BufferedWrite)
++            .is_ok()
++    );
++});
++
++fault_test!(regular_file_negative_completion_releases_admission, {
++    use rvvdk_platform::FileAccessKind::Flush;
++    let writable = file();
++    let read_only = File::open(format!("/proc/self/fd/{}", writable.as_raw_fd())).unwrap();
++    // Exercise infallible OwnedFd conversion and lazy registration too.
++    let endpoint = IoUringFile::from(std::os::fd::OwnedFd::from(read_only));
++    let access = admission(&endpoint);
++    let pool = BufferPool::new(1, BLOCK, BLOCK).unwrap();
++    let mut engine = IoUringEngine::new(1).unwrap();
++    engine
++        .submit_owned_write(&endpoint, 0, BLOCK, pool.acquire())
++        .unwrap();
++    assert!(access.try_acquire(0, 0, Flush).is_err());
++    assert!(matches!(engine.wait_owned_completion(), Err(Error::Io(_))));
++    assert!(access.try_acquire(0, 0, Flush).is_ok());
++    assert_eq!(pool.available(), 1);
++    engine.shutdown().unwrap();
++});
+diff --git a/crates/rvvdk-datamover/src/io_uring/file.rs b/crates/rvvdk-datamover/src/io_uring/file.rs
+index 72fcc03..0c2aca3 100644
+--- a/crates/rvvdk-datamover/src/io_uring/file.rs
++++ b/crates/rvvdk-datamover/src/io_uring/file.rs
+@@ -1,28 +1,76 @@
++use rvvdk_core::Result;
++use rvvdk_platform::{FileAccess, FileAccessGuard, FileAccessKind};
+ use std::os::fd::{AsFd, BorrowedFd, OwnedFd};
+-use std::sync::Arc;
++use std::sync::{Arc, OnceLock};
+ 
+-use rvvdk_core::Result;
++#[derive(Debug)]
++struct Access {
++    file: Option<FileAccess>,
++    direct: bool,
++}
++#[derive(Debug)]
++struct FileInner {
++    fd: OwnedFd,
++    access: OnceLock<Access>,
++}
+ 
+ /// An owned descriptor shared by queued operations, independently of the caller.
+-///
+-/// Duplicate once per endpoint, then cheaply clone the handle for each operation.
++/// Regular-file requests join process-local alias admission. The caller must keep
++/// descriptor status flags stable; raw syscalls and mmap do not participate.
+ #[derive(Clone, Debug)]
+-pub struct IoUringFile(Arc<OwnedFd>);
+-
++pub struct IoUringFile(Arc<FileInner>);
+ impl IoUringFile {
+     pub fn new(fd: BorrowedFd<'_>) -> Result<Self> {
+-        Ok(Self::from(fd.try_clone_to_owned()?))
++        let file = Self::from(fd.try_clone_to_owned()?);
++        file.prepare_access()?;
++        Ok(file)
++    }
++    fn prepare_access(&self) -> Result<&Access> {
++        if let Some(access) = self.0.access.get() {
++            return Ok(access);
++        }
++        let state = rvvdk_platform::inspect_file(self.as_fd())?;
++        let access = Access {
++            file: state
++                .regular
++                .then(|| FileAccess::for_identity(state.device, state.inode)),
++            direct: state.direct_io,
++        };
++        // Concurrent initializers join the same identity; only one cache wins.
++        let _ = self.0.access.set(access);
++        Ok(self.0.access.get().expect("initialized file access"))
++    }
++    pub(crate) fn admit(
++        &self,
++        offset: u64,
++        length: usize,
++        write: bool,
++    ) -> Result<Option<FileAccessGuard>> {
++        let access = self.prepare_access()?;
++        let kind = match (access.direct, write) {
++            (false, false) => FileAccessKind::BufferedRead,
++            (false, true) => FileAccessKind::BufferedWrite,
++            (true, false) => FileAccessKind::DirectRead,
++            (true, true) => FileAccessKind::DirectWrite,
++        };
++        match &access.file {
++            Some(file) => file.try_acquire(offset, length as u64, kind),
++            None => Ok(None),
++        }
+     }
+ }
+-
+ impl From<OwnedFd> for IoUringFile {
++    /// Ownership conversion remains infallible. Inspection/admission happens on
++    /// the first enqueue; use new() for eager inspection during preparation.
+     fn from(fd: OwnedFd) -> Self {
+-        Self(Arc::new(fd))
++        Self(Arc::new(FileInner {
++            fd,
++            access: OnceLock::new(),
++        }))
+     }
+ }
+-
+ impl AsFd for IoUringFile {
+     fn as_fd(&self) -> BorrowedFd<'_> {
+-        self.0.as_fd()
++        self.0.fd.as_fd()
+     }
+ }
+diff --git a/crates/rvvdk-datamover/src/io_uring/operation.rs b/crates/rvvdk-datamover/src/io_uring/operation.rs
+index 4c7f86d..dd3a545 100644
+--- a/crates/rvvdk-datamover/src/io_uring/operation.rs
++++ b/crates/rvvdk-datamover/src/io_uring/operation.rs
+@@ -9,6 +9,7 @@ pub enum IoUringOperationKind {
+ 
+ pub(crate) struct InFlightOperation {
+     _file: IoUringFile,
++    _access: Option<rvvdk_platform::FileAccessGuard>,
+     user_data: u64,
+     kind: IoUringOperationKind,
+     offset: u64,
+@@ -19,6 +20,7 @@ pub(crate) struct InFlightOperation {
+ impl InFlightOperation {
+     pub(crate) fn new(
+         file: IoUringFile,
++        access: Option<rvvdk_platform::FileAccessGuard>,
+         user_data: u64,
+         kind: IoUringOperationKind,
+         offset: u64,
+@@ -27,6 +29,7 @@ impl InFlightOperation {
+     ) -> Self {
+         Self {
+             _file: file,
++            _access: access,
+             user_data,
+             kind,
+             offset,
+diff --git a/crates/rvvdk-local/src/file.rs b/crates/rvvdk-local/src/file.rs
+index 21d0f9d..70705d7 100644
+--- a/crates/rvvdk-local/src/file.rs
++++ b/crates/rvvdk-local/src/file.rs
+@@ -14,6 +14,7 @@ use rvvdk_core::{BlockDevice, Capabilities, DiskGeometry, Error, Extent, Result}
+ use rvvdk_platform::{LinuxFdBackend, LinuxFdCapabilities};
+ 
+ pub struct LocalFileBlockDevice {
++    access: rvvdk_platform::FileAccess,
+     file: File,
+     buffered_file: Option<File>,
+     geometry: DiskGeometry,
+@@ -167,7 +168,9 @@ impl LocalFileBlockDevice {
+             capabilities
+         };
+ 
++        use std::os::unix::fs::MetadataExt;
+         Ok(Self {
++            access: rvvdk_platform::FileAccess::for_identity(metadata.dev(), metadata.ino()),
+             #[cfg(target_os = "linux")]
+             sparse_unsupported: std::sync::atomic::AtomicU8::new(0),
+             file,
+@@ -202,10 +205,16 @@ impl BlockDevice for LocalFileBlockDevice {
+ 
+         self.validate_range(offset, buffer.len())?;
+ 
+-        if self.is_direct_io_compatible(offset, buffer) {
++        let direct = self.is_direct_io_compatible(offset, buffer);
++        let kind = if direct {
++            rvvdk_platform::FileAccessKind::DirectRead
++        } else {
++            rvvdk_platform::FileAccessKind::BufferedRead
++        };
++        let _access = self.access.try_acquire(offset, buffer.len() as u64, kind)?;
++        if direct {
+             return Ok(self.file.read_at(buffer, offset)?);
+         }
+-
+         Ok(self.buffered_file().read_at(buffer, offset)?)
+     }
+ 
+@@ -216,10 +225,16 @@ impl BlockDevice for LocalFileBlockDevice {
+ 
+         self.validate_range(offset, buffer.len())?;
+ 
+-        if self.is_direct_io_compatible(offset, buffer) {
++        let direct = self.is_direct_io_compatible(offset, buffer);
++        let kind = if direct {
++            rvvdk_platform::FileAccessKind::DirectWrite
++        } else {
++            rvvdk_platform::FileAccessKind::BufferedWrite
++        };
++        let _access = self.access.try_acquire(offset, buffer.len() as u64, kind)?;
++        if direct {
+             return Ok(self.file.write_at(buffer, offset)?);
+         }
+-
+         Ok(self.buffered_file().write_at(buffer, offset)?)
+     }
+ 
+@@ -244,6 +259,9 @@ impl BlockDevice for LocalFileBlockDevice {
+             return Err(Error::Unsupported);
+         }
+ 
++        let _access = self
++            .access
++            .try_acquire(0, 0, rvvdk_platform::FileAccessKind::Flush)?;
+         self.file.sync_data()?;
+ 
+         if let Some(buffered_file) = &self.buffered_file {
+diff --git a/crates/rvvdk-local/src/file/discovery.rs b/crates/rvvdk-local/src/file/discovery.rs
+index 62b1ad0..ba26834 100644
+--- a/crates/rvvdk-local/src/file/discovery.rs
++++ b/crates/rvvdk-local/src/file/discovery.rs
+@@ -16,6 +16,9 @@ impl LocalFileBlockDevice {
+         check_size(offset, length, end, self.geometry.size())?;
+         // Validate the complete range before interpreting EINVAL as unsupported.
+         libc::off_t::try_from(end).map_err(|_| Error::RangeOverflow { offset, length })?;
++        let _access =
++            self.access
++                .try_acquire(offset, length, rvvdk_platform::FileAccessKind::Inspect)?;
+         let size = self.file.metadata()?.len();
+         check_size(offset, length, end, size)?;
+         if length == 0 {
+diff --git a/crates/rvvdk-local/src/file/discovery/tests.rs b/crates/rvvdk-local/src/file/discovery/tests.rs
+index 5551fde..932e00a 100644
+--- a/crates/rvvdk-local/src/file/discovery/tests.rs
++++ b/crates/rvvdk-local/src/file/discovery/tests.rs
+@@ -245,3 +245,21 @@ fn unsupported_discovery_does_not_hide_later_errors_or_map_changes() {
+         .unwrap();
+     assert_eq!(map, vec![Extent::new(0, 8192, ExtentKind::Hole).unwrap()]);
+ }
++
++#[test]
++fn discovery_holds_admission_across_seeks_and_releases_after_error() {
++    use rvvdk_platform::FileAccessKind::BufferedWrite;
++    let device = device();
++    assert!(
++        device
++            .discover_extents(0, 4096, |_, _| {
++                assert!(matches!(
++                    device.access.try_acquire(0, 1, BufferedWrite),
++                    Err(Error::ConcurrentFileAccess { .. })
++                ));
++                errno(libc::EIO)
++            })
++            .is_err()
++    );
++    assert!(device.access.try_acquire(0, 1, BufferedWrite).is_ok());
++}
+diff --git a/crates/rvvdk-local/src/file/sparse.rs b/crates/rvvdk-local/src/file/sparse.rs
+index 4284e29..27f46d1 100644
+--- a/crates/rvvdk-local/src/file/sparse.rs
++++ b/crates/rvvdk-local/src/file/sparse.rs
+@@ -71,6 +71,11 @@ impl LocalFileBlockDevice {
+                 size: self.geometry.size(),
+             });
+         }
++        let _access = self.access.try_acquire(
++            offset,
++            length,
++            rvvdk_platform::FileAccessKind::BufferedWrite,
++        )?;
+         // Range/access checks apply even to empty requests. Neither KEEP_SIZE nor
+         // cached geometry alone protects against a file truncated since open.
+         let endpoint = self.copy_endpoint()?;
+@@ -211,6 +216,38 @@ mod tests {
+         }
+     }
+ 
++    #[test]
++    fn sparse_guard_covers_syscall_fallback_and_error_unwinding() {
++        for outcome in [libc::EOPNOTSUPP, libc::EIO] {
++            let disk = fixture();
++            let result = disk.sparse_with(Operation::Zero, 3, 199_997, |_, _, _| {
++                assert!(matches!(
++                    disk.read_at(3, &mut [0; 1]),
++                    Err(Error::ConcurrentFileAccess { .. })
++                ));
++                assert!(matches!(
++                    disk.flush(),
++                    Err(Error::ConcurrentFileAccess { .. })
++                ));
++                Err(std::io::Error::from_raw_os_error(outcome))
++            });
++            assert_eq!(result.is_ok(), outcome == libc::EOPNOTSUPP);
++            disk.flush().unwrap();
++            if outcome == libc::EOPNOTSUPP {
++                check(&disk, 3, 200_000);
++            }
++        }
++        let disk = fixture();
++        assert!(
++            std::panic::catch_unwind(|| {
++                let _ =
++                    disk.sparse_with(Operation::Punch, 0, 4096, |_, _, _| panic!("syscall panic"));
++            })
++            .is_err()
++        );
++        disk.flush().unwrap();
++    }
++
+     #[test]
+     fn empty_and_invalid_ranges_never_reach_the_kernel_operation() {
+         let disk = fixture();
+diff --git a/crates/rvvdk-platform/src/lib.rs b/crates/rvvdk-platform/src/lib.rs
+index 21c6f27..92a032b 100644
+--- a/crates/rvvdk-platform/src/lib.rs
++++ b/crates/rvvdk-platform/src/lib.rs
+@@ -3,3 +3,8 @@ mod linux;
+ 
+ #[cfg(target_os = "linux")]
+ pub use linux::{FileInspection, FileState, LinuxFdBackend, LinuxFdCapabilities, inspect_file};
++
++#[cfg(target_os = "linux")]
++mod access;
++#[cfg(target_os = "linux")]
++pub use access::{FileAccess, FileAccessGuard, FileAccessKind};
+diff --git a/crates/rvvdk-datamover/tests/local_concurrency.rs b/crates/rvvdk-datamover/tests/local_concurrency.rs
+new file mode 100644
+index 0000000..ee49d1c
+--- /dev/null
++++ b/crates/rvvdk-datamover/tests/local_concurrency.rs
+@@ -0,0 +1,147 @@
++#![cfg(target_os = "linux")]
++use rvvdk_core::{AlignedBuffer, BlockDevice, BufferPool, Error};
++use rvvdk_datamover::io_uring::{IoUringEngine, IoUringFile};
++use rvvdk_local::LocalFileBlockDevice;
++use rvvdk_platform::{FileAccess, FileAccessKind, inspect_file};
++use std::{
++    fs,
++    os::fd::AsFd,
++    sync::atomic::{AtomicUsize, Ordering},
++};
++
++const PAGE: usize = 4096;
++fn page_size() -> usize {
++    // SAFETY: sysconf has no pointer arguments.
++    usize::try_from(unsafe { libc::sysconf(libc::_SC_PAGESIZE) }).unwrap()
++}
++fn fixture() -> (LocalFileBlockDevice, LocalFileBlockDevice, FileAccess) {
++    static NEXT: AtomicUsize = AtomicUsize::new(0);
++    let path = std::env::var_os("RVVDK_TEST_DIR")
++        .map(std::path::PathBuf::from)
++        .unwrap_or_else(std::env::temp_dir)
++        .join(format!(
++            "rvvdk-r26-{}-{}",
++            std::process::id(),
++            NEXT.fetch_add(1, Ordering::Relaxed)
++        ));
++    let link = path.with_extension("link");
++    fs::write(&path, vec![0x5a; page_size().max(PAGE) * 4]).unwrap();
++    fs::hard_link(&path, &link).unwrap();
++    let direct = LocalFileBlockDevice::open_direct_read_write(&path).unwrap();
++    let buffered = LocalFileBlockDevice::open_read_write(&link).unwrap();
++    fs::remove_file(path).unwrap();
++    fs::remove_file(link).unwrap();
++    let state = inspect_file(direct.as_fd()).unwrap();
++    let access = FileAccess::for_identity(state.device, state.inode);
++    (direct, buffered, access)
++}
++fn conflict<T>(result: rvvdk_core::Result<T>) {
++    assert!(matches!(result, Err(Error::ConcurrentFileAccess { .. })));
++}
++
++#[test]
++fn queued_native_read_blocks_buffered_alias_and_unaligned_fallback_until_confirmed() {
++    let (direct, buffered, _) = fixture();
++    let file = IoUringFile::new(direct.as_fd()).unwrap();
++    let pool = BufferPool::new(1, PAGE, PAGE).unwrap();
++    let mut engine = IoUringEngine::new(1).unwrap();
++    engine
++        .submit_owned_read(&file, 0, PAGE, pool.acquire())
++        .unwrap();
++    conflict(buffered.read_at(1, &mut [0; 7]));
++    conflict(direct.read_at(1, &mut [0; 7]));
++    conflict(buffered.write_at(1, &[0; 7]));
++    conflict(direct.write_zero_at(1, 7));
++    conflict(buffered.discard(1, 7));
++    conflict(direct.flush());
++    // Extent inspection is compatible with readers, and disjoint pages stay available.
++    buffered.extents(0, PAGE as u64).unwrap();
++    buffered
++        .write_at((page_size().max(PAGE) * 2) as u64, &[0xa5; 7])
++        .unwrap();
++    let done = engine.wait_owned_completion().unwrap();
++    assert!(done.buffer().iter().all(|&v| v == 0x5a));
++    // CompletedOperation still owns its buffer, but has released file admission.
++    direct.write_at(1, &[0x33; 7]).unwrap();
++    direct.flush().unwrap();
++    drop(done);
++    let mut bytes = [0; 9];
++    buffered.read_exact_at(0, &mut bytes).unwrap();
++    assert_eq!(
++        bytes,
++        [0x5a, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x5a]
++    );
++}
++
++#[test]
++fn queued_native_writer_excludes_inspection_and_other_queues_without_losing_buffers() {
++    let (_, buffered, _) = fixture();
++    let file = IoUringFile::new(buffered.as_fd()).unwrap();
++    let pool = BufferPool::new(2, PAGE, PAGE).unwrap();
++    let mut first = IoUringEngine::new(1).unwrap();
++    let mut second = IoUringEngine::new(1).unwrap();
++    let mut bytes = pool.acquire();
++    bytes.as_mut_slice().fill(0x66);
++    first.submit_owned_write(&file, 0, PAGE, bytes).unwrap();
++    conflict(second.submit_owned_read(&file, 0, PAGE, pool.acquire()));
++    assert_eq!(second.in_flight(), 0);
++    assert_eq!(pool.available(), 1);
++    conflict(buffered.extents(0, PAGE as u64));
++    conflict(buffered.write_zero_at(0, PAGE as u64));
++    first.shutdown().unwrap();
++    assert_eq!(pool.available(), 2);
++    let mut bytes = [0; PAGE];
++    buffered.read_exact_at(0, &mut bytes).unwrap();
++    assert_eq!(bytes, [0x66; PAGE]);
++    buffered.discard(1, 7).unwrap();
++}
++
++#[test]
++fn local_aligned_unaligned_sparse_and_flush_paths_all_join_admission() {
++    let (direct, buffered, access) = fixture();
++    let mut bytes = AlignedBuffer::new(PAGE, PAGE).unwrap();
++    bytes.fill(0x77);
++    let guard = access
++        .try_acquire(0, PAGE as u64, FileAccessKind::BufferedRead)
++        .unwrap();
++    conflict(direct.read_at(0, bytes.as_mut_slice()));
++    conflict(direct.write_at(0, bytes.as_slice()));
++    buffered.read_at(1, &mut [0; 7]).unwrap();
++    conflict(buffered.write_at(1, &[1]));
++    conflict(buffered.write_zero_at(1, 7));
++    conflict(direct.discard(1, 7));
++    drop(guard);
++    direct.write_at(0, bytes.as_slice()).unwrap();
++    let barrier = access.try_acquire(0, 0, FileAccessKind::Flush).unwrap();
++    conflict(direct.read_at((page_size().max(PAGE) * 2) as u64, bytes.as_mut_slice()));
++    conflict(buffered.extents((page_size().max(PAGE) * 2) as u64, PAGE as u64));
++    conflict(buffered.flush());
++    drop(barrier);
++    direct.flush().unwrap();
++    buffered.read_exact_at(0, bytes.as_mut_slice()).unwrap();
++    assert!(bytes.as_slice().iter().all(|&v| v == 0x77));
++}
++
++#[test]
++fn disjoint_direct_subpage_requests_remain_pipeline_compatible() {
++    let (direct, _, _) = fixture();
++    let alignment = direct.direct_io_alignment().unwrap();
++    let block = alignment.offset_alignment();
++    // Test at the actual discovered unit, including 512-byte units where supported.
++    let pool = BufferPool::new(2, block, alignment.memory_alignment()).unwrap();
++    let file = IoUringFile::new(direct.as_fd()).unwrap();
++    let mut engine = IoUringEngine::new(2).unwrap();
++    for i in 0..2 {
++        let mut bytes = pool.acquire();
++        bytes.as_mut_slice().fill(0x22 + i as u8);
++        engine
++            .submit_owned_write(&file, (i * block) as u64, block, bytes)
++            .unwrap();
++    }
++    engine.shutdown().unwrap();
++    assert_eq!(pool.available(), 2);
++    let mut bytes = vec![0; block * 2];
++    direct.read_exact_at(0, &mut bytes).unwrap();
++    assert!(bytes[..block].iter().all(|&v| v == 0x22));
++    assert!(bytes[block..].iter().all(|&v| v == 0x23));
++}
+diff --git a/crates/rvvdk-platform/src/access.rs b/crates/rvvdk-platform/src/access.rs
+new file mode 100644
+index 0000000..12e4aee
+--- /dev/null
++++ b/crates/rvvdk-platform/src/access.rs
+@@ -0,0 +1,271 @@
++//! Cooperative, process-local admission for regular-file aliases.
++use rvvdk_core::{Error, Result};
++use std::collections::HashMap;
++use std::sync::{Arc, Mutex, OnceLock, Weak};
++
++/// Payload mode, extent inspection, or a whole-file durability barrier.
++#[derive(Debug, Clone, Copy, PartialEq, Eq)]
++pub enum FileAccessKind {
++    BufferedRead,
++    BufferedWrite,
++    DirectRead,
++    DirectWrite,
++    Inspect,
++    Flush,
++}
++impl FileAccessKind {
++    fn writes(self) -> bool {
++        matches!(self, Self::BufferedWrite | Self::DirectWrite | Self::Flush)
++    }
++    fn direct(self) -> Option<bool> {
++        match self {
++            Self::DirectRead | Self::DirectWrite => Some(true),
++            Self::BufferedRead | Self::BufferedWrite => Some(false),
++            _ => None,
++        }
++    }
++}
++#[derive(Debug)]
++struct Entry {
++    id: u64,
++    start: u64,
++    end: u64,
++    kind: FileAccessKind,
++}
++#[derive(Debug, Default)]
++struct State {
++    next: u64,
++    active: Vec<Entry>,
++}
++#[derive(Debug)]
++struct Coordinator {
++    state: Mutex<State>,
++    page_size: u64,
++}
++type Identity = (u64, u64);
++static REGISTRY: OnceLock<Mutex<HashMap<Identity, Weak<Coordinator>>>> = OnceLock::new();
++
++/// Shared by participating handles for the same (device, inode). Raw syscalls,
++/// mmap, external processes, and separately loaded library copies do not join it.
++#[derive(Debug, Clone)]
++pub struct FileAccess(Arc<Coordinator>);
++impl FileAccess {
++    /// Register a known regular-file identity. Keep its descriptor alive while
++    /// using this handle; identities are not path names or persistent tokens.
++    pub fn for_identity(device: u64, inode: u64) -> Self {
++        let mut registry = REGISTRY
++            .get_or_init(Mutex::default)
++            .lock()
++            .unwrap_or_else(|e| e.into_inner());
++        if let Some(coordinator) = registry.get(&(device, inode)).and_then(Weak::upgrade) {
++            return Self(coordinator);
++        }
++        // Clean weak entries on insertion, rather than retaining every file ever opened.
++        registry.retain(|_, value| value.strong_count() != 0);
++        static PAGE_SIZE: OnceLock<u64> = OnceLock::new();
++        let page_size = *PAGE_SIZE.get_or_init(|| {
++            // SAFETY: sysconf takes a constant selector, with no pointers.
++            let size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
++            u64::try_from(size)
++                .ok()
++                .filter(|s| *s > 0)
++                .expect("Linux page size must be positive")
++        });
++        let coordinator = Arc::new(Coordinator {
++            state: Mutex::new(State::default()),
++            page_size,
++        });
++        registry.insert((device, inode), Arc::downgrade(&coordinator));
++        Self(coordinator)
++    }
++
++    /// Admit without waiting for active I/O. A conflict submits no new request.
++    /// Same-mode reads may overlap; any overlapping writer conflicts. Mixed
++    /// payload modes conflict on page overlap, including adjacent byte ranges.
++    /// Flush excludes all active operations for the whole file.
++    pub fn try_acquire(
++        &self,
++        offset: u64,
++        length: u64,
++        kind: FileAccessKind,
++    ) -> Result<Option<FileAccessGuard>> {
++        let end = offset
++            .checked_add(length)
++            .ok_or(Error::RangeOverflow { offset, length })?;
++        if length == 0 && kind != FileAccessKind::Flush {
++            return Ok(None);
++        }
++        let (start, end) = if kind == FileAccessKind::Flush {
++            (0, u64::MAX)
++        } else {
++            (offset, end)
++        };
++        let mut state = self.0.state.lock().unwrap_or_else(|e| e.into_inner());
++        let conflict = state.active.iter().any(|entry| {
++            if kind == FileAccessKind::Flush || entry.kind == FileAccessKind::Flush {
++                return true;
++            }
++            let overlap = start < entry.end && entry.start < end;
++            let mixed = matches!((kind.direct(),entry.kind.direct()),(Some(a),Some(b)) if a!=b);
++            let page = self.0.page_size;
++            (overlap && (kind.writes() || entry.kind.writes()))
++                || (mixed
++                    && start / page <= (entry.end - 1) / page
++                    && entry.start / page <= (end - 1) / page)
++        });
++        if conflict {
++            return Err(Error::ConcurrentFileAccess { offset, length });
++        }
++        state
++            .active
++            .try_reserve(1)
++            .map_err(|_| Error::Io(std::io::ErrorKind::OutOfMemory.into()))?;
++        let id = loop {
++            state.next = state.next.wrapping_add(1);
++            if !state.active.iter().any(|e| e.id == state.next) {
++                break state.next;
++            }
++        };
++        state.active.push(Entry {
++            id,
++            start,
++            end,
++            kind,
++        });
++        Ok(Some(FileAccessGuard {
++            coordinator: Arc::clone(&self.0),
++            id,
++        }))
++    }
++}
++
++/// Owned request admission. Native operations retain this through CQE confirmation;
++/// unconfirmed operations must retain it along with their buffers and descriptors.
++#[derive(Debug)]
++pub struct FileAccessGuard {
++    coordinator: Arc<Coordinator>,
++    id: u64,
++}
++impl Drop for FileAccessGuard {
++    fn drop(&mut self) {
++        let mut state = self
++            .coordinator
++            .state
++            .lock()
++            .unwrap_or_else(|e| e.into_inner());
++        let index = state
++            .active
++            .iter()
++            .position(|e| e.id == self.id)
++            .expect("live admission entry");
++        state.active.swap_remove(index);
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use FileAccessKind::*;
++
++    fn access() -> FileAccess {
++        FileAccess(Arc::new(Coordinator {
++            state: Mutex::new(State::default()),
++            page_size: 4096,
++        }))
++    }
++
++    #[test]
++    fn overlap_matrix_is_symmetric_and_flush_is_exclusive() {
++        let kinds = [
++            BufferedRead,
++            BufferedWrite,
++            DirectRead,
++            DirectWrite,
++            Inspect,
++            Flush,
++        ];
++        for a in kinds {
++            for b in kinds {
++                let file = access();
++                let _first = file.try_acquire(512, 512, a).unwrap();
++                let allowed = matches!(
++                    (a, b),
++                    (BufferedRead, BufferedRead | Inspect)
++                        | (DirectRead, DirectRead | Inspect)
++                        | (Inspect, BufferedRead | DirectRead | Inspect)
++                );
++                assert_eq!(
++                    file.try_acquire(512, 512, b).is_ok(),
++                    allowed,
++                    "{a:?}, {b:?}"
++                );
++                if a == Flush || b == Flush {
++                    assert!(file.try_acquire(8192, 1, b).is_err());
++                }
++            }
++        }
++    }
++
++    #[test]
++    fn mixed_modes_conflict_within_page_but_same_mode_subpage_writes_do_not() {
++        let file = access();
++        let _first = file.try_acquire(0, 512, DirectWrite).unwrap();
++        let _adjacent = file.try_acquire(512, 512, DirectWrite).unwrap();
++        assert!(matches!(
++            file.try_acquire(4095, 1, BufferedRead),
++            Err(Error::ConcurrentFileAccess { .. })
++        ));
++        assert!(file.try_acquire(4096, 1, BufferedWrite).is_ok());
++        assert!(file.try_acquire(1024, 1, Inspect).is_ok());
++        // A mixed request ending at the page boundary touches the first page.
++        assert!(file.try_acquire(4095, 2, BufferedWrite).is_err());
++    }
++
++    #[test]
++    fn empty_overflow_release_and_unwind_preserve_admission() {
++        let file = access();
++        let barrier = file.try_acquire(0, 0, Flush).unwrap();
++        assert!(file.try_acquire(u64::MAX, 0, DirectRead).unwrap().is_none());
++        assert!(matches!(
++            file.try_acquire(u64::MAX, 1, DirectRead),
++            Err(Error::RangeOverflow { .. })
++        ));
++        assert!(file.try_acquire(u64::MAX - 1, 1, Inspect).is_err());
++        drop(barrier);
++        let result = std::panic::catch_unwind(|| {
++            let _guard = file.try_acquire(0, 1, BufferedWrite).unwrap();
++            panic!("release while unwinding");
++        });
++        assert!(result.is_err());
++        assert!(file.try_acquire(0, 1, DirectWrite).is_ok());
++    }
++
++    #[test]
++    fn concurrent_admission_excludes_a_writer_until_cross_thread_release() {
++        let file = access();
++        let guard = file.try_acquire(0, 4096, DirectRead).unwrap();
++        std::thread::scope(|scope| {
++            scope
++                .spawn(|| {
++                    assert!(file.try_acquire(0, 1, BufferedWrite).is_err());
++                    drop(guard);
++                    assert!(file.try_acquire(0, 1, BufferedWrite).is_ok());
++                })
++                .join()
++                .unwrap();
++        });
++    }
++
++    #[test]
++    fn wrapped_ids_skip_live_entries() {
++        let file = access();
++        let first = file.try_acquire(0, 1, BufferedRead).unwrap();
++        file.0.state.lock().unwrap().next = u64::MAX;
++        let second = file.try_acquire(0, 1, BufferedRead).unwrap();
++        assert_ne!(first.as_ref().unwrap().id, second.as_ref().unwrap().id);
++        drop(first);
++        assert!(file.try_acquire(0, 1, BufferedWrite).is_err());
++        drop(second);
++        assert!(file.try_acquire(0, 1, BufferedWrite).is_ok());
++    }
++}

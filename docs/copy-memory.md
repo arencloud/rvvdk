@@ -85,6 +85,10 @@ boundaries remain unchanged. Planning can perform endpoint/metadata inspection.
   hash-table spare buckets/control bytes, thread handles/stacks, and general
   runtime/error bookkeeping are excluded. Queue charges bound logical payload
   entries, not the exact storage used by Rust's opaque collections.
+- R2.6 includes the owned admission guard in each native operation entry. Shared
+  per-file admission vectors/registry capacity and coordinator allocations are
+  backend bookkeeping outside the payload budget; admission is not a process
+  reservation. Quarantines also retain their conflicting range admissions.
 - Kernel io_uring mappings/requests, OS page cache, filesystem/device buffers,
   disk backend contents (including MemoryBlockDevice), and observer-owned
   allocations are external. Availability of RAM or native resources is not

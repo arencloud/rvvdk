@@ -1,0 +1,25 @@
+   Compiling rvvdk-core v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-core)
+   Compiling rvvdk-platform v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-platform)
+   Compiling rvvdk-local v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-local)
+   Compiling rvvdk-datamover v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-datamover)
+error[E0599]: no method named `punch_hole` found for struct `LocalFileBlockDevice` in the current scope
+  --> crates/rvvdk-datamover/tests/local_concurrency.rs:51:23
+   |
+51 |     conflict(buffered.punch_hole(1, 7));
+   |                       ^^^^^^^^^^ method not found in `LocalFileBlockDevice`
+
+error[E0599]: no method named `punch_hole` found for struct `LocalFileBlockDevice` in the current scope
+  --> crates/rvvdk-datamover/tests/local_concurrency.rs:90:14
+   |
+90 |     buffered.punch_hole(1, 7).unwrap();
+   |              ^^^^^^^^^^ method not found in `LocalFileBlockDevice`
+
+error[E0599]: no method named `punch_hole` found for struct `LocalFileBlockDevice` in the current scope
+   --> crates/rvvdk-datamover/tests/local_concurrency.rs:106:21
+    |
+106 |     conflict(direct.punch_hole(1, 7));
+    |                     ^^^^^^^^^^ method not found in `LocalFileBlockDevice`
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `rvvdk-datamover` (test "local_concurrency") due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
