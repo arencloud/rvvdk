@@ -13,6 +13,11 @@ the direct io_uring comparison. The harness correction is committed, but those
 historical results still need replacement measurements. Do not derive engine
 defaults or performance claims from an unmatched comparison.
 
+Latest measured step: [R2.4 native request compatibility](benchmark-results/2026-09-29-r24/README.md)
+includes SVG/PNG charts, aligned mixed-I/O comparisons, odd-tail fallback,
+longer repeats, and same-binary controls. Performance qualification remains open;
+see its raw evidence and limitations before interpreting the aggregates.
+
 ### PERF.0 — Establish a reproducible baseline
 
 - [x] Equalize timed durability boundaries: the low-level native direct benchmark

@@ -54,8 +54,10 @@ VMware disk access and migration, extensible to other platforms.
 | **VMDK and VMware access** | Planned; no VMware VDDK dependency in the current workspace |
 
 The [endpoint contract](docs/architecture.md#copy-endpoint-preflight-r05) describes
-preflight guarantees and custom-backend requirements. Native execution still
-needs complete compatibility checks. Its direct-FD path
+preflight guarantees and custom-backend requirements. DataMover native request
+compatibility and whole-plan Auto fallback are
+[checked before execution](docs/native-request-compatibility.md); native runtime
+resource preparation remains pending. Its direct-FD path
 does not inherit the local backend's buffered fallback for unaligned requests.
 See the [review findings](docs/project-review-2026-09-28.md#findings-requiring-action).
 
@@ -208,7 +210,7 @@ workloads. Measurements depend on the filesystem, page cache, hardware, and
 flush policy. See the [benchmark notes](docs/benchmarks.md) for historical results
 and the [review](docs/project-review-2026-09-28.md) for measurement gaps.
 
-Explore the [R2.3 benchmark charts](docs/benchmark-results/2026-09-29-r23/README.md#visual-results)
+Explore the [R2.4 benchmark charts](docs/benchmark-results/2026-09-29-r24/README.md#final-comparison)
 for latency comparisons, paired changes, and sample distributions. A
 [reusable generator](scripts/benchmarks/README.md) exports SVG and PNG figures.
 

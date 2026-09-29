@@ -672,8 +672,9 @@ to the pool and leave a healthy engine available for subsequent valid requests.
 This is configuration validation, not transactional execution. Backend failures,
 allocation failure, or ring creation failure can still occur after earlier
 extents have completed. Endpoint access, capacity, identity, and durability
-preflight are implemented in R0.5 below; direct-I/O alignment/tail compatibility
-remains R2 work. Logical discard guarantees are implemented by R2.1. The
+preflight are implemented in R0.5 below; DataMover direct-I/O request compatibility
+is implemented in R2.4. Standalone low-level FD APIs still require caller-supplied
+direct compatibility. Logical discard guarantees are implemented by R2.1. The
 allocation layout check does not impose an aggregate memory budget or guarantee enough available memory. DataMover adds
 the separate R1.6 payload budget described below; low-level native functions
 retain the original allocation contract.
@@ -893,8 +894,9 @@ cached in a plan.
 
 Reasons distinguish explicit Threaded/native requests, portable Auto, and RAW
 descriptor acceptance/rejection. The current RAW evaluator accepts descriptor
-pairs and combines their alignment claims; it does not validate complete native
-requests or ring availability. Structured runtime fallback policy remains R2.
+pairs and combines their alignment claims. R2.4 additionally validates DataMover
+request intent and records whole-plan Auto fallback for incompatible requests.
+Ring availability and resource preparation remain R2.5.
 Successful reports continue to expose the actual backend. Plan selection remains
 historical even if a different mover executes it; native execution uses that
 mover's current native options, and a Threaded plan retains its chosen backend.
@@ -1016,5 +1018,19 @@ unsupported modes are cached separately per open file. Other errors propagate.
 The [local sparse-output contract](local-sparse-output.md) defines error handling,
 concurrency limits, operation counters, and storage-backed allocation evidence.
 Fallback can allocate space; bytes_discarded counts logical operation bytes.
-Source extent discovery fallback is implemented in R2.3; broader native request
-compatibility remains follow-up work.
+Source extent discovery fallback is implemented in R2.3; DataMover native request
+compatibility is implemented in R2.4. Runtime resource preparation remains open.
+
+## Native request compatibility (R2.4)
+
+RAW planning validates SQE width, signed file ranges, allocation layout, and
+Data range/block alignment for each direct endpoint. Auto selects Threaded for
+the complete incompatible plan with a structured reason; explicit native returns
+NativeRequestIncompatible. Preparation rechecks native intent before cloning
+native extents or notifying observers; changed compatibility rejects the plan
+and requires replanning. Both RAW planning and preparation compare declared
+modes with O_DIRECT captured in existing fresh descriptor inspections.
+
+See the [contract and API boundaries](native-request-compatibility.md) for mixed
+modes, exact tail/split policy, budget/observer parity, low-level FD limitations,
+and outstanding runtime resource and concurrent alias work.

@@ -65,7 +65,8 @@ impl DataMover {
         S: BlockDevice + LinuxFdBackend,
         D: BlockDevice + LinuxFdBackend,
     {
-        self.validate_raw_plan(plan, source, destination)?;
+        let compatibility = evaluate_compatibility(source.device(), destination.device());
+        self.validate_raw_plan(plan, source, destination, compatibility.direct_modes())?;
         let executor = match plan.backend() {
             ExecutionBackend::Threaded => PreparedExecutor::Threaded,
             ExecutionBackend::IoUring => {
@@ -79,22 +80,18 @@ impl DataMover {
                     }
                 };
 
-                let native_extents = plan.extents().to_vec();
-                self.native_memory(
-                    plan.extent_capacity(),
-                    native_extents.capacity(),
-                    plan.data_bytes() != 0,
-                    plan.extent_count() != 0,
-                    execution_options,
-                )?
-                .check(self.options.memory_budget(), "native plan")?;
-                let native_plan = NativeExtentPlan::new(native_extents, plan.logical_bytes())?;
-
-                let source_backend = source.device();
-
-                let destination_backend = destination.device();
-
-                let compatibility = evaluate_compatibility(source_backend, destination_backend);
+                if let Some(issue) = compatibility.request_issue(
+                    0,
+                    plan.logical_bytes(),
+                    self.options.block_size(),
+                    self.options.buffer_alignment(),
+                    plan.extents()
+                        .iter()
+                        .filter(|e| e.kind() == ExtentKind::Data)
+                        .map(|e| (e.offset(), e.length())),
+                ) {
+                    return Err(issue.into());
+                }
 
                 if !compatibility.compatible() {
                     return Err(Error::NativeExecutionUnsupported);
@@ -111,6 +108,17 @@ impl DataMover {
                         plan.alignment(),
                     )));
                 }
+
+                let native_extents = plan.extents().to_vec();
+                self.native_memory(
+                    plan.extent_capacity(),
+                    native_extents.capacity(),
+                    plan.data_bytes() != 0,
+                    plan.extent_count() != 0,
+                    execution_options,
+                )?
+                .check(self.options.memory_budget(), "native plan")?;
+                let native_plan = NativeExtentPlan::new(native_extents, plan.logical_bytes())?;
 
                 PreparedExecutor::IoUring {
                     native_plan,
@@ -155,6 +163,7 @@ impl DataMover {
         plan: &CopyPlan,
         source: &RawDisk<S>,
         destination: &RawDisk<D>,
+        direct_modes: (bool, bool),
     ) -> Result<()>
     where
         S: BlockDevice + LinuxFdBackend,
@@ -162,6 +171,7 @@ impl DataMover {
     {
         self.validate_plan(plan, source, destination, || {
             let endpoints = crate::preflight::raw_pair(source, destination, plan.logical_bytes())?;
+            endpoints.validate_io_modes(direct_modes)?;
             if plan.backend() == ExecutionBackend::IoUring
                 && plan
                     .extents()

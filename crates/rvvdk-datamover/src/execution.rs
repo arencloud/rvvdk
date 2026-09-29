@@ -75,6 +75,9 @@ pub enum ExecutionSelectionReason {
     RawDescriptorsCompatible,
     #[cfg(target_os = "linux")]
     RawDescriptorsIncompatible,
+    /// Auto selected the portable executor for the entire RAW plan.
+    #[cfg(target_os = "linux")]
+    RawRequestsIncompatible(rvvdk_core::NativeRequestIssue),
 }
 
 /// The planning-time request and decision; execution still performs live checks.
@@ -86,6 +89,23 @@ pub struct ExecutionSelection {
 }
 
 impl ExecutionSelection {
+    #[cfg(target_os = "linux")]
+    pub(crate) fn raw_requests(
+        requested: ExecutionStrategy,
+        compatible: bool,
+        issue: Option<rvvdk_core::NativeRequestIssue>,
+    ) -> rvvdk_core::Result<Self> {
+        match (requested, issue) {
+            (ExecutionStrategy::Auto(_), Some(issue)) => Ok(Self {
+                requested,
+                selected: ExecutionBackend::Threaded,
+                reason: ExecutionSelectionReason::RawRequestsIncompatible(issue),
+            }),
+            (ExecutionStrategy::IoUring(_), Some(issue)) => Err(issue.into()),
+            _ => Self::raw(requested, compatible),
+        }
+    }
+
     pub const fn requested(&self) -> ExecutionStrategy {
         self.requested
     }

@@ -1,0 +1,17 @@
+Gnuplot not found, using plotters backend
+progress/dense: logical=16777216, data=16777216, holes=0, extents=1, block=65536, workers=1, buffered, flush=included
+Benchmarking progress_copy/dense/unobserved
+Benchmarking progress_copy/dense/unobserved: Warming up for 300.00 ms
+Benchmarking progress_copy/dense/unobserved: Collecting 30 samples in estimated 2.7331 s (90 iterations)
+Benchmarking progress_copy/dense/unobserved: Analyzing
+progress_copy/dense/unobserved
+                        time:   [14.496 ms 14.826 ms 15.197 ms]
+                        thrpt:  [1.0281 GiB/s 1.0539 GiB/s 1.0779 GiB/s]
+                 change:
+                        time:   [−20.765% −16.843% −12.631%] (p = 0.00 < 0.05)
+                        thrpt:  [+14.457% +20.255% +26.208%]
+                        Performance has improved.
+Found 2 outliers among 30 measurements (6.67%)
+  2 (6.67%) high mild
+
+progress/fragmented50: logical=16777216, data=8388608, holes=8388608, extents=256, block=65536, workers=1, buffered, flush=included

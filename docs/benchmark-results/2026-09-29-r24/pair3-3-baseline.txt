@@ -1,0 +1,18 @@
+Gnuplot not found, using plotters backend
+progress/dense: logical=16777216, data=16777216, holes=0, extents=1, block=65536, workers=1, buffered, flush=included
+progress/fragmented50: logical=16777216, data=8388608, holes=8388608, extents=256, block=65536, workers=1, buffered, flush=included
+Benchmarking progress_plan/fragmented50/plan
+Benchmarking progress_plan/fragmented50/plan: Warming up for 300.00 ms
+Benchmarking progress_plan/fragmented50/plan: Collecting 30 samples in estimated 2.0065 s (8820 iterations)
+Benchmarking progress_plan/fragmented50/plan: Analyzing
+progress_plan/fragmented50/plan
+                        time:   [231.10 µs 236.76 µs 244.37 µs]
+                        thrpt:  [1.0476 Melem/s 1.0813 Melem/s 1.1077 Melem/s]
+                 change:
+                        time:   [+10.858% +15.356% +20.221%] (p = 0.00 < 0.05)
+                        thrpt:  [−16.820% −13.312% −9.7944%]
+                        Performance has regressed.
+Found 5 outliers among 30 measurements (16.67%)
+  3 (10.00%) high mild
+  2 (6.67%) high severe
+

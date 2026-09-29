@@ -1,0 +1,22 @@
+[
+  {
+    "tag": "tail-baseline-smoke",
+    "command": [
+      "/tmp/rvvdk-r24-jfwu7ray/baseline-target/release/deps/native_requests-91a28d066722a1ce",
+      "--test",
+      "native_requests_plan/tail_fallback$"
+    ],
+    "exit_code": 101,
+    "expected_success": false
+  },
+  {
+    "tag": "tail-candidate-smoke",
+    "command": [
+      "/tmp/rvvdk-r24-jfwu7ray/candidate-boxed-target/release/deps/native_requests-010c9d94223ba94b",
+      "--test",
+      "tail_fallback$"
+    ],
+    "exit_code": 0,
+    "expected_success": true
+  }
+]

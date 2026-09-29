@@ -184,3 +184,20 @@ memory, and earlier native quarantines remain external. This is not a process
 RSS cap, a resource reservation, or a claim of fragmentation-independent memory.
 Zero is a valid budget; overflow and excess are typed pre-execution errors.
 The [accounting contract](../copy-memory.md) records phases and exclusions.
+
+## R2.4 — Request compatibility and whole-plan fallback, 2026-09-29
+
+Planning now checks DataMover native request width/range/layout and each direct
+endpoint's Data offset, length, and effective block splits. Auto stores
+RawRequestsIncompatible(NativeRequestIssue) and selects Threaded for the whole
+plan; explicit native fails with the same structured issue. Preparation rejects
+changed native compatibility before cloning extents or notifying observers.
+Replanning is required to change the selected backend; R1.4's historical plan
+selection and budget/alignment semantics remain intact.
+
+RAW inspection also binds backend mode declarations to fresh O_DIRECT flags.
+This uses existing descriptor inspections. It does not promise live alignment
+rediscovery, native runtime readiness, low-level FD request negotiation, or a
+general concurrent buffered/direct alias policy. See the
+[R2.4 contract](../native-request-compatibility.md) and
+[measurements](../benchmark-results/2026-09-29-r24/README.md).

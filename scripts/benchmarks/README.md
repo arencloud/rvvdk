@@ -14,7 +14,9 @@ target/benchmark-plots/bin/python -m unittest discover -s scripts/benchmarks -p 
 The output is `REPORT/plots/`; `--output PATH` renders to another directory.
 SVG is embedded in Markdown reports; PNG is available for sharing. Matplotlib
 uses a headless backend and its bundled DejaVu Sans font. Fixed SVG identifiers
-and omitted timestamps make repeat output stable in the recorded environment.
+and omitted timestamps make repeat output stable with the same generator in the
+recorded environment. Historical manifests identify the generator version used;
+use that recorded source revision when reproducing older figures.
 Cross-version/platform byte identity is not guaranteed. The manifest records
 Python, installed package versions, generator/input hashes, and output hashes.
 
@@ -43,7 +45,11 @@ comparison schema (a single-object summary is also accepted). Workloads must
 exist in the main comparison. They create a separate main/repeat chart.
 Optional `unsupported-measurements.json` contains candidate-only run records
 without `pair`/`variant`; this specific experiment is labeled as injected EINVAL
-via LD_PRELOAD. Do not reuse that filename for other experiment types.
+via LD_PRELOAD. Do not reuse that filename for other experiment types. Other candidate-only
+experiments use `candidate-only-measurements.json` with the same run schema and
+a `candidate_only` configuration object containing `title`, `note`, and
+`sampling`. Use only one candidate-only file per report. Explicitly explain why
+a baseline timing comparison is unavailable or inappropriate.
 
 The generator supports these schemas, not arbitrary historical Criterion layouts.
 It checks normalized sample medians against recorded estimates and recomputes

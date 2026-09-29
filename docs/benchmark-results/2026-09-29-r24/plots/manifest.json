@@ -1,0 +1,101 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R2.4 \u00b7 Native request compatibility",
+    "candidate": "patch 5685b947",
+    "conditions": "Btrfs \u00b7 CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 copy flush included; I/O modes as labeled",
+    "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "repeat_sampling": "3 adjacent pairs \u00b7 40 samples/run \u00b7 0.5 s warmup \u00b7 4 s target",
+    "candidate_only": {
+      "title": "Whole-plan odd-tail fallback \u00b7 candidate only",
+      "note": "Baseline lacks required Threaded selection. No speedup comparison; local backend still uses direct I/O for aligned blocks.",
+      "sampling": "3 candidate runs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target \u00b7 16 MiB + 7 bytes"
+    },
+    "workloads": {
+      "preflight/plan_native": {
+        "label": "Native planning \u00b7 1 MiB \u00b7 buffered",
+        "phase": "planning"
+      },
+      "preflight_copy/threaded": {
+        "label": "Threaded copy \u00b7 1 MiB \u00b7 buffered",
+        "phase": "copy"
+      },
+      "preflight_copy/native": {
+        "label": "Native copy \u00b7 1 MiB \u00b7 buffered",
+        "phase": "copy"
+      },
+      "progress_plan/fragmented50/plan": {
+        "label": "Fragmented planning \u00b7 16 MiB \u00b7 buffered",
+        "phase": "planning"
+      },
+      "progress_copy/dense/unobserved": {
+        "label": "Dense copy \u00b7 16 MiB \u00b7 buffered",
+        "phase": "copy"
+      },
+      "progress_copy/fragmented50/noop": {
+        "label": "Fragmented copy \u00b7 16 MiB \u00b7 buffered",
+        "phase": "copy"
+      },
+      "native_requests_plan/direct_destination": {
+        "label": "Native planning \u00b7 16 MiB \u00b7 direct destination",
+        "phase": "planning"
+      },
+      "native_requests_copy/direct_source": {
+        "label": "Native copy \u00b7 16 MiB \u00b7 direct source",
+        "phase": "copy"
+      },
+      "native_requests_copy/direct_destination": {
+        "label": "Native copy \u00b7 16 MiB \u00b7 direct destination",
+        "phase": "copy"
+      },
+      "native_requests_plan/tail_fallback": {
+        "label": "Tail fallback planning \u00b7 16 MiB + 7 bytes",
+        "phase": "planning"
+      },
+      "native_requests_copy/tail_fallback": {
+        "label": "Tail fallback copy \u00b7 16 MiB + 7 bytes",
+        "phase": "copy"
+      }
+    }
+  },
+  "input_sha256": {
+    "plot-config.json": "ee53b269f6e003f236d5dfda8736811150184ca72d4b631f07cce7fc807bd11d",
+    "environment.json": "14364a602c3cfaaa736caa8587f131dbb2fd1697e37b35b13c46e2ab457e8dea",
+    "measurements.json": "ee78e0629a844a323e466c0175af8052903779c9263622b897d896daaef6d99d",
+    "summary.json": "0995d41e94696082a6a01755caf80ff1dd1f63d8ae2f9157e19311cf41efe2ff",
+    "followup-measurements.json": "8c0a8f2a8f6c4c74b0322fa5fa55ab561cdd1a52c16353e7e86563b13734a55a",
+    "followup-summary.json": "e3eb11c3e10c4fbf9eaef70be7de2eb7e3320c53255015b27b7bd0be3141058e",
+    "candidate-only-measurements.json": "394c83e331d0c63f2fb9972013cffb009c2bed475fd60c3834fa3c92a80b0266"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "3856fdce50d7462668b9407ba4e662f9a9adeddbd352576ad80f99bdd8c9e57e",
+    "planning-latency.png": "15b689e08ecc055ca2080d8a7cb6d495575712faac3c0e627120f14676287073",
+    "copy-latency.svg": "f28fcaf13ecf6d67e233a1b1e2a48d466b29b02563c3402a25df77707cea73ab",
+    "copy-latency.png": "6c624dfee9ffe05bf5957183c8e75a6630479719067942c3634f26c63d162fb3",
+    "relative-change.svg": "b3de6eee7dd4f585020986a6778754be79ba36cbcc48ff71d19ab3f33c8063b5",
+    "relative-change.png": "15f575b13664d005eef0e065b68896a4ea8aa97b483ce08728817c09751b0a5f",
+    "sample-distributions.svg": "709f6b45dd7a8c0acd14815864848d1563aa17205b341581a1ac1213049c7d74",
+    "sample-distributions.png": "5dd5a09888b18d75747510cd6f1d083324205880b15506e4d17e5b5bc3e40230",
+    "followup-change.svg": "d78ff23c4b2026723b13945029929cdb9959d442c46753a18578976a6c9589a4",
+    "followup-change.png": "1eb672d25ced674a7870d84e4ff095e971acfcfd9628ace4fd2659045ab3bfd7",
+    "candidate-only.svg": "61e08426dad97f40baf632c22bd336a9264851e022713cab2226e3ff53a64b25",
+    "candidate-only.png": "4b6e3c8f66b7ee5674d43d0ca26572bdcb1edd8dbd52b89e3e4f81c35cdfc191",
+    "computed.json": "64769e842284adca133b8b6d01bd445c2a37cfc2a838c44503cc3500900447db"
+  }
+}

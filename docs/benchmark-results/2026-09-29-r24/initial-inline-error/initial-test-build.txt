@@ -1,0 +1,59 @@
+   Compiling rvvdk-datamover v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-datamover)
+error[E0433]: cannot find module or crate `libc` in this scope
+   --> crates/rvvdk-datamover/tests/native_requests.rs:281:26
+    |
+281 |     let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
+    |                          ^^^^ use of unresolved module or unlinked crate `libc`
+    |
+    = help: if you wanted to use a crate named `libc`, use `cargo add libc` to add it to your `Cargo.toml`
+
+error[E0433]: cannot find module or crate `libc` in this scope
+   --> crates/rvvdk-datamover/tests/native_requests.rs:281:42
+    |
+281 |     let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
+    |                                          ^^^^ use of unresolved module or unlinked crate `libc`
+    |
+    = help: if you wanted to use a crate named `libc`, use `cargo add libc` to add it to your `Cargo.toml`
+
+error[E0433]: cannot find module or crate `libc` in this scope
+   --> crates/rvvdk-datamover/tests/native_requests.rs:285:18
+    |
+285 |         unsafe { libc::fcntl(fd, libc::F_SETFL, flags | libc::O_DIRECT) },
+    |                  ^^^^ use of unresolved module or unlinked crate `libc`
+    |
+    = help: if you wanted to use a crate named `libc`, use `cargo add libc` to add it to your `Cargo.toml`
+
+error[E0433]: cannot find module or crate `libc` in this scope
+   --> crates/rvvdk-datamover/tests/native_requests.rs:285:34
+    |
+285 |         unsafe { libc::fcntl(fd, libc::F_SETFL, flags | libc::O_DIRECT) },
+    |                                  ^^^^ use of unresolved module or unlinked crate `libc`
+    |
+    = help: if you wanted to use a crate named `libc`, use `cargo add libc` to add it to your `Cargo.toml`
+
+error[E0433]: cannot find module or crate `libc` in this scope
+   --> crates/rvvdk-datamover/tests/native_requests.rs:285:57
+    |
+285 |         unsafe { libc::fcntl(fd, libc::F_SETFL, flags | libc::O_DIRECT) },
+    |                                                         ^^^^ use of unresolved module or unlinked crate `libc`
+    |
+    = help: if you wanted to use a crate named `libc`, use `cargo add libc` to add it to your `Cargo.toml`
+
+error[E0433]: cannot find module or crate `libc` in this scope
+   --> crates/rvvdk-datamover/tests/native_requests.rs:295:25
+    |
+295 |     assert_eq!(unsafe { libc::fcntl(fd, libc::F_SETFL, flags) }, 0);
+    |                         ^^^^ use of unresolved module or unlinked crate `libc`
+    |
+    = help: if you wanted to use a crate named `libc`, use `cargo add libc` to add it to your `Cargo.toml`
+
+error[E0433]: cannot find module or crate `libc` in this scope
+   --> crates/rvvdk-datamover/tests/native_requests.rs:295:41
+    |
+295 |     assert_eq!(unsafe { libc::fcntl(fd, libc::F_SETFL, flags) }, 0);
+    |                                         ^^^^ use of unresolved module or unlinked crate `libc`
+    |
+    = help: if you wanted to use a crate named `libc`, use `cargo add libc` to add it to your `Cargo.toml`
+
+For more information about this error, try `rustc --explain E0433`.
+error: could not compile `rvvdk-datamover` (test "native_requests") due to 7 previous errors

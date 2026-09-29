@@ -42,8 +42,8 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 | R0.5 | Complete | Endpoint capabilities/live capacity, known aliases, native binding, and contextual preflight errors | Required correctness cost accepted: planning +2.08–2.15 µs; final copy aggregates −1.93% to +2.37%; general qualification provisional |
 | V0 | Planned | Independent VMware access feasibility; licensed/evaluation host needed for representative API workflows | Pending — first transport baseline follows functional proof |
 
-R1.1–R1.6 and R2.1–R2.3 are complete within their documented scopes; their detailed
-records appear below. R2.4 onward and V0 remain planned in the roadmap. Performance qualification
+R1.1–R1.6 and R2.1–R2.4 are complete within their documented scopes; their detailed
+records appear below. R2.5 onward and V0 remain planned in the roadmap. Performance qualification
 remains provisional as recorded for each step.
 
 ## Per-step record template
@@ -967,17 +967,90 @@ unchanged. Rust tests and benchmarks were not rerun: no Rust/runtime changes.
 Performance disposition: **N/A — plotting and documentation only**; R2.3 and
 all earlier qualifications remain as recorded. R2.4 remains next.
 
+## R2.4 — Native request compatibility and whole-plan fallback
+
+Date: 2026-09-29. Status: **Complete within DataMover's declared request contract**.
+Baseline: `5b64bf7` (R2.3 plus plots), initially clean working tree. Candidate is
+committed with this record; [source/harness patches and hashes](benchmark-results/2026-09-29-r24/README.md)
+identify the measured builds.
+
+Problem: RAW descriptor evaluation accepted every pair, so Auto could select
+io_uring for odd tails, unaligned Data, or block splits incompatible with a direct
+endpoint. A sparse prefix or observer callback could occur before a later native
+request failed. Mixed endpoint evaluation did not enforce the direct side's
+request alignment independently.
+
+Implementation:
+
+1. Added one allocation-free checker for declared native request intent: u32
+   block width, nonnegative i64 ranges, power-of-two endpoint alignments, valid
+   allocation layout, Data offsets/lengths, and block boundaries actually used
+   by multi-request Data extents. Buffered pairs avoid a per-Data alignment scan.
+2. Auto records RawRequestsIncompatible(NativeRequestIssue) and chooses Threaded
+   for the whole plan. Explicit native returns the typed issue. The new core
+   error/reason carries endpoint, range, and alignment information. Logical
+   extents, zero/discard policy, and source validation remain intact.
+3. Preparation rechecks native intent before allocating its extent clone or
+   invoking observers. Changed compatibility rejects the existing plan for both
+   strategies; callers may replan with Auto. Preserve R1.4's historical plan
+   selection and R1.6's backend-specific budget rather than changing execution
+   backend underneath an already prepared structural plan.
+4. Existing fresh descriptor inspection now includes O_DIRECT. RAW planning and
+   preparation reject disagreement with backend declarations, without adding
+   fstat/fcntl calls. Alignment declarations are reread, not rediscovered via
+   statx on each execution; local discovery still occurs at open.
+5. The explicitly native FD-only DataMover wrapper also rejects declared request
+   incompatibility and never silently falls back. Standalone low-level FD copy
+   functions retain their caller-managed direct alignment contract. Runtime
+   resource preparation, ring reuse, and general concurrent alias policy remain
+   open; no retry after mutation was added.
+6. Added five request-math tests and six integration tests. The latter include
+   48 tiny/odd/aligned copies across buffered/direct/mixed endpoints, one/four
+   workers, and observed/unobserved execution, plus sparse-prefix rejection,
+   changed declarations/flags, replanning, split boundaries, and fallback budgets.
+7. Added a matched 16 MiB benchmark for both mixed endpoint directions and a
+   candidate-only 16 MiB + 7-byte Auto fallback workload. Complete copies time
+   planning and final flush, assert selected backend/counters, and verify all
+   output bytes on a nonzero-prefilled destination. Extended plot tooling to
+   label generic candidate-only experiments without calling them injected EINVAL.
+8. Review found that an inline request diagnostic increased core Error from
+   40 to 48 bytes on this target. Boxed the diagnostic only on the error path
+   to preserve the existing layout; retained the first candidate's source and
+   measurements in a separate archive and remeasured the final implementation.
+9. Updated README, architecture, roadmap, ADR-0027, and the
+   [request contract](native-request-compatibility.md), including migration and
+   the distinction between request acceptance and runtime readiness.
+
+Validation: **334 workspace tests pass**, one unchanged storage-allocation test
+remains gated (335 distinct tests). Formatting, strict all-target Clippy, and the
+core/datamover wasm32 library check pass. All six new integration tests also pass
+on the recorded Btrfs mount; this is not renewed physical-allocation qualification.
+Five plot-calculation tests pass. The first focused build lacked a direct libc
+dev dependency for the fcntl test; its diagnostic is retained, the Linux-only test
+dependency was added, and the final suite passes.
+
+Performance disposition: final native small-plan aggregate **+3.59%** (about
+0.096 µs); complete buffered RAW Threaded/native **−4.55%/+3.15%**; mixed direct
+source/destination **+4.33%/−3.00%**. Native RAW and mixed direct-source retain
+**+15.57%/+16.61%** adverse pairs. Longer-repeat aggregates are
+**-0.07%/-2.68%**, with paired results preserved.
+Same-baseline-binary controls characterize mixed-I/O variation but do not rule out
+candidate effects. Accept request-safety functionality with performance
+qualification still open. The [report](benchmark-results/2026-09-29-r24/README.md)
+retains all final/initial samples, controls, candidate-only fallback, plots, and
+limitations. No timing gain is attributed to boxing the diagnostic.
+
 ## Next session
 
-Start **R2.4**: validate complete native request compatibility before callbacks
-or destination mutation. Cover Data offsets/lengths, block size, direct-I/O
-alignment, odd tails, and mixed buffered/direct endpoints. For Auto, select
-whole-plan Threaded fallback with an observable reason when requests cannot be
-submitted safely; explicit IoUring should fail precisely before execution.
-Preserve source validation, budgets, and observed/unobserved parity.
+Start **R2.5**: prepare native runtime resources before observer callbacks or
+mutation. Explicit native setup failures should be precise pre-execution errors;
+Auto fallback should cover defined unavailability cases and report the actual
+executor consistently. Transfer ownership of successfully prepared resources into
+execution instead of probing and discarding them. Preserve buffer/FD lifetimes,
+shutdown confirmation, memory admission, source validation, and no retry after
+mutation. Integrate per-job ring/buffer reuse where needed by this ownership
+boundary; general concurrent buffered/direct alias policy remains open.
 
-Runtime io_uring resource preparation and per-job ring/buffer reuse remain later
-R2 work. Keep PERF.0 and all recorded performance dispositions open, including
-R2.2's fragmented-output cost and R2.3's discovery checks. Track evidence and
-commit each completed step. ESXi is still unnecessary; request the 60-day trial
-when V0 is ready.
+Keep PERF.0 and all recorded adverse timing pairs open for controlled-runner
+qualification. Track raw evidence and plots and commit each completed step.
+ESXi is still unnecessary; request the 60-day trial when V0 is ready.

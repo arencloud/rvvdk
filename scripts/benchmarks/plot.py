@@ -118,11 +118,11 @@ class Report:
             ax.set_visible(False)
         return fig, flat[:count]
 
-    def save(self, fig, name, title, note, sampling=None, legend=True):
+    def save(self, fig, name, title, note, sampling=None, legend=True, candidate_only=False):
         height = fig.get_figheight()
         fig.suptitle(f"{self.config['title']}\n{title}", x=.055, y=1-.12/height,
                      ha='left', fontsize=17, fontweight='bold').set_in_layout(False)
-        identity = self.identity if name != 'unsupported-discovery' else (f"Candidate {self.config['candidate']} · baseline {self.environment['baseline'][:7]} fails; no baseline timing")
+        identity = self.identity if not candidate_only and name != 'unsupported-discovery' else (f"Candidate {self.config['candidate']} · no baseline timing comparison")
         fig.text(.055, 1-.98/height, identity, fontsize=10, color='#465568')
         if legend:
             fig.legend(handles=[Patch(facecolor=COLORS[v], label=v.title()) for v in VARIANTS],
@@ -203,7 +203,7 @@ class Report:
         self.save(fig, 'sample-distributions', 'Sample distributions · each run kept separate',
                   'Boxes: Q1–Q3; line: median; whiskers: 1.5×IQR; all outliers shown. Zoomed axes; scales differ. Not per-I/O latency.')
 
-    def unsupported(self, runs):
+    def unsupported(self, runs, experiment=None):
         cases = list(dict.fromkeys(r['benchmark'] for r in runs))
         fig, axes = self.panels(len(cases))
         data = []
@@ -222,9 +222,14 @@ class Report:
             ax.set_ylabel(f'Elapsed time ({unit})')
             ax.set_title(self.label(case), fontsize=11)
             data.append(dict(benchmark=case, candidate_ns=value, run_medians_ns=values))
-        self.save(fig, 'unsupported-discovery', 'Injected unavailable discovery · candidate only',
-                  'No baseline speedup: baseline fails. LD_PRELOAD injects EINVAL; not real unsupported-filesystem seek latency.',
-                  sampling='3 candidate runs · 30 samples/run · 0.3 s warmup · 2 s target · sparse fixture copied as all Data', legend=False)
+        experiment = experiment or {
+            'title': 'Injected unavailable discovery · candidate only',
+            'note': 'No baseline speedup: baseline fails. LD_PRELOAD injects EINVAL; not real unsupported-filesystem seek latency.',
+            'sampling': '3 candidate runs · 30 samples/run · 0.3 s warmup · 2 s target · sparse fixture copied as all Data',
+        }
+        self.save(fig, 'candidate-only' if 'candidate_only' in self.config else 'unsupported-discovery',
+                  experiment['title'], experiment['note'], sampling=experiment['sampling'], legend=False,
+                  candidate_only=True)
         return data
 
 
@@ -245,6 +250,11 @@ def main():
     if (args.report / 'followup-measurements.json').exists():
         followup = compare(report.read('followup-measurements.json'), report.read('followup-summary.json'))
     unsupported = report.read('unsupported-measurements.json') if (args.report / 'unsupported-measurements.json').exists() else None
+    candidate_only = report.read('candidate-only-measurements.json') if (args.report / 'candidate-only-measurements.json').exists() else None
+    if candidate_only is not None:
+        require(unsupported is None, 'use one candidate-only experiment file per report')
+        require('candidate_only' in report.config, 'candidate_only configuration is required')
+        unsupported = candidate_only
     if followup:
         require({r['benchmark'] for r in followup} <= {r['benchmark'] for r in rows},
                 'followup workloads must exist in the main comparison')
@@ -274,7 +284,7 @@ def main():
                        'Main: ' + report.config['main_sampling'] + '\nRepeat: ' + report.config['repeat_sampling'])
     computed = {'main': rows, 'followup': followup}
     if unsupported:
-        computed['unsupported'] = report.unsupported(unsupported)
+        computed['candidate_only' if candidate_only else 'unsupported'] = report.unsupported(unsupported, report.config.get('candidate_only'))
     computed_path = output / 'computed.json'
     computed_path.write_text(json.dumps(computed, indent=2) + '\n')
     report.outputs.append(computed_path)

@@ -1,0 +1,58 @@
+{
+  "title": "R2.4 \u00b7 Native request compatibility",
+  "candidate": "patch 5685b947",
+  "conditions": "Btrfs \u00b7 CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 copy flush included; I/O modes as labeled",
+  "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+  "repeat_sampling": "3 adjacent pairs \u00b7 40 samples/run \u00b7 0.5 s warmup \u00b7 4 s target",
+  "candidate_only": {
+    "title": "Whole-plan odd-tail fallback \u00b7 candidate only",
+    "note": "Baseline lacks required Threaded selection. No speedup comparison; local backend still uses direct I/O for aligned blocks.",
+    "sampling": "3 candidate runs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target \u00b7 16 MiB + 7 bytes"
+  },
+  "workloads": {
+    "preflight/plan_native": {
+      "label": "Native planning \u00b7 1 MiB \u00b7 buffered",
+      "phase": "planning"
+    },
+    "preflight_copy/threaded": {
+      "label": "Threaded copy \u00b7 1 MiB \u00b7 buffered",
+      "phase": "copy"
+    },
+    "preflight_copy/native": {
+      "label": "Native copy \u00b7 1 MiB \u00b7 buffered",
+      "phase": "copy"
+    },
+    "progress_plan/fragmented50/plan": {
+      "label": "Fragmented planning \u00b7 16 MiB \u00b7 buffered",
+      "phase": "planning"
+    },
+    "progress_copy/dense/unobserved": {
+      "label": "Dense copy \u00b7 16 MiB \u00b7 buffered",
+      "phase": "copy"
+    },
+    "progress_copy/fragmented50/noop": {
+      "label": "Fragmented copy \u00b7 16 MiB \u00b7 buffered",
+      "phase": "copy"
+    },
+    "native_requests_plan/direct_destination": {
+      "label": "Native planning \u00b7 16 MiB \u00b7 direct destination",
+      "phase": "planning"
+    },
+    "native_requests_copy/direct_source": {
+      "label": "Native copy \u00b7 16 MiB \u00b7 direct source",
+      "phase": "copy"
+    },
+    "native_requests_copy/direct_destination": {
+      "label": "Native copy \u00b7 16 MiB \u00b7 direct destination",
+      "phase": "copy"
+    },
+    "native_requests_plan/tail_fallback": {
+      "label": "Tail fallback planning \u00b7 16 MiB + 7 bytes",
+      "phase": "planning"
+    },
+    "native_requests_copy/tail_fallback": {
+      "label": "Tail fallback copy \u00b7 16 MiB + 7 bytes",
+      "phase": "copy"
+    }
+  }
+}

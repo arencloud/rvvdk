@@ -1,0 +1,1088 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 0ea02fb..68d3623 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -438,6 +438,7 @@ version = "0.1.0"
+ dependencies = [
+  "criterion",
+  "io-uring",
++ "libc",
+  "rvvdk-core",
+  "rvvdk-local",
+  "rvvdk-platform",
+diff --git a/crates/rvvdk-core/src/error.rs b/crates/rvvdk-core/src/error.rs
+index 0e056ea..83878a0 100644
+--- a/crates/rvvdk-core/src/error.rs
++++ b/crates/rvvdk-core/src/error.rs
+@@ -4,6 +4,9 @@ pub type Result<T> = std::result::Result<T, Error>;
+ 
+ #[derive(Debug, Error)]
+ pub enum Error {
++    #[error("native request is incompatible: {0}")]
++    NativeRequestIncompatible(#[source] Box<crate::NativeRequestIssue>),
++
+     #[error("copy memory budget exceeded during {phase}: required={required}, budget={budget}")]
+     MemoryBudgetExceeded {
+         phase: &'static str,
+@@ -166,3 +169,10 @@ impl Error {
+         }
+     }
+ }
++
++impl From<crate::NativeRequestIssue> for Error {
++    #[cold]
++    fn from(issue: crate::NativeRequestIssue) -> Self {
++        Self::NativeRequestIncompatible(Box::new(issue))
++    }
++}
+diff --git a/crates/rvvdk-core/src/lib.rs b/crates/rvvdk-core/src/lib.rs
+index f3e9ada..88692e9 100644
+--- a/crates/rvvdk-core/src/lib.rs
++++ b/crates/rvvdk-core/src/lib.rs
+@@ -8,6 +8,7 @@ pub mod error;
+ pub mod extent;
+ pub mod geometry;
+ pub mod memory;
++pub mod native_request;
+ pub mod range;
+ pub mod raw;
+ pub mod virtual_disk;
+@@ -22,6 +23,7 @@ pub use error::{Error, Result};
+ pub use extent::{Extent, ExtentKind};
+ pub use geometry::DiskGeometry;
+ pub use memory::MemoryBlockDevice;
++pub use native_request::NativeRequestIssue;
+ pub use range::DiskRange;
+ pub use raw::RawDisk;
+ pub use virtual_disk::VirtualDisk;
+diff --git a/crates/rvvdk-datamover/Cargo.toml b/crates/rvvdk-datamover/Cargo.toml
+index cf498d2..fd1ebe0 100644
+--- a/crates/rvvdk-datamover/Cargo.toml
++++ b/crates/rvvdk-datamover/Cargo.toml
+@@ -11,6 +11,9 @@ rvvdk-platform = { path = "../rvvdk-platform" }
+ [target.'cfg(target_os = "linux")'.dependencies]
+ io-uring = "0.7.15"
+ 
++[target.'cfg(target_os = "linux")'.dev-dependencies]
++libc = "0.2.189"
++
+ [dev-dependencies]
+ rvvdk-local = { path = "../rvvdk-local" }
+ criterion = "0.8.2"
+@@ -70,3 +73,7 @@ harness = false
+ [[bench]]
+ name = "local_sparse"
+ harness = false
++
++[[bench]]
++name = "native_requests"
++harness = false
+diff --git a/crates/rvvdk-datamover/src/execution.rs b/crates/rvvdk-datamover/src/execution.rs
+index a06dbfb..b525bed 100644
+--- a/crates/rvvdk-datamover/src/execution.rs
++++ b/crates/rvvdk-datamover/src/execution.rs
+@@ -75,6 +75,9 @@ pub enum ExecutionSelectionReason {
+     RawDescriptorsCompatible,
+     #[cfg(target_os = "linux")]
+     RawDescriptorsIncompatible,
++    /// Auto selected the portable executor for the entire RAW plan.
++    #[cfg(target_os = "linux")]
++    RawRequestsIncompatible(rvvdk_core::NativeRequestIssue),
+ }
+ 
+ /// The planning-time request and decision; execution still performs live checks.
+@@ -86,6 +89,23 @@ pub struct ExecutionSelection {
+ }
+ 
+ impl ExecutionSelection {
++    #[cfg(target_os = "linux")]
++    pub(crate) fn raw_requests(
++        requested: ExecutionStrategy,
++        compatible: bool,
++        issue: Option<rvvdk_core::NativeRequestIssue>,
++    ) -> rvvdk_core::Result<Self> {
++        match (requested, issue) {
++            (ExecutionStrategy::Auto(_), Some(issue)) => Ok(Self {
++                requested,
++                selected: ExecutionBackend::Threaded,
++                reason: ExecutionSelectionReason::RawRequestsIncompatible(issue),
++            }),
++            (ExecutionStrategy::IoUring(_), Some(issue)) => Err(issue.into()),
++            _ => Self::raw(requested, compatible),
++        }
++    }
++
+     pub const fn requested(&self) -> ExecutionStrategy {
+         self.requested
+     }
+diff --git a/crates/rvvdk-datamover/src/io_uring/compatibility.rs b/crates/rvvdk-datamover/src/io_uring/compatibility.rs
+index e538e49..38e7de7 100644
+--- a/crates/rvvdk-datamover/src/io_uring/compatibility.rs
++++ b/crates/rvvdk-datamover/src/io_uring/compatibility.rs
+@@ -1,13 +1,93 @@
+-use rvvdk_platform::LinuxFdBackend;
++use rvvdk_core::NativeRequestIssue;
++use rvvdk_platform::{LinuxFdBackend, LinuxFdCapabilities};
+ 
++/// Descriptor declarations only; this does not establish request or runtime readiness.
+ #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+ pub struct IoUringCompatibility {
+     compatible: bool,
+     direct_io: bool,
+     alignment: usize,
++    source: LinuxFdCapabilities,
++    destination: LinuxFdCapabilities,
+ }
+ 
+ impl IoUringCompatibility {
++    pub(crate) fn direct_modes(&self) -> (bool, bool) {
++        (self.source.direct_io(), self.destination.direct_io())
++    }
++
++    /// Check the complete native intent without allocating or touching payloads.
++    /// Only Data extents become native requests; Zero/Hole use backend operations.
++    pub(crate) fn request_issue(
++        &self,
++        offset: u64,
++        length: u64,
++        block_size: usize,
++        buffer_alignment: usize,
++        data: impl IntoIterator<Item = (u64, u64)>,
++    ) -> Option<NativeRequestIssue> {
++        if block_size == 0 || u32::try_from(block_size).is_err() {
++            return Some(NativeRequestIssue::BlockSize { block_size });
++        }
++        if offset
++            .checked_add(length)
++            .is_none_or(|end| end > i64::MAX as u64)
++        {
++            return Some(NativeRequestIssue::Range { offset, length });
++        }
++        let endpoints = [("source", self.source), ("destination", self.destination)];
++        for (endpoint, caps) in endpoints {
++            if !valid_alignment(caps) {
++                return Some(NativeRequestIssue::DescriptorAlignment {
++                    endpoint,
++                    memory: caps.memory_alignment(),
++                    offset: caps.offset_alignment(),
++                });
++            }
++        }
++        let alignment = self.alignment.max(buffer_alignment);
++        if std::alloc::Layout::from_size_align(block_size, alignment).is_err() {
++            return Some(NativeRequestIssue::BufferLayout {
++                block_size,
++                alignment,
++            });
++        }
++        // Buffered descriptors impose no direct-I/O offset/tail restrictions.
++        if !self.source.direct_io() && !self.destination.direct_io() {
++            return None;
++        }
++        for (offset, length) in data {
++            for (endpoint, caps) in endpoints {
++                if !caps.direct_io() {
++                    continue;
++                }
++                let alignment = caps.offset_alignment();
++                if !offset.is_multiple_of(alignment as u64)
++                    || !length.is_multiple_of(alignment as u64)
++                {
++                    return Some(NativeRequestIssue::DirectRange {
++                        endpoint,
++                        offset,
++                        length,
++                        alignment,
++                    });
++                }
++                // A smaller extent uses one request, so an unused block size
++                // need not be aligned. Otherwise every split must stay aligned.
++                if length > block_size as u64 && !block_size.is_multiple_of(alignment) {
++                    return Some(NativeRequestIssue::DirectBlockSize {
++                        endpoint,
++                        block_size,
++                        alignment,
++                    });
++                }
++            }
++        }
++        None
++    }
++
++    /// True only when both endpoints declare direct I/O. Mixed pairs still
++    /// require the direct endpoint's alignment for each native request.
+     pub const fn direct_io(&self) -> bool {
+         self.direct_io
+     }
+@@ -38,8 +118,150 @@ where
+     let direct_io = source_capabilities.direct_io() && destination_capabilities.direct_io();
+ 
+     IoUringCompatibility {
+-        compatible: true,
++        compatible: valid_alignment(source_capabilities)
++            && valid_alignment(destination_capabilities),
+         direct_io,
+         alignment,
++        source: source_capabilities,
++        destination: destination_capabilities,
++    }
++}
++
++fn valid_alignment(capabilities: LinuxFdCapabilities) -> bool {
++    capabilities.memory_alignment().is_power_of_two()
++        && capabilities.offset_alignment().is_power_of_two()
++}
++
++#[cfg(test)]
++mod request_tests {
++    use super::*;
++    fn pair(source: LinuxFdCapabilities, destination: LinuxFdCapabilities) -> IoUringCompatibility {
++        IoUringCompatibility {
++            compatible: true,
++            direct_io: source.direct_io() && destination.direct_io(),
++            alignment: source
++                .memory_alignment()
++                .max(source.offset_alignment())
++                .max(destination.memory_alignment())
++                .max(destination.offset_alignment()),
++            source,
++            destination,
++        }
++    }
++    fn buffered() -> LinuxFdCapabilities {
++        LinuxFdCapabilities::new(false, 1, 1)
++    }
++    fn direct() -> LinuxFdCapabilities {
++        LinuxFdCapabilities::new(true, 4096, 512)
++    }
++
++    #[test]
++    fn mixed_pairs_enforce_each_direct_endpoint_and_distinguish_memory_from_offset_alignment() {
++        for (source, destination, role) in [
++            (direct(), buffered(), "source"),
++            (buffered(), direct(), "destination"),
++        ] {
++            let pair = pair(source, destination);
++            assert!(
++                pair.request_issue(0, 8192, 512, 4096, [(512, 512)])
++                    .is_none()
++            );
++            for (offset, length) in [(1, 512), (512, 513)] {
++                assert_eq!(
++                    pair.request_issue(0, 8192, 512, 4096, [(offset, length)]),
++                    Some(NativeRequestIssue::DirectRange {
++                        endpoint: role,
++                        offset,
++                        length,
++                        alignment: 512
++                    })
++                );
++            }
++        }
++    }
++
++    #[test]
++    fn validates_splits_but_not_an_unused_block_boundary() {
++        let pair = pair(direct(), direct());
++        assert!(
++            pair.request_issue(0, 4096, 4097, 4096, [(0, 4096)])
++                .is_none()
++        );
++        assert_eq!(
++            pair.request_issue(0, 8192, 4097, 4096, [(0, 8192)]),
++            Some(NativeRequestIssue::DirectBlockSize {
++                endpoint: "source",
++                block_size: 4097,
++                alignment: 512
++            })
++        );
++    }
++
++    #[test]
++    fn buffered_odd_ranges_and_backend_only_sparse_extents_need_no_direct_alignment() {
++        assert!(
++            pair(buffered(), buffered())
++                .request_issue(0, 8193, 4097, 4096, [(1, 8191)])
++                .is_none()
++        );
++        assert!(
++            pair(direct(), direct())
++                .request_issue(0, 8193, 4097, 4096, [])
++                .is_none()
++        );
++    }
++
++    #[test]
++    fn rejects_invalid_declarations_and_unallocatable_layouts() {
++        for value in [0, 3] {
++            for caps in [
++                LinuxFdCapabilities::new(true, value, 512),
++                LinuxFdCapabilities::new(true, 4096, value),
++            ] {
++                assert!(matches!(
++                    pair(caps, buffered()).request_issue(0, 0, 4096, 4096, []),
++                    Some(NativeRequestIssue::DescriptorAlignment {
++                        endpoint: "source",
++                        ..
++                    })
++                ));
++            }
++        }
++        let huge = 1usize << (usize::BITS - 1);
++        assert!(matches!(
++            pair(LinuxFdCapabilities::new(true, huge, 512), buffered()).request_issue(
++                0,
++                0,
++                4096,
++                4096,
++                []
++            ),
++            Some(NativeRequestIssue::BufferLayout { .. })
++        ));
++    }
++
++    #[test]
++    fn validates_signed_ranges_and_sqe_lengths_even_without_payload() {
++        let pair = pair(buffered(), buffered());
++        for (offset, length) in [(u64::MAX, 1), (i64::MAX as u64, 1), (u64::MAX, 0)] {
++            assert_eq!(
++                pair.request_issue(offset, length, 4096, 4096, []),
++                Some(NativeRequestIssue::Range { offset, length })
++            );
++        }
++        assert!(
++            pair.request_issue(i64::MAX as u64, 0, 4096, 4096, [])
++                .is_none()
++        );
++        assert_eq!(
++            pair.request_issue(0, 0, 0, 4096, []),
++            Some(NativeRequestIssue::BlockSize { block_size: 0 })
++        );
++        if let Ok(block_size) = usize::try_from(u64::from(u32::MAX) + 1) {
++            assert_eq!(
++                pair.request_issue(0, 0, block_size, 4096, []),
++                Some(NativeRequestIssue::BlockSize { block_size })
++            );
++        }
+     }
+ }
+diff --git a/crates/rvvdk-datamover/src/mover.rs b/crates/rvvdk-datamover/src/mover.rs
+index 95b3ebe..4be234b 100644
+--- a/crates/rvvdk-datamover/src/mover.rs
++++ b/crates/rvvdk-datamover/src/mover.rs
+@@ -168,8 +168,26 @@ impl DataMover {
+ 
+         let compatibility = evaluate_compatibility(source_backend, destination_backend);
+ 
+-        let selection =
+-            ExecutionSelection::raw(self.execution_strategy, compatibility.compatible())?;
++        endpoints.validate_io_modes(compatibility.direct_modes())?;
++        let issue = if self.execution_strategy == ExecutionStrategy::Threaded {
++            None
++        } else {
++            compatibility.request_issue(
++                0,
++                source_size,
++                self.options.block_size(),
++                self.options.buffer_alignment(),
++                extents
++                    .iter()
++                    .filter(|e| e.kind() == ExtentKind::Data)
++                    .map(|e| (e.offset(), e.length())),
++            )
++        };
++        let selection = ExecutionSelection::raw_requests(
++            self.execution_strategy,
++            compatibility.compatible(),
++            issue,
++        )?;
+         let backend = selection.selected();
+         let alignment = match backend {
+             ExecutionBackend::Threaded => self.options.buffer_alignment(),
+@@ -214,6 +232,16 @@ impl DataMover {
+             | ExecutionStrategy::Auto(execution_options) => {
+                 let compatibility = evaluate_compatibility(source, destination);
+ 
++                if let Some(issue) = compatibility.request_issue(
++                    offset,
++                    length,
++                    self.options.block_size(),
++                    self.options.buffer_alignment(),
++                    (length != 0).then_some((offset, length)),
++                ) {
++                    return Err(issue.into());
++                }
++
+                 if !compatibility.compatible() {
+                     return Err(Error::NativeExecutionUnsupported);
+                 }
+diff --git a/crates/rvvdk-datamover/src/preflight.rs b/crates/rvvdk-datamover/src/preflight.rs
+index 8fb62c7..5f0ee7e 100644
+--- a/crates/rvvdk-datamover/src/preflight.rs
++++ b/crates/rvvdk-datamover/src/preflight.rs
+@@ -148,10 +148,28 @@ pub(crate) struct RawEndpoints {
+     destination: CopyEndpoint,
+     source_fd: CopyEndpoint,
+     destination_fd: CopyEndpoint,
++    direct_modes: (bool, bool),
+ }
+ 
+ #[cfg(target_os = "linux")]
+ impl RawEndpoints {
++    pub(crate) fn validate_io_modes(&self, declared: (bool, bool)) -> Result<()> {
++        for (role, actual, expected) in [
++            ("source", self.direct_modes.0, declared.0),
++            ("destination", self.direct_modes.1, declared.1),
++        ] {
++            if actual != expected {
++                return Err(context(
++                    role,
++                    Error::EndpointChanged(
++                        "descriptor O_DIRECT disagrees with backend capabilities".into(),
++                    ),
++                ));
++            }
++        }
++        Ok(())
++    }
++
+     pub(crate) fn validate_native_binding(&self) -> Result<()> {
+         for (role, backend, descriptor) in [
+             ("source", self.source, self.source_fd),
+@@ -189,9 +207,10 @@ where
+     {
+         return Err(Error::AliasedEndpoints);
+     }
+-    let (source_info, source_fd) = raw_endpoint(source.device(), "source")?;
++    let (source_info, source_fd, source_direct) = raw_endpoint(source.device(), "source")?;
+     source_size(source_info, length)?;
+-    let (destination_info, destination_fd) = raw_endpoint(destination.device(), "destination")?;
++    let (destination_info, destination_fd, destination_direct) =
++        raw_endpoint(destination.device(), "destination")?;
+     pair(source_info, destination_info, 0, length, true)?;
+     pair(source_fd, destination_fd, 0, length, false)?;
+     Ok(RawEndpoints {
+@@ -199,11 +218,12 @@ where
+         destination: destination_info,
+         source_fd,
+         destination_fd,
++        direct_modes: (source_direct, destination_direct),
+     })
+ }
+ 
+ #[cfg(target_os = "linux")]
+-fn raw_endpoint<B>(backend: &B, role: &'static str) -> Result<(CopyEndpoint, CopyEndpoint)>
++fn raw_endpoint<B>(backend: &B, role: &'static str) -> Result<(CopyEndpoint, CopyEndpoint, bool)>
+ where
+     B: rvvdk_core::BlockDevice + rvvdk_platform::LinuxFdBackend,
+ {
+@@ -213,7 +233,7 @@ where
+         .copy_endpoint_from_inspection(&inspection)
+         .map_err(|e| context(role, e))?;
+     let descriptor = file_state(inspection.state(), role)?;
+-    Ok((logical, descriptor))
++    Ok((logical, descriptor, inspection.state().direct_io))
+ }
+ 
+ #[cfg(test)]
+diff --git a/crates/rvvdk-datamover/src/preparation.rs b/crates/rvvdk-datamover/src/preparation.rs
+index e79d431..64f81ba 100644
+--- a/crates/rvvdk-datamover/src/preparation.rs
++++ b/crates/rvvdk-datamover/src/preparation.rs
+@@ -65,7 +65,8 @@ impl DataMover {
+         S: BlockDevice + LinuxFdBackend,
+         D: BlockDevice + LinuxFdBackend,
+     {
+-        self.validate_raw_plan(plan, source, destination)?;
++        let compatibility = evaluate_compatibility(source.device(), destination.device());
++        self.validate_raw_plan(plan, source, destination, compatibility.direct_modes())?;
+         let executor = match plan.backend() {
+             ExecutionBackend::Threaded => PreparedExecutor::Threaded,
+             ExecutionBackend::IoUring => {
+@@ -79,22 +80,18 @@ impl DataMover {
+                     }
+                 };
+ 
+-                let native_extents = plan.extents().to_vec();
+-                self.native_memory(
+-                    plan.extent_capacity(),
+-                    native_extents.capacity(),
+-                    plan.data_bytes() != 0,
+-                    plan.extent_count() != 0,
+-                    execution_options,
+-                )?
+-                .check(self.options.memory_budget(), "native plan")?;
+-                let native_plan = NativeExtentPlan::new(native_extents, plan.logical_bytes())?;
+-
+-                let source_backend = source.device();
+-
+-                let destination_backend = destination.device();
+-
+-                let compatibility = evaluate_compatibility(source_backend, destination_backend);
++                if let Some(issue) = compatibility.request_issue(
++                    0,
++                    plan.logical_bytes(),
++                    self.options.block_size(),
++                    self.options.buffer_alignment(),
++                    plan.extents()
++                        .iter()
++                        .filter(|e| e.kind() == ExtentKind::Data)
++                        .map(|e| (e.offset(), e.length())),
++                ) {
++                    return Err(issue.into());
++                }
+ 
+                 if !compatibility.compatible() {
+                     return Err(Error::NativeExecutionUnsupported);
+@@ -112,6 +109,17 @@ impl DataMover {
+                     )));
+                 }
+ 
++                let native_extents = plan.extents().to_vec();
++                self.native_memory(
++                    plan.extent_capacity(),
++                    native_extents.capacity(),
++                    plan.data_bytes() != 0,
++                    plan.extent_count() != 0,
++                    execution_options,
++                )?
++                .check(self.options.memory_budget(), "native plan")?;
++                let native_plan = NativeExtentPlan::new(native_extents, plan.logical_bytes())?;
++
+                 PreparedExecutor::IoUring {
+                     native_plan,
+                     options: execution_options,
+@@ -155,6 +163,7 @@ impl DataMover {
+         plan: &CopyPlan,
+         source: &RawDisk<S>,
+         destination: &RawDisk<D>,
++        direct_modes: (bool, bool),
+     ) -> Result<()>
+     where
+         S: BlockDevice + LinuxFdBackend,
+@@ -162,6 +171,7 @@ impl DataMover {
+     {
+         self.validate_plan(plan, source, destination, || {
+             let endpoints = crate::preflight::raw_pair(source, destination, plan.logical_bytes())?;
++            endpoints.validate_io_modes(direct_modes)?;
+             if plan.backend() == ExecutionBackend::IoUring
+                 && plan
+                     .extents()
+diff --git a/crates/rvvdk-platform/src/linux.rs b/crates/rvvdk-platform/src/linux.rs
+index d49234e..0e5c753 100644
+--- a/crates/rvvdk-platform/src/linux.rs
++++ b/crates/rvvdk-platform/src/linux.rs
+@@ -98,6 +98,7 @@ pub struct FileState {
+     pub readable: bool,
+     pub writable: bool,
+     pub append: bool,
++    pub direct_io: bool,
+ }
+ 
+ /// One point-in-time inspection bound to a live descriptor borrow.
+@@ -165,6 +166,7 @@ pub fn inspect_file(fd: std::os::fd::BorrowedFd<'_>) -> std::io::Result<FileStat
+         readable: !path_only && matches!(flags & libc::O_ACCMODE, libc::O_RDONLY | libc::O_RDWR),
+         writable: !path_only && matches!(flags & libc::O_ACCMODE, libc::O_WRONLY | libc::O_RDWR),
+         append: flags & libc::O_APPEND != 0,
++        direct_io: flags & libc::O_DIRECT != 0,
+     })
+ }
+ 
+diff --git a/crates/rvvdk-core/src/native_request.rs b/crates/rvvdk-core/src/native_request.rs
+new file mode 100644
+index 0000000..7e08c9f
+--- /dev/null
++++ b/crates/rvvdk-core/src/native_request.rs
+@@ -0,0 +1,34 @@
++use thiserror::Error;
++
++/// A deterministic native request restriction, detected before submission.
++#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
++#[non_exhaustive]
++pub enum NativeRequestIssue {
++    #[error("native block size {block_size} must be in 1..=u32::MAX")]
++    BlockSize { block_size: usize },
++    #[error("native range offset={offset}, length={length} exceeds the nonnegative i64 domain")]
++    Range { offset: u64, length: u64 },
++    #[error("{endpoint} declares invalid native alignment: memory={memory}, offset={offset}")]
++    DescriptorAlignment {
++        endpoint: &'static str,
++        memory: usize,
++        offset: usize,
++    },
++    #[error("invalid native buffer layout: block_size={block_size}, alignment={alignment}")]
++    BufferLayout { block_size: usize, alignment: usize },
++    #[error(
++        "{endpoint} direct request offset={offset}, length={length} requires alignment={alignment}"
++    )]
++    DirectRange {
++        endpoint: &'static str,
++        offset: u64,
++        length: u64,
++        alignment: usize,
++    },
++    #[error("{endpoint} native block size={block_size} requires direct alignment={alignment}")]
++    DirectBlockSize {
++        endpoint: &'static str,
++        block_size: usize,
++        alignment: usize,
++    },
++}
+diff --git a/crates/rvvdk-datamover/benches/native_requests.rs b/crates/rvvdk-datamover/benches/native_requests.rs
+new file mode 100644
+index 0000000..aa16d9d
+--- /dev/null
++++ b/crates/rvvdk-datamover/benches/native_requests.rs
+@@ -0,0 +1,94 @@
++mod support;
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use rvvdk_core::{RawDisk, VirtualDisk};
++use rvvdk_datamover::{
++    CopyOptions, DataMover, ExecutionBackend, ExecutionStrategy, IoUringExecutionOptions,
++};
++use rvvdk_local::LocalFileBlockDevice;
++use std::{
++    hint::black_box,
++    time::{Duration, Instant},
++};
++
++fn native_requests(criterion: &mut Criterion) {
++    support::ensure_benchmark_directory();
++    for (name, source_direct, tail) in [
++        ("direct_source", true, 0),
++        ("direct_destination", false, 0),
++        ("tail_fallback", false, 7),
++    ] {
++        let size = 16 * support::MIB + tail;
++        let src = support::benchmark_path(&format!("r24-{name}-source"));
++        let dst = support::benchmark_path(&format!("r24-{name}-destination"));
++        support::create_incompressible_file(&src, size, 0x52562401);
++        support::create_incompressible_file(&dst, size, 0x52562402);
++        let expected = std::fs::read(&src).unwrap();
++        let prefill = std::fs::read(&dst).unwrap();
++        let source = RawDisk::new(
++            if source_direct {
++                LocalFileBlockDevice::open_direct_read_only(&src)
++            } else {
++                LocalFileBlockDevice::open_read_only(&src)
++            }
++            .unwrap(),
++        );
++        let destination = RawDisk::new(
++            if source_direct {
++                LocalFileBlockDevice::open_read_write(&dst)
++            } else {
++                LocalFileBlockDevice::open_direct_read_write(&dst)
++            }
++            .unwrap(),
++        );
++        let mover = DataMover::with_execution_strategy(
++            CopyOptions::new(65536).unwrap(),
++            ExecutionStrategy::Auto(IoUringExecutionOptions::new(8).unwrap()),
++        );
++        let backend = if tail == 0 {
++            ExecutionBackend::IoUring
++        } else {
++            ExecutionBackend::Threaded
++        };
++        let mut group = criterion.benchmark_group("native_requests_plan");
++        group.sampling_mode(SamplingMode::Flat);
++        group.bench_function(name, |b| {
++            b.iter(|| {
++                let plan = mover
++                    .plan_raw_with_destination(black_box(&source), black_box(&destination))
++                    .unwrap();
++                assert_eq!(plan.backend(), backend);
++                assert_eq!(plan.data_bytes(), size as u64);
++                black_box(plan);
++            })
++        });
++        group.finish();
++        let mut actual = vec![0; size];
++        let mut group = criterion.benchmark_group("native_requests_copy");
++        group.sampling_mode(SamplingMode::Flat);
++        group.bench_function(name, |b| {
++            b.iter_custom(|iterations| {
++                let mut elapsed = Duration::ZERO;
++                for _ in 0..iterations {
++                    destination.write_all_at(0, &prefill).unwrap();
++                    destination.flush().unwrap();
++                    let started = Instant::now();
++                    let report = mover.copy_raw_with_report(&source, &destination).unwrap();
++                    elapsed += started.elapsed();
++                    assert_eq!(report.backend(), backend);
++                    assert_eq!(report.stats().bytes_read(), size as u64);
++                    assert_eq!(report.stats().bytes_written(), size as u64);
++                    destination.read_exact_at(0, &mut actual).unwrap();
++                    assert_eq!(actual, expected);
++                }
++                elapsed
++            })
++        });
++        group.finish();
++        drop(source);
++        drop(destination);
++        support::remove_file(src);
++        support::remove_file(dst);
++    }
++}
++criterion_group! { name = benches; config = Criterion::default().sample_size(30).warm_up_time(Duration::from_millis(300)).measurement_time(Duration::from_secs(2)); targets = native_requests }
++criterion_main!(benches);
+diff --git a/crates/rvvdk-datamover/tests/native_requests.rs b/crates/rvvdk-datamover/tests/native_requests.rs
+new file mode 100644
+index 0000000..8e0054a
+--- /dev/null
++++ b/crates/rvvdk-datamover/tests/native_requests.rs
+@@ -0,0 +1,352 @@
++#![cfg(target_os = "linux")]
++use rvvdk_core::{
++    BlockDevice, Capabilities, CopyEndpoint, DiskGeometry, Error, Extent, ExtentKind,
++    NativeRequestIssue, RawDisk, Result, VirtualDisk,
++};
++use rvvdk_datamover::{
++    CopyOptions, DataMover, ExecutionBackend, ExecutionSelectionReason, ExecutionStrategy,
++    IoUringExecutionOptions,
++};
++use rvvdk_local::LocalFileBlockDevice;
++use rvvdk_platform::{LinuxFdBackend, LinuxFdCapabilities};
++use std::{
++    fs,
++    os::fd::{AsFd, AsRawFd, BorrowedFd},
++    sync::atomic::{AtomicUsize, Ordering},
++};
++
++struct Source {
++    file: LocalFileBlockDevice,
++    extents: Vec<Extent>,
++    offset_alignment: AtomicUsize,
++}
++impl AsFd for Source {
++    fn as_fd(&self) -> BorrowedFd<'_> {
++        self.file.as_fd()
++    }
++}
++impl LinuxFdBackend for Source {
++    fn linux_fd_capabilities(&self) -> LinuxFdCapabilities {
++        let caps = self.file.linux_fd_capabilities();
++        let alignment = self.offset_alignment.load(Ordering::Relaxed);
++        LinuxFdCapabilities::new(
++            caps.direct_io(),
++            caps.memory_alignment(),
++            if alignment == 0 {
++                caps.offset_alignment()
++            } else {
++                alignment
++            },
++        )
++    }
++}
++impl BlockDevice for Source {
++    fn geometry(&self) -> DiskGeometry {
++        self.file.geometry()
++    }
++    fn capabilities(&self) -> Capabilities {
++        self.file.capabilities()
++    }
++    fn copy_endpoint(&self) -> Result<CopyEndpoint> {
++        self.file.copy_endpoint()
++    }
++    fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
++        self.file.read_at(offset, buffer)
++    }
++    fn write_at(&self, _: u64, _: &[u8]) -> Result<usize> {
++        Err(Error::Unsupported)
++    }
++    fn flush(&self) -> Result<()> {
++        Err(Error::Unsupported)
++    }
++    fn extents(&self, offset: u64, length: u64) -> Result<Vec<Extent>> {
++        assert_eq!((offset, length), (0, self.file.size()));
++        Ok(self.extents.clone())
++    }
++}
++fn fixture(
++    size: usize,
++    source_direct: bool,
++    destination_direct: bool,
++    layout: &[(u64, u64, ExtentKind)],
++) -> (RawDisk<Source>, RawDisk<LocalFileBlockDevice>, Vec<u8>) {
++    static NEXT: AtomicUsize = AtomicUsize::new(0);
++    let path = std::env::var_os("RVVDK_TEST_DIR")
++        .map(std::path::PathBuf::from)
++        .unwrap_or_else(std::env::temp_dir)
++        .join(format!(
++            "rvvdk-r24-{}-{}",
++            std::process::id(),
++            NEXT.fetch_add(1, Ordering::Relaxed)
++        ));
++    let src = path.with_extension("src");
++    let dst = path.with_extension("dst");
++    let mut expected = vec![0; size];
++    for &(offset, length, kind) in layout {
++        if kind == ExtentKind::Data {
++            expected[offset as usize..(offset + length) as usize].fill(0x5a);
++        }
++    }
++    fs::write(&src, &expected).unwrap();
++    fs::write(&dst, vec![0xa5; size]).unwrap();
++    let file = if source_direct {
++        LocalFileBlockDevice::open_direct_read_only(&src)
++    } else {
++        LocalFileBlockDevice::open_read_only(&src)
++    }
++    .unwrap();
++    let destination = if destination_direct {
++        LocalFileBlockDevice::open_direct_read_write(&dst)
++    } else {
++        LocalFileBlockDevice::open_read_write(&dst)
++    }
++    .unwrap();
++    fs::remove_file(src).unwrap();
++    fs::remove_file(dst).unwrap();
++    (
++        RawDisk::new(Source {
++            file,
++            extents: layout
++                .iter()
++                .map(|&(o, l, k)| Extent::new(o, l, k).unwrap())
++                .collect(),
++            offset_alignment: AtomicUsize::new(0),
++        }),
++        RawDisk::new(destination),
++        expected,
++    )
++}
++fn mover(auto: bool, block: usize, workers: usize) -> DataMover {
++    let options = CopyOptions::with_execution(block, 4096, workers, 2).unwrap();
++    let native = IoUringExecutionOptions::new(4).unwrap();
++    DataMover::with_execution_strategy(
++        options,
++        if auto {
++            ExecutionStrategy::Auto(native)
++        } else {
++            ExecutionStrategy::IoUring(native)
++        },
++    )
++}
++fn bytes(disk: &RawDisk<LocalFileBlockDevice>) -> Vec<u8> {
++    let mut data = vec![0; disk.size() as usize];
++    disk.read_exact_at(0, &mut data).unwrap();
++    data
++}
++
++#[test]
++fn odd_and_aligned_copies_select_once_and_preserve_bytes_across_endpoint_modes() {
++    for size in [1, 4097, 12288] {
++        for (sd, dd) in [(false, false), (true, false), (false, true), (true, true)] {
++            for workers in [1, 4] {
++                for observed in [false, true] {
++                    let (source, destination, expected) =
++                        fixture(size, sd, dd, &[(0, size as u64, ExtentKind::Data)]);
++                    let mover = mover(true, 4096, workers);
++                    let plan = mover
++                        .plan_raw_with_destination(&source, &destination)
++                        .unwrap();
++                    let fallback = size != 12288 && (sd || dd);
++                    assert_eq!(
++                        plan.backend(),
++                        if fallback {
++                            ExecutionBackend::Threaded
++                        } else {
++                            ExecutionBackend::IoUring
++                        }
++                    );
++                    if fallback {
++                        assert!(matches!(
++                            plan.execution_selection().reason(),
++                            ExecutionSelectionReason::RawRequestsIncompatible(
++                                NativeRequestIssue::DirectRange { .. }
++                            )
++                        ));
++                    }
++                    let callbacks = AtomicUsize::new(0);
++                    let observer = |p: &rvvdk_datamover::ProgressSnapshot| {
++                        assert_eq!(p.backend(), plan.backend());
++                        callbacks.fetch_add(1, Ordering::Relaxed);
++                    };
++                    let report = if observed {
++                        mover.execute_raw_plan_with_observer(
++                            &plan,
++                            &source,
++                            &destination,
++                            &observer,
++                        )
++                    } else {
++                        mover.execute_raw_plan(&plan, &source, &destination)
++                    }
++                    .unwrap();
++                    assert_eq!(report.backend(), plan.backend());
++                    assert_eq!(report.stats().bytes_read(), size as u64);
++                    assert_eq!(report.stats().bytes_written(), size as u64);
++                    assert_eq!(bytes(&destination), expected);
++                    assert_eq!(callbacks.load(Ordering::Relaxed) > 0, observed);
++                }
++            }
++        }
++    }
++}
++
++#[test]
++fn unaligned_data_after_sparse_prefix_falls_back_or_rejects_before_mutation() {
++    let layout = [
++        (0, 1, ExtentKind::Zero),
++        (1, 4096, ExtentKind::Data),
++        (4097, 4095, ExtentKind::Hole),
++    ];
++    for (sd, dd) in [(true, false), (false, true), (true, true)] {
++        let (source, destination, expected) = fixture(8192, sd, dd, &layout);
++        let explicit = mover(false, 4096, 1);
++        assert!(matches!(
++            explicit.plan_raw_with_destination(&source, &destination),
++            Err(Error::NativeRequestIncompatible(issue)) if matches!(*issue, NativeRequestIssue::DirectRange { offset: 1, .. })
++        ));
++        assert_eq!(bytes(&destination), vec![0xa5; 8192]);
++        let auto = mover(true, 4096, 1);
++        let plan = auto
++            .plan_raw_with_destination(&source, &destination)
++            .unwrap();
++        assert_eq!(plan.backend(), ExecutionBackend::Threaded);
++        let report = auto.execute_raw_plan(&plan, &source, &destination).unwrap();
++        assert_eq!(report.stats().bytes_read(), 4096);
++        assert_eq!(report.stats().bytes_zeroed(), 1);
++        assert_eq!(report.stats().bytes_discarded(), 4095);
++        assert_eq!(bytes(&destination), expected);
++    }
++}
++
++#[test]
++fn preparation_rechecks_requests_before_callbacks_and_sparse_prefix_then_allows_replanning() {
++    for auto in [false, true] {
++        let (source, destination, expected) = fixture(
++            12288,
++            true,
++            false,
++            &[(0, 4096, ExtentKind::Zero), (4096, 8192, ExtentKind::Data)],
++        );
++        let mover = mover(auto, 4096, 1);
++        let plan = mover
++            .plan_raw_with_destination(&source, &destination)
++            .unwrap();
++        source
++            .device()
++            .offset_alignment
++            .store(8192, Ordering::Relaxed);
++        let calls = AtomicUsize::new(0);
++        let observer = |_: &rvvdk_datamover::ProgressSnapshot| {
++            calls.fetch_add(1, Ordering::Relaxed);
++        };
++        for observed in [false, true] {
++            let result = if observed {
++                mover.execute_raw_plan_with_observer(&plan, &source, &destination, &observer)
++            } else {
++                mover.execute_raw_plan(&plan, &source, &destination)
++            };
++            assert!(matches!(
++                result,
++                Err(Error::NativeRequestIncompatible(issue)) if matches!(*issue, NativeRequestIssue::DirectRange { offset: 4096, .. })
++            ));
++            assert_eq!(bytes(&destination), vec![0xa5; 12288]);
++            assert_eq!(calls.load(Ordering::Relaxed), 0);
++        }
++        if auto {
++            let replanned = mover
++                .plan_raw_with_destination(&source, &destination)
++                .unwrap();
++            assert_eq!(replanned.backend(), ExecutionBackend::Threaded);
++            mover
++                .execute_raw_plan(&replanned, &source, &destination)
++                .unwrap();
++            assert_eq!(bytes(&destination), expected);
++        }
++    }
++}
++
++#[test]
++fn changed_direct_flag_is_rejected_before_observation() {
++    let (source, destination, _) = fixture(8192, false, false, &[(0, 8192, ExtentKind::Data)]);
++    let mover = mover(true, 4096, 1);
++    let plan = mover
++        .plan_raw_with_destination(&source, &destination)
++        .unwrap();
++    let fd = source.device().as_fd().as_raw_fd();
++    // SAFETY: fd is live; F_GETFL/F_SETFL have no pointer arguments.
++    let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
++    assert!(flags >= 0);
++    // SAFETY: changes only this owned source descriptor's flags during the test.
++    assert_eq!(
++        unsafe { libc::fcntl(fd, libc::F_SETFL, flags | libc::O_DIRECT) },
++        0
++    );
++    let result = mover.execute_raw_plan_with_observer(
++        &plan,
++        &source,
++        &destination,
++        &|_: &rvvdk_datamover::ProgressSnapshot| panic!("preflight must reject before callback"),
++    );
++    // SAFETY: restore the original flags on the still-live descriptor.
++    assert_eq!(unsafe { libc::fcntl(fd, libc::F_SETFL, flags) }, 0);
++    assert!(
++        matches!(result,Err(Error::EndpointPreflight { endpoint:"source",source }) if matches!(*source,Error::EndpointChanged(_)))
++    );
++    assert_eq!(bytes(&destination), vec![0xa5; 8192]);
++}
++
++#[test]
++fn fallback_uses_threaded_budget_and_fd_only_native_api_never_silently_falls_back() {
++    let (source, destination, expected) = fixture(4097, true, true, &[(0, 4097, ExtentKind::Data)]);
++    let mover = DataMover::with_execution_strategy(
++        CopyOptions::new(4096).unwrap().with_memory_budget(5000),
++        ExecutionStrategy::Auto(IoUringExecutionOptions::new(8).unwrap()),
++    );
++    let plan = mover
++        .plan_raw_with_destination(&source, &destination)
++        .unwrap();
++    assert_eq!(plan.backend(), ExecutionBackend::Threaded);
++    mover
++        .execute_raw_plan(&plan, &source, &destination)
++        .unwrap();
++    assert_eq!(bytes(&destination), expected);
++    assert!(matches!(
++        mover.copy_native_with_report(source.device(), destination.device(), 1, 4096),
++        Err(Error::NativeRequestIncompatible(issue)) if matches!(*issue, NativeRequestIssue::DirectRange { offset: 1, .. })
++    ));
++}
++
++#[test]
++fn unaligned_split_block_falls_back_but_unused_block_boundary_is_allowed() {
++    for (size, fallback) in [(4096, false), (8192, true)] {
++        let (source, destination, expected) =
++            fixture(size, true, true, &[(0, size as u64, ExtentKind::Data)]);
++        let mover = mover(true, 4097, 1);
++        let plan = mover
++            .plan_raw_with_destination(&source, &destination)
++            .unwrap();
++        assert_eq!(
++            plan.backend(),
++            if fallback {
++                ExecutionBackend::Threaded
++            } else {
++                ExecutionBackend::IoUring
++            }
++        );
++        if fallback {
++            assert!(matches!(
++                plan.execution_selection().reason(),
++                ExecutionSelectionReason::RawRequestsIncompatible(
++                    NativeRequestIssue::DirectBlockSize {
++                        block_size: 4097,
++                        ..
++                    }
++                )
++            ));
++        }
++        mover
++            .execute_raw_plan(&plan, &source, &destination)
++            .unwrap();
++        assert_eq!(bytes(&destination), expected);
++    }
++}

@@ -4,6 +4,9 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error("native request is incompatible: {0}")]
+    NativeRequestIncompatible(#[source] Box<crate::NativeRequestIssue>),
+
     #[error("copy memory budget exceeded during {phase}: required={required}, budget={budget}")]
     MemoryBudgetExceeded {
         phase: &'static str,
@@ -164,5 +167,12 @@ impl Error {
             Self::EndpointPreflight { source, .. } => source.copy_failure(),
             _ => None,
         }
+    }
+}
+
+impl From<crate::NativeRequestIssue> for Error {
+    #[cold]
+    fn from(issue: crate::NativeRequestIssue) -> Self {
+        Self::NativeRequestIncompatible(Box::new(issue))
     }
 }

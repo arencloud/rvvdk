@@ -11,6 +11,9 @@ rvvdk-platform = { path = "../rvvdk-platform" }
 [target.'cfg(target_os = "linux")'.dependencies]
 io-uring = "0.7.15"
 
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+libc = "0.2.189"
+
 [dev-dependencies]
 rvvdk-local = { path = "../rvvdk-local" }
 criterion = "0.8.2"
@@ -69,4 +72,8 @@ harness = false
 
 [[bench]]
 name = "local_sparse"
+harness = false
+
+[[bench]]
+name = "native_requests"
 harness = false

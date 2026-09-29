@@ -168,8 +168,26 @@ impl DataMover {
 
         let compatibility = evaluate_compatibility(source_backend, destination_backend);
 
-        let selection =
-            ExecutionSelection::raw(self.execution_strategy, compatibility.compatible())?;
+        endpoints.validate_io_modes(compatibility.direct_modes())?;
+        let issue = if self.execution_strategy == ExecutionStrategy::Threaded {
+            None
+        } else {
+            compatibility.request_issue(
+                0,
+                source_size,
+                self.options.block_size(),
+                self.options.buffer_alignment(),
+                extents
+                    .iter()
+                    .filter(|e| e.kind() == ExtentKind::Data)
+                    .map(|e| (e.offset(), e.length())),
+            )
+        };
+        let selection = ExecutionSelection::raw_requests(
+            self.execution_strategy,
+            compatibility.compatible(),
+            issue,
+        )?;
         let backend = selection.selected();
         let alignment = match backend {
             ExecutionBackend::Threaded => self.options.buffer_alignment(),
@@ -213,6 +231,16 @@ impl DataMover {
             ExecutionStrategy::IoUring(execution_options)
             | ExecutionStrategy::Auto(execution_options) => {
                 let compatibility = evaluate_compatibility(source, destination);
+
+                if let Some(issue) = compatibility.request_issue(
+                    offset,
+                    length,
+                    self.options.block_size(),
+                    self.options.buffer_alignment(),
+                    (length != 0).then_some((offset, length)),
+                ) {
+                    return Err(issue.into());
+                }
 
                 if !compatibility.compatible() {
                     return Err(Error::NativeExecutionUnsupported);

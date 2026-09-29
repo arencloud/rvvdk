@@ -98,6 +98,7 @@ pub struct FileState {
     pub readable: bool,
     pub writable: bool,
     pub append: bool,
+    pub direct_io: bool,
 }
 
 /// One point-in-time inspection bound to a live descriptor borrow.
@@ -165,6 +166,7 @@ pub fn inspect_file(fd: std::os::fd::BorrowedFd<'_>) -> std::io::Result<FileStat
         readable: !path_only && matches!(flags & libc::O_ACCMODE, libc::O_RDONLY | libc::O_RDWR),
         writable: !path_only && matches!(flags & libc::O_ACCMODE, libc::O_WRONLY | libc::O_RDWR),
         append: flags & libc::O_APPEND != 0,
+        direct_io: flags & libc::O_DIRECT != 0,
     })
 }
 

@@ -148,10 +148,28 @@ pub(crate) struct RawEndpoints {
     destination: CopyEndpoint,
     source_fd: CopyEndpoint,
     destination_fd: CopyEndpoint,
+    direct_modes: (bool, bool),
 }
 
 #[cfg(target_os = "linux")]
 impl RawEndpoints {
+    pub(crate) fn validate_io_modes(&self, declared: (bool, bool)) -> Result<()> {
+        for (role, actual, expected) in [
+            ("source", self.direct_modes.0, declared.0),
+            ("destination", self.direct_modes.1, declared.1),
+        ] {
+            if actual != expected {
+                return Err(context(
+                    role,
+                    Error::EndpointChanged(
+                        "descriptor O_DIRECT disagrees with backend capabilities".into(),
+                    ),
+                ));
+            }
+        }
+        Ok(())
+    }
+
     pub(crate) fn validate_native_binding(&self) -> Result<()> {
         for (role, backend, descriptor) in [
             ("source", self.source, self.source_fd),
@@ -189,9 +207,10 @@ where
     {
         return Err(Error::AliasedEndpoints);
     }
-    let (source_info, source_fd) = raw_endpoint(source.device(), "source")?;
+    let (source_info, source_fd, source_direct) = raw_endpoint(source.device(), "source")?;
     source_size(source_info, length)?;
-    let (destination_info, destination_fd) = raw_endpoint(destination.device(), "destination")?;
+    let (destination_info, destination_fd, destination_direct) =
+        raw_endpoint(destination.device(), "destination")?;
     pair(source_info, destination_info, 0, length, true)?;
     pair(source_fd, destination_fd, 0, length, false)?;
     Ok(RawEndpoints {
@@ -199,11 +218,12 @@ where
         destination: destination_info,
         source_fd,
         destination_fd,
+        direct_modes: (source_direct, destination_direct),
     })
 }
 
 #[cfg(target_os = "linux")]
-fn raw_endpoint<B>(backend: &B, role: &'static str) -> Result<(CopyEndpoint, CopyEndpoint)>
+fn raw_endpoint<B>(backend: &B, role: &'static str) -> Result<(CopyEndpoint, CopyEndpoint, bool)>
 where
     B: rvvdk_core::BlockDevice + rvvdk_platform::LinuxFdBackend,
 {
@@ -213,7 +233,7 @@ where
         .copy_endpoint_from_inspection(&inspection)
         .map_err(|e| context(role, e))?;
     let descriptor = file_state(inspection.state(), role)?;
-    Ok((logical, descriptor))
+    Ok((logical, descriptor, inspection.state().direct_io))
 }
 
 #[cfg(test)]

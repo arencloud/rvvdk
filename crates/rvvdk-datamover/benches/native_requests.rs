@@ -1,0 +1,94 @@
+mod support;
+use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
+use rvvdk_core::{RawDisk, VirtualDisk};
+use rvvdk_datamover::{
+    CopyOptions, DataMover, ExecutionBackend, ExecutionStrategy, IoUringExecutionOptions,
+};
+use rvvdk_local::LocalFileBlockDevice;
+use std::{
+    hint::black_box,
+    time::{Duration, Instant},
+};
+
+fn native_requests(criterion: &mut Criterion) {
+    support::ensure_benchmark_directory();
+    for (name, source_direct, tail) in [
+        ("direct_source", true, 0),
+        ("direct_destination", false, 0),
+        ("tail_fallback", false, 7),
+    ] {
+        let size = 16 * support::MIB + tail;
+        let src = support::benchmark_path(&format!("r24-{name}-source"));
+        let dst = support::benchmark_path(&format!("r24-{name}-destination"));
+        support::create_incompressible_file(&src, size, 0x52562401);
+        support::create_incompressible_file(&dst, size, 0x52562402);
+        let expected = std::fs::read(&src).unwrap();
+        let prefill = std::fs::read(&dst).unwrap();
+        let source = RawDisk::new(
+            if source_direct {
+                LocalFileBlockDevice::open_direct_read_only(&src)
+            } else {
+                LocalFileBlockDevice::open_read_only(&src)
+            }
+            .unwrap(),
+        );
+        let destination = RawDisk::new(
+            if source_direct {
+                LocalFileBlockDevice::open_read_write(&dst)
+            } else {
+                LocalFileBlockDevice::open_direct_read_write(&dst)
+            }
+            .unwrap(),
+        );
+        let mover = DataMover::with_execution_strategy(
+            CopyOptions::new(65536).unwrap(),
+            ExecutionStrategy::Auto(IoUringExecutionOptions::new(8).unwrap()),
+        );
+        let backend = if tail == 0 {
+            ExecutionBackend::IoUring
+        } else {
+            ExecutionBackend::Threaded
+        };
+        let mut group = criterion.benchmark_group("native_requests_plan");
+        group.sampling_mode(SamplingMode::Flat);
+        group.bench_function(name, |b| {
+            b.iter(|| {
+                let plan = mover
+                    .plan_raw_with_destination(black_box(&source), black_box(&destination))
+                    .unwrap();
+                assert_eq!(plan.backend(), backend);
+                assert_eq!(plan.data_bytes(), size as u64);
+                black_box(plan);
+            })
+        });
+        group.finish();
+        let mut actual = vec![0; size];
+        let mut group = criterion.benchmark_group("native_requests_copy");
+        group.sampling_mode(SamplingMode::Flat);
+        group.bench_function(name, |b| {
+            b.iter_custom(|iterations| {
+                let mut elapsed = Duration::ZERO;
+                for _ in 0..iterations {
+                    destination.write_all_at(0, &prefill).unwrap();
+                    destination.flush().unwrap();
+                    let started = Instant::now();
+                    let report = mover.copy_raw_with_report(&source, &destination).unwrap();
+                    elapsed += started.elapsed();
+                    assert_eq!(report.backend(), backend);
+                    assert_eq!(report.stats().bytes_read(), size as u64);
+                    assert_eq!(report.stats().bytes_written(), size as u64);
+                    destination.read_exact_at(0, &mut actual).unwrap();
+                    assert_eq!(actual, expected);
+                }
+                elapsed
+            })
+        });
+        group.finish();
+        drop(source);
+        drop(destination);
+        support::remove_file(src);
+        support::remove_file(dst);
+    }
+}
+criterion_group! { name = benches; config = Criterion::default().sample_size(30).warm_up_time(Duration::from_millis(300)).measurement_time(Duration::from_secs(2)); targets = native_requests }
+criterion_main!(benches);
