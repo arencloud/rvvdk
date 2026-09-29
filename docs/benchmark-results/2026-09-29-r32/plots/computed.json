@@ -1,0 +1,184 @@
+{
+  "main": [
+    {
+      "benchmark": "preflight_copy/threaded",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          7469327.8,
+          7519855.3,
+          7277099.7
+        ],
+        "candidate": [
+          7474695.9,
+          7557846.300000001,
+          7432609.2
+        ]
+      },
+      "baseline_ns": 7469327.8,
+      "candidate_ns": 7474695.9,
+      "change_percent": 0.0718685823374976,
+      "paired_changes_percent": [
+        0.0718685823374976,
+        0.5052091893310795,
+        2.136970859420817
+      ]
+    },
+    {
+      "benchmark": "preflight_copy/native",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          7551762.6,
+          7667313.1,
+          7673788.0
+        ],
+        "candidate": [
+          7622623.1,
+          7519484.800000001,
+          7609574.6
+        ]
+      },
+      "baseline_ns": 7667313.1,
+      "candidate_ns": 7609574.6,
+      "change_percent": -0.7530473745750665,
+      "paired_changes_percent": [
+        0.9383306090686716,
+        -1.9280326507078338,
+        -0.8367888192897688
+      ]
+    },
+    {
+      "benchmark": "cli_preview/inspect_dense_json",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          18145.667553865653,
+          16647.573259612967,
+          16395.01935483871
+        ],
+        "candidate": [
+          15701.006029684602,
+          15824.489235337787,
+          15417.0263700986
+        ]
+      },
+      "baseline_ns": 16647.573259612967,
+      "candidate_ns": 15701.006029684602,
+      "change_percent": -5.685917191454792,
+      "paired_changes_percent": [
+        -13.472425398095943,
+        -4.944168206617738,
+        -5.965183471719859
+      ]
+    },
+    {
+      "benchmark": "cli_preview/plan_new_json",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          22438.598484848484,
+          22259.023429364803,
+          21872.666834002677
+        ],
+        "candidate": [
+          23820.811044460126,
+          22047.06127856906,
+          22126.455778894473
+        ]
+      },
+      "baseline_ns": 22259.023429364803,
+      "candidate_ns": 22126.455778894473,
+      "change_percent": -0.5955681339345875,
+      "paired_changes_percent": [
+        6.1599772398662545,
+        -0.9522526963879008,
+        1.1603017904394886
+      ]
+    }
+  ],
+  "followup": [
+    {
+      "benchmark": "cli_preview/plan_new_json",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          22260.730327520207,
+          22785.384271671137,
+          23263.965055674013
+        ],
+        "candidate": [
+          23026.077038577037,
+          24198.08849770919,
+          22801.873046875
+        ]
+      },
+      "baseline_ns": 22785.384271671137,
+      "candidate_ns": 23026.077038577037,
+      "change_percent": 1.0563471918494383,
+      "paired_changes_percent": [
+        3.438102433282064,
+        6.200045648536423,
+        -1.986299445056594
+      ]
+    }
+  ],
+  "candidate_only": [
+    {
+      "benchmark": "cli_transfer/threaded_new",
+      "candidate_ns": 20152528.666666664,
+      "run_medians_ns": [
+        20950962.166666664,
+        19305525.833333336,
+        20152528.666666664
+      ]
+    },
+    {
+      "benchmark": "cli_transfer/threaded_new_verify",
+      "candidate_ns": 31896403.5,
+      "run_medians_ns": [
+        31162040.75,
+        31896403.5,
+        32692786.5
+      ]
+    },
+    {
+      "benchmark": "cli_transfer/native_new_verify",
+      "candidate_ns": 31328195.75,
+      "run_medians_ns": [
+        30470208.0,
+        31328195.75,
+        32561709.5
+      ]
+    },
+    {
+      "benchmark": "cli_transfer/verify_only",
+      "candidate_ns": 2736015.85,
+      "run_medians_ns": [
+        3094633.3181818184,
+        2726022.55,
+        2736015.85
+      ]
+    }
+  ]
+}

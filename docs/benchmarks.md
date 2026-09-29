@@ -13,10 +13,12 @@ the direct io_uring comparison. The harness correction is committed, but those
 historical results still need replacement measurements. Do not derive engine
 defaults or performance claims from an unmatched comparison.
 
-Latest measured step: [R3.1 read-only RAW CLI](benchmark-results/2026-09-29-r31/README.md)
-includes SVG/PNG charts, matched library-planning controls, and candidate-only
-CLI parsing/inspection/serialization and whole-process launch measurements. Performance qualification remains open;
-see its raw evidence and limitations before interpreting the aggregates.
+Latest measured step: [R3.2 RAW copy and verification](benchmark-results/2026-09-29-r32/README.md)
+includes SVG/PNG charts, matched library-copy and CLI-preview controls, and
+candidate-only copy/publication/read-back measurements. Initial argument-building
+regressions and the subsequent optimization are retained separately. Performance
+qualification remains open; see the raw evidence and limitations before interpreting
+aggregates.
 
 ### PERF.0 — Establish a reproducible baseline
 

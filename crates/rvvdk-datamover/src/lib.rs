@@ -38,3 +38,6 @@ pub use observer::{NoopProgressObserver, ProgressObserver};
 pub use plan::{CopyPlan, CopyPlanSummary};
 pub(crate) use progress::ProgressState;
 pub use progress::{ProgressCompleted, ProgressSnapshot, ProgressTotals};
+
+mod verify;
+pub use verify::{VerificationReport, Verifier};

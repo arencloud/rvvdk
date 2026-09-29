@@ -43,7 +43,7 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 | V0 | Planned | Independent VMware access feasibility; licensed/evaluation host needed for representative API workflows | Pending — first transport baseline follows functional proof |
 
 R1.1–R1.6 and R2.1–R2.6 are complete within their documented scopes; their detailed
-records appear below. R3.1 inspect/plan CLI is complete; R3.2 onward and V0 remain planned in the roadmap. Performance qualification
+records appear below. R3.1 inspect/plan and R3.2 copy/verify are complete; R3.3 onward and V0 remain planned in the roadmap. Performance qualification
 remains provisional as recorded for each step.
 
 ## Per-step record template
@@ -1206,14 +1206,60 @@ captured output. Different boundaries have no before/after speedup interpretatio
 Four reproducible SVG/PNG charts retain all measurements and identities. No tuning
 defaults changed; PERF.0 and prior adverse results remain open.
 
+## R3.2 — Copy, verification, and safe publication
+
+Date: 2026-09-29. Status: **Complete within the local transfer contract**.
+Baseline: `cd41872`, initially clean. The [report](benchmark-results/2026-09-29-r32/README.md)
+retains initial/final source patches, separate binaries, raw samples, resource
+logs, validation and reproducible SVG/PNG charts. The enclosing commit records
+this step; no third-party dependency versions or tuning defaults changed.
+
+Implemented reusable bounded logical verification and buffered owned-file
+adoption. CLI copy independently prepares live endpoints; optional verification
+buffers are reserved from the same payload budget before mutation. New output
+uses a private anonymous inode, copy/flush/optional verify, source metadata checks,
+file sync, no-replace linking, directory sync and final name check. Existing
+--overwrite is in place and preserves its inode and tail. Errors retain phase,
+conservative destination state, confirmed counters and nested context. Failure
+to print a successful result identifies the already-completed operation.
+
+[ADR-0031](adr/0031-local-copy-publication.md) and the
+[transfer contract](cli-transfer.md) record O_TMPFILE/procfs/directory requirements,
+metadata observation limits, partial effects and no rollback. Stable contents
+and namespace remain caller obligations. Native quarantine can retain an unnamed
+file descriptor after uncertain I/O. Cancellation and progress remain R3.3.
+
+Validation: **382 tests passed; one unchanged allocation test gated** (383 total).
+Fourteen new tests exercise verification, budgets, alias/path policies, all
+backend requests, output failure and publication boundaries. Two bounded child
+cases deny ring setup. Sync-error hooks model boundary errors, not real fsync
+fault injection. All 18 CLI integration tests pass on Btrfs; fmt, strict all-target
+Clippy and portable core/datamover wasm32 checks pass. Initial dependency-check
+and zero-in-hole corruption-fixture diagnostics are retained, with successful
+subsequent validation.
+
+Initial controls found +25.27%/+24.01% inspect/plan cost from the eager command
+tree. Deferred selected-command construction removed unrelated option building;
+all initial evidence remains, including build-confounded later repeats. Final
+24 matched controls yield +0.07%, -0.75%, -5.69%, -0.60%
+(Threaded copy, native copy, inspect, plan). Longer repeats yield +1.06%, retaining
+a +6.20% plan pair; attribution remains open.
+Every pair is in the report; no engine speedup or broad storage qualification is
+claimed. Twelve new 16 MiB workflow runs record median costs of
+20.153 ms, 31.896 ms, 31.328 ms, 2.736 ms for Threaded new, Threaded new+verify,
+native new+verify and verify-only respectively. Copy timers include file and
+directory durability; verify-only has a different boundary. Earlier PERF.0 and
+adverse qualification results remain open.
+
 ## Next session
 
-Start **R3.2**: bounded logical read-back verification and CLI copy/verify, safe
-new-output temporary creation and no-replace publication, explicit existing-file
-in-place overwrite/tail preservation, and partial-output handling. Recheck all
-identities, permissions, native compatibility, memory, and source state using live
-endpoints; never execute a preview JSON as a saved plan. Preserve the R3.1 schema
-and read-only commands. R3.3 adds lifecycle progress and cancellation afterward.
+Start **R3.3**: lifecycle progress across all backends, cooperative cancellation,
+signal/exit handling and partial-failure reports. Distinguish processed bytes from
+completion after flush/verification/publication. Preserve R3.1 preview schemas and
+R3.2 destination/durability contracts. Cover cancellation before mutation, during
+transfer, around flush/verification and publication; never falsely report success
+or unlink a published/racing destination. Measure matched controls and observer/
+cancellation overhead with the existing evidence/plot workflow.
 
 Keep PERF.0 and earlier adverse timing pairs open for controlled-runner
 qualification. Commit each completed step. ESXi remains unnecessary; request the

@@ -107,3 +107,15 @@ Buffer sizes, worker count, queue capacity, and native queue depth/read window
 remain unchanged. R2.5 [prepares and reuses native resources per job](native-runtime-preparation.md);
 [its measurements](benchmark-results/2026-09-29-r25/README.md) record the effect. [R1.6 measurements](benchmark-results/2026-09-29-r16/README.md)
 record admission overhead and the removed concurrent clone.
+
+
+## Verification buffers (R3.2)
+
+`Verifier::new(length, block_size, budget)` admits two Vec payloads of requested
+size `min(length, block_size)`, checking expected storage before allocation and
+actual capacities afterward. Empty comparisons allocate no payload. CLI
+`copy --verify` retains these buffers throughout the invocation and subtracts
+`Verifier::storage_bytes()` from the budget passed to every DataMover phase.
+Standalone verify admits only its comparison buffers. This shares the exclusions
+above, including allocator metadata and backend working allocations; it is not an
+RSS limit. See [the transfer contract](cli-transfer.md).

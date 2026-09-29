@@ -1,0 +1,1706 @@
+[
+  {
+    "tag": "transfer1-0",
+    "benchmark": "cli_transfer/threaded_new",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/candidate-target/release/deps/transfer-7b69e53978e421d9",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/threaded_new$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "threaded_new",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/threaded_new",
+        "directory_name": "cli_transfer/threaded_new",
+        "title": "cli_transfer/threaded_new"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20785612.655555554,
+            "upper_bound": 22032816.97777778
+          },
+          "point_estimate": 21414915.55555556,
+          "standard_error": 320270.8127293947
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20952970.833333336,
+            "upper_bound": 22136825.0
+          },
+          "point_estimate": 21739379.0,
+          "standard_error": 312070.27979918575
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 718652.7780413646,
+            "upper_bound": 2665797.531172637
+          },
+          "point_estimate": 1457289.2740279427,
+          "standard_error": 519589.8671363546
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1346780.9698923742,
+            "upper_bound": 2120244.6312819743
+          },
+          "point_estimate": 1787416.9359529165,
+          "standard_error": 196795.39354504907
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0
+        ],
+        "times": [
+          54049614.0,
+          61914438.0,
+          70637320.0,
+          66360544.0,
+          65271017.0,
+          66344506.0,
+          67056392.0,
+          62624267.0,
+          65736760.0,
+          60354135.0,
+          65291891.0,
+          67274048.0,
+          66460406.0,
+          72186757.0,
+          71887719.0,
+          64912644.0,
+          64643091.0,
+          57183700.0,
+          54725863.0,
+          55223120.0,
+          58043237.0,
+          63093558.0,
+          56635000.0,
+          69030540.0,
+          60056178.0,
+          63391005.0,
+          65165257.0,
+          74542549.0,
+          67494807.0,
+          69752037.0
+        ]
+      },
+      "tukey.json": [
+        13772646.999999996,
+        17010358.625,
+        25644256.29166667,
+        28881967.91666667
+      ]
+    }
+  },
+  {
+    "tag": "transfer1-1",
+    "benchmark": "cli_transfer/threaded_new_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/candidate-target/release/deps/transfer-7b69e53978e421d9",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/threaded_new_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "threaded_new_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/threaded_new_verify",
+        "directory_name": "cli_transfer/threaded_new_verify",
+        "title": "cli_transfer/threaded_new_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 33101700.233333334,
+            "upper_bound": 34053388.13333333
+          },
+          "point_estimate": 33556155.333333336,
+          "standard_error": 243967.51193939068
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 33039465.75,
+            "upper_bound": 33799757.75
+          },
+          "point_estimate": 33140801.25,
+          "standard_error": 188153.19116743925
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 329879.9767434597,
+            "upper_bound": 1653214.6134495735
+          },
+          "point_estimate": 976968.889555335,
+          "standard_error": 342832.72847422166
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 909559.7445115154,
+            "upper_bound": 1709733.869897949
+          },
+          "point_estimate": 1357591.6417585446,
+          "standard_error": 205875.9535100433
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "times": [
+          66227672.0,
+          66192602.0,
+          64741061.0,
+          67636166.0,
+          74729205.0,
+          70453273.0,
+          71319905.0,
+          69695307.0,
+          69634646.0,
+          72469317.0,
+          69777015.0,
+          62751936.0,
+          65531773.0,
+          65756144.0,
+          66913039.0,
+          67910999.0,
+          64856224.0,
+          65809196.0,
+          65426902.0,
+          66016430.0,
+          66272957.0,
+          66289237.0,
+          67562865.0,
+          67885723.0,
+          66294979.0,
+          66273968.0,
+          63450687.0,
+          62956106.0,
+          66392553.0,
+          66141433.0
+        ]
+      },
+      "tukey.json": [
+        29681794.0,
+        31283248.75,
+        35553794.75,
+        37155249.5
+      ]
+    }
+  },
+  {
+    "tag": "transfer1-2",
+    "benchmark": "cli_transfer/native_new_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/candidate-target/release/deps/transfer-7b69e53978e421d9",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/native_new_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "native_new_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/native_new_verify",
+        "directory_name": "cli_transfer/native_new_verify",
+        "title": "cli_transfer/native_new_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 31369910.05,
+            "upper_bound": 31916943.486666664
+          },
+          "point_estimate": 31626831.533333335,
+          "standard_error": 139997.0669000019
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 31301864.5,
+            "upper_bound": 31724514.5
+          },
+          "point_estimate": 31584066.25,
+          "standard_error": 126400.55460637943
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 270991.847088933,
+            "upper_bound": 736453.7381753325
+          },
+          "point_estimate": 444821.8755528331,
+          "standard_error": 116379.99724053754
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 418980.2164805954,
+            "upper_bound": 1037196.6889223241
+          },
+          "point_estimate": 775295.360288024,
+          "standard_error": 159707.67775829625
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "times": [
+          67643627.0,
+          62552752.0,
+          63083820.0,
+          62984226.0,
+          64106133.0,
+          63419127.0,
+          62592534.0,
+          62640876.0,
+          63252445.0,
+          63425736.0,
+          62614924.0,
+          63865873.0,
+          61323439.0,
+          62162633.0,
+          60431587.0,
+          63689373.0,
+          67906989.0,
+          64649044.0,
+          62914084.0,
+          61928006.0,
+          64704498.0,
+          62472705.0,
+          61392418.0,
+          63356321.0,
+          63579304.0,
+          63472322.0,
+          63306849.0,
+          63752865.0,
+          62407114.0,
+          61978268.0
+        ]
+      },
+      "tukey.json": [
+        29492649.875,
+        30369504.125,
+        32707782.125,
+        33584636.375
+      ]
+    }
+  },
+  {
+    "tag": "transfer1-3",
+    "benchmark": "cli_transfer/verify_only",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/candidate-target/release/deps/transfer-7b69e53978e421d9",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/verify_only$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "verify_only",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/verify_only",
+        "directory_name": "cli_transfer/verify_only",
+        "title": "cli_transfer/verify_only"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2662143.9571428564,
+            "upper_bound": 2944319.499404762
+          },
+          "point_estimate": 2791688.1547619053,
+          "standard_error": 72314.50396429872
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2594393.1428571427,
+            "upper_bound": 2740583.2857142854
+          },
+          "point_estimate": 2633513.8928571427,
+          "standard_error": 41384.38218467135
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 91552.03097462689,
+            "upper_bound": 277248.26012785995
+          },
+          "point_estimate": 200657.99268760855,
+          "standard_error": 49357.84995360083
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 215546.9633567089,
+            "upper_bound": 529301.9675239878
+          },
+          "point_estimate": 403547.2285092517,
+          "standard_error": 79677.20899315322
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0
+        ],
+        "times": [
+          36009732.0,
+          37574579.0,
+          39537826.0,
+          39441065.0,
+          40192422.0,
+          39221149.0,
+          36457593.0,
+          37972889.0,
+          37705501.0,
+          36547518.0,
+          36398873.0,
+          37525506.0,
+          36562743.0,
+          36244135.0,
+          36808314.0,
+          52188826.0,
+          50020166.0,
+          56762289.0,
+          46832502.0,
+          38763443.0,
+          36930075.0,
+          46960063.0,
+          35573071.0,
+          35659834.0,
+          34973868.0,
+          34556521.0,
+          34470013.0,
+          34770464.0,
+          34876802.0,
+          34971243.0
+        ]
+      },
+      "tukey.json": [
+        1773641.1428571427,
+        2163510.1607142854,
+        3203160.875,
+        3593029.892857143
+      ]
+    }
+  },
+  {
+    "tag": "transfer2-0",
+    "benchmark": "cli_transfer/threaded_new",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/candidate-target/release/deps/transfer-7b69e53978e421d9",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/threaded_new$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "threaded_new",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/threaded_new",
+        "directory_name": "cli_transfer/threaded_new",
+        "title": "cli_transfer/threaded_new"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20849323.211111113,
+            "upper_bound": 21923931.566944443
+          },
+          "point_estimate": 21354647.411111113,
+          "standard_error": 275240.25933163345
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20562191.833333332,
+            "upper_bound": 21522571.166666664
+          },
+          "point_estimate": 21010198.5,
+          "standard_error": 264657.7740982576
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 671141.1321848631,
+            "upper_bound": 1811341.3136422662
+          },
+          "point_estimate": 1362601.5441089887,
+          "standard_error": 294649.6013713079
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 962888.3377392406,
+            "upper_bound": 1933223.189459257
+          },
+          "point_estimate": 1525084.819658765,
+          "standard_error": 246886.51756728347
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0
+        ],
+        "times": [
+          58908721.0,
+          63044611.0,
+          60042394.0,
+          62420216.0,
+          76035450.0,
+          63917486.0,
+          61638247.0,
+          60162292.0,
+          58574134.0,
+          61734904.0,
+          71855534.0,
+          76043508.0,
+          66005843.0,
+          66700732.0,
+          60009308.0,
+          61070836.0,
+          60384526.0,
+          62359027.0,
+          63872685.0,
+          65367108.0,
+          65127372.0,
+          64008055.0,
+          69568197.0,
+          66980562.0,
+          63016580.0,
+          59593996.0,
+          61919226.0,
+          63407624.0,
+          68316673.0,
+          59832420.0
+        ]
+      },
+      "tukey.json": [
+        14895312.083333328,
+        17540339.95833333,
+        24593747.625,
+        27238775.500000004
+      ]
+    }
+  },
+  {
+    "tag": "transfer2-1",
+    "benchmark": "cli_transfer/threaded_new_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/candidate-target/release/deps/transfer-7b69e53978e421d9",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/threaded_new_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "threaded_new_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/threaded_new_verify",
+        "directory_name": "cli_transfer/threaded_new_verify",
+        "title": "cli_transfer/threaded_new_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 29046189.35,
+            "upper_bound": 31196472.916666668
+          },
+          "point_estimate": 30017200.466666665,
+          "standard_error": 555010.989547701
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 28597871.75,
+            "upper_bound": 29894429.0
+          },
+          "point_estimate": 28994261.5,
+          "standard_error": 347418.2570180068
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 630624.2694541812,
+            "upper_bound": 2553918.560358882
+          },
+          "point_estimate": 1658308.8269591331,
+          "standard_error": 527840.3905562251
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1443398.8833723248,
+            "upper_bound": 4362176.3491920205
+          },
+          "point_estimate": 3089559.8333282764,
+          "standard_error": 766442.8132232716
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "times": [
+          55032819.0,
+          54535329.0,
+          54639739.0,
+          55881137.0,
+          56636917.0,
+          54715181.0,
+          56589448.0,
+          56711438.0,
+          57111516.0,
+          57412094.0,
+          66231862.0,
+          58290849.0,
+          57448726.0,
+          61068484.0,
+          58188882.0,
+          57441410.0,
+          58671856.0,
+          58597614.0,
+          57279971.0,
+          62159841.0,
+          61929125.0,
+          60405506.0,
+          57788164.0,
+          59172210.0,
+          55621853.0,
+          63577232.0,
+          61923197.0,
+          82886295.0,
+          74702504.0,
+          68380829.0
+        ]
+      },
+      "tukey.json": [
+        20746816.375,
+        24537295.0,
+        34645238.0,
+        38435716.625
+      ]
+    }
+  },
+  {
+    "tag": "transfer2-2",
+    "benchmark": "cli_transfer/native_new_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/candidate-target/release/deps/transfer-7b69e53978e421d9",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/native_new_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "native_new_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/native_new_verify",
+        "directory_name": "cli_transfer/native_new_verify",
+        "title": "cli_transfer/native_new_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 31209659.00166667,
+            "upper_bound": 32073025.971666668
+          },
+          "point_estimate": 31621970.616666667,
+          "standard_error": 220190.8706412234
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 31039738.25,
+            "upper_bound": 31952888.75
+          },
+          "point_estimate": 31315957.5,
+          "standard_error": 257602.8303441811
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 678586.3786026835,
+            "upper_bound": 1576539.3612608314
+          },
+          "point_estimate": 1281510.4914486408,
+          "standard_error": 228484.01058255776
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 842917.8496418048,
+            "upper_bound": 1507778.9426456885
+          },
+          "point_estimate": 1229816.6286364058,
+          "standard_error": 171086.2449168691
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "times": [
+          64503160.0,
+          64943664.0,
+          63326037.0,
+          62533011.0,
+          62730819.0,
+          62323143.0,
+          62253322.0,
+          64008783.0,
+          61084234.0,
+          60586509.0,
+          63508443.0,
+          63043924.0,
+          61431240.0,
+          68422943.0,
+          66305060.0,
+          60481259.0,
+          62200604.0,
+          69020211.0,
+          68765399.0,
+          63802772.0,
+          62515880.0,
+          65034844.0,
+          60833194.0,
+          64796641.0,
+          60828676.0,
+          59820241.0,
+          64449513.0,
+          60917015.0,
+          60889347.0,
+          61958349.0
+        ]
+      },
+      "tukey.json": [
+        25607348.625,
+        28096420.6875,
+        34733946.1875,
+        37223018.25
+      ]
+    }
+  },
+  {
+    "tag": "transfer2-3",
+    "benchmark": "cli_transfer/verify_only",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/candidate-target/release/deps/transfer-7b69e53978e421d9",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/verify_only$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "verify_only",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/verify_only",
+        "directory_name": "cli_transfer/verify_only",
+        "title": "cli_transfer/verify_only"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2692978.418392857,
+            "upper_bound": 2960408.080535714
+          },
+          "point_estimate": 2821810.5166666666,
+          "standard_error": 68160.20039756352
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2507714.6071428573,
+            "upper_bound": 3073405.8571428573
+          },
+          "point_estimate": 2652944.0714285714,
+          "standard_error": 125476.06506969113
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 48581.09463751316,
+            "upper_bound": 532440.7276472877
+          },
+          "point_estimate": 251596.5271832687,
+          "standard_error": 124571.95400650463
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 284273.1552611692,
+            "upper_bound": 459856.7480697196
+          },
+          "point_estimate": 380351.6072479286,
+          "standard_error": 45364.36909655041
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0
+        ],
+        "times": [
+          37248788.0,
+          37763516.0,
+          34850562.0,
+          34991801.0,
+          34766809.0,
+          35947540.0,
+          36155745.0,
+          37033646.0,
+          35022901.0,
+          35152299.0,
+          34536546.0,
+          34990144.0,
+          34867929.0,
+          34707296.0,
+          35063710.0,
+          34764038.0,
+          46189119.0,
+          44202759.0,
+          53831101.0,
+          47172282.0,
+          46550793.0,
+          43778807.0,
+          37480388.0,
+          35998332.0,
+          39603747.0,
+          42276557.0,
+          44676879.0,
+          45951747.0,
+          45764034.0,
+          43820602.0
+        ]
+      },
+      "tukey.json": [
+        548331.7678571441,
+        1524150.7410714293,
+        4126334.6696428563,
+        5102153.642857142
+      ]
+    }
+  },
+  {
+    "tag": "transfer3-0",
+    "benchmark": "cli_transfer/threaded_new",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/candidate-target/release/deps/transfer-7b69e53978e421d9",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/threaded_new$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "threaded_new",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/threaded_new",
+        "directory_name": "cli_transfer/threaded_new",
+        "title": "cli_transfer/threaded_new"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 19852199.655555554,
+            "upper_bound": 21458382.334444445
+          },
+          "point_estimate": 20607821.244444445,
+          "standard_error": 412495.44554299174
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 19129494.0,
+            "upper_bound": 20812994.333333336
+          },
+          "point_estimate": 20076584.0,
+          "standard_error": 473276.65792570636
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 938723.4935343275,
+            "upper_bound": 2584291.597619651
+          },
+          "point_estimate": 2033763.1855934858,
+          "standard_error": 472923.27975846437
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1383106.2671362734,
+            "upper_bound": 2965371.0693612676
+          },
+          "point_estimate": 2289181.5192793347,
+          "standard_error": 401984.1262028732
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0
+        ],
+        "times": [
+          60167338.0,
+          61398338.0,
+          66571206.0,
+          61482433.0,
+          61875134.0,
+          67191369.0,
+          58165206.0,
+          56038616.0,
+          53793581.0,
+          66250552.0,
+          76503782.0,
+          75521670.0,
+          82616836.0,
+          60292166.0,
+          55659046.0,
+          56796005.0,
+          56880404.0,
+          55904551.0,
+          57896560.0,
+          64583207.0,
+          59347880.0,
+          62861348.0,
+          66342240.0,
+          66214366.0,
+          58942441.0,
+          56316020.0,
+          62016618.0,
+          56190361.0,
+          55548918.0,
+          55335720.0
+        ]
+      },
+      "tukey.json": [
+        9441445.41666668,
+        14126725.416666673,
+        26620805.416666657,
+        31306085.416666653
+      ]
+    }
+  },
+  {
+    "tag": "transfer3-1",
+    "benchmark": "cli_transfer/threaded_new_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/candidate-target/release/deps/transfer-7b69e53978e421d9",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/threaded_new_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "threaded_new_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/threaded_new_verify",
+        "directory_name": "cli_transfer/threaded_new_verify",
+        "title": "cli_transfer/threaded_new_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 30804659.216666665,
+            "upper_bound": 32310067.433333334
+          },
+          "point_estimate": 31551551.75,
+          "standard_error": 383138.06349648
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 30660422.5,
+            "upper_bound": 32071839.5
+          },
+          "point_estimate": 31330406.0,
+          "standard_error": 416303.1172447244
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 998958.071064949,
+            "upper_bound": 3580410.736835003
+          },
+          "point_estimate": 1789601.2089282274,
+          "standard_error": 719056.082074479
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1635852.713189071,
+            "upper_bound": 2495812.763878406
+          },
+          "point_estimate": 2130920.3857712103,
+          "standard_error": 219401.80762476183
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "times": [
+          68490332.0,
+          61294025.0,
+          66488396.0,
+          64291166.0,
+          62876753.0,
+          61347665.0,
+          60988953.0,
+          57571528.0,
+          57210100.0,
+          67996361.0,
+          67932669.0,
+          57793759.0,
+          58783376.0,
+          60690424.0,
+          56580796.0,
+          62937929.0,
+          61778503.0,
+          63580559.0,
+          63996192.0,
+          61889553.0,
+          64914677.0,
+          60086399.0,
+          55616840.0,
+          61911668.0,
+          69959203.0,
+          68089152.0,
+          70918127.0,
+          63914083.0,
+          62444871.0,
+          70719046.0
+        ]
+      },
+      "tukey.json": [
+        22387663.125,
+        26385095.625,
+        37044915.625,
+        41042348.125
+      ]
+    }
+  },
+  {
+    "tag": "transfer3-2",
+    "benchmark": "cli_transfer/native_new_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/candidate-target/release/deps/transfer-7b69e53978e421d9",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/native_new_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "native_new_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/native_new_verify",
+        "directory_name": "cli_transfer/native_new_verify",
+        "title": "cli_transfer/native_new_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 31144953.183333334,
+            "upper_bound": 32118943.482916664
+          },
+          "point_estimate": 31615775.1,
+          "standard_error": 247575.74242340264
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 31130481.0,
+            "upper_bound": 31642519.0
+          },
+          "point_estimate": 31503410.75,
+          "standard_error": 152914.34421845814
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 397521.3766425848,
+            "upper_bound": 1740341.454152763
+          },
+          "point_estimate": 997691.1893874407,
+          "standard_error": 342924.3625986701
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 947396.9781253863,
+            "upper_bound": 1715680.4147259193
+          },
+          "point_estimate": 1372862.420502402,
+          "standard_error": 196768.3408204783
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "times": [
+          59981435.0,
+          63203489.0,
+          60990113.0,
+          60567334.0,
+          62813198.0,
+          63066251.0,
+          70598455.0,
+          62197026.0,
+          61375041.0,
+          63277823.0,
+          62324898.0,
+          62947392.0,
+          67020275.0,
+          67193202.0,
+          64519420.0,
+          67757277.0,
+          61841208.0,
+          62598621.0,
+          64010426.0,
+          62740516.0,
+          61827686.0,
+          67628601.0,
+          63226846.0,
+          63147583.0,
+          59547038.0,
+          63292253.0,
+          64675037.0,
+          59516518.0,
+          58058267.0,
+          65003277.0
+        ]
+      },
+      "tukey.json": [
+        27073875.75,
+        28994704.5,
+        34116914.5,
+        36037743.25
+      ]
+    }
+  },
+  {
+    "tag": "transfer3-3",
+    "benchmark": "cli_transfer/verify_only",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/candidate-target/release/deps/transfer-7b69e53978e421d9",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/verify_only$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "verify_only",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/verify_only",
+        "directory_name": "cli_transfer/verify_only",
+        "title": "cli_transfer/verify_only"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2568597.9530128203,
+            "upper_bound": 2763136.826858975
+          },
+          "point_estimate": 2658046.994871795,
+          "standard_error": 49770.693222994865
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2477595.576923077,
+            "upper_bound": 2675176.9615384615
+          },
+          "point_estimate": 2522851.423076923,
+          "standard_error": 49520.24661164339
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 39319.34962501898,
+            "upper_bound": 283426.18497587147
+          },
+          "point_estimate": 99784.2813746285,
+          "standard_error": 62971.46554051806
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 158457.59429345367,
+            "upper_bound": 364458.3559274668
+          },
+          "point_estimate": 276867.4715838523,
+          "standard_error": 52881.57958706333
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0,
+          13.0
+        ],
+        "times": [
+          32246049.0,
+          32807469.0,
+          32460696.0,
+          32117935.0,
+          32160522.0,
+          32132395.0,
+          31667573.0,
+          34882024.0,
+          38152420.0,
+          32524044.0,
+          32123082.0,
+          31798796.0,
+          31917678.0,
+          31926566.0,
+          31984184.0,
+          32171436.0,
+          32770652.0,
+          36933171.0,
+          46065690.0,
+          42624049.0,
+          39734554.0,
+          40471715.0,
+          34907302.0,
+          34343830.0,
+          33105480.0,
+          35367129.0,
+          32786668.0,
+          33214523.0,
+          36568119.0,
+          34672577.0
+        ]
+      },
+      "tukey.json": [
+        1753937.7115384615,
+        2113100.653846154,
+        3070868.5,
+        3430031.442307692
+      ]
+    }
+  }
+]

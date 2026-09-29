@@ -1,0 +1,986 @@
+[
+  {
+    "tag": "followup1-0-baseline",
+    "benchmark": "cli_preview/plan_new_json",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/baseline-target/release/deps/preview-0c7c23c3520b5668",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_preview/plan_new_json$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_preview",
+        "function_id": "plan_new_json",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_preview/plan_new_json",
+        "directory_name": "cli_preview/plan_new_json",
+        "title": "cli_preview/plan_new_json"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 22030.03606444067,
+            "upper_bound": 22717.676623112504
+          },
+          "point_estimate": 22361.79833581455,
+          "standard_error": 175.28764371696468
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 21629.621225010633,
+            "upper_bound": 22714.097405359422
+          },
+          "point_estimate": 22260.730327520207,
+          "standard_error": 293.48507440169686
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 621.254793989664,
+            "upper_bound": 1646.2265742827822
+          },
+          "point_estimate": 1304.033703135462,
+          "standard_error": 266.7134330170173
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 806.058364577508,
+            "upper_bound": 1416.8982381518472
+          },
+          "point_estimate": 1117.3301995982436,
+          "standard_error": 161.40941094483773
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0,
+          4702.0
+        ],
+        "times": [
+          100227685.0,
+          100490887.0,
+          100065907.0,
+          101046825.0,
+          100127013.0,
+          100118006.0,
+          99586079.0,
+          99769859.0,
+          100131364.0,
+          99283399.0,
+          107344000.0,
+          111998230.0,
+          101853803.0,
+          101848597.0,
+          99279895.0,
+          99494323.0,
+          100088782.0,
+          111002690.0,
+          101556361.0,
+          103034431.0,
+          103240121.0,
+          107129859.0,
+          111236091.0,
+          113051146.0,
+          105374684.0,
+          106473513.0,
+          104421143.0,
+          106288606.0,
+          109492251.0,
+          107366488.0,
+          106361921.0,
+          107702004.0,
+          107216127.0,
+          114969533.0,
+          105563684.0,
+          104918765.0,
+          122849618.0,
+          110658479.0,
+          108762257.0,
+          104382605.0
+        ]
+      },
+      "tukey.json": [
+        16687.22203317737,
+        18999.034745852827,
+        25163.868646320712,
+        27475.68135899617
+      ]
+    },
+    "variant": "baseline",
+    "pair": 1
+  },
+  {
+    "tag": "followup1-0-candidate",
+    "benchmark": "cli_preview/plan_new_json",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/optimized-target/release/deps/preview-142ae99d6eb44574",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_preview/plan_new_json$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_preview",
+        "function_id": "plan_new_json",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_preview/plan_new_json",
+        "directory_name": "cli_preview/plan_new_json",
+        "title": "cli_preview/plan_new_json"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 22759.811295766915,
+            "upper_bound": 23301.980988969735
+          },
+          "point_estimate": 23021.468052668053,
+          "standard_error": 138.373071765256
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 22818.132825132823,
+            "upper_bound": 23180.056826056825
+          },
+          "point_estimate": 23026.077038577037,
+          "standard_error": 95.15881680048855
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 347.7866510674109,
+            "upper_bound": 1064.5740786052313
+          },
+          "point_estimate": 811.2635336914371,
+          "standard_error": 178.20245166917456
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 609.5689967848317,
+            "upper_bound": 1130.120318718341
+          },
+          "point_estimate": 885.1899637475703,
+          "standard_error": 134.83563797680517
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0,
+          4329.0
+        ],
+        "times": [
+          100097416.0,
+          112009012.0,
+          104552288.0,
+          102549399.0,
+          100590758.0,
+          98127656.0,
+          98559774.0,
+          102183221.0,
+          102425605.0,
+          102289458.0,
+          109467937.0,
+          100345539.0,
+          100347393.0,
+          99578709.0,
+          95558052.0,
+          101115857.0,
+          100288928.0,
+          100181290.0,
+          101556482.0,
+          99800744.0,
+          94411222.0,
+          94117613.0,
+          94251656.0,
+          95963872.0,
+          96426315.0,
+          104221905.0,
+          99498606.0,
+          101863362.0,
+          102179462.0,
+          98999620.0,
+          99697823.0,
+          99661952.0,
+          99184055.0,
+          99524908.0,
+          97430130.0,
+          97192076.0,
+          94492037.0,
+          94991419.0,
+          95875818.0,
+          94788039.0
+        ]
+      },
+      "tukey.json": [
+        19196.79764379765,
+        20801.98345460846,
+        25082.47895010395,
+        26687.664760914755
+      ]
+    },
+    "variant": "candidate",
+    "pair": 1
+  },
+  {
+    "tag": "followup2-0-candidate",
+    "benchmark": "cli_preview/plan_new_json",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/optimized-target/release/deps/preview-142ae99d6eb44574",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_preview/plan_new_json$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_preview",
+        "function_id": "plan_new_json",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_preview/plan_new_json",
+        "directory_name": "cli_preview/plan_new_json",
+        "title": "cli_preview/plan_new_json"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 23968.185489510484,
+            "upper_bound": 24988.865872920174
+          },
+          "point_estimate": 24465.370153122745,
+          "standard_error": 260.5133491333705
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 23296.87798408488,
+            "upper_bound": 24903.9540631782
+          },
+          "point_estimate": 24198.08849770919,
+          "standard_error": 500.2676059387377
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 877.4398098624071,
+            "upper_bound": 2613.953887762326
+          },
+          "point_estimate": 1820.6756690510324,
+          "standard_error": 448.9163658125734
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1301.6894401871148,
+            "upper_bound": 1974.0209364227157
+          },
+          "point_estimate": 1667.6653808005517,
+          "standard_error": 171.096897820155
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0,
+          4147.0
+        ],
+        "times": [
+          95065265.0,
+          96802653.0,
+          97772069.0,
+          99503324.0,
+          104814802.0,
+          99806571.0,
+          109114015.0,
+          100892375.0,
+          94929016.0,
+          94405088.0,
+          103004629.0,
+          106423312.0,
+          120190901.0,
+          108622611.0,
+          111911948.0,
+          111320995.0,
+          114100404.0,
+          110743441.0,
+          103323978.0,
+          106625294.0,
+          102374328.0,
+          102749998.0,
+          101524606.0,
+          96916120.0,
+          94601483.0,
+          92892025.0,
+          93241692.0,
+          93595308.0,
+          93973899.0,
+          95371487.0,
+          95142187.0,
+          95376268.0,
+          95755309.0,
+          95523124.0,
+          96421653.0,
+          97428461.0,
+          107247370.0,
+          112205275.0,
+          103372900.0,
+          103229417.0
+        ]
+      },
+      "tukey.json": [
+        14969.584880636612,
+        18984.0777972028,
+        29689.392241379304,
+        33703.88515794549
+      ]
+    },
+    "variant": "candidate",
+    "pair": 2
+  },
+  {
+    "tag": "followup2-0-baseline",
+    "benchmark": "cli_preview/plan_new_json",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/baseline-target/release/deps/preview-0c7c23c3520b5668",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_preview/plan_new_json$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_preview",
+        "function_id": "plan_new_json",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_preview/plan_new_json",
+        "directory_name": "cli_preview/plan_new_json",
+        "title": "cli_preview/plan_new_json"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 22792.179692806076,
+            "upper_bound": 23325.735500446834
+          },
+          "point_estimate": 23033.901050044682,
+          "standard_error": 136.82278567086155
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 22690.64655942806,
+            "upper_bound": 23049.682082216263
+          },
+          "point_estimate": 22785.384271671137,
+          "standard_error": 94.08865911470791
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 300.27352978972726,
+            "upper_bound": 614.7940967393787
+          },
+          "point_estimate": 476.0361541492041,
+          "standard_error": 78.15671502829572
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 451.9716565045267,
+            "upper_bound": 1197.7842550279029
+          },
+          "point_estimate": 872.006984323269,
+          "standard_error": 193.08150493489308
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0,
+          4476.0
+        ],
+        "times": [
+          101952661.0,
+          100508303.0,
+          100772662.0,
+          100415342.0,
+          99986787.0,
+          104114620.0,
+          103626435.0,
+          103618927.0,
+          101679123.0,
+          99905291.0,
+          99626458.0,
+          100036940.0,
+          103303451.0,
+          103389488.0,
+          111019648.0,
+          103556855.0,
+          102456780.0,
+          102022099.0,
+          101879203.0,
+          102704243.0,
+          118290174.0,
+          105286733.0,
+          103037303.0,
+          101050137.0,
+          101447545.0,
+          100577819.0,
+          101797711.0,
+          104541178.0,
+          103389981.0,
+          102731900.0,
+          102264424.0,
+          99923028.0,
+          100351658.0,
+          100814916.0,
+          101687066.0,
+          101702477.0,
+          111435955.0,
+          103452145.0,
+          100308444.0,
+          113323734.0
+        ]
+      },
+      "tukey.json": [
+        20657.023570151923,
+        21580.070235701518,
+        24041.528010500442,
+        24964.57467605004
+      ]
+    },
+    "variant": "baseline",
+    "pair": 2
+  },
+  {
+    "tag": "followup3-0-baseline",
+    "benchmark": "cli_preview/plan_new_json",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/baseline-target/release/deps/preview-0c7c23c3520b5668",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_preview/plan_new_json$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_preview",
+        "function_id": "plan_new_json",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_preview/plan_new_json",
+        "directory_name": "cli_preview/plan_new_json",
+        "title": "cli_preview/plan_new_json"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 23074.585157545607,
+            "upper_bound": 23570.323270552002
+          },
+          "point_estimate": 23313.784103293063,
+          "standard_error": 127.10508363162262
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 22862.441364605547,
+            "upper_bound": 23463.046079128166
+          },
+          "point_estimate": 23263.965055674013,
+          "standard_error": 126.95702558362014
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 413.5600404190349,
+            "upper_bound": 913.1549604051729
+          },
+          "point_estimate": 716.0150012185443,
+          "standard_error": 123.28990804891468
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 551.5341649952583,
+            "upper_bound": 1030.473145855728
+          },
+          "point_estimate": 818.8881267198857,
+          "standard_error": 122.71889158381906
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0,
+          4221.0
+        ],
+        "times": [
+          99133262.0,
+          100571671.0,
+          98760386.0,
+          100026963.0,
+          100148963.0,
+          98423445.0,
+          98270783.0,
+          99682995.0,
+          98941773.0,
+          97623528.0,
+          98633541.0,
+          99600861.0,
+          97662560.0,
+          98123610.0,
+          97876554.0,
+          106572524.0,
+          108834740.0,
+          106527441.0,
+          102538391.0,
+          98585744.0,
+          99267689.0,
+          100369711.0,
+          102173821.0,
+          91600719.0,
+          93772849.0,
+          95704904.0,
+          95016505.0,
+          94708681.0,
+          95588421.0,
+          95458563.0,
+          95632137.0,
+          96570363.0,
+          95422406.0,
+          95157003.0,
+          96434367.0,
+          100658130.0,
+          96078603.0,
+          95949027.0,
+          97956910.0,
+          96238764.0
+        ]
+      },
+      "tukey.json": [
+        19958.54631603885,
+        21337.718579720444,
+        25015.51128287136,
+        26394.683546552955
+      ]
+    },
+    "variant": "baseline",
+    "pair": 3
+  },
+  {
+    "tag": "followup3-0-candidate",
+    "benchmark": "cli_preview/plan_new_json",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r32-h211pqkq/optimized-target/release/deps/preview-142ae99d6eb44574",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_preview/plan_new_json$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_preview",
+        "function_id": "plan_new_json",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_preview/plan_new_json",
+        "directory_name": "cli_preview/plan_new_json",
+        "title": "cli_preview/plan_new_json"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 22790.56643497243,
+            "upper_bound": 23227.690062040434
+          },
+          "point_estimate": 22997.750453814333,
+          "standard_error": 111.39411298158457
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 22646.822265625,
+            "upper_bound": 22929.523552389706
+          },
+          "point_estimate": 22801.873046875,
+          "standard_error": 79.97256698998856
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 238.34480898085076,
+            "upper_bound": 602.3324709700646
+          },
+          "point_estimate": 430.65458217512423,
+          "standard_error": 94.37111104518719
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 478.9655740525275,
+            "upper_bound": 889.2975189142593
+          },
+          "point_estimate": 713.0550842086416,
+          "standard_error": 104.46136039443276
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0,
+          4352.0
+        ],
+        "times": [
+          98674131.0,
+          98394790.0,
+          105257090.0,
+          98740972.0,
+          97909636.0,
+          102758838.0,
+          97981000.0,
+          98338857.0,
+          98806206.0,
+          97834190.0,
+          97918414.0,
+          98063536.0,
+          98962368.0,
+          97728218.0,
+          97497821.0,
+          98443810.0,
+          98874892.0,
+          99173492.0,
+          105453147.0,
+          106857851.0,
+          105992404.0,
+          97958230.0,
+          109740655.0,
+          96607296.0,
+          97293449.0,
+          103848477.0,
+          104314078.0,
+          94934548.0,
+          99294011.0,
+          99659641.0,
+          100007838.0,
+          99900889.0,
+          99455071.0,
+          100577919.0,
+          99704563.0,
+          99738124.0,
+          100527387.0,
+          99840449.0,
+          99487139.0,
+          100896972.0
+        ]
+      },
+      "tukey.json": [
+        20806.88143382354,
+        21667.560891544123,
+        23962.706112132346,
+        24823.38556985293
+      ]
+    },
+    "variant": "candidate",
+    "pair": 3
+  }
+]

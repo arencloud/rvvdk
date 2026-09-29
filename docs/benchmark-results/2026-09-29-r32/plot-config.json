@@ -1,0 +1,46 @@
+{
+  "title": "R3.2 \u00b7 RAW copy and bounded verification",
+  "candidate": "patch 818c22d9",
+  "conditions": "Btrfs \u00b7 CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm files \u00b7 copy includes flush",
+  "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+  "candidate_only": {
+    "title": "New copy/verify workflows \u00b7 candidate-only latency",
+    "note": "16 MiB dense \u00b7 copy includes publication and directory sync; verify-only compares readable bytes without copy/flush.",
+    "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+  },
+  "workloads": {
+    "preflight_copy/threaded": {
+      "label": "Threaded copy + flush \u00b7 1 MiB",
+      "phase": "copy"
+    },
+    "preflight_copy/native": {
+      "label": "Native copy + flush \u00b7 1 MiB",
+      "phase": "copy"
+    },
+    "cli_preview/inspect_dense_json": {
+      "label": "CLI inspect JSON \u00b7 1 MiB",
+      "phase": "planning"
+    },
+    "cli_preview/plan_new_json": {
+      "label": "CLI plan new JSON \u00b7 1 MiB",
+      "phase": "planning"
+    },
+    "cli_transfer/threaded_new": {
+      "label": "Threaded new + publication \u00b7 16 MiB",
+      "phase": "copy"
+    },
+    "cli_transfer/threaded_new_verify": {
+      "label": "Threaded new + verify + publication \u00b7 16 MiB",
+      "phase": "copy"
+    },
+    "cli_transfer/native_new_verify": {
+      "label": "Native new + verify + publication \u00b7 16 MiB",
+      "phase": "copy"
+    },
+    "cli_transfer/verify_only": {
+      "label": "Verify source prefix only \u00b7 16 MiB",
+      "phase": "copy"
+    }
+  },
+  "repeat_sampling": "3 adjacent pairs \u00b7 40 samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+}

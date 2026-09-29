@@ -1,0 +1,34 @@
+    Checking rvvdk-local v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-local)
+    Checking rvvdk-cli v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-cli)
+    Checking rvvdk-datamover v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-datamover)
+error[E0432]: unresolved import `rvvdk_datamover::Verifier`
+ --> crates/rvvdk-cli/src/transfer.rs:9:53
+  |
+9 |     IoUringExecutionOptions, NativeRuntimeFallback, Verifier,
+  |                                                     ^^^^^^^^ no `Verifier` in the root
+
+error[E0599]: no variant named `VerificationMismatch` found for enum `rvvdk_core::Error`
+  --> crates/rvvdk-cli/src/error.rs:52:32
+   |
+52 |             rvvdk_core::Error::VerificationMismatch { offset } => {
+   |                                ^^^^^^^^^^^^^^^^^^^^ variant not found in `rvvdk_core::Error`
+
+Some errors have detailed explanations: E0432, E0599.
+For more information about an error, try `rustc --explain E0432`.
+error: could not compile `rvvdk-cli` (lib) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `rvvdk-cli` (lib test) due to 2 previous errors
+error[E0599]: no variant named `VerificationMismatch` found for enum `rvvdk_core::Error`
+   --> crates/rvvdk-datamover/src/verify.rs:106:35
+    |
+106 |                 return Err(Error::VerificationMismatch {
+    |                                   ^^^^^^^^^^^^^^^^^^^^ variant not found in `rvvdk_core::Error`
+
+error[E0599]: no variant named `VerificationMismatch` found for enum `rvvdk_core::Error`
+   --> crates/rvvdk-datamover/src/verify.rs:147:24
+    |
+147 |             Err(Error::VerificationMismatch { offset: 10002 })
+    |                        ^^^^^^^^^^^^^^^^^^^^ variant not found in `rvvdk_core::Error`
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `rvvdk-datamover` (lib test) due to 2 previous errors

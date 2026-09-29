@@ -1,0 +1,78 @@
+[
+  {
+    "argv": [
+      "/tmp/rvvdk-r32-h211pqkq/optimized-target/release/rvddk",
+      "--help"
+    ],
+    "exit_code": 0,
+    "stdout": "Inspect, plan, copy, and verify local RAW disks\n\nUsage: rvddk [OPTIONS] <COMMAND>\n\nCommands:\n  inspect  Inspect a regular RAW file\n  plan     Preview logical work and destination policy; does not create or write output\n  copy     Copy RAW bytes; publish new output without replacement\n  verify   Compare source bytes with the destination prefix; no writes\n  help     Print this message or the help of the given subcommand(s)\n\nOptions:\n      --json     Emit schema-versioned JSON; errors go to stderr\n  -h, --help     Print help\n  -V, --version  Print version\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/tmp/rvvdk-r32-h211pqkq/optimized-target/release/rvddk",
+      "inspect",
+      "--help"
+    ],
+    "exit_code": 0,
+    "stdout": "Inspect a regular RAW file\n\nUsage: rvddk inspect [OPTIONS] --format <format> <source>\n\nArguments:\n  <source>  \n\nOptions:\n      --format <format>                Explicit input format; no format autodetection [possible values: raw]\n      --json                           Emit schema-versioned JSON; errors go to stderr\n      --memory-budget <memory-budget>  Planning/execution payload budget in bytes; not an RSS limit [default: 268435456]\n      --extents                        Include the complete logical extent map\n  -h, --help                           Print help\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/tmp/rvvdk-r32-h211pqkq/optimized-target/release/rvddk",
+      "plan",
+      "--help"
+    ],
+    "exit_code": 0,
+    "stdout": "Preview logical work and destination policy; does not create or write output\n\nUsage: rvddk plan [OPTIONS] --format <format> <source> <destination>\n\nArguments:\n  <source>       \n  <destination>  \n\nOptions:\n      --format <format>                Explicit input format; no format autodetection [possible values: raw]\n      --json                           Emit schema-versioned JSON; errors go to stderr\n      --memory-budget <memory-budget>  Planning/execution payload budget in bytes; not an RSS limit [default: 268435456]\n      --block-size <block-size>        Copy/comparison block size in bytes [default: 1048576]\n      --overwrite                      Preview in-place overwrite of an existing file; still performs no writes\n      --backend <backend>              Requested copy backend; native selection is deferred until destination preparation [default: threaded] [possible values: threaded, auto, io-uring]\n      --workers <workers>              Threaded worker count [default: 1]\n      --queue-depth <queue-depth>      Requested native queue depth [default: 8]\n      --extents                        Include the complete logical extent map\n  -h, --help                           Print help\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/tmp/rvvdk-r32-h211pqkq/optimized-target/release/rvddk",
+      "copy",
+      "--help"
+    ],
+    "exit_code": 0,
+    "stdout": "Copy RAW bytes; publish new output without replacement\n\nUsage: rvddk copy [OPTIONS] --format <format> <source> <destination>\n\nArguments:\n  <source>       \n  <destination>  \n\nOptions:\n      --format <format>                Explicit input format; no format autodetection [possible values: raw]\n      --json                           Emit schema-versioned JSON; errors go to stderr\n      --memory-budget <memory-budget>  Planning/execution payload budget in bytes; not an RSS limit [default: 268435456]\n      --block-size <block-size>        Copy/comparison block size in bytes [default: 1048576]\n      --overwrite                      Modify an existing destination in place; failures may leave partial changes\n      --backend <backend>              Execution backend; Auto can fall back before mutation [default: threaded] [possible values: threaded, auto, io-uring]\n      --workers <workers>              Threaded worker count [default: 1]\n      --queue-depth <queue-depth>      Requested native queue depth [default: 8]\n      --verify                         Read back and compare all logical bytes before publishing new output\n  -h, --help                           Print help\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/tmp/rvvdk-r32-h211pqkq/optimized-target/release/rvddk",
+      "verify",
+      "--help"
+    ],
+    "exit_code": 0,
+    "stdout": "Compare source bytes with the destination prefix; no writes\n\nUsage: rvddk verify [OPTIONS] --format <format> <source> <destination>\n\nArguments:\n  <source>       \n  <destination>  \n\nOptions:\n      --format <format>                Explicit input format; no format autodetection [possible values: raw]\n      --json                           Emit schema-versioned JSON; errors go to stderr\n      --memory-budget <memory-budget>  Planning/execution payload budget in bytes; not an RSS limit [default: 268435456]\n      --block-size <block-size>        Copy/comparison block size in bytes [default: 1048576]\n  -h, --help                           Print help\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/tmp/rvvdk-r32-h211pqkq/optimized-target/release/rvddk",
+      "copy",
+      "/home/egevorky/RustroverProjects/rvvdk/target/r32-benchmark-storage/tmpei1k741o/source",
+      "/home/egevorky/RustroverProjects/rvvdk/target/r32-benchmark-storage/tmpei1k741o/dest",
+      "--format",
+      "raw",
+      "--verify"
+    ],
+    "exit_code": 0,
+    "stdout": "RAW copy: completed (8283 logical bytes)\nBackend: threaded; verification: true; durability: file_and_directory_synced\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/tmp/rvvdk-r32-h211pqkq/optimized-target/release/rvddk",
+      "verify",
+      "/home/egevorky/RustroverProjects/rvvdk/target/r32-benchmark-storage/tmpei1k741o/source",
+      "/home/egevorky/RustroverProjects/rvvdk/target/r32-benchmark-storage/tmpei1k741o/dest",
+      "--format",
+      "raw"
+    ],
+    "exit_code": 0,
+    "stdout": "RAW verify: verified (8283 logical bytes)\nVerified source-length prefix; destination tail: 0 bytes\n",
+    "stderr": ""
+  }
+]

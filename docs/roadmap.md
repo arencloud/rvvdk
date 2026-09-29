@@ -57,7 +57,7 @@ The arrows describe conceptual access/composition, not a requirement to create a
 | Existing `rvvdk-local` | Files, sparse discovery, zero/hole operations, direct-I/O policy | Own filesystem fallback and descriptor identity checks |
 | Existing `rvvdk-datamover` | Plan validation, work scheduling, execution, cancellation, progress, copy results | Same logical behavior across executors |
 | Proposed `rvvdk-vmdk` | Descriptor/binary parsing, logical mapping, parent-chain reads | Backend resolution supplied by caller; read-only first |
-| Existing `rvvdk-cli` | Inspect and plan previews; exit codes and JSON output; copy/verify planned | Thin adapter over public library workflows; public binary `rvddk` |
+| Existing `rvvdk-cli` | Inspect/plan/copy/verify; safe output, exit codes and JSON reports | Thin adapter over public library workflows; public binary `rvddk` |
 | Proposed `rvvdk-vsphere` | Authentication, inventory, snapshots, tasks, CBT | Control plane only; no hidden snapshot creation inside reads |
 | Transport module/crate selected by feasibility work | Remote backing-file or logical-disk access | Name and interface follow verified protocol semantics |
 | Future job/journal module | Durable state, resume, snapshot cleanup reconciliation | Extract into a crate only when independent users justify it |
@@ -188,14 +188,15 @@ Acceptance: byte equality on nonzero-prefilled destinations; demonstrable hole p
   Native selection/readiness is deferred without a writable destination. Define
   no-clobber new output and explicit in-place overwrite intent. [Contract](cli.md);
   [evidence](benchmark-results/2026-09-29-r31/README.md).
-- [ ] **R3.2 (next):** Add bounded read-back verification and safe output creation,
-  temporary publication, explicit overwrite semantics, and copy/verify commands.
-- [ ] **R3.3:** Add progress lifecycle events, cancellation, and complete partial
+- [x] **R3.2:** Add bounded read-back verification and safe output creation,
+  anonymous no-clobber publication, explicit overwrite semantics, and copy/verify commands.
+  [Contract](cli-transfer.md); [evidence](benchmark-results/2026-09-29-r32/README.md).
+- [ ] **R3.3 (next):** Add progress lifecycle events, cancellation, and complete partial
   failure/exit-code reporting across execution backends.
 
 These increments must collectively satisfy the full acceptance criteria below.
 
-Public binary name is `rvddk`; inspect/plan are implemented, copy/verify follow:
+Public binary name is `rvddk`; inspect/plan/copy/verify are implemented:
 
 ```text
 rvddk inspect source.raw --format raw --json
@@ -204,12 +205,12 @@ rvddk copy source.raw destination.raw --format raw --verify
 rvddk verify source.raw destination.raw --format raw
 ```
 
-- [x] Introduce a thin CLI crate with explicit format and documented destination intent (R3.1). Actual output creation/overwrite remains R3.2.
-- [ ] Default new output creation to no-clobber; require an explicit overwrite option for existing destinations. Reject same-file/hard-link aliases.
-- [ ] Expose actual execution backend, selection reason, logical bytes, payload read/written, zero/deallocation bytes, elapsed time, and completion state.
+- [x] Introduce a thin CLI crate with explicit format and documented destination intent (R3.1). Output creation/overwrite is implemented in R3.2.
+- [x] Default new output creation to no-clobber; require an explicit overwrite option for existing destinations. Reject same-file/hard-link aliases.
+- [x] Expose actual execution backend, selection reason, logical bytes, payload read/written, zero/deallocation bytes, elapsed time, and completion state.
 - [ ] Complete intermediate progress across sequential/threaded/native paths through coordinator aggregation. Distinguish 100% bytes processed from a durable Completed event.
 - [ ] Add cancellation requests, partial failure reports, and meaningful process exit codes.
-- [ ] Implement logical read-back verification with bounded memory. For new files, publish a temporary output only after the configured flush/verification steps; document partial-output handling for in-place destinations.
+- [x] Implement logical read-back verification with bounded memory. For new files, publish a temporary output only after the configured flush/verification steps; document partial-output handling for in-place destinations.
 
 Acceptance: a user can inspect, dry-run, copy, cancel, and verify a sparse RAW image entirely through supported public APIs. Failure/cancellation never reports success. Tests cover output preservation, injected corruption, and cancellation during transfer/flush boundaries.
 
@@ -338,14 +339,17 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 | [0026](adr/0026-logical-hole-guarantee.md) | Accepted: logical Hole zero reads and explicit zero-guaranteed discard; local filesystem operations implemented by R2.2 |
 | [0027](adr/0027-portable-planning.md) | Accepted: portable planning, selection reasons, and invocation preparation; full native runtime preparation remains follow-up work |
 | [0028](adr/0028-endpoint-inspection.md) | Accepted: fresh descriptor inspection and current endpoint identity; persistent consistency/durability contracts remain future work |
-| 0029 | VMDK support subset, backing resolver, parent-chain rules |
-| 0030 | Independent VMware transport feasibility and selected first workflow |
-| 0031 | Changed-range selection and CBT baseline identity |
-| 0032 | Durable journals, checkpoint ordering, and resume |
+| [0029](adr/0029-local-file-admission.md) | Accepted: cooperative local-file admission |
+| [0030](adr/0030-read-only-cli-preview.md) | Accepted: read-only RAW CLI previews |
+| [0031](adr/0031-local-copy-publication.md) | Accepted: descriptor-bound copy, bounded verification and private publication |
+| TBD | VMDK subset, backing resolver, parent-chain rules |
+| TBD | Independent VMware transport feasibility and first workflow |
+| TBD | Changed-range selection and CBT baseline identity |
+| TBD | Durable journals, checkpoint ordering and resume |
 
 ## First implementation session — R0.1 completed
 
-The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete; R3.1 adds the read-only inspect/plan CLI; continue with R3.2 copy/verify next.
+The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete; R3.1 adds inspect/plan and R3.2 adds copy/verify; continue with R3.3 lifecycle progress and cancellation next.
 
 R0.1 was the bounded change directly related to the observer work:
 
@@ -360,13 +364,13 @@ R0.1 was the bounded change directly related to the observer work:
    tradeoff in the implementation log. Update this checklist and ADR-0025 with
    the implemented behavior and remaining limitations.
 
-R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete. R3.1 inspect/plan CLI is complete. Start **R3.2** with bounded verification and safe copy/output creation. Keep PERF.0 and the prior performance follow-ups open.
+R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete. R3.1 inspect/plan and R3.2 copy/verify are complete. Start **R3.3** with progress lifecycle and cancellation. Keep PERF.0 and the prior performance follow-ups open.
 
 ## Decisions to record before their milestone
 
 These do not block R0:
 
-- Public spelling: `rvddk` versus existing `rvvdk`; decide before CLI/package publication.
+- Public CLI spelling is `rvddk` (R3.1); existing repository and library spelling remains `rvvdk`.
 - First local VMDK variants and availability of representative fixtures; default to read-only flat, then hosted sparse.
 - First supported VMware versions/workflow and access to a disposable lab; required for V0/R6 acceptance.
 - Whether “from scratch” excludes optional reference testing against VDDK; default production remains independent.

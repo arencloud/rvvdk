@@ -1,9 +1,10 @@
-# Local RAW CLI (R3.1)
+# Local RAW CLI
 
 The Linux command is **`rvddk`**, using the requested public spelling. Its crate
 is `rvvdk-cli`; existing `rvvdk-*` library and repository names are unchanged.
-This step supports inspection and read-only planning previews. Copy, verify,
-cancellation, and terminal progress events are the following R3 increments.
+Inspection and planning previews are read-only. R3.2 adds [copy and verification](cli-transfer.md).
+Progress events and cancellation remain R3.3 work. This page defines the unchanged
+inspect/plan contract; the linked transfer guide defines the new commands.
 
 ```bash
 cargo build --release -p rvvdk-cli
@@ -64,7 +65,7 @@ Neither permission bits nor a successful preview prove that later creation,
 mutation, sparse operations, or durability will succeed. Parent symlinks are
 resolved normally. Path/identity checks are observations, not race-free future
 creation or overwrite authorization. Keep source contents, sizes, and namespace
-stable while inspecting; R3.2 execution must validate again with actual endpoints.
+stable while inspecting; copy validates again with actual endpoints.
 
 `--backend threaded|auto|io-uring` defaults to `threaded`. The Threaded request
 records `selected_backend: "threaded"` and `selection_reason: "requested_threaded"`.
@@ -128,17 +129,20 @@ Version-1 codes are `usage`, `io`, `not_regular_file`, `invalid_destination`,
 `memory_budget`, `concurrent_access`, `planning`, and `output`.
 Match `code` rather than message text; `os_error` is present when available.
 
-## R3.2 execution contract to implement
+## Copy and verification
 
-New outputs should be created privately in the destination directory, copied,
-flushed and optionally verified, then published with a no-replace operation.
-An existing name appearing after preview must not be silently clobbered. Failed
-new-output publication must preserve the existing name and define temporary-file
-cleanup. Existing `--overwrite` will mean in-place modification of an independently
-validated regular file, retaining bytes beyond the source range. Failures can leave
-partial effects there; no rollback should be promised. Recheck aliases, access,
-capacity, native compatibility, and memory with live endpoints before any write.
+```bash
+target/release/rvddk copy source.raw new.raw --format raw --verify --json
+target/release/rvddk copy source.raw existing.raw --format raw --overwrite --verify
+target/release/rvddk verify source.raw existing.raw --format raw --json
+```
 
-The [architecture decision](adr/0030-read-only-cli-preview.md),
-[implementation log](implementation-log.md), and
-[performance evidence](benchmark-results/2026-09-29-r31/README.md) track this step.
+The [transfer contract](cli-transfer.md) defines bounded verification, private
+new output, no-clobber publication, explicit in-place overwrite, durability,
+backend reporting, and additional version-1 error details. The read-only preview
+schema above remains unchanged. Progress and cancellation are the next increment.
+
+[ADR-0030](adr/0030-read-only-cli-preview.md) records previews;
+[ADR-0031](adr/0031-local-copy-publication.md) records transfer decisions.
+See the [implementation log](implementation-log.md) and
+[R3.2 performance evidence](benchmark-results/2026-09-29-r32/README.md).

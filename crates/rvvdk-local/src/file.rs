@@ -26,6 +26,37 @@ pub struct LocalFileBlockDevice {
 }
 
 impl LocalFileBlockDevice {
+    /// Adopt a buffered regular file without reopening its pathname. Access is
+    /// derived from the live descriptor. Append, direct, and O_PATH handles reject.
+    /// The caller must keep shared descriptor flags stable after adoption.
+    #[cfg(target_os = "linux")]
+    pub fn from_buffered_file(file: File) -> Result<Self> {
+        let state = rvvdk_platform::inspect_file(file.as_fd())?;
+        // SAFETY: F_GETFL reads flags from this live owned descriptor.
+        let flags = unsafe { libc::fcntl(file.as_raw_fd(), libc::F_GETFL) };
+        if flags < 0 {
+            return Err(std::io::Error::last_os_error().into());
+        }
+        if !state.regular
+            || state.append
+            || state.direct_io
+            || flags & libc::O_PATH != 0
+            || (!state.readable && !state.writable)
+        {
+            return Err(Error::InvalidEndpoint {
+                reason: "adoption requires a regular buffered non-append I/O descriptor",
+            });
+        }
+        let mut capabilities = Capabilities::EXTENTS | Capabilities::SPARSE;
+        if state.readable {
+            capabilities |= Capabilities::READ;
+        }
+        if state.writable {
+            capabilities |= Capabilities::WRITE | Capabilities::FLUSH;
+        }
+        Self::from_file(file, None, capabilities, false)
+    }
+
     fn buffered_file(&self) -> &File {
         self.buffered_file.as_ref().unwrap_or(&self.file)
     }

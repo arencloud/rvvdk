@@ -4,6 +4,9 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error("verification mismatch at byte offset {offset}")]
+    VerificationMismatch { offset: u64 },
+
     #[error(
         "concurrent file access conflicts with offset={offset}, length={length}; no request admitted"
     )]

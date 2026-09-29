@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R3.2 \u00b7 RAW copy and bounded verification",
+    "candidate": "patch 818c22d9",
+    "conditions": "Btrfs \u00b7 CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm files \u00b7 copy includes flush",
+    "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "candidate_only": {
+      "title": "New copy/verify workflows \u00b7 candidate-only latency",
+      "note": "16 MiB dense \u00b7 copy includes publication and directory sync; verify-only compares readable bytes without copy/flush.",
+      "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+    },
+    "workloads": {
+      "preflight_copy/threaded": {
+        "label": "Threaded copy + flush \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "preflight_copy/native": {
+        "label": "Native copy + flush \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "cli_preview/inspect_dense_json": {
+        "label": "CLI inspect JSON \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "cli_preview/plan_new_json": {
+        "label": "CLI plan new JSON \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "cli_transfer/threaded_new": {
+        "label": "Threaded new + publication \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/threaded_new_verify": {
+        "label": "Threaded new + verify + publication \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/native_new_verify": {
+        "label": "Native new + verify + publication \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/verify_only": {
+        "label": "Verify source prefix only \u00b7 16 MiB",
+        "phase": "copy"
+      }
+    },
+    "repeat_sampling": "3 adjacent pairs \u00b7 40 samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+  },
+  "input_sha256": {
+    "plot-config.json": "340c06d8cd2bcf4ad748e8df08c1db93c45ed4c0512e3560dd335018807d5049",
+    "environment.json": "c493083f3d2509b6803748bc6c03009626ed30327f122f992b341c69fbe094a9",
+    "measurements.json": "c26c1ff0d170f5e9a37a2fce6df766dcf384d48c8e186bd4fa5a77ef73d4122d",
+    "summary.json": "bf441ac6414fb6d14ede96a31304b367a548a713f5ff4722909cb052ab8fde6e",
+    "followup-measurements.json": "a9c06ae7a8ee3d9dc5d065f743a435ec2c10b4ecfae70e19b765eba708d0c295",
+    "followup-summary.json": "f2705b434918e4686b2426703ae19c092a3e856fd452a1f54257bf1c54b2305c",
+    "candidate-only-measurements.json": "dca82759f57c1149f00baba1d24b083ab78d610b2db313c048600e73feb544fc"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "076e8c5677d272eea1edf68c11ed4307747e3cb9f2af3b4e782ca191e4ae1148",
+    "planning-latency.png": "ef4cf4b9e2a40f939507274441459ae53a6c7265023531f29b627246a8e34ca7",
+    "copy-latency.svg": "e5370bd1deeb1acc9fc1f327337e95ffc9a7d23c13f51b5520d956958fb80084",
+    "copy-latency.png": "3b6e2008ccfd3a7c05e5be8b4468e73060bf1c69e96ee2063ac54209f486dc8c",
+    "relative-change.svg": "6cc1bc1c3424ac63854b4c31b87cfea280a67ba5e4e7f347d9c08ff0e56078e8",
+    "relative-change.png": "d788027099fba0c6b190d531749062a30a6556b9ab8de9d384a49e36066471a0",
+    "sample-distributions.svg": "b492a91ce95b1ffea730f10f7dbd37d810383bbc522038d47224bda53e4a8e0f",
+    "sample-distributions.png": "2861e04b47ddd6e248bfc8aef5c73f6093c37315310b59d433f6f4d04c1c8211",
+    "followup-change.svg": "6a00dab58e521b3b7d7a033db11f352e15bbc788928cad2713e54a1f0015c214",
+    "followup-change.png": "be0081fd6537fabd7d3f20e1a96e9c37cd57ae4d0dacdb3f96ac8c3c99bb32c5",
+    "candidate-only.svg": "9e2e688d5081c1db5d78fb2a16739fd0d0f043a932bc7e843e985d2b1d59624d",
+    "candidate-only.png": "9480b7deebb5bb97f3681157c91ea06226a9c1868f480bf0bb01adeef4a729ff",
+    "computed.json": "53e76d0827c0df513cbe294686d28c48339bdaa29754a810f097e99a481aaf91"
+  }
+}

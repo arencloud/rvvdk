@@ -1075,5 +1075,23 @@ previews destination intent without writable opens or creation. Actual RAW
 native selection requires a writable destination and remains explicitly deferred.
 The preview is not a serialized executable plan. New output defaults to no-clobber;
 existing overwrite intent is in-place with tail preservation. Live execution and
-publication are R3.2. See the [CLI contract](cli.md) and
+publication are implemented in R3.2 below. See the [CLI contract](cli.md) and
 [ADR-0030](adr/0030-read-only-cli-preview.md).
+
+
+## RAW copy, verification and publication (R3.2)
+
+The CLI owns output policy, pinned filesystem descriptors, metadata observations,
+durability and versioned reports. LocalFileBlockDevice adopts an owned buffered
+regular-file descriptor and derives capabilities without reopening paths.
+DataMover continues to own planning, payload budgets, backend readiness and copy.
+Its reusable Verifier performs full logical comparison with two bounded buffers;
+CLI reserves those capacities from the same copy budget before mutation.
+
+New output uses an anonymous inode until copy/flush/optional verification and file
+sync succeed, then no-replace publication and directory sync. Explicit overwrite
+preserves the opened inode and tail, with conservative partial-effect reports on
+failure. Descriptor ownership protects I/O targets; concurrent external content
+and namespace stability are still caller obligations. Progress and cancellation
+remain R3.3. See [the transfer contract](cli-transfer.md) and
+[ADR-0031](adr/0031-local-copy-publication.md).
