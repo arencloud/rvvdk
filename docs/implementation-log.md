@@ -43,7 +43,7 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 | V0 | Planned | Independent VMware access feasibility; licensed/evaluation host needed for representative API workflows | Pending — first transport baseline follows functional proof |
 
 R1.1–R1.6 and R2.1–R2.6 are complete within their documented scopes; their detailed
-records appear below. R3 onward and V0 remain planned in the roadmap. Performance qualification
+records appear below. R3.1 inspect/plan CLI is complete; R3.2 onward and V0 remain planned in the roadmap. Performance qualification
 remains provisional as recorded for each step.
 
 ## Per-step record template
@@ -1156,14 +1156,64 @@ charts and exact source/harness/binary identities accompany all samples.
 Prior R2.5 adverse results and PERF.0 remain open. Registration scaling and
 heavily contended multi-job costs are explicitly unmeasured.
 
+## R3.1 — Read-only RAW CLI
+
+Date: 2026-09-29. Status: **Complete within the preview contract**.
+Baseline: `bfd5355`, initially clean. The [report](benchmark-results/2026-09-29-r31/README.md)
+records exact source patch, unchanged control harnesses, compiler/build commands,
+and separate release artifact hashes. Public binary spelling is `rvddk`; the
+crate is `rvvdk-cli`, with existing repository/library names unchanged.
+
+Implemented inspect and read-only plan preview, explicit RAW format, human output,
+schema-versioned JSON, stable error codes/exit status, optional extent lists,
+non-UTF-8 paths, and validated backend/tuning requests. Reuse LocalFileBlockDevice
+and DataMover logical planning for discovery/topology/budgets; no existing library
+implementation changed. Source and destination bytes are never mutated.
+
+Executable RAW planning requires a writable destination. Instead of fabricating
+capabilities or opening output writable, plan records logical work and destination
+intent. Threaded selection follows its explicit request; Auto/native selection
+and all runtime preparation are deferred. A labeled Threaded payload estimate
+can exceed budget while producing a valid preview; execution admission remains
+separate. JSON is not a serialized/reloadable CopyPlan.
+
+New output intent is no-clobber without creating files or parents. Existing output
+requires --overwrite and adequate capacity; intent is in-place over source length,
+preserving any tail. Reject known aliases, leaf symlinks, special files, and invalid
+paths. Read-only output can be previewed; permission and race-safe publication
+checks remain execution work. [ADR-0030](adr/0030-read-only-cli-preview.md) and the
+[CLI contract](cli.md) define schema, resource limits, and R3.2 obligations.
+
+Twelve new tests cover dense/empty/odd/sparse topology, preservation, policies,
+aliases, path encodings, flags, budgets, output failures, and real binary use.
+Six bounded exec cases use seccomp to deny writable opens and native setup while
+previewing new/existing destinations through each backend request. The initial
+scaffold check preceded creation of its declared benchmark file; that manifest
+error is retained. All executable test runs pass. Cargo.lock adds only the new
+workspace package; no third-party versions were changed.
+
+Validation: **368 workspace tests passed**, one unchanged allocation test remains
+gated (369 distinct tests). Formatting, strict all-target Clippy, and the
+core/datamover wasm32 library check pass. All twelve CLI tests also pass on Btrfs.
+
+Performance: twelve matched library controls yield **−0.47% Threaded / +0.48%
+native planning**, with no +5% aggregate/pair threshold crossing. No engine
+speedup is claimed. Nine candidate-only Criterion runs measure about **16.913 µs**
+for dense in-process inspect, **22.715 µs** for new-output plan, and **1.638 ms**
+for fragmented full-map inspect. Six whole-process runs (900 measured launches)
+yield about **1.381/1.388 ms** for inspect/plan, including taskset/startup and
+captured output. Different boundaries have no before/after speedup interpretation.
+Four reproducible SVG/PNG charts retain all measurements and identities. No tuning
+defaults changed; PERF.0 and prior adverse results remain open.
+
 ## Next session
 
-Start **R3.1**: introduce a thin CLI for local RAW `inspect` and read-only `plan`,
-with human/JSON output, explicit format/backend options, and documented naming.
-Define new-output planning and no-clobber behavior before copy creation. Follow
-with R3.2 copy/verify and R3.3 progress lifecycle/cancellation as tracked in the
-roadmap. Existing request, runtime, failure, memory, and alias contracts remain
-mandatory.
+Start **R3.2**: bounded logical read-back verification and CLI copy/verify, safe
+new-output temporary creation and no-replace publication, explicit existing-file
+in-place overwrite/tail preservation, and partial-output handling. Recheck all
+identities, permissions, native compatibility, memory, and source state using live
+endpoints; never execute a preview JSON as a saved plan. Preserve the R3.1 schema
+and read-only commands. R3.3 adds lifecycle progress and cancellation afterward.
 
 Keep PERF.0 and earlier adverse timing pairs open for controlled-runner
 qualification. Commit each completed step. ESXi remains unnecessary; request the

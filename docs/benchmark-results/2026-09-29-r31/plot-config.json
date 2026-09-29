@@ -1,0 +1,41 @@
+{
+  "title": "R3.1 \u00b7 Read-only RAW CLI",
+  "candidate": "patch ffc26d28",
+  "conditions": "Btrfs \u00b7 CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm files \u00b7 no copy/flush timing",
+  "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+  "candidate_only": {
+    "title": "New CLI \u00b7 candidate-only latency",
+    "note": "No previous CLI baseline. In-process sink output and full process/captured-output boundaries differ.",
+    "sampling": "3 runs/case \u00b7 in-process: 30 Criterion samples, 0.3 s warmup, 2 s target \u00b7 process: 30 batches \u00d7 5 launches, 5 warmup batches"
+  },
+  "workloads": {
+    "preflight/plan_threaded": {
+      "label": "Threaded planning control \u00b7 1 MiB",
+      "phase": "planning"
+    },
+    "preflight/plan_native": {
+      "label": "Native planning control \u00b7 1 MiB",
+      "phase": "planning"
+    },
+    "cli_preview/inspect_dense_json": {
+      "label": "In-process inspect \u00b7 1 MiB \u00b7 JSON summary",
+      "phase": "planning"
+    },
+    "cli_preview/plan_new_json": {
+      "label": "In-process plan new \u00b7 1 MiB \u00b7 JSON summary",
+      "phase": "planning"
+    },
+    "cli_preview/inspect_fragmented_extents_json": {
+      "label": "In-process inspect \u00b7 8 MiB \u00b7 fragmented full map",
+      "phase": "planning"
+    },
+    "cli_process/inspect_json": {
+      "label": "Whole process inspect \u00b7 1 MiB \u00b7 captured JSON",
+      "phase": "planning"
+    },
+    "cli_process/plan_json": {
+      "label": "Whole process plan new \u00b7 1 MiB \u00b7 captured JSON",
+      "phase": "planning"
+    }
+  }
+}

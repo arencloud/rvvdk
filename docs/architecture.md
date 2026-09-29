@@ -1065,3 +1065,15 @@ shutdown. Completion-buffer lifetime does not extend the admission.
 This preserves disjoint same-mode pipelines while bounding supported alias use.
 It does not provide snapshots or coordinate raw FDs, mmap, or external processes.
 See the [policy matrix, caller responsibilities, and costs](local-file-concurrency.md).
+
+## Read-only RAW CLI (R3.1)
+
+rvvdk-cli exposes the rvddk binary and owns command parsing and versioned report
+serialization. It reuses local RAW discovery and DataMover logical plans without
+adding CLI dependencies to the libraries. Inspect reports source facts; plan
+previews destination intent without writable opens or creation. Actual RAW
+native selection requires a writable destination and remains explicitly deferred.
+The preview is not a serialized executable plan. New output defaults to no-clobber;
+existing overwrite intent is in-place with tail preservation. Live execution and
+publication are R3.2. See the [CLI contract](cli.md) and
+[ADR-0030](adr/0030-read-only-cli-preview.md).

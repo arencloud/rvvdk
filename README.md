@@ -30,15 +30,16 @@ io_uring execution. The longer-term goal is an independent Rust toolkit for
 VMware disk access and migration, extensible to other platforms.
 
 > [!IMPORTANT]
-> **Active development.** The project currently exposes Rust libraries.
-> VMDK parsing, VMware remote access, CBT, and a CLI are planned.
-> Known correctness and failure-path gaps are documented in the
-> [project review](docs/project-review-2026-09-28.md); stabilization is the next milestone.
+> **Active development.** The project exposes Rust libraries and a read-only RAW CLI.
+> VMDK parsing, VMware remote access, CBT, and CLI copy/verify are planned.
+> The [roadmap](docs/roadmap.md) tracks completed fixes and remaining work;
+> the [dated review](docs/project-review-2026-09-28.md) records the starting assessment.
 
 ## At a glance
 
 | Capability | Current state |
 |:---|:---|
+| **CLI** | [`rvddk inspect` and `plan`](docs/cli.md), human/JSON output, explicit RAW format, read-only destination previews |
 | **Logical disk model** | `BlockDevice`, `VirtualDisk`, checked ranges, geometry, and capabilities |
 | **RAW disk access** | Memory devices and local regular files |
 | **Sparse source discovery** | Linux Data/Hole extents with [safe dense fallback](docs/local-sparse-discovery.md) when discovery is unavailable |
@@ -157,6 +158,7 @@ migration and exceptional cleanup behavior.
 
 | Crate | Responsibility |
 |:---|:---|
+| [`rvvdk-cli`](crates/rvvdk-cli) | `rvddk` RAW inspection and read-only plan previews; human/JSON reports |
 | [`rvvdk-core`](crates/rvvdk-core) | Disk contracts, ranges, extents, RAW/memory devices, and buffer ownership |
 | [`rvvdk-local`](crates/rvvdk-local) | Local regular-file access, sparse discovery, and direct-I/O handling |
 | [`rvvdk-platform`](crates/rvvdk-platform) | Platform-specific backend capabilities |
@@ -212,9 +214,22 @@ workloads. Measurements depend on the filesystem, page cache, hardware, and
 flush policy. See the [benchmark notes](docs/benchmarks.md) for historical results
 and the [review](docs/project-review-2026-09-28.md) for measurement gaps.
 
-Explore the [R2.6 benchmark charts](docs/benchmark-results/2026-09-29-r26/README.md#final-comparison)
+Explore the [R3.1 benchmark charts](docs/benchmark-results/2026-09-29-r31/README.md#final-comparison)
 for latency comparisons, paired changes, and sample distributions. A
 [reusable generator](scripts/benchmarks/README.md) exports SVG and PNG figures.
+
+## Inspect and preview from the command line
+
+```bash
+cargo build --release -p rvvdk-cli
+target/release/rvddk inspect source.raw --format raw --json
+target/release/rvddk plan source.raw destination.raw --format raw --backend auto
+```
+
+Planning creates and writes nothing. Existing destinations require `--overwrite`
+to preview in-place changes; native selection and runtime readiness stay deferred.
+See the [CLI guide](docs/cli.md) for output fields, exit codes, and destination policy.
+Copy and verification commands follow in R3.2.
 
 ## Documentation
 

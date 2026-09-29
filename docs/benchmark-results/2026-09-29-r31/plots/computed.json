@@ -1,0 +1,108 @@
+{
+  "main": [
+    {
+      "benchmark": "preflight/plan_threaded",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          2367.0821150184993,
+          2416.694312026002,
+          2396.188325075048
+        ],
+        "candidate": [
+          2377.2854401437203,
+          2402.7712989079337,
+          2384.9160258850397
+        ]
+      },
+      "baseline_ns": 2396.188325075048,
+      "candidate_ns": 2384.9160258850397,
+      "change_percent": -0.47042626291300405,
+      "paired_changes_percent": [
+        0.4310507464225122,
+        -0.5761180902683627,
+        -0.47042626291300405
+      ]
+    },
+    {
+      "benchmark": "preflight/plan_native",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          2410.519669981423,
+          2400.0889866073057,
+          2411.527306866953
+        ],
+        "candidate": [
+          2442.881402417721,
+          2422.199696915671,
+          2355.943261523046
+        ]
+      },
+      "baseline_ns": 2410.519669981423,
+      "candidate_ns": 2422.199696915671,
+      "change_percent": 0.48454393796082407,
+      "paired_changes_percent": [
+        1.3425209857983678,
+        0.92124543847103,
+        -2.304931202131877
+      ]
+    }
+  ],
+  "followup": null,
+  "candidate_only": [
+    {
+      "benchmark": "cli_preview/inspect_dense_json",
+      "candidate_ns": 16913.470759460175,
+      "run_medians_ns": [
+        16913.470759460175,
+        16842.106083459024,
+        17162.392556549185
+      ]
+    },
+    {
+      "benchmark": "cli_preview/plan_new_json",
+      "candidate_ns": 22715.229919678713,
+      "run_medians_ns": [
+        24903.852793696275,
+        22715.229919678713,
+        22085.868403584467
+      ]
+    },
+    {
+      "benchmark": "cli_preview/inspect_fragmented_extents_json",
+      "candidate_ns": 1638093.285714286,
+      "run_medians_ns": [
+        1655192.975609756,
+        1638093.285714286,
+        1606672.3513513515
+      ]
+    },
+    {
+      "benchmark": "cli_process/inspect_json",
+      "candidate_ns": 1381499.7,
+      "run_medians_ns": [
+        1336576.7000000002,
+        1381499.7,
+        1428379.5
+      ]
+    },
+    {
+      "benchmark": "cli_process/plan_json",
+      "candidate_ns": 1388359.2000000002,
+      "run_medians_ns": [
+        1388359.2000000002,
+        1343603.6,
+        1405664.0
+      ]
+    }
+  ]
+}

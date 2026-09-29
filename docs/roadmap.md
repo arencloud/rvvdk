@@ -57,7 +57,7 @@ The arrows describe conceptual access/composition, not a requirement to create a
 | Existing `rvvdk-local` | Files, sparse discovery, zero/hole operations, direct-I/O policy | Own filesystem fallback and descriptor identity checks |
 | Existing `rvvdk-datamover` | Plan validation, work scheduling, execution, cancellation, progress, copy results | Same logical behavior across executors |
 | Proposed `rvvdk-vmdk` | Descriptor/binary parsing, logical mapping, parent-chain reads | Backend resolution supplied by caller; read-only first |
-| Proposed `rvvdk-cli` | Inspect, plan, copy, verify; exit codes and JSON output | Thin adapter over public library workflows |
+| Existing `rvvdk-cli` | Inspect and plan previews; exit codes and JSON output; copy/verify planned | Thin adapter over public library workflows; public binary `rvddk` |
 | Proposed `rvvdk-vsphere` | Authentication, inventory, snapshots, tasks, CBT | Control plane only; no hidden snapshot creation inside reads |
 | Transport module/crate selected by feasibility work | Remote backing-file or logical-disk access | Name and interface follow verified protocol semantics |
 | Future job/journal module | Durable state, resume, snapshot cleanup reconciliation | Extract into a crate only when independent users justify it |
@@ -183,18 +183,19 @@ Acceptance: byte equality on nonzero-prefilled destinations; demonstrable hole p
 
 ### R3 — Deliver a local RAW vertical slice
 
-- [ ] **R3.1 (next):** Add the CLI crate and read-only RAW `inspect`/`plan`
-  commands, stable human/JSON output, explicit format/backend options, and
-  documented command naming. Plan must not create or modify a destination;
-  define new-output planning and no-clobber behavior before adding copy.
-- [ ] **R3.2:** Add bounded read-back verification and safe output creation,
+- [x] **R3.1:** Add `rvddk inspect`/`plan`, explicit RAW format, human/JSON reports,
+  exit codes, requested backend/options, and read-only destination previews.
+  Native selection/readiness is deferred without a writable destination. Define
+  no-clobber new output and explicit in-place overwrite intent. [Contract](cli.md);
+  [evidence](benchmark-results/2026-09-29-r31/README.md).
+- [ ] **R3.2 (next):** Add bounded read-back verification and safe output creation,
   temporary publication, explicit overwrite semantics, and copy/verify commands.
 - [ ] **R3.3:** Add progress lifecycle events, cancellation, and complete partial
   failure/exit-code reporting across execution backends.
 
 These increments must collectively satisfy the full acceptance criteria below.
 
-Proposed commands, using the requested public spelling pending the naming decision:
+Public binary name is `rvddk`; inspect/plan are implemented, copy/verify follow:
 
 ```text
 rvddk inspect source.raw --format raw --json
@@ -203,7 +204,7 @@ rvddk copy source.raw destination.raw --format raw --verify
 rvddk verify source.raw destination.raw --format raw
 ```
 
-- [ ] Introduce a thin CLI crate; document explicit format and destination creation/replacement behavior.
+- [x] Introduce a thin CLI crate with explicit format and documented destination intent (R3.1). Actual output creation/overwrite remains R3.2.
 - [ ] Default new output creation to no-clobber; require an explicit overwrite option for existing destinations. Reject same-file/hard-link aliases.
 - [ ] Expose actual execution backend, selection reason, logical bytes, payload read/written, zero/deallocation bytes, elapsed time, and completion state.
 - [ ] Complete intermediate progress across sequential/threaded/native paths through coordinator aggregation. Distinguish 100% bytes processed from a durable Completed event.
@@ -344,7 +345,7 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 
 ## First implementation session — R0.1 completed
 
-The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete; continue with R3.1 local RAW inspect/plan CLI next.
+The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete; R3.1 adds the read-only inspect/plan CLI; continue with R3.2 copy/verify next.
 
 R0.1 was the bounded change directly related to the observer work:
 
@@ -359,7 +360,7 @@ R0.1 was the bounded change directly related to the observer work:
    tradeoff in the implementation log. Update this checklist and ADR-0025 with
    the implemented behavior and remaining limitations.
 
-R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete. Start **R3.1** with a thin local RAW inspect/plan CLI. Keep PERF.0 and the prior performance follow-ups open.
+R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete. R3.1 inspect/plan CLI is complete. Start **R3.2** with bounded verification and safe copy/output creation. Keep PERF.0 and the prior performance follow-ups open.
 
 ## Decisions to record before their milestone
 

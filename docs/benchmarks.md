@@ -13,9 +13,9 @@ the direct io_uring comparison. The harness correction is committed, but those
 historical results still need replacement measurements. Do not derive engine
 defaults or performance claims from an unmatched comparison.
 
-Latest measured step: [R2.6 concurrent local alias admission](benchmark-results/2026-09-29-r26/README.md)
-includes SVG/PNG charts, dense/fragmented copies, small-block native I/O,
-four-worker buffered/direct controls, and sparse operations. Performance qualification remains open;
+Latest measured step: [R3.1 read-only RAW CLI](benchmark-results/2026-09-29-r31/README.md)
+includes SVG/PNG charts, matched library-planning controls, and candidate-only
+CLI parsing/inspection/serialization and whole-process launch measurements. Performance qualification remains open;
 see its raw evidence and limitations before interpreting the aggregates.
 
 ### PERF.0 — Establish a reproducible baseline

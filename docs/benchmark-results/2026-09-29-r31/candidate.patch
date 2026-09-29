@@ -1,0 +1,1177 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 68d3623..464d743 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -424,6 +424,20 @@ version = "1.0.23"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
+ 
++[[package]]
++name = "rvvdk-cli"
++version = "0.1.0"
++dependencies = [
++ "clap",
++ "criterion",
++ "libc",
++ "rvvdk-core",
++ "rvvdk-datamover",
++ "rvvdk-local",
++ "serde",
++ "serde_json",
++]
++
+ [[package]]
+ name = "rvvdk-core"
+ version = "0.1.0"
+diff --git a/Cargo.toml b/Cargo.toml
+index 71bab5f..76b910a 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -2,6 +2,7 @@
+ resolver = "3"
+ 
+ members = [
++    "crates/rvvdk-cli",
+     "crates/rvvdk-core",
+     "crates/rvvdk-datamover",
+     "crates/rvvdk-local",
+diff --git a/crates/rvvdk-cli/Cargo.toml b/crates/rvvdk-cli/Cargo.toml
+new file mode 100644
+index 0000000..18b31ee
+--- /dev/null
++++ b/crates/rvvdk-cli/Cargo.toml
+@@ -0,0 +1,26 @@
++[package]
++name = "rvvdk-cli"
++version.workspace = true
++edition.workspace = true
++license.workspace = true
++repository.workspace = true
++
++[[bin]]
++name = "rvddk"
++path = "src/main.rs"
++
++[dependencies]
++rvvdk-core = { path = "../rvvdk-core" }
++rvvdk-datamover = { path = "../rvvdk-datamover" }
++rvvdk-local = { path = "../rvvdk-local" }
++clap = { version = "4.6.7", default-features = false, features = ["std", "help", "usage", "error-context"] }
++serde = { version = "1.0.229", features = ["derive"] }
++serde_json = "1.0.151"
++
++[dev-dependencies]
++criterion = "0.8.2"
++libc = "0.2.189"
++
++[[bench]]
++name = "preview"
++harness = false
+diff --git a/crates/rvvdk-cli/benches/preview.rs b/crates/rvvdk-cli/benches/preview.rs
+new file mode 100644
+index 0000000..0b75aed
+--- /dev/null
++++ b/crates/rvvdk-cli/benches/preview.rs
+@@ -0,0 +1,82 @@
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use std::{
++    fs::{self, File},
++    io::Write,
++    os::unix::fs::FileExt,
++    time::Duration,
++};
++
++fn preview(c: &mut Criterion) {
++    let dir = std::env::var_os("RVVDK_BENCH_DIR")
++        .map(std::path::PathBuf::from)
++        .unwrap_or_else(std::env::temp_dir);
++    fs::create_dir_all(&dir).unwrap();
++    let root = dir.join(format!("rvddk-cli-bench-{}", std::process::id()));
++    fs::create_dir(&root).unwrap();
++    let dense = root.join("dense.raw");
++    let fragmented = root.join("fragmented.raw");
++    let destination = root.join("absent.raw");
++    let mut file = File::create(&dense).unwrap();
++    file.write_all(&vec![0x5a; 1024 * 1024]).unwrap();
++    file.sync_all().unwrap();
++    let file = File::create(&fragmented).unwrap();
++    file.set_len(8 * 1024 * 1024).unwrap();
++    for offset in (0..8 * 1024 * 1024).step_by(8192) {
++        file.write_all_at(&[0xa5; 4096], offset).unwrap();
++    }
++    file.sync_all().unwrap();
++    let mut group = c.benchmark_group("cli_preview");
++    group.sampling_mode(SamplingMode::Flat);
++    for (name, command, path, extents) in [
++        ("inspect_dense_json", "inspect", &dense, false),
++        ("plan_new_json", "plan", &dense, false),
++        (
++            "inspect_fragmented_extents_json",
++            "inspect",
++            &fragmented,
++            true,
++        ),
++    ] {
++        let mut args = vec!["rvddk".into(), command.into(), path.as_os_str().to_owned()];
++        if command == "plan" {
++            args.push(destination.as_os_str().to_owned());
++        }
++        args.extend(["--format".into(), "raw".into(), "--json".into()]);
++        if extents {
++            args.push("--extents".into());
++        }
++        let mut output = Vec::new();
++        assert_eq!(
++            rvvdk_cli::run(args.clone(), &mut output, &mut std::io::sink()),
++            0
++        );
++        let report: serde_json::Value = serde_json::from_slice(&output).unwrap();
++        assert_eq!(
++            report["summary"]["logical_bytes"],
++            fs::metadata(path).unwrap().len()
++        );
++        if extents {
++            assert!(
++                report["summary"]["extent_count"].as_u64().unwrap() >= 1024,
++                "fragmented fixture was not exposed by this filesystem"
++            );
++        }
++        group.bench_function(name, |b| {
++            b.iter(|| {
++                assert_eq!(
++                    rvvdk_cli::run(args.clone(), &mut std::io::sink(), &mut std::io::sink()),
++                    0
++                );
++            })
++        });
++        assert!(!destination.exists());
++    }
++    group.finish();
++    fs::remove_dir_all(root).unwrap();
++}
++criterion_group! {
++    name = benches;
++    config = Criterion::default().sample_size(30).warm_up_time(Duration::from_millis(300)).measurement_time(Duration::from_secs(2));
++    targets = preview
++}
++criterion_main!(benches);
+diff --git a/crates/rvvdk-cli/src/args.rs b/crates/rvvdk-cli/src/args.rs
+new file mode 100644
+index 0000000..ae90d9e
+--- /dev/null
++++ b/crates/rvvdk-cli/src/args.rs
+@@ -0,0 +1,59 @@
++use clap::{Arg, ArgAction, Command, value_parser};
++use std::path::PathBuf;
++
++fn positive(value: &str) -> Result<usize, String> {
++    value
++        .parse::<usize>()
++        .ok()
++        .filter(|&v| v > 0)
++        .ok_or_else(|| "expected a positive byte/count value in decimal".into())
++}
++fn source(command: Command) -> Command {
++    command
++        .arg(
++            Arg::new("source")
++                .required(true)
++                .value_parser(value_parser!(PathBuf)),
++        )
++        .arg(
++            Arg::new("format")
++                .long("format")
++                .required(true)
++                .value_parser(["raw"])
++                .help("Explicit input format; no format autodetection"),
++        )
++        .arg(
++            Arg::new("extents")
++                .long("extents")
++                .action(ArgAction::SetTrue)
++                .help("Include the complete logical extent map"),
++        )
++        .arg(
++            Arg::new("memory-budget")
++                .long("memory-budget")
++                .default_value("268435456")
++                .value_parser(value_parser!(usize))
++                .help("Planning/execution payload budget in bytes; not an RSS limit"),
++        )
++}
++pub(crate) fn command() -> Command {
++    Command::new("rvddk").version(env!("CARGO_PKG_VERSION"))
++        .about("Inspect local RAW disks and preview copy intent without modifying files")
++        .subcommand_required(true).arg_required_else_help(true)
++        .arg(Arg::new("json").long("json").global(true).action(ArgAction::SetTrue)
++            .help("Emit schema-versioned JSON; errors go to stderr"))
++        .subcommand(source(Command::new("inspect").about("Inspect a regular RAW file")))
++        .subcommand(source(Command::new("plan").about("Preview logical work and destination policy; does not create or write output"))
++            .arg(Arg::new("destination").required(true).value_parser(value_parser!(PathBuf)))
++            .arg(Arg::new("overwrite").long("overwrite").action(ArgAction::SetTrue)
++                .help("Preview in-place overwrite of an existing file; still performs no writes"))
++            .arg(Arg::new("backend").long("backend").default_value("threaded")
++                .value_parser(["threaded", "auto", "io-uring"])
++                .help("Requested copy backend; native selection is deferred until destination preparation"))
++            .arg(Arg::new("block-size").long("block-size").default_value("1048576")
++                .value_parser(positive).help("Copy block size in bytes"))
++            .arg(Arg::new("workers").long("workers").default_value("1")
++                .value_parser(positive).help("Threaded worker count"))
++            .arg(Arg::new("queue-depth").long("queue-depth").default_value("8")
++                .value_parser(value_parser!(u32).range(1..)).help("Requested native queue depth")))
++}
+diff --git a/crates/rvvdk-cli/src/error.rs b/crates/rvvdk-cli/src/error.rs
+new file mode 100644
+index 0000000..d1779bd
+--- /dev/null
++++ b/crates/rvvdk-cli/src/error.rs
+@@ -0,0 +1,49 @@
++use serde::Serialize;
++use std::fmt;
++
++#[derive(Debug, Serialize)]
++pub(crate) struct Failure {
++    pub code: &'static str,
++    pub message: String,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub os_error: Option<i32>,
++}
++impl Failure {
++    pub fn new(code: &'static str, message: impl Into<String>) -> Self {
++        Self {
++            code,
++            message: message.into(),
++            os_error: None,
++        }
++    }
++    pub fn io(context: &str, error: std::io::Error) -> Self {
++        Self {
++            code: "io",
++            message: format!("{context}: {error}"),
++            os_error: error.raw_os_error(),
++        }
++    }
++}
++impl fmt::Display for Failure {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        self.message.fmt(f)
++    }
++}
++impl From<rvvdk_core::Error> for Failure {
++    fn from(error: rvvdk_core::Error) -> Self {
++        let code = match &error {
++            rvvdk_core::Error::MemoryBudgetExceeded { .. }
++            | rvvdk_core::Error::MemoryAccountingOverflow => "memory_budget",
++            rvvdk_core::Error::ConcurrentFileAccess { .. } => "concurrent_access",
++            rvvdk_core::Error::Io(e) => {
++                return Self {
++                    code: "io",
++                    message: e.to_string(),
++                    os_error: e.raw_os_error(),
++                };
++            }
++            _ => "planning",
++        };
++        Self::new(code, error.to_string())
++    }
++}
+diff --git a/crates/rvvdk-cli/src/lib.rs b/crates/rvvdk-cli/src/lib.rs
+new file mode 100644
+index 0000000..a79b32c
+--- /dev/null
++++ b/crates/rvvdk-cli/src/lib.rs
+@@ -0,0 +1,56 @@
++//! Linux RAW inspection and read-only plan previews for the rvddk command.
++//! The JSON report is not a serialized executable CopyPlan.
++mod args;
++mod error;
++mod output;
++mod preview;
++
++use error::Failure;
++use std::{ffi::OsString, io::Write};
++
++/// Run the CLI with supplied arguments and streams. Exit codes: 0 success/help,
++/// 1 inspection/planning/output failure, 2 command-line usage error.
++pub fn run<I, T>(arguments: I, out: &mut impl Write, err: &mut impl Write) -> i32
++where
++    I: IntoIterator<Item = T>,
++    T: Into<OsString>,
++{
++    let arguments: Vec<OsString> = arguments.into_iter().map(Into::into).collect();
++    let json = arguments
++        .iter()
++        .skip(1)
++        .take_while(|a| *a != "--")
++        .any(|a| a == "--json");
++    let matches = match args::command().try_get_matches_from(arguments) {
++        Ok(matches) => matches,
++        Err(error) => {
++            if !error.use_stderr() {
++                return if write!(out, "{error}").and_then(|_| out.flush()).is_ok() {
++                    0
++                } else {
++                    1
++                };
++            }
++            emit_error(&Failure::new("usage", error.to_string()), json, err);
++            return 2;
++        }
++    };
++    let (name, args) = matches.subcommand().expect("required subcommand");
++    match preview::build(name, args).and_then(|report| output::write(&report, json, out)) {
++        Ok(()) => 0,
++        Err(error) => {
++            emit_error(&error, json, err);
++            1
++        }
++    }
++}
++fn emit_error(error: &Failure, json: bool, err: &mut impl Write) {
++    if json {
++        let report = serde_json::json!({"schema_version": 1, "error": error});
++        let _ = serde_json::to_writer(&mut *err, &report);
++        let _ = writeln!(err);
++    } else {
++        let _ = writeln!(err, "rvddk: {}: {}", error.code, error.message);
++    }
++    let _ = err.flush();
++}
+diff --git a/crates/rvvdk-cli/src/main.rs b/crates/rvvdk-cli/src/main.rs
+new file mode 100644
+index 0000000..84dab22
+--- /dev/null
++++ b/crates/rvvdk-cli/src/main.rs
+@@ -0,0 +1,5 @@
++fn main() -> std::process::ExitCode {
++    let mut out = std::io::BufWriter::new(std::io::stdout().lock());
++    let mut err = std::io::stderr().lock();
++    std::process::ExitCode::from(rvvdk_cli::run(std::env::args_os(), &mut out, &mut err) as u8)
++}
+diff --git a/crates/rvvdk-cli/src/output.rs b/crates/rvvdk-cli/src/output.rs
+new file mode 100644
+index 0000000..e677a0d
+--- /dev/null
++++ b/crates/rvvdk-cli/src/output.rs
+@@ -0,0 +1,144 @@
++use crate::{error::Failure, preview::Preview};
++use rvvdk_core::{Extent, ExtentKind};
++use serde::{Serialize, Serializer, ser::SerializeSeq};
++use std::io::Write;
++
++#[derive(Serialize)]
++struct Summary {
++    logical_bytes: u64,
++    data_bytes: u64,
++    zero_bytes: u64,
++    hole_bytes: u64,
++    extent_count: usize,
++}
++#[derive(Serialize)]
++struct ExtentReport {
++    offset: u64,
++    length: u64,
++    kind: &'static str,
++}
++fn extent(e: &Extent) -> ExtentReport {
++    ExtentReport {
++        offset: e.offset(),
++        length: e.length(),
++        kind: match e.kind() {
++            ExtentKind::Data => "data",
++            ExtentKind::Zero => "zero",
++            ExtentKind::Hole => "hole",
++        },
++    }
++}
++struct Extents<'a>(&'a [Extent]);
++impl Serialize for Extents<'_> {
++    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
++        let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
++        for item in self.0 {
++            seq.serialize_element(&extent(item))?;
++        }
++        seq.end()
++    }
++}
++#[derive(Serialize)]
++struct Report<'a> {
++    schema_version: u32,
++    command: &'static str,
++    format: &'static str,
++    status: &'static str,
++    source: &'a crate::preview::Source,
++    summary: Summary,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    destination: &'a Option<crate::preview::Destination>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    execution: &'a Option<crate::preview::Execution>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    extents: Option<Extents<'a>>,
++}
++pub(crate) fn write(preview: &Preview, json: bool, out: &mut impl Write) -> Result<(), Failure> {
++    let plan = &preview.plan;
++    if json {
++        let report = Report {
++            schema_version: 1,
++            command: preview.command,
++            format: "raw",
++            status: if preview.command == "plan" {
++                "preview"
++            } else {
++                "inspected"
++            },
++            source: &preview.source,
++            summary: Summary {
++                logical_bytes: plan.logical_bytes(),
++                data_bytes: plan.data_bytes(),
++                zero_bytes: plan.zero_bytes(),
++                hole_bytes: plan.hole_bytes(),
++                extent_count: plan.extent_count(),
++            },
++            destination: &preview.destination,
++            execution: &preview.execution,
++            extents: preview.include_extents.then(|| Extents(plan.extents())),
++        };
++        serde_json::to_writer_pretty(&mut *out, &report)
++            .map_err(|e| Failure::new("output", e.to_string()))?;
++        writeln!(out).map_err(|e| Failure::io("write output", e))?;
++    } else {
++        human(preview, out).map_err(|e| Failure::io("write output", e))?;
++    }
++    out.flush().map_err(|e| Failure::io("flush output", e))
++}
++fn human(preview: &Preview, out: &mut impl Write) -> std::io::Result<()> {
++    let path = preview.source.path.label();
++    // Escaped path text keeps embedded control characters from changing terminal layout.
++    writeln!(out, "RAW {}: {path}", preview.command)?;
++    let plan = &preview.plan;
++    writeln!(out, "Logical size: {} bytes", plan.logical_bytes())?;
++    writeln!(
++        out,
++        "Extents: {} (Data {} / Zero {} / Hole {} bytes)",
++        plan.extent_count(),
++        plan.data_bytes(),
++        plan.zero_bytes(),
++        plan.hole_bytes()
++    )?;
++    if let Some(destination) = &preview.destination {
++        writeln!(out, "Destination: {}", destination.path.label())?;
++        writeln!(
++            out,
++            "Policy: {} ({})",
++            destination.policy, destination.state
++        )?;
++        if destination.preserved_tail_bytes > 0 {
++            writeln!(
++                out,
++                "Preserved destination tail: {} bytes",
++                destination.preserved_tail_bytes
++            )?;
++        }
++    }
++    if let Some(execution) = &preview.execution {
++        writeln!(
++            out,
++            "Backend requested: {}; selection: {}",
++            execution.requested_backend,
++            execution.selected_backend.unwrap_or("deferred")
++        )?;
++        writeln!(
++            out,
++            "Threaded payload estimate: {} bytes; budget: {} bytes; fits: {}",
++            execution.threaded_payload_estimate_bytes,
++            execution.memory_budget_bytes,
++            execution.threaded_payload_fits_budget
++        )?;
++        writeln!(
++            out,
++            "Preview only: write access and runtime readiness are unchecked. No destination was created or written."
++        )?;
++    }
++    if preview.include_extents {
++        writeln!(out, "OFFSET\tLENGTH\tKIND")?;
++        for e in plan.extents() {
++            let e = extent(e);
++            writeln!(out, "{}\t{}\t{}", e.offset, e.length, e.kind)?;
++        }
++    }
++    Ok(())
++}
+diff --git a/crates/rvvdk-cli/src/preview.rs b/crates/rvvdk-cli/src/preview.rs
+new file mode 100644
+index 0000000..ab65055
+--- /dev/null
++++ b/crates/rvvdk-cli/src/preview.rs
+@@ -0,0 +1,259 @@
++use crate::error::Failure;
++use rvvdk_core::{EndpointIdentity, RawDisk, VirtualDisk};
++use rvvdk_datamover::{CopyOptions, CopyPlan, DataMover};
++use rvvdk_local::LocalFileBlockDevice;
++use serde::Serialize;
++use std::{
++    fs,
++    os::unix::{ffi::OsStrExt, fs::MetadataExt},
++    path::{Path, PathBuf},
++};
++
++type Result<T> = std::result::Result<T, Failure>;
++
++#[derive(Serialize)]
++pub(crate) struct PathReport {
++    display: String,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    bytes_hex: Option<String>,
++}
++impl PathReport {
++    pub fn label(&self) -> String {
++        format!("{:?}", self.display)
++    }
++}
++impl From<&Path> for PathReport {
++    fn from(path: &Path) -> Self {
++        Self {
++            display: path.to_string_lossy().into_owned(),
++            bytes_hex: path.to_str().is_none().then(|| {
++                path.as_os_str()
++                    .as_bytes()
++                    .iter()
++                    .map(|b| format!("{b:02x}"))
++                    .collect()
++            }),
++        }
++    }
++}
++#[derive(Serialize)]
++pub(crate) struct Identity {
++    device: u64,
++    inode: u64,
++}
++#[derive(Serialize)]
++pub(crate) struct Source {
++    pub path: PathReport,
++    pub logical_bytes: u64,
++    pub logical_block_size: u32,
++    pub physical_block_size: u32,
++    identity: Identity,
++}
++#[derive(Serialize)]
++pub(crate) struct Destination {
++    pub path: PathReport,
++    pub state: &'static str,
++    pub policy: &'static str,
++    pub existing_bytes: Option<u64>,
++    pub copy_range_bytes: u64,
++    pub preserved_tail_bytes: u64,
++    pub write_access_checked: bool,
++}
++#[derive(Serialize)]
++pub(crate) struct Execution {
++    pub requested_backend: String,
++    pub selected_backend: Option<&'static str>,
++    pub selection_reason: &'static str,
++    pub runtime_prepared: bool,
++    pub block_size: usize,
++    pub buffer_alignment: usize,
++    pub workers: usize,
++    pub work_queue_capacity: usize,
++    pub native_queue_depth: u32,
++    pub native_read_window: usize,
++    pub memory_budget_bytes: usize,
++    pub threaded_payload_estimate_bytes: usize,
++    pub threaded_payload_fits_budget: bool,
++}
++pub(crate) struct Preview {
++    pub command: &'static str,
++    pub source: Source,
++    pub plan: CopyPlan,
++    pub destination: Option<Destination>,
++    pub execution: Option<Execution>,
++    pub include_extents: bool,
++}
++fn regular(path: &Path) -> Result<fs::Metadata> {
++    let metadata = fs::metadata(path).map_err(|e| Failure::io(&format!("inspect {path:?}"), e))?;
++    if !metadata.is_file() {
++        return Err(Failure::new(
++            "not_regular_file",
++            format!("expected a regular file: {path:?}"),
++        ));
++    }
++    Ok(metadata)
++}
++
++pub(crate) fn build(name: &str, args: &clap::ArgMatches) -> Result<Preview> {
++    let source_path = args.get_one::<PathBuf>("source").expect("required source");
++    // Reject ordinary special-file paths before open (e.g. FIFOs). This path
++    // check is not a lease against concurrent namespace changes.
++    regular(source_path)?;
++    let source = RawDisk::new(LocalFileBlockDevice::open_read_only(source_path)?);
++    let endpoint = source.copy_endpoint()?;
++    let Some(EndpointIdentity::LocalFile { device, inode }) = endpoint.identity else {
++        return Err(Failure::new("planning", "missing local file identity"));
++    };
++    let budget = *args.get_one::<usize>("memory-budget").unwrap();
++    let options = if name == "plan" {
++        CopyOptions::with_concurrency(
++            *args.get_one("block-size").unwrap(),
++            4096,
++            *args.get_one("workers").unwrap(),
++        )?
++    } else {
++        CopyOptions::default()
++    }
++    .with_memory_budget(budget);
++    // Reuse canonical logical topology validation and metadata budget admission.
++    // This portable selection is NOT presented as the future RAW native decision.
++    let mover = DataMover::new(options);
++    let plan = mover.plan(&source)?;
++    let live = source.copy_endpoint()?;
++    if live.size != source.size() || live.identity != endpoint.identity {
++        return Err(Failure::new(
++            "source_changed",
++            "source size or identity changed during inspection",
++        ));
++    }
++    let mut preview = Preview {
++        command: if name == "plan" { "plan" } else { "inspect" },
++        source: Source {
++            path: source_path.as_path().into(),
++            logical_bytes: source.size(),
++            logical_block_size: source.geometry().logical_block_size(),
++            physical_block_size: source.geometry().physical_block_size(),
++            identity: Identity { device, inode },
++        },
++        plan,
++        destination: None,
++        execution: None,
++        include_extents: args.get_flag("extents"),
++    };
++    if name == "plan" {
++        let destination = args.get_one::<PathBuf>("destination").unwrap();
++        preview.destination = Some(destination_preview(
++            destination,
++            args.get_flag("overwrite"),
++            device,
++            inode,
++            source.size(),
++        )?);
++        let requested = args.get_one::<String>("backend").unwrap();
++        let estimate = mover.execution_memory(&preview.plan)?.total_bytes();
++        let queue = *args.get_one::<u32>("queue-depth").unwrap();
++        preview.execution = Some(Execution {
++            requested_backend: requested.clone(),
++            selected_backend: (requested == "threaded").then_some("threaded"),
++            selection_reason: if requested == "threaded" {
++                "requested_threaded"
++            } else {
++                "deferred_until_destination_preparation"
++            },
++            runtime_prepared: false,
++            block_size: options.block_size(),
++            buffer_alignment: options.buffer_alignment(),
++            workers: options.concurrency(),
++            work_queue_capacity: options.queue_capacity(),
++            native_queue_depth: queue,
++            native_read_window: (queue as usize).div_ceil(2),
++            memory_budget_bytes: budget,
++            threaded_payload_estimate_bytes: estimate,
++            threaded_payload_fits_budget: estimate <= budget,
++        });
++    }
++    Ok(preview)
++}
++fn destination_preview(
++    path: &Path,
++    overwrite: bool,
++    device: u64,
++    inode: u64,
++    size: u64,
++) -> Result<Destination> {
++    let bytes = path.as_os_str().as_bytes();
++    if path.file_name().is_none() || bytes.ends_with(b"/") || bytes.ends_with(b"/.") {
++        return Err(Failure::new(
++            "invalid_destination",
++            "destination must name a file",
++        ));
++    }
++    let existing = match fs::symlink_metadata(path) {
++        Ok(metadata) => Some(metadata),
++        Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
++        Err(e) => return Err(Failure::io(&format!("inspect destination {path:?}"), e)),
++    };
++    if let Some(metadata) = &existing {
++        // Reject leaf symlinks, including dangling links, even with --overwrite.
++        if !metadata.is_file() {
++            return Err(Failure::new(
++                "invalid_destination",
++                "destination must be a regular file, not a symlink or special file",
++            ));
++        }
++        if (metadata.dev(), metadata.ino()) == (device, inode) {
++            return Err(Failure::new(
++                "same_file",
++                "source and destination refer to the same file",
++            ));
++        }
++        if !overwrite {
++            return Err(Failure::new(
++                "destination_exists",
++                "destination exists; use --overwrite to preview an in-place overwrite",
++            ));
++        }
++        if metadata.len() < size {
++            return Err(Failure::new(
++                "destination_too_small",
++                "in-place destination is smaller than the source; preview does not resize it",
++            ));
++        }
++    } else {
++        let parent = path
++            .parent()
++            .filter(|p| !p.as_os_str().is_empty())
++            .unwrap_or_else(|| Path::new("."));
++        if path.file_name().is_none() {
++            return Err(Failure::new(
++                "invalid_destination",
++                "destination needs a file name",
++            ));
++        }
++        let metadata = fs::metadata(parent)
++            .map_err(|e| Failure::io(&format!("inspect destination parent {parent:?}"), e))?;
++        if !metadata.is_dir() {
++            return Err(Failure::new(
++                "invalid_destination",
++                "destination parent is not a directory",
++            ));
++        }
++    }
++    Ok(Destination {
++        path: path.into(),
++        state: if existing.is_some() {
++            "existing"
++        } else {
++            "new"
++        },
++        policy: if existing.is_some() {
++            "overwrite_in_place"
++        } else {
++            "create_new_no_clobber"
++        },
++        existing_bytes: existing.as_ref().map(fs::Metadata::len),
++        copy_range_bytes: size,
++        preserved_tail_bytes: existing.as_ref().map_or(0, |m| m.len() - size),
++        write_access_checked: false,
++    })
++}
+diff --git a/crates/rvvdk-cli/tests/commands.rs b/crates/rvvdk-cli/tests/commands.rs
+new file mode 100644
+index 0000000..df7fd7c
+--- /dev/null
++++ b/crates/rvvdk-cli/tests/commands.rs
+@@ -0,0 +1,406 @@
++#![cfg(target_os = "linux")]
++use serde_json::Value;
++use std::{
++    ffi::OsString,
++    fs::{self, File},
++    io::Write,
++    os::unix::{
++        ffi::OsStringExt,
++        fs::{FileExt, MetadataExt, PermissionsExt, symlink},
++    },
++    path::PathBuf,
++    process::{Command, Stdio},
++    sync::atomic::{AtomicUsize, Ordering},
++    time::{Duration, Instant},
++};
++
++struct Fixture {
++    root: PathBuf,
++    source: PathBuf,
++    destination: PathBuf,
++}
++impl Fixture {
++    fn new(size: usize) -> Self {
++        static NEXT: AtomicUsize = AtomicUsize::new(0);
++        let root = std::env::var_os("RVVDK_TEST_DIR")
++            .map(PathBuf::from)
++            .unwrap_or_else(std::env::temp_dir)
++            .join(format!(
++                "rvddk-cli-{}-{}",
++                std::process::id(),
++                NEXT.fetch_add(1, Ordering::Relaxed)
++            ));
++        fs::create_dir(&root).unwrap();
++        let source = root.join("source.raw");
++        let destination = root.join("destination.raw");
++        fs::write(&source, vec![0x5a; size]).unwrap();
++        Self {
++            root,
++            source,
++            destination,
++        }
++    }
++    fn args(&self, plan: bool, extra: &[&str]) -> Vec<OsString> {
++        let mut args = vec![
++            "rvddk".into(),
++            if plan {
++                "plan".into()
++            } else {
++                "inspect".into()
++            },
++            self.source.clone().into(),
++        ];
++        if plan {
++            args.push(self.destination.clone().into());
++        }
++        args.extend(["--format".into(), "raw".into(), "--json".into()]);
++        args.extend(extra.iter().map(OsString::from));
++        args
++    }
++}
++impl Drop for Fixture {
++    fn drop(&mut self) {
++        fs::remove_dir_all(&self.root).unwrap();
++    }
++}
++fn run(args: Vec<OsString>) -> (i32, Vec<u8>, Vec<u8>) {
++    let (mut out, mut err) = (Vec::new(), Vec::new());
++    let code = rvvdk_cli::run(args, &mut out, &mut err);
++    (code, out, err)
++}
++fn ok(args: Vec<OsString>) -> Value {
++    let (code, out, err) = run(args);
++    assert_eq!(code, 0, "{}", String::from_utf8_lossy(&err));
++    assert!(err.is_empty());
++    serde_json::from_slice(&out).unwrap()
++}
++fn error(args: Vec<OsString>, expected: &str, exit: i32) {
++    let (code, out, err) = run(args);
++    assert_eq!(code, exit, "{}", String::from_utf8_lossy(&err));
++    assert!(out.is_empty());
++    let value: Value = serde_json::from_slice(&err).unwrap();
++    assert_eq!(value["schema_version"], 1);
++    assert_eq!(value["error"]["code"], expected);
++}
++#[test]
++fn inspect_dense_empty_and_odd_images_with_explicit_extent_output() {
++    for size in [0, 7, 4096, 4103] {
++        let f = Fixture::new(size);
++        let report = ok(f.args(false, &["--extents"]));
++        assert_eq!(report["schema_version"], 1);
++        assert_eq!(report["status"], "inspected");
++        assert_eq!(report["summary"]["logical_bytes"], size);
++        let extents = report["extents"].as_array().unwrap();
++        let mut offset = 0;
++        for extent in extents {
++            assert_eq!(extent["offset"], offset);
++            offset += extent["length"].as_u64().unwrap();
++        }
++        assert_eq!(offset, size as u64);
++        assert!(report.get("execution").is_none());
++        assert_eq!(fs::read(&f.source).unwrap(), vec![0x5a; size]);
++        assert!(ok(f.args(false, &[])).get("extents").is_none());
++    }
++}
++#[test]
++fn sparse_map_matches_library_topology_without_reading_payload() {
++    use rvvdk_core::{RawDisk, VirtualDisk};
++    let f = Fixture::new(0);
++    let file = File::options().write(true).open(&f.source).unwrap();
++    file.set_len(65536).unwrap();
++    file.write_all_at(&[0x77; 4096], 16384).unwrap();
++    file.sync_all().unwrap();
++    let source =
++        RawDisk::new(rvvdk_local::LocalFileBlockDevice::open_read_only(&f.source).unwrap());
++    let map = source.extents(0, source.size()).unwrap();
++    let report = ok(f.args(false, &["--extents"]));
++    assert_eq!(report["extents"].as_array().unwrap().len(), map.len());
++    for (e, expected) in report["extents"].as_array().unwrap().iter().zip(map) {
++        assert_eq!(e["offset"], expected.offset());
++        assert_eq!(e["length"], expected.length());
++    }
++}
++#[test]
++fn new_destination_preview_never_creates_output_and_native_is_deferred() {
++    let f = Fixture::new(4103);
++    for backend in ["threaded", "auto", "io-uring"] {
++        let report = ok(f.args(
++            true,
++            &[
++                "--backend",
++                backend,
++                "--block-size",
++                "4096",
++                "--workers",
++                "4",
++            ],
++        ));
++        assert_eq!(report["status"], "preview");
++        assert_eq!(report["destination"]["policy"], "create_new_no_clobber");
++        assert_eq!(report["destination"]["write_access_checked"], false);
++        assert_eq!(report["execution"]["runtime_prepared"], false);
++        assert_eq!(report["execution"]["workers"], 4);
++        assert_eq!(report["execution"]["requested_backend"], backend);
++        if backend == "threaded" {
++            assert_eq!(report["execution"]["selected_backend"], "threaded");
++        } else {
++            assert!(report["execution"]["selected_backend"].is_null());
++        }
++        assert!(!f.destination.exists());
++    }
++    assert_eq!(fs::read_dir(&f.root).unwrap().count(), 1);
++}
++#[test]
++fn overwrite_is_explicit_preserves_bytes_and_reports_untouched_tail() {
++    let f = Fixture::new(4096);
++    fs::write(&f.destination, vec![0xa5; 8192]).unwrap();
++    fs::set_permissions(&f.destination, fs::Permissions::from_mode(0o444)).unwrap();
++    let before = fs::metadata(&f.destination).unwrap();
++    error(f.args(true, &[]), "destination_exists", 1);
++    let report = ok(f.args(true, &["--overwrite"]));
++    assert_eq!(report["destination"]["policy"], "overwrite_in_place");
++    assert_eq!(report["destination"]["preserved_tail_bytes"], 4096);
++    assert_eq!(fs::read(&f.destination).unwrap(), vec![0xa5; 8192]);
++    let after = fs::metadata(&f.destination).unwrap();
++    assert_eq!(
++        (
++            before.ino(),
++            before.len(),
++            before.mtime(),
++            before.mtime_nsec()
++        ),
++        (after.ino(), after.len(), after.mtime(), after.mtime_nsec())
++    );
++    assert_eq!(fs::read(&f.source).unwrap(), vec![0x5a; 4096]);
++}
++#[test]
++fn aliases_symlinks_and_small_destinations_reject_without_changes() {
++    let f = Fixture::new(4096);
++    fs::hard_link(&f.source, &f.destination).unwrap();
++    error(f.args(true, &["--overwrite"]), "same_file", 1);
++    fs::remove_file(&f.destination).unwrap();
++    for target in [&f.source, &f.root.join("missing.raw")] {
++        symlink(target, &f.destination).unwrap();
++        error(f.args(true, &["--overwrite"]), "invalid_destination", 1);
++        fs::remove_file(&f.destination).unwrap();
++    }
++    fs::write(&f.destination, [0xa5; 7]).unwrap();
++    error(f.args(true, &["--overwrite"]), "destination_too_small", 1);
++    assert_eq!(fs::read(&f.destination).unwrap(), [0xa5; 7]);
++}
++#[test]
++fn missing_parent_and_non_file_paths_fail_before_output() {
++    let mut f = Fixture::new(4096);
++    f.destination = f.root.join("missing/target");
++    error(f.args(true, &[]), "io", 1);
++    f.destination = f.root.join("new/");
++    error(f.args(true, &[]), "invalid_destination", 1);
++    f.destination = f.root.clone();
++    error(f.args(true, &["--overwrite"]), "invalid_destination", 1);
++    f.source = f.root.clone();
++    error(f.args(false, &[]), "not_regular_file", 1);
++}
++#[test]
++fn usage_errors_are_json_and_tunables_are_checked() {
++    let f = Fixture::new(7);
++    for extra in [
++        &["--backend", "bogus"][..],
++        &["--block-size", "0"],
++        &["--workers", "0"],
++        &["--queue-depth", "0"],
++        &["--queue-depth", "4294967296"],
++        &["--workers", "-1"],
++        &["--unknown"],
++    ] {
++        error(f.args(true, extra), "usage", 2);
++    }
++    error(
++        vec![
++            "rvddk".into(),
++            "inspect".into(),
++            f.source.clone().into(),
++            "--json".into(),
++        ],
++        "usage",
++        2,
++    );
++    error(
++        vec!["rvddk".into(), "copy".into(), "--json".into()],
++        "usage",
++        2,
++    );
++    let (code, _, _) = run(vec!["rvddk".into(), "--help".into()]);
++    assert_eq!(code, 0);
++    let (code, out, _) = run(vec!["rvddk".into(), "--version".into()]);
++    assert_eq!(code, 0);
++    assert!(String::from_utf8(out).unwrap().starts_with("rvddk "));
++}
++#[test]
++fn metadata_budget_failure_and_unadmitted_execution_estimate_are_distinct() {
++    let f = Fixture::new(4096);
++    error(f.args(false, &["--memory-budget", "0"]), "memory_budget", 1);
++    let report = ok(f.args(true, &["--memory-budget", "1024"]));
++    assert_eq!(report["execution"]["threaded_payload_fits_budget"], false);
++    assert!(!f.destination.exists());
++}
++#[test]
++fn non_utf8_paths_round_trip_and_control_characters_are_escaped() {
++    let mut f = Fixture::new(7);
++    let old = f.source.clone();
++    f.source = f
++        .root
++        .join(OsString::from_vec(b"source-\xff\n.raw".to_vec()));
++    fs::rename(old, &f.source).unwrap();
++    let report = ok(f.args(false, &[]));
++    assert!(
++        report["source"]["path"]["bytes_hex"]
++            .as_str()
++            .unwrap()
++            .ends_with("736f757263652dff0a2e726177")
++    );
++    let args = f
++        .args(false, &[])
++        .into_iter()
++        .filter(|a| a != "--json")
++        .collect();
++    let (code, out, _) = run(args);
++    assert_eq!(code, 0);
++    let text = String::from_utf8(out).unwrap();
++    assert!(text.contains("\\n.raw"));
++    assert_eq!(text.lines().count(), 3);
++}
++#[test]
++fn output_write_and_flush_failures_return_failure() {
++    struct FailsFlush;
++    impl Write for FailsFlush {
++        fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
++            Ok(bytes.len())
++        }
++        fn flush(&mut self) -> std::io::Result<()> {
++            Err(std::io::ErrorKind::BrokenPipe.into())
++        }
++    }
++    let f = Fixture::new(7);
++    let mut full = File::options().write(true).open("/dev/full").unwrap();
++    assert_eq!(
++        rvvdk_cli::run(f.args(false, &[]), &mut full, &mut Vec::new()),
++        1
++    );
++    assert_eq!(
++        rvvdk_cli::run(f.args(false, &[]), &mut FailsFlush, &mut Vec::new()),
++        1
++    );
++}
++#[test]
++fn actual_binary_handles_help_errors_and_special_files_without_blocking() {
++    let mut f = Fixture::new(7);
++    let fifo = f.root.join("fifo");
++    let path = std::ffi::CString::new(fifo.as_os_str().as_encoded_bytes()).unwrap();
++    // SAFETY: the path is NUL terminated and local to this test.
++    assert_eq!(unsafe { libc::mkfifo(path.as_ptr(), 0o600) }, 0);
++    f.source = fifo;
++    let output = bounded(Command::new(env!("CARGO_BIN_EXE_rvddk")).args(&f.args(false, &[])[1..]));
++    assert_eq!(output.status.code(), Some(1));
++    let error: Value = serde_json::from_slice(&output.stderr).unwrap();
++    assert_eq!(error["error"]["code"], "not_regular_file");
++}
++fn bounded(command: &mut Command) -> std::process::Output {
++    let mut child = command
++        .stdout(Stdio::piped())
++        .stderr(Stdio::piped())
++        .spawn()
++        .unwrap();
++    let deadline = Instant::now() + Duration::from_secs(10);
++    loop {
++        if child.try_wait().unwrap().is_some() {
++            return child.wait_with_output().unwrap();
++        }
++        if Instant::now() > deadline {
++            child.kill().unwrap();
++            child.wait().unwrap();
++            panic!("CLI timed out");
++        }
++        std::thread::sleep(Duration::from_millis(10));
++    }
++}
++
++#[test]
++fn commands_succeed_when_writable_opens_and_ring_setup_are_denied() {
++    use std::os::unix::process::CommandExt;
++    let f = Fixture::new(4103);
++    for existing in [false, true] {
++        if existing {
++            fs::write(&f.destination, vec![0xa5; 8192]).unwrap();
++        }
++        for backend in ["threaded", "auto", "io-uring"] {
++            let mut args = f.args(true, &["--backend", backend]);
++            if existing {
++                args.push("--overwrite".into());
++            }
++            let instruction = |code, jt, jf, k| libc::sock_filter { code, jt, jf, k };
++            let mut filter = Vec::new();
++            // Filter only the disposable exec child; never change host policy.
++            for (call, argument) in [(libc::SYS_openat, 2), (libc::SYS_open, 1)] {
++                let word = 16 + argument * 8 + if cfg!(target_endian = "big") { 4 } else { 0 };
++                filter.extend([
++                    instruction(0x20, 0, 0, 0),
++                    instruction(0x15, 0, 4, call as u32),
++                    instruction(0x20, 0, 0, word),
++                    instruction(
++                        0x54,
++                        0,
++                        0,
++                        (libc::O_ACCMODE | libc::O_CREAT | libc::O_TRUNC | libc::O_APPEND) as u32,
++                    ),
++                    instruction(0x15, 1, 0, 0),
++                    instruction(0x06, 0, 0, libc::SECCOMP_RET_ERRNO | libc::EPERM as u32),
++                ]);
++            }
++            for syscall in [
++                libc::SYS_creat,
++                libc::SYS_truncate,
++                libc::SYS_ftruncate,
++                libc::SYS_fallocate,
++                libc::SYS_io_uring_setup,
++            ] {
++                filter.extend([
++                    instruction(0x20, 0, 0, 0),
++                    instruction(0x15, 0, 1, syscall as u32),
++                    instruction(0x06, 0, 0, libc::SECCOMP_RET_ERRNO | libc::EPERM as u32),
++                ]);
++            }
++            filter.push(instruction(0x06, 0, 0, libc::SECCOMP_RET_ALLOW));
++            let mut command = Command::new(env!("CARGO_BIN_EXE_rvddk"));
++            command.args(&args[1..]);
++            // SAFETY: after fork this closure only calls prctl using live filter
++            // storage. It does not allocate, lock, or access shared mutable state.
++            unsafe {
++                command.pre_exec(move || {
++                    let program = libc::sock_fprog {
++                        len: filter.len() as u16,
++                        filter: filter.as_mut_ptr(),
++                    };
++                    if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0
++                        || libc::prctl(libc::PR_SET_SECCOMP, libc::SECCOMP_MODE_FILTER, &program)
++                            != 0
++                    {
++                        return Err(std::io::Error::last_os_error());
++                    }
++                    Ok(())
++                });
++            }
++            let output = bounded(&mut command);
++            assert!(
++                output.status.success(),
++                "{}",
++                String::from_utf8_lossy(&output.stderr)
++            );
++            let report: Value = serde_json::from_slice(&output.stdout).unwrap();
++            assert_eq!(report["status"], "preview");
++            assert_eq!(report["execution"]["runtime_prepared"], false);
++            assert_eq!(f.destination.exists(), existing);
++        }
++    }
++    assert_eq!(fs::read(&f.source).unwrap(), vec![0x5a; 4103]);
++    assert_eq!(fs::read(&f.destination).unwrap(), vec![0xa5; 8192]);
++}

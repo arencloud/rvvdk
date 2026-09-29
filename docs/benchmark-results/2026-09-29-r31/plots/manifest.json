@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R3.1 \u00b7 Read-only RAW CLI",
+    "candidate": "patch ffc26d28",
+    "conditions": "Btrfs \u00b7 CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm files \u00b7 no copy/flush timing",
+    "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "candidate_only": {
+      "title": "New CLI \u00b7 candidate-only latency",
+      "note": "No previous CLI baseline. In-process sink output and full process/captured-output boundaries differ.",
+      "sampling": "3 runs/case \u00b7 in-process: 30 Criterion samples, 0.3 s warmup, 2 s target \u00b7 process: 30 batches \u00d7 5 launches, 5 warmup batches"
+    },
+    "workloads": {
+      "preflight/plan_threaded": {
+        "label": "Threaded planning control \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "preflight/plan_native": {
+        "label": "Native planning control \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "cli_preview/inspect_dense_json": {
+        "label": "In-process inspect \u00b7 1 MiB \u00b7 JSON summary",
+        "phase": "planning"
+      },
+      "cli_preview/plan_new_json": {
+        "label": "In-process plan new \u00b7 1 MiB \u00b7 JSON summary",
+        "phase": "planning"
+      },
+      "cli_preview/inspect_fragmented_extents_json": {
+        "label": "In-process inspect \u00b7 8 MiB \u00b7 fragmented full map",
+        "phase": "planning"
+      },
+      "cli_process/inspect_json": {
+        "label": "Whole process inspect \u00b7 1 MiB \u00b7 captured JSON",
+        "phase": "planning"
+      },
+      "cli_process/plan_json": {
+        "label": "Whole process plan new \u00b7 1 MiB \u00b7 captured JSON",
+        "phase": "planning"
+      }
+    }
+  },
+  "input_sha256": {
+    "plot-config.json": "1db692de90585016fae42a3c0a1ebcfd2ea9d1a17c4598de42476ca9a706ec7a",
+    "environment.json": "258c99b6e4a01fd24c563adcdc4be1c417ad74d0ed1dae31e4e98959c3d68fc0",
+    "measurements.json": "39b353183d6fa9e29829700f3306d2fea346515eaa67cec413aab1368f0c31dd",
+    "summary.json": "66b501f4e6698026de6538c84598e1cf1ad4696dbb0a13ea8d9a1295858b0d2c",
+    "candidate-only-measurements.json": "0b150c143453be8084e0ebf3f9b70a448c6589b2abe005095af070e0b4d7f3b9"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "1461fd7527e649b12773a7eebb36c15362d1c8bfd4e31cfb28a712a0ef69a9cf",
+    "planning-latency.png": "38888f7492e29cbb8b72e5f8ae3c35dc9c9154045dae63a8326e03fbf7490092",
+    "relative-change.svg": "959dfc3936847f5d9792bec4531f0db212e1bd5741a948fabef8967722821ed4",
+    "relative-change.png": "01d0beec6031ae23d9cdaf5a7e1ca32ec0a7aa997af48bf6228cdc5732fdda10",
+    "sample-distributions.svg": "c5abf2fec50c77049b5fe32c33552ee671ee20fe644ae65c52173af026f1fb3f",
+    "sample-distributions.png": "37adc2f30dfb0eb31c5c207847b0860b29266c340aa1a9990b4e0fb15dab0d31",
+    "candidate-only.svg": "1ab87f0a09bd46982222936bb7745878b112c068ad65311fa07797fda18f4ff8",
+    "candidate-only.png": "88f54658be5bd02a3ea66f5ef0a138f55c749541f2fe9fbc3dc0995d1c9f6de4",
+    "computed.json": "7982c3c7ce2e8830adcb168ca505863ddc8bd35543e7b84c76904a0ee5f3d3ff"
+  }
+}
