@@ -6,6 +6,63 @@ Candidate: that commit plus [candidate.patch](candidate.patch).
 builds. No worker, queue, block size, memory budget, native read window, or
 host governor defaults changed.
 
+## Visual results
+
+Added after R2.3 from the original saved evidence; no new benchmark runs.
+Positive elapsed-time changes mean slower. Bars use medians of run medians;
+points retain individual runs or matched pairs. These plots do not change the
+performance disposition below.
+
+![Elapsed-time percentage changes with all paired runs](plots/relative-change.svg)
+
+[PNG copy](plots/relative-change.png). The +5% line is an investigation threshold,
+not a statistical confidence bound. Native small-plan cost remains +34.54%.
+
+![Planning latency in microseconds](plots/planning-latency.svg)
+
+[Planning PNG](plots/planning-latency.png). Zero-based axes; each panel has its
+own scale. The native-planning increase is approximately 0.610 µs.
+
+![Complete-copy latency in milliseconds](plots/copy-latency.svg)
+
+[Copy PNG](plots/copy-latency.png). Final flush is timed; reset and readback are
+outside the timer. RAW copies include planning; progress copies revalidate a
+prebuilt plan. Small differences remain provisional on this shared host.
+
+<details>
+<summary>Sample distributions — all outliers retained</summary>
+
+![Per-run Criterion sample distributions](plots/sample-distributions.svg)
+
+[Distribution PNG](plots/sample-distributions.png). Samples are elapsed time
+normalized by iterations, not individual I/O latency. Boxes show Q1–Q3 and the
+median; whiskers use 1.5×IQR. Runs are kept separate. Axes are zoomed and vary
+between panels; no outliers are removed.
+
+</details>
+
+![Main fragmented-planning comparison and longer repeat](plots/followup-change.svg)
+
+[Repeat PNG](plots/followup-change.png). Both the original +9.10% pair and the
+longer repeat remain visible. The repeat is not a historical performance trend.
+
+<details>
+<summary>Injected unsupported discovery — candidate only</summary>
+
+![Candidate-only fallback timing](plots/unsupported-discovery.svg)
+
+[Fallback PNG](plots/unsupported-discovery.png). The baseline fails this workload,
+so there is no before/after speedup. The interposer does not model actual failed
+filesystem seek latency; the source's logical holes are read/written as Data.
+
+</details>
+
+Regenerate with the [plotting guide](../../../scripts/benchmarks/README.md).
+[Configuration](plot-config.json), [plotted values](plots/computed.json), and
+[generator/input/output hashes and tool versions](plots/manifest.json) preserve
+plot provenance. [Plot validation](plots/validation.json) records checks. Original raw evidence
+and the original R2.3 audit are unchanged.
+
 ## Validation
 
 **323 tests pass; one existing allocation test is gated** in the workspace run

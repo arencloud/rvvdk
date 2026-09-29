@@ -1,0 +1,37 @@
+{
+  "title": "R2.3 \u00b7 Sparse discovery fallback",
+  "candidate": "8ed67ec",
+  "conditions": "Btrfs \u00b7 warm buffered I/O \u00b7 copy flush included \u00b7 CPUs 2\u20136 \u00b7 powersave \u00b7 shared host",
+  "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+  "repeat_sampling": "3 adjacent pairs \u00b7 40 samples/run \u00b7 0.5 s warmup \u00b7 5 s target",
+  "workloads": {
+    "preflight/plan_native": {
+      "label": "Native planning \u00b7 1 MiB RAW",
+      "phase": "planning"
+    },
+    "preflight_copy/threaded": {
+      "label": "Threaded copy \u00b7 1 MiB RAW",
+      "phase": "copy"
+    },
+    "preflight_copy/native": {
+      "label": "Native copy \u00b7 1 MiB RAW",
+      "phase": "copy"
+    },
+    "progress_plan/fragmented50/plan": {
+      "label": "Fragmented planning \u00b7 16 MiB",
+      "phase": "planning"
+    },
+    "progress_copy/dense/unobserved": {
+      "label": "Dense copy \u00b7 16 MiB \u00b7 unobserved",
+      "phase": "copy"
+    },
+    "progress_copy/fragmented50/noop": {
+      "label": "Fragmented copy \u00b7 16 MiB \u00b7 no-op observer",
+      "phase": "copy"
+    },
+    "progress_copy/fragmented50/unobserved": {
+      "label": "Fragmented copy \u00b7 16 MiB \u00b7 unobserved",
+      "phase": "copy"
+    }
+  }
+}

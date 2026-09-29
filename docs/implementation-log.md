@@ -31,6 +31,7 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 |---|---|---|---|
 | DOC.1 | Complete | [Dated project review](project-review-2026-09-28.md) and [roadmap](roadmap.md); review session: 194 tests passed, fmt/Clippy passed; targeted defects recorded | N/A — analysis/documentation; historical benchmarks reviewed, no new throughput runs |
 | DOC.2 | Complete | README presentation and accurate capability status; Rust example executed, local links and whitespace checked | N/A — documentation only |
+| DOC.4 | Complete | Reusable benchmark plot generator; six R2.3 charts in SVG/PNG; [guide](../scripts/benchmarks/README.md) | N/A — presentation/tooling only; original samples and performance dispositions preserved |
 | DOC.3 | Complete | Benchmark policy, this tracking index, and V0 lab/license requirements | N/A — documentation only; PERF.0 remains pending |
 | WIP.OBS | In progress — checkpoint committed | `c951547` records the pre-existing observer/progress modules, exports, mover integration, and sparse progress test; F03 validation bypass is now fixed by R0.1; other progress lifecycle work remains open | [R0.1 comparison](benchmark-results/2026-09-28-r01/README.md) recorded; broader qualification remains pending |
 | PERF.0 | In progress | Flush parity corrected; isolated builds, source patch/hashes, and repeated Btrfs planning/observer comparisons captured | Targeted evidence recorded; controlled-runner repeat, sustained direct I/O, and broader matrix remain pending |
@@ -934,6 +935,37 @@ Keep this concern provisional; no same-binary control was run. Candidate-only
 injected fallback timings characterize a different I/O path, not a baseline
 speedup. [All results and limits](benchmark-results/2026-09-29-r23/README.md)
 are retained. Prior PERF.0 and R2.2's fragmented-output cost remain open.
+
+## DOC.4 — Benchmark plots and reusable report generation
+
+Date: 2026-09-29. Status: **Complete**. Baseline: `8ed67ec` (R2.3), initially
+clean working tree. This step responds to the request for visual benchmark
+reports before continuing implementation.
+
+Added a headless Matplotlib generator with a pinned plotting dependency, explicit
+report configuration, and usage guide. R2.3 now embeds six SVG charts with PNG
+copies: separate planning/copy bars, aggregate changes with paired-run dots,
+per-run sample box plots, the main/longer-repeat comparison, and candidate-only
+injected fallback. Each figure carries measured source identities, units, and
+conditions. Outliers remain visible; candidate-only results claim no speedup.
+
+The generator normalizes Criterion samples by iteration count, matches explicit
+pair IDs, and checks raw medians and all aggregate/paired results against saved
+summaries. It records computed values and hashes of inputs, generator, and images,
+plus the Python/package environment. Future measured steps must include applicable
+plots under the [benchmark policy](benchmarks.md#plots-for-recorded-results).
+Historical trends require matched conditions; no misleading cross-step trend is
+inferred from different fixtures or host conditions.
+
+Validation: five focused Python tests pass, covering pair identity, aggregation,
+normalization/outlier preservation, missing/duplicate pairs, mismatched recorded
+values, and invalid samples. All 48 saved runs validate (36 main, six repeat,
+six candidate-only); all six figures were visually inspected. SVG/XML, PNGs,
+links, and provenance hashes check successfully, and regeneration in the recorded
+environment produces identical image bytes. Original benchmark evidence remains
+unchanged. Rust tests and benchmarks were not rerun: no Rust/runtime changes.
+Performance disposition: **N/A — plotting and documentation only**; R2.3 and
+all earlier qualifications remain as recorded. R2.4 remains next.
 
 ## Next session
 

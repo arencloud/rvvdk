@@ -208,6 +208,10 @@ workloads. Measurements depend on the filesystem, page cache, hardware, and
 flush policy. See the [benchmark notes](docs/benchmarks.md) for historical results
 and the [review](docs/project-review-2026-09-28.md) for measurement gaps.
 
+Explore the [R2.3 benchmark charts](docs/benchmark-results/2026-09-29-r23/README.md#visual-results)
+for latency comparisons, paired changes, and sample distributions. A
+[reusable generator](scripts/benchmarks/README.md) exports SVG and PNG figures.
+
 ## Documentation
 
 | Start here | What you will find |

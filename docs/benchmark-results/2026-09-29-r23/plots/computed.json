@@ -1,0 +1,222 @@
+{
+  "main": [
+    {
+      "benchmark": "preflight/plan_native",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          1695.9259980525803,
+          1766.3878791067154,
+          1860.813402665477
+        ],
+        "candidate": [
+          2334.8344405231474,
+          2376.416836206589,
+          2446.8232641189898
+        ]
+      },
+      "baseline_ns": 1766.3878791067154,
+      "candidate_ns": 2376.416836206589,
+      "change_percent": 34.535390800370116,
+      "paired_changes_percent": [
+        37.673132153420674,
+        34.535390800370116,
+        31.492134601679943
+      ]
+    },
+    {
+      "benchmark": "preflight_copy/threaded",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          6577647.0,
+          6738892.3,
+          6844443.0
+        ],
+        "candidate": [
+          6801923.7,
+          6754375.6,
+          6842926.9
+        ]
+      },
+      "baseline_ns": 6738892.3,
+      "candidate_ns": 6801923.7,
+      "change_percent": 0.9353376963748161,
+      "paired_changes_percent": [
+        3.40967978366733,
+        0.22976031238843841,
+        -0.02215081636298688
+      ]
+    },
+    {
+      "benchmark": "preflight_copy/native",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          6785828.3,
+          6792311.2,
+          6860147.6
+        ],
+        "candidate": [
+          6800481.0,
+          6864796.199999999,
+          6923287.3
+        ]
+      },
+      "baseline_ns": 6792311.2,
+      "candidate_ns": 6864796.199999999,
+      "change_percent": 1.0671625293022347,
+      "paired_changes_percent": [
+        0.21593089822211642,
+        1.0671625293022347,
+        0.9203839870733921
+      ]
+    },
+    {
+      "benchmark": "progress_plan/fragmented50/plan",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          199373.628742515,
+          205692.22740963855,
+          206843.76325088338
+        ],
+        "candidate": [
+          206907.56534954408,
+          224414.9255952381,
+          211910.065830721
+        ]
+      },
+      "baseline_ns": 205692.22740963855,
+      "candidate_ns": 211910.065830721,
+      "change_percent": 3.0228844810453293,
+      "paired_changes_percent": [
+        3.7788029713593296,
+        9.10228763691352,
+        2.4493378481480477
+      ]
+    },
+    {
+      "benchmark": "progress_copy/dense/unobserved",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          12712338.833333334,
+          12986897.833333332,
+          12976897.666666666
+        ],
+        "candidate": [
+          12937504.666666668,
+          12911559.333333332,
+          12959662.333333332
+        ]
+      },
+      "baseline_ns": 12976897.666666666,
+      "candidate_ns": 12937504.666666668,
+      "change_percent": -0.30356253868892846,
+      "paired_changes_percent": [
+        1.771238450181345,
+        -0.580111593752819,
+        -0.13281551396991942
+      ]
+    },
+    {
+      "benchmark": "progress_copy/fragmented50/noop",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          14539352.166666668,
+          13722729.0,
+          13749290.0
+        ],
+        "candidate": [
+          13530758.333333332,
+          13756101.75,
+          13845364.25
+        ]
+      },
+      "baseline_ns": 13749290.0,
+      "candidate_ns": 13756101.75,
+      "change_percent": 0.04954255819755726,
+      "paired_changes_percent": [
+        -6.9369929400683095,
+        0.24319324530857056,
+        0.6987578994988031
+      ]
+    }
+  ],
+  "followup": [
+    {
+      "benchmark": "progress_plan/fragmented50/plan",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          203388.0057660626,
+          215884.55489864864,
+          203492.1547420965
+        ],
+        "candidate": [
+          206233.42881072027,
+          210799.28497409326,
+          204195.1038961039
+        ]
+      },
+      "baseline_ns": 203492.1547420965,
+      "candidate_ns": 206233.42881072027,
+      "change_percent": 1.3471153578859196,
+      "paired_changes_percent": [
+        1.3990122150715711,
+        -2.3555505983013814,
+        0.3454428770968132
+      ]
+    }
+  ],
+  "unsupported": [
+    {
+      "benchmark": "progress_plan/fragmented50/plan",
+      "candidate_ns": 1445.7320148170613,
+      "run_medians_ns": [
+        1437.752711496746,
+        1450.7704348009893,
+        1445.7320148170613
+      ]
+    },
+    {
+      "benchmark": "progress_copy/fragmented50/unobserved",
+      "candidate_ns": 13225581.666666666,
+      "run_medians_ns": [
+        13122112.333333332,
+        13225581.666666666,
+        13276087.833333334
+      ]
+    }
+  ]
+}

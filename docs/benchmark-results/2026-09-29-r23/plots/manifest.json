@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R2.3 \u00b7 Sparse discovery fallback",
+    "candidate": "8ed67ec",
+    "conditions": "Btrfs \u00b7 warm buffered I/O \u00b7 copy flush included \u00b7 CPUs 2\u20136 \u00b7 powersave \u00b7 shared host",
+    "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "repeat_sampling": "3 adjacent pairs \u00b7 40 samples/run \u00b7 0.5 s warmup \u00b7 5 s target",
+    "workloads": {
+      "preflight/plan_native": {
+        "label": "Native planning \u00b7 1 MiB RAW",
+        "phase": "planning"
+      },
+      "preflight_copy/threaded": {
+        "label": "Threaded copy \u00b7 1 MiB RAW",
+        "phase": "copy"
+      },
+      "preflight_copy/native": {
+        "label": "Native copy \u00b7 1 MiB RAW",
+        "phase": "copy"
+      },
+      "progress_plan/fragmented50/plan": {
+        "label": "Fragmented planning \u00b7 16 MiB",
+        "phase": "planning"
+      },
+      "progress_copy/dense/unobserved": {
+        "label": "Dense copy \u00b7 16 MiB \u00b7 unobserved",
+        "phase": "copy"
+      },
+      "progress_copy/fragmented50/noop": {
+        "label": "Fragmented copy \u00b7 16 MiB \u00b7 no-op observer",
+        "phase": "copy"
+      },
+      "progress_copy/fragmented50/unobserved": {
+        "label": "Fragmented copy \u00b7 16 MiB \u00b7 unobserved",
+        "phase": "copy"
+      }
+    }
+  },
+  "input_sha256": {
+    "plot-config.json": "2e25979c06c0b79938d77aa2aba4c2bde1ff690c076d7c735b46bd9da3fc8a03",
+    "environment.json": "1a183c451a315d3b6e004e58f9b13c280703ddcbc4f8169c7af274e2ef432613",
+    "measurements.json": "b35f946ae8231bacb33c4f7f21144a9d5c02ca1c009316c84c9383a519868f0e",
+    "summary.json": "6e35a8804a19659d945afe22e6e4065ca2a77bd5f1e3042fde59029df9e70a0a",
+    "followup-measurements.json": "716c55d29776064dfd38b6e005737ae39e8b0706004242573f90c9abf47d1fca",
+    "followup-summary.json": "157d87d20d72bd53a6902e59dc05dae2afc4419a36752e821a1f4e0cc897bb7d",
+    "unsupported-measurements.json": "0f9dbc982b3341bac68f9c5c3d2390e4af0cce972aed9fb2787a76a2aa0fd1f1"
+  },
+  "generator_sha256": "1dd4d566d2d7563958dd827e7e0cc1f0e02c2b73648dc8da141febcadb39b12b",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "c9d77fdfce2c031ba8677c0488fe407a3fd7e40072b29fad1061e09658f86604",
+    "planning-latency.png": "9c73f6c0479b605cfc9e1e8f03210a369d0e0fc562a2676607eada9261de8335",
+    "copy-latency.svg": "28416b8a54c5dd95ca64cd5b7f597c4a0c8fbadf2d925eb0ae939ea35b3f7ee9",
+    "copy-latency.png": "a91b3c2bf3d7a233014e72b5a289cf3bb28761653ca8bcf05ff57d5e20337493",
+    "relative-change.svg": "3713bcce6f850030ba4bce4eda0bd01a7c742f4a5a5daff7c8c8c3229dd334fd",
+    "relative-change.png": "6a0b2ddd2390f21e40573f419ee14fb2fe40422528b614994b4f09dabdfe4983",
+    "sample-distributions.svg": "cf9960b548ac6b2e38439bd0e8da2b469821d5ce4acc11f436172eaf682bef97",
+    "sample-distributions.png": "f85a6030cc73e427c7a4dcd0dd00bf7dfbfbef53249a3c3b719a6fcf4870d2da",
+    "followup-change.svg": "c751c4a043ae7f4eb10cd2fcb4dc3a94a40c26837fb368aa2bdfd07124b73bea",
+    "followup-change.png": "839662c697977aed7904f7fe11113b4ce9974e5b4714d04a08c65a3c7fe2ef49",
+    "unsupported-discovery.svg": "80c579f6cacc4d902929c2aae98db99f8b2143a1d48e194aafd8c7e87a195c30",
+    "unsupported-discovery.png": "21a80795543cbf24715d15993c4249c40b8463ae2729f7c0cef2e45595e82325",
+    "computed.json": "9e8700e000515009339487d4b845985f40bbc88edf9fe3d2da1cebcf23628359"
+  }
+}

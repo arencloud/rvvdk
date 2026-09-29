@@ -1,0 +1,75 @@
+# Benchmark plots
+
+Render saved measurements as standalone SVG and PNG files without running a
+benchmark or changing its raw evidence. Install the plotting dependency in an
+ignored local environment:
+
+```bash
+python3 -m venv target/benchmark-plots
+target/benchmark-plots/bin/python -m pip install -r scripts/benchmarks/requirements.txt
+target/benchmark-plots/bin/python scripts/benchmarks/plot.py docs/benchmark-results/2026-09-29-r23
+target/benchmark-plots/bin/python -m unittest discover -s scripts/benchmarks -p 'test_*.py'
+```
+
+The output is `REPORT/plots/`; `--output PATH` renders to another directory.
+SVG is embedded in Markdown reports; PNG is available for sharing. Matplotlib
+uses a headless backend and its bundled DejaVu Sans font. Fixed SVG identifiers
+and omitted timestamps make repeat output stable in the recorded environment.
+Cross-version/platform byte identity is not guaranteed. The manifest records
+Python, installed package versions, generator/input hashes, and output hashes.
+
+## Input contract
+
+Use R2.3's [plot-config.json](../../docs/benchmark-results/2026-09-29-r23/plot-config.json)
+as a template. Set the title, **measured** candidate identity, recorded conditions,
+sampling description, and labels/phases for every workload. Do not use the current
+checkout's commit as a substitute for the measured source. Candidate identity
+can describe an uncommitted source patch; the report must link its provenance.
+Baseline identity comes from `environment.json`.
+
+Required evidence follows the compact R2.3 schema:
+
+- `measurements.json`: a list of runs, each with a unique `tag`, `benchmark`,
+  `variant` (`baseline`/`candidate`), explicit `pair`, and `criterion` object.
+- `criterion["sample.json"]`: positive, finite `times` (ns) and `iters` arrays of
+  equal length. Each plotted sample is **time / iterations**.
+- `criterion["estimates.json"]["median"]["point_estimate"]`: run median in ns.
+- `summary.json`: one row per workload with `baseline_ns`, `candidate_ns`,
+  `change_percent`, and `paired_changes_percent` in ascending pair-ID order.
+- `environment.json`: recorded baseline identity and environment/source evidence.
+
+Optional `followup-measurements.json` and `followup-summary.json` use the same
+comparison schema (a single-object summary is also accepted). Workloads must
+exist in the main comparison. They create a separate main/repeat chart.
+Optional `unsupported-measurements.json` contains candidate-only run records
+without `pair`/`variant`; this specific experiment is labeled as injected EINVAL
+via LD_PRELOAD. Do not reuse that filename for other experiment types.
+
+The generator supports these schemas, not arbitrary historical Criterion layouts.
+It checks normalized sample medians against recorded estimates and recomputes
+all published aggregate/pair changes before rendering. Mismatches, missing or
+duplicate pairs, and invalid samples fail rather than silently dropping evidence.
+`computed.json` retains plotted aggregate values, pair IDs, and run medians.
+
+## Reading the figures
+
+- Latency bars use zero-based axes, median-of-run-medians heights, and individual
+  run-median dots. Planning uses µs; copying uses ms. Panel scales are independent.
+- Change bars use `100 × (median(candidate runs) / median(baseline runs) − 1)`.
+  Dots use the corresponding ratio for each matched pair. These are different
+  statistics; neither is a confidence interval. Positive means slower.
+- Box plots keep runs separate: Q1–Q3, median, 1.5×IQR whiskers and every outlier.
+  They show normalized Criterion sample variability, **not per-I/O latency**.
+  Their axes may be zoomed and must not be interpreted as zero-based bars.
+- The +5% line marks the project's investigation threshold, not significance.
+- Candidate-only fallback has no successful baseline and no claimed speedup.
+
+Keep historical trend charts for genuinely matched workloads and conditions.
+Do not chain per-step percentages or combine mismatched harnesses into a trend.
+A repeat within one report is shown separately and does not resolve earlier
+performance investigations.
+
+For each future measured step: record provenance and raw evidence, configure
+labels/conditions, run this generator, inspect the images, embed the applicable
+SVGs with PNG links, and commit the generator/config/results with the step.
+Do not refresh historical measurements merely to update their presentation.

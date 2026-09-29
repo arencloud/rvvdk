@@ -157,6 +157,22 @@ project history.
 Keep existing `benchmark-m11.txt` as historical input until its provenance and
 environment are documented; it has not been deleted or promoted to a baseline.
 
+### Plots for recorded results
+
+Future measured implementation steps include SVG figures in their reports and
+PNG copies for sharing. Use the [reusable plot generator](../scripts/benchmarks/README.md)
+and [R2.3 visual report](benchmark-results/2026-09-29-r23/README.md#visual-results)
+as the initial format. Render existing evidence after validation; plotting does
+not rerun benchmarks or replace raw samples.
+
+Show planning and copying separately, identify measured source revisions and
+conditions, label units, and retain paired-run variability and outliers. Include
+aggregate changes and absolute timings; a large percentage on a tiny baseline
+needs both. Show repeats and candidate-only experiments separately. Use historical
+trends only for matched workloads/conditions, without chaining per-step changes.
+Record the plot configuration, computed values, generator/input/output hashes,
+and plotting dependency versions with the step. Inspect the output before commit.
+
 ### Planning and observer overhead
 
 The `progress` target isolates structural planning and single-worker observed
