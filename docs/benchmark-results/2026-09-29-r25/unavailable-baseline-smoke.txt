@@ -1,0 +1,7 @@
+Gnuplot not found, using plotters backend
+Testing native_runtime/unavailable_fallback
+
+thread 'main' (1431999) panicked at crates/rvvdk-datamover/benches/native_runtime.rs:101:22:
+called `Result::unwrap()` on an `Err` value: CopyExecution(CopyFailure { backend: "io_uring", operation: NativeSetup, range: Some(DiskRange { offset: 0, length: 65536 }), progress: CopyProgress { bytes_read: 0, bytes_written: 0, bytes_zeroed: 0, bytes_discarded: 0, blocks_completed: 0, extents_completed: Some(0), unconfirmed_io: false }, cause: Io(Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" }) })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+

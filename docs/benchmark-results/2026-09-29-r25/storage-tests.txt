@@ -1,0 +1,88 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
+     Running tests/native_requests.rs (target/debug/deps/native_requests-c162d3ab5365ebaa)
+
+running 6 tests
+test changed_direct_flag_is_rejected_before_observation ... ok
+test preparation_rechecks_requests_before_callbacks_and_sparse_prefix_then_allows_replanning ... ok
+test fallback_uses_threaded_budget_and_fd_only_native_api_never_silently_falls_back ... ok
+test unaligned_split_block_falls_back_but_unused_block_boundary_is_allowed ... ok
+test unaligned_data_after_sparse_prefix_falls_back_or_rejects_before_mutation ... ok
+test odd_and_aligned_copies_select_once_and_preserve_bytes_across_endpoint_modes ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.59s
+
+     Running tests/native_runtime.rs (target/debug/deps/native_runtime-3eabf2673eec4e28)
+
+running 8 tests
+
+running 1 test
+
+running 1 test
+
+running 1 test
+
+running 1 test
+
+running 1 test
+
+running 1 test
+
+running 1 test
+
+running 1 test
+test submission_failure_after_sparse_prefix_never_retries_threaded ... ok
+
+test result: test descriptor_duplication_denial_is_not_ring_unavailability ... okok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out
+; finished in 0.00s
+
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+test runtime_fallback_checks_the_threaded_budget_before_observation ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+test invalid_or_exhausted_ring_setup_does_not_fallback ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+
+thread 'observer_panic_releases_unsubmitted_native_resources' (1429275) panicked at crates/rvvdk-datamover/tests/native_runtime.rs:383:49:
+observer
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'observer_panic_releases_unsubmitted_native_resources' (1429275) panicked at crates/rvvdk-datamover/tests/native_runtime.rs:383:49:
+observer
+
+thread 'observer_panic_releases_unsubmitted_native_resources' (1429275) panicked at crates/rvvdk-datamover/tests/native_runtime.rs:383:49:
+observer
+
+thread 'observer_panic_releases_unsubmitted_native_resources' (1429275) panicked at crates/rvvdk-datamover/tests/native_runtime.rs:383:49:
+observer
+test observer_panic_releases_unsubmitted_native_resources ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+test descriptor_duplication_denial_is_not_ring_unavailability ... ok
+test submission_failure_after_sparse_prefix_never_retries_threaded ... ok
+test invalid_or_exhausted_ring_setup_does_not_fallback ... ok
+test runtime_fallback_checks_the_threaded_budget_before_observation ... ok
+test observer_panic_releases_unsubmitted_native_resources ... ok
+test prepared_ring_is_reused_across_data_and_zero_fallback_extents ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.01s
+
+test prepared_ring_is_reused_across_data_and_zero_fallback_extents ... ok
+test sparse_only_and_empty_plans_do_not_require_a_ring ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.03s
+
+test sparse_only_and_empty_plans_do_not_require_a_ring ... ok
+test denied_setup_falls_back_before_progress_for_auto_only ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.07s
+
+test denied_setup_falls_back_before_progress_for_auto_only ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+

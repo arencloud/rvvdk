@@ -1,0 +1,1490 @@
+[
+  {
+    "tag": "diagnostic1-baseline",
+    "benchmark": "preflight_copy/native",
+    "pair": 1,
+    "variant": "baseline",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r25-rwj2orgi/baseline-target/release/deps/preflight-f6883f68126b9060",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "20",
+      "--warm-up-time",
+      "0.1",
+      "--measurement-time",
+      "1",
+      "preflight_copy/native$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "native",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/native",
+        "directory_name": "preflight_copy/native",
+        "title": "preflight_copy/native"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7134932.0153125,
+            "upper_bound": 7254508.45
+          },
+          "point_estimate": 7189320.25,
+          "standard_error": 30688.988134501356
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7126292.375,
+            "upper_bound": 7220310.5
+          },
+          "point_estimate": 7158747.75,
+          "standard_error": 25347.645489223207
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 37529.05313372612,
+            "upper_bound": 147795.01695111394
+          },
+          "point_estimate": 83718.15803870559,
+          "standard_error": 27761.64768035147
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 67881.36928240772,
+            "upper_bound": 202293.32787618143
+          },
+          "point_estimate": 140235.26754137606,
+          "standard_error": 37280.57411865635
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          28521898.0,
+          27814821.0,
+          28823703.0,
+          28585850.0,
+          29372984.0,
+          28627291.0,
+          28677370.0,
+          29120681.0,
+          28488441.0,
+          29249297.0,
+          28995421.0,
+          28938366.0,
+          28213876.0,
+          28424787.0,
+          28316497.0,
+          28642691.0,
+          28393458.0,
+          30565352.0,
+          28824118.0,
+          28548718.0
+        ]
+      },
+      "tukey.json": [
+        6758055.1875,
+        6938093.53125,
+        7418195.78125,
+        7598234.125
+      ]
+    }
+  },
+  {
+    "tag": "diagnostic1-candidate",
+    "benchmark": "preflight_copy/native",
+    "pair": 1,
+    "variant": "candidate",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r25-rwj2orgi/candidate-target/release/deps/preflight-df94444c3cf5a6bc",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "20",
+      "--warm-up-time",
+      "0.1",
+      "--measurement-time",
+      "1",
+      "preflight_copy/native$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "native",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/native",
+        "directory_name": "preflight_copy/native",
+        "title": "preflight_copy/native"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7254219.195625001,
+            "upper_bound": 7352221.2175
+          },
+          "point_estimate": 7302566.275,
+          "standard_error": 24897.294086793085
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7236590.875,
+            "upper_bound": 7357026.5
+          },
+          "point_estimate": 7309333.375,
+          "standard_error": 29791.10506118999
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 41416.8009147048,
+            "upper_bound": 167485.9831765294
+          },
+          "point_estimate": 103845.19398137927,
+          "standard_error": 30960.36764634178
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 73626.44211816459,
+            "upper_bound": 145805.58209808436
+          },
+          "point_estimate": 114404.94832720015,
+          "standard_error": 18561.062817826092
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          28689849.0,
+          29509889.0,
+          30242759.0,
+          29435609.0,
+          28820592.0,
+          29242498.0,
+          28294927.0,
+          29621256.0,
+          29905594.0,
+          28949548.0,
+          28549105.0,
+          29324498.0,
+          28943179.0,
+          29420603.0,
+          29401419.0,
+          29436239.0,
+          29232169.0,
+          29196454.0,
+          28847451.0,
+          29141664.0
+        ]
+      },
+      "tukey.json": [
+        6842422.125,
+        7036116.9375,
+        7552636.4375,
+        7746331.25
+      ]
+    }
+  },
+  {
+    "tag": "diagnostic2-candidate",
+    "benchmark": "preflight_copy/native",
+    "pair": 2,
+    "variant": "candidate",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r25-rwj2orgi/candidate-target/release/deps/preflight-df94444c3cf5a6bc",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "20",
+      "--warm-up-time",
+      "0.1",
+      "--measurement-time",
+      "1",
+      "preflight_copy/native$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "native",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/native",
+        "directory_name": "preflight_copy/native",
+        "title": "preflight_copy/native"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7420356.9121875,
+            "upper_bound": 8880224.617187494
+          },
+          "point_estimate": 8081498.8875,
+          "standard_error": 376990.4771244307
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7158324.75,
+            "upper_bound": 7546900.625
+          },
+          "point_estimate": 7244348.375,
+          "standard_error": 140886.88164201923
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 94840.80836623907,
+            "upper_bound": 697024.1772003472
+          },
+          "point_estimate": 230294.1071614623,
+          "standard_error": 198211.9917849663
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 598978.5043560449,
+            "upper_bound": 2195254.152419158
+          },
+          "point_estimate": 1724213.8400195676,
+          "standard_error": 374199.3014116019
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          29000396.0,
+          28909428.0,
+          29210268.0,
+          28178185.0,
+          28416054.0,
+          28837121.0,
+          28307057.0,
+          28532910.0,
+          32551538.0,
+          28954391.0,
+          38170461.0,
+          28377370.0,
+          30755185.0,
+          28311721.0,
+          29302545.0,
+          28733688.0,
+          29620020.0,
+          46745599.0,
+          47757175.0,
+          47848799.0
+        ]
+      },
+      "tukey.json": [
+        5100491.0625,
+        6113207.53125,
+        8813784.78125,
+        9826501.25
+      ]
+    }
+  },
+  {
+    "tag": "diagnostic2-baseline",
+    "benchmark": "preflight_copy/native",
+    "pair": 2,
+    "variant": "baseline",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r25-rwj2orgi/baseline-target/release/deps/preflight-f6883f68126b9060",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "20",
+      "--warm-up-time",
+      "0.1",
+      "--measurement-time",
+      "1",
+      "preflight_copy/native$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "native",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/native",
+        "directory_name": "preflight_copy/native",
+        "title": "preflight_copy/native"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7695243.2375,
+            "upper_bound": 9058352.975
+          },
+          "point_estimate": 8329723.6,
+          "standard_error": 351375.1107795832
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7339714.625,
+            "upper_bound": 8295137.375
+          },
+          "point_estimate": 7507255.375,
+          "standard_error": 325099.7733275723
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 135425.12939572334,
+            "upper_bound": 1806771.7551983893
+          },
+          "point_estimate": 669430.211815238,
+          "standard_error": 415783.3772991027
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 897845.4231474041,
+            "upper_bound": 2015611.5944500284
+          },
+          "point_estimate": 1609974.9409514142,
+          "standard_error": 287098.9562955433
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          32345755.0,
+          29317314.0,
+          29410965.0,
+          28310721.0,
+          29838563.0,
+          31922917.0,
+          29107819.0,
+          29400403.0,
+          34015344.0,
+          27854370.0,
+          30647029.0,
+          30219480.0,
+          27977156.0,
+          40539557.0,
+          40984528.0,
+          48169632.0,
+          40269170.0,
+          47340889.0,
+          29532614.0,
+          29173662.0
+        ]
+      },
+      "tukey.json": [
+        2597300.625,
+        4958825.4375,
+        11256224.9375,
+        13617749.75
+      ]
+    }
+  },
+  {
+    "tag": "diagnostic3-baseline",
+    "benchmark": "preflight_copy/native",
+    "pair": 3,
+    "variant": "baseline",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r25-rwj2orgi/baseline-target/release/deps/preflight-f6883f68126b9060",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "20",
+      "--warm-up-time",
+      "0.1",
+      "--measurement-time",
+      "1",
+      "preflight_copy/native$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "native",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/native",
+        "directory_name": "preflight_copy/native",
+        "title": "preflight_copy/native"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7311736.675,
+            "upper_bound": 8010430.125
+          },
+          "point_estimate": 7596110.375,
+          "standard_error": 182925.51166775267
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7279227.75,
+            "upper_bound": 7495375.25
+          },
+          "point_estimate": 7366925.25,
+          "standard_error": 63390.843836988635
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 87179.47300225496,
+            "upper_bound": 342388.85804638267
+          },
+          "point_estimate": 188818.37289780378,
+          "standard_error": 68454.77879012347
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 158022.25669674046,
+            "upper_bound": 1272197.967204031
+          },
+          "point_estimate": 835504.2825008538,
+          "standard_error": 320771.1432683489
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          30606426.0,
+          29495176.0,
+          36194843.0,
+          42669585.0,
+          29925121.0,
+          30011085.0,
+          29440226.0,
+          28933067.0,
+          29951917.0,
+          29205019.0,
+          28436038.0,
+          29116641.0,
+          30061480.0,
+          29015129.0,
+          29225560.0,
+          27873472.0,
+          29582626.0,
+          30553766.0,
+          29117181.0,
+          28274472.0
+        ]
+      },
+      "tukey.json": [
+        6573500.1875,
+        6923157.96875,
+        7855578.71875,
+        8205236.5
+      ]
+    }
+  },
+  {
+    "tag": "diagnostic3-candidate",
+    "benchmark": "preflight_copy/native",
+    "pair": 3,
+    "variant": "candidate",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r25-rwj2orgi/candidate-target/release/deps/preflight-df94444c3cf5a6bc",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "20",
+      "--warm-up-time",
+      "0.1",
+      "--measurement-time",
+      "1",
+      "preflight_copy/native$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "native",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/native",
+        "directory_name": "preflight_copy/native",
+        "title": "preflight_copy/native"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7173464.902500001,
+            "upper_bound": 7427864.0696875
+          },
+          "point_estimate": 7275260.4875,
+          "standard_error": 68105.84188345245
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7148811.875,
+            "upper_bound": 7234368.875
+          },
+          "point_estimate": 7189865.25,
+          "standard_error": 21058.33026153632
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 38119.49857324362,
+            "upper_bound": 158541.45753532648
+          },
+          "point_estimate": 80147.130677104,
+          "standard_error": 29942.83005424811
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 71904.71383072385,
+            "upper_bound": 497421.86955278047
+          },
+          "point_estimate": 314357.4090703199,
+          "standard_error": 134074.5645630113
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          28982026.0,
+          28602884.0,
+          28892925.0,
+          29627728.0,
+          28473376.0,
+          28587611.0,
+          30201766.0,
+          28744952.0,
+          28820204.0,
+          28549558.0,
+          28677488.0,
+          28113616.0,
+          29067871.0,
+          29405006.0,
+          34062311.0,
+          28489897.0,
+          28845059.0,
+          28734201.0,
+          28773970.0,
+          28368390.0
+        ]
+      },
+      "tukey.json": [
+        6825482.3125,
+        6985003.375,
+        7410392.875,
+        7569913.9375
+      ]
+    }
+  },
+  {
+    "tag": "diagnostic4-candidate",
+    "benchmark": "preflight_copy/native",
+    "pair": 4,
+    "variant": "candidate",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r25-rwj2orgi/candidate-target/release/deps/preflight-df94444c3cf5a6bc",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "20",
+      "--warm-up-time",
+      "0.1",
+      "--measurement-time",
+      "1",
+      "preflight_copy/native$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "native",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/native",
+        "directory_name": "preflight_copy/native",
+        "title": "preflight_copy/native"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7234227.3,
+            "upper_bound": 7399882.51375
+          },
+          "point_estimate": 7306228.9875,
+          "standard_error": 42856.791801411055
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7199984.625,
+            "upper_bound": 7336828.0
+          },
+          "point_estimate": 7276003.25,
+          "standard_error": 36143.46607429727
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 62659.49333757162,
+            "upper_bound": 211211.9335502386
+          },
+          "point_estimate": 137735.2054797113,
+          "standard_error": 35058.89569353001
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 88328.17553999541,
+            "upper_bound": 292866.7522022157
+          },
+          "point_estimate": 196654.625288311,
+          "standard_error": 60606.888094644244
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          28455310.0,
+          29567213.0,
+          29539035.0,
+          29285679.0,
+          29408945.0,
+          29950686.0,
+          29194105.0,
+          29091480.0,
+          28611188.0,
+          28795826.0,
+          28666927.0,
+          29175664.0,
+          28823149.0,
+          29072632.0,
+          29965843.0,
+          31967946.0,
+          28471381.0,
+          28534713.0,
+          28804051.0,
+          29116546.0
+        ]
+      },
+      "tukey.json": [
+        6682500.625,
+        6936700.46875,
+        7614566.71875,
+        7868766.5625
+      ]
+    }
+  },
+  {
+    "tag": "diagnostic4-baseline",
+    "benchmark": "preflight_copy/native",
+    "pair": 4,
+    "variant": "baseline",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r25-rwj2orgi/baseline-target/release/deps/preflight-f6883f68126b9060",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "20",
+      "--warm-up-time",
+      "0.1",
+      "--measurement-time",
+      "1",
+      "preflight_copy/native$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "native",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/native",
+        "directory_name": "preflight_copy/native",
+        "title": "preflight_copy/native"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7267033.05,
+            "upper_bound": 7443702.88875
+          },
+          "point_estimate": 7350874.725,
+          "standard_error": 45142.203564143725
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7222774.125,
+            "upper_bound": 7442642.0
+          },
+          "point_estimate": 7288825.625,
+          "standard_error": 62668.10160435766
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 78333.54025930166,
+            "upper_bound": 297370.63647061586
+          },
+          "point_estimate": 149328.0253238976,
+          "standard_error": 58035.595133593095
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 133768.23777896407,
+            "upper_bound": 268477.59518638026
+          },
+          "point_estimate": 207591.50109008525,
+          "standard_error": 35842.87299400473
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          28852028.0,
+          28275322.0,
+          30439602.0,
+          28930165.0,
+          28738960.0,
+          29083741.0,
+          31583176.0,
+          29522768.0,
+          29226864.0,
+          28801727.0,
+          29996413.0,
+          28555239.0,
+          28989208.0,
+          30177111.0,
+          29544723.0,
+          30140479.0,
+          30298666.0,
+          29535520.0,
+          29063369.0,
+          28314897.0
+        ]
+      },
+      "tukey.json": [
+        6315130.625,
+        6762496.90625,
+        7955473.65625,
+        8402839.9375
+      ]
+    }
+  },
+  {
+    "tag": "diagnostic5-baseline",
+    "benchmark": "preflight_copy/native",
+    "pair": 5,
+    "variant": "baseline",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r25-rwj2orgi/baseline-target/release/deps/preflight-f6883f68126b9060",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "20",
+      "--warm-up-time",
+      "0.1",
+      "--measurement-time",
+      "1",
+      "preflight_copy/native$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "native",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/native",
+        "directory_name": "preflight_copy/native",
+        "title": "preflight_copy/native"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7220153.8546875,
+            "upper_bound": 7660839.590625
+          },
+          "point_estimate": 7417744.075,
+          "standard_error": 113748.10743139994
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7120800.875,
+            "upper_bound": 7450563.5
+          },
+          "point_estimate": 7193517.625,
+          "standard_error": 87783.51510958766
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 61972.308249771595,
+            "upper_bound": 464503.0195534229
+          },
+          "point_estimate": 195918.91482174397,
+          "standard_error": 107340.07901750859
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 193858.388448404,
+            "upper_bound": 727667.1344403152
+          },
+          "point_estimate": 521353.89586219157,
+          "standard_error": 136903.27246915686
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          29629004.0,
+          28114146.0,
+          28378818.0,
+          28372766.0,
+          28778989.0,
+          29975504.0,
+          29004147.0,
+          30630289.0,
+          36199783.0,
+          32801237.0,
+          29429930.0,
+          28379602.0,
+          28521816.0,
+          28444591.0,
+          28556238.0,
+          32978827.0,
+          28769152.0,
+          29984307.0,
+          28684213.0,
+          27786167.0
+        ]
+      },
+      "tukey.json": [
+        5945065.1875,
+        6526075.5625,
+        8075436.5625,
+        8656446.9375
+      ]
+    }
+  },
+  {
+    "tag": "diagnostic5-candidate",
+    "benchmark": "preflight_copy/native",
+    "pair": 5,
+    "variant": "candidate",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r25-rwj2orgi/candidate-target/release/deps/preflight-df94444c3cf5a6bc",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "20",
+      "--warm-up-time",
+      "0.1",
+      "--measurement-time",
+      "1",
+      "preflight_copy/native$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "native",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/native",
+        "directory_name": "preflight_copy/native",
+        "title": "preflight_copy/native"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7214604.3,
+            "upper_bound": 7339156.8875
+          },
+          "point_estimate": 7273238.475,
+          "standard_error": 32092.783511391503
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7173787.625,
+            "upper_bound": 7300166.75
+          },
+          "point_estimate": 7218166.125,
+          "standard_error": 37573.12981124443
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 36513.842801749706,
+            "upper_bound": 211131.68782666326
+          },
+          "point_estimate": 106882.67067745328,
+          "standard_error": 44282.59034358841
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 88216.69577164653,
+            "upper_bound": 180544.64735027417
+          },
+          "point_estimate": 147509.59067776034,
+          "standard_error": 23570.982868157545
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          28400877.0,
+          28949460.0,
+          28680211.0,
+          28646768.0,
+          29192071.0,
+          30329678.0,
+          28749019.0,
+          30301565.0,
+          28710090.0,
+          29305315.0,
+          29209263.0,
+          29192046.0,
+          29863867.0,
+          28615315.0,
+          28860130.0,
+          28802816.0,
+          28676873.0,
+          28885199.0,
+          28473062.0,
+          30015453.0
+        ]
+      },
+      "tukey.json": [
+        6754419.5,
+        6962131.8125,
+        7516031.3125,
+        7723743.625
+      ]
+    }
+  },
+  {
+    "tag": "diagnostic6-candidate",
+    "benchmark": "preflight_copy/native",
+    "pair": 6,
+    "variant": "candidate",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r25-rwj2orgi/candidate-target/release/deps/preflight-df94444c3cf5a6bc",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "20",
+      "--warm-up-time",
+      "0.1",
+      "--measurement-time",
+      "1",
+      "preflight_copy/native$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "native",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/native",
+        "directory_name": "preflight_copy/native",
+        "title": "preflight_copy/native"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7203827.59625,
+            "upper_bound": 7308569.575
+          },
+          "point_estimate": 7254809.2875,
+          "standard_error": 26865.360757226586
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7171350.25,
+            "upper_bound": 7313184.75
+          },
+          "point_estimate": 7258923.625,
+          "standard_error": 41453.16230431406
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 57319.53888237476,
+            "upper_bound": 187554.27109524608
+          },
+          "point_estimate": 130607.79143124819,
+          "standard_error": 31360.421667992683
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 85148.22205154323,
+            "upper_bound": 151396.43651618966
+          },
+          "point_estimate": 122929.16981087104,
+          "standard_error": 17102.942610857906
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          30106571.0,
+          29387150.0,
+          28567721.0,
+          28823701.0,
+          28376220.0,
+          28359977.0,
+          28250037.0,
+          28835578.0,
+          29219517.0,
+          28688402.0,
+          29245491.0,
+          29259987.0,
+          29104277.0,
+          29446693.0,
+          29112095.0,
+          29540195.0,
+          28967112.0,
+          28637395.0,
+          28682400.0,
+          29774224.0
+        ]
+      },
+      "tukey.json": [
+        6702315.4375,
+        6935051.3125,
+        7555680.3125,
+        7788416.1875
+      ]
+    }
+  },
+  {
+    "tag": "diagnostic6-baseline",
+    "benchmark": "preflight_copy/native",
+    "pair": 6,
+    "variant": "baseline",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r25-rwj2orgi/baseline-target/release/deps/preflight-f6883f68126b9060",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "20",
+      "--warm-up-time",
+      "0.1",
+      "--measurement-time",
+      "1",
+      "preflight_copy/native$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "preflight_copy",
+        "function_id": "native",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "preflight_copy/native",
+        "directory_name": "preflight_copy/native",
+        "title": "preflight_copy/native"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7172359.0065625,
+            "upper_bound": 7312101.145625
+          },
+          "point_estimate": 7236535.3,
+          "standard_error": 35789.11346220069
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7144765.0,
+            "upper_bound": 7246922.0
+          },
+          "point_estimate": 7189185.5,
+          "standard_error": 25903.65549657237
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 42646.61759287119,
+            "upper_bound": 167558.07460024953
+          },
+          "point_estimate": 86425.5709156394,
+          "standard_error": 34489.355099909015
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 77754.43378882237,
+            "upper_bound": 213580.2913419229
+          },
+          "point_estimate": 163793.82723093656,
+          "standard_error": 33618.88117458614
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          29083694.0,
+          28768335.0,
+          28414381.0,
+          28307773.0,
+          28823758.0,
+          30019504.0,
+          28850499.0,
+          28606287.0,
+          28532107.0,
+          28598929.0,
+          28742240.0,
+          28745149.0,
+          28117600.0,
+          30212682.0,
+          29259863.0,
+          28891682.0,
+          30664354.0,
+          29209765.0,
+          28559191.0,
+          28515031.0
+        ]
+      },
+      "tukey.json": [
+        6716011.1875,
+        6927058.09375,
+        7489849.84375,
+        7700896.75
+      ]
+    }
+  }
+]

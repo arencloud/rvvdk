@@ -669,9 +669,9 @@ queue depth arguments reject zero. Buffer capacity and request width checks in
 the owned engine also precede publication. Invalid requests return their buffer
 to the pool and leave a healthy engine available for subsequent valid requests.
 
-This is configuration validation, not transactional execution. Backend failures,
-allocation failure, or ring creation failure can still occur after earlier
-extents have completed. Endpoint access, capacity, identity, and durability
+This is configuration validation, not transactional execution. Backend failures
+can still occur after earlier extents have completed. R2.5 prepares native rings,
+pools, and descriptors before executing any extent. Endpoint access, capacity, identity, and durability
 preflight are implemented in R0.5 below; DataMover direct-I/O request compatibility
 is implemented in R2.4. Standalone low-level FD APIs still require caller-supplied
 direct compatibility. Logical discard guarantees are implemented by R2.1. The
@@ -749,8 +749,8 @@ keep contents, capacity, open-file flags, and endpoint mappings stable throughou
 the copy. Unknown custom-backend identities cannot prove absence of aliases;
 wrappers must forward the identity of their backing object. Plans are still
 structural and are not bound to a persisted source identity. R1 now provides
-portable planning and failure counters. R2 retains runtime ring availability,
-direct-I/O tail policy, and safe sparse semantics. Device nodes/pipes are unsupported by the
+portable planning and failure counters. R2.1–R2.5 add safe sparse semantics,
+direct-I/O request policy, and prepared native resources with runtime fallback. Device nodes/pipes are unsupported by the
 native file-copy APIs; the owned engine remains a lower-level request interface.
 
 ## Native Zero extent execution
@@ -896,14 +896,14 @@ Reasons distinguish explicit Threaded/native requests, portable Auto, and RAW
 descriptor acceptance/rejection. The current RAW evaluator accepts descriptor
 pairs and combines their alignment claims. R2.4 additionally validates DataMover
 request intent and records whole-plan Auto fallback for incompatible requests.
-Ring availability and resource preparation remain R2.5.
+R2.5 prepares runtime resources before observation and reports defined ring
+unavailability through CopyReport::runtime_fallback().
 Successful reports continue to expose the actual backend. Plan selection remains
 historical even if a different mover executes it; native execution uses that
 mover's current native options, and a Threaded plan retains its chosen backend.
 
-Preparation is a checked dispatch boundary, not a resource reservation or lease.
-Native ring creation, buffer allocation, and remaining low-level request checks
-can still fail after initial observation. Callers must keep endpoints stable,
+Preparation owns native resources as of R2.5; the structural plan does not hold
+a resource lease. Native setup errors precede observation. Callers must keep endpoints stable,
 including during observer callbacks. R1.5 adds contextual failures and confirmed
 partial counters below. Snapshot consistency and terminal lifecycle events
 remain separate work. The direct
@@ -1019,7 +1019,7 @@ The [local sparse-output contract](local-sparse-output.md) defines error handlin
 concurrency limits, operation counters, and storage-backed allocation evidence.
 Fallback can allocate space; bytes_discarded counts logical operation bytes.
 Source extent discovery fallback is implemented in R2.3; DataMover native request
-compatibility is implemented in R2.4. Runtime resource preparation remains open.
+compatibility is implemented in R2.4; runtime resource preparation in R2.5.
 
 ## Native request compatibility (R2.4)
 
@@ -1033,4 +1033,20 @@ modes with O_DIRECT captured in existing fresh descriptor inspections.
 
 See the [contract and API boundaries](native-request-compatibility.md) for mixed
 modes, exact tail/split policy, budget/observer parity, low-level FD limitations,
-and outstanding runtime resource and concurrent alias work.
+and concurrent alias limits. Runtime ownership is described below.
+
+## Native runtime preparation (R2.5)
+
+Preparation constructs the actual ring, bounded pool, and owned descriptor pair
+before callbacks or sparse prefix writes. Dispatch consumes that ownership and
+reuses it across all Data extents. Sparse write fallback borrows a zeroed pool
+buffer; sparse-only jobs prepare scratch without a ring. Shutdown runs once per
+job, preserves unconfirmed ownership retention, and precedes final flush.
+
+Executing Auto may use Threaded only for recognized ring-construction
+unavailability, after separate Threaded budget admission. CopyPlan keeps its
+planning selection; CopyReport and all progress snapshots expose the actual
+backend, with CopyReport::runtime_fallback() explaining runtime fallback.
+Explicit native and all non-eligible setup errors reject before observation;
+no post-mutation retry occurs. See the [runtime contract](native-runtime-preparation.md)
+and [performance evidence](benchmark-results/2026-09-29-r25/README.md).

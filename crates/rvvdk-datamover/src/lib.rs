@@ -31,7 +31,7 @@ pub use options::{
 pub use stats::{CopyReport, CopyStats};
 
 #[cfg(target_os = "linux")]
-pub use execution::IoUringExecutionOptions;
+pub use execution::{IoUringExecutionOptions, NativeRuntimeFallback};
 
 pub use native::{NativeCopyReport, NativeCopyStats};
 pub use observer::{NoopProgressObserver, ProgressObserver};

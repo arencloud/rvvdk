@@ -230,3 +230,13 @@ mod tests {
         assert!(IoUringExecutionOptions::with_read_window(8, 9,).is_none());
     }
 }
+
+/// A preparation-time fallback; CopyPlan still records its planning decision.
+#[cfg(target_os = "linux")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum NativeRuntimeFallback {
+    /// Ring construction was unavailable or denied. Resource exhaustion and
+    /// invalid configuration are errors instead; no I/O was submitted.
+    RingUnavailable { os_error: i32 },
+}

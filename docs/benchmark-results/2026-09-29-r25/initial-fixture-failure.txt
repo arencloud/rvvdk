@@ -1,0 +1,143 @@
+   Compiling rvvdk-datamover v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-datamover)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.83s
+     Running tests/native_runtime.rs (target/debug/deps/native_runtime-3eabf2673eec4e28)
+
+running 7 tests
+
+running 1 test
+
+running 1 test
+
+running 1 test
+
+running 1 test
+
+running 1 test
+
+running 1 test
+
+running 1 test
+
+thread 'sparse_only_and_empty_plans_do_not_require_a_ring' (test runtime_fallback_checks_the_threaded_budget_before_observation ... 1407194) panicked at okcrates/rvvdk-datamover/tests/native_runtime.rs
+:290
+:test result: 76ok:
+. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered outcalled `Result::unwrap()` on an `Err` value: CopyExecution(CopyFailure { backend: "io_uring", operation: NativeSetup, range: None, progress: CopyProgress { bytes_read: 0, bytes_written: 0, bytes_zeroed: 0, bytes_discarded: 0, blocks_completed: 0, extents_completed: Some(0), unconfirmed_io: false }, cause: Io(Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" }) })
+; finished in 0.00snote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+test sparse_only_and_empty_plans_do_not_require_a_ring ... FAILED
+
+failures:
+
+failures:
+    sparse_only_and_empty_plans_do_not_require_a_ring
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+
+thread 'observer_panic_releases_unsubmitted_native_resources' (1407196) panicked at crates/rvvdk-datamover/tests/native_runtime.rs:378:49:
+observer
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'submission_failure_after_sparse_prefix_never_retries_threaded' (1407197) panicked at crates/rvvdk-datamover/tests/native_runtime.rs:413:13:
+assertion `left == right` failed
+  left: 0
+ right: 4096
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test invalid_or_exhausted_ring_setup_does_not_fallback ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+test submission_failure_after_sparse_prefix_never_retries_threaded ... FAILED
+
+failures:
+
+failures:
+
+thread 'observer_panic_releases_unsubmitted_native_resources' (1407196) panicked at crates/rvvdk-datamover/tests/native_runtime.rs:378:49:
+observer
+    submission_failure_after_sparse_prefix_never_retries_threaded
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+
+thread 'observer_panic_releases_unsubmitted_native_resources' (1407196) panicked at crates/rvvdk-datamover/tests/native_runtime.rs:378:49:
+observer
+
+thread 'prepared_ring_is_reused_across_data_and_zero_fallback_extents' (1407195) panicked at crates/rvvdk-datamover/tests/native_runtime.rs:275:13:
+assertion `left == right` failed
+  left: 20480
+ right: 8192
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'observer_panic_releases_unsubmitted_native_resources' (1407196) panicked at crates/rvvdk-datamover/tests/native_runtime.rs:378:49:
+observer
+test observer_panic_releases_unsubmitted_native_resources ... ok
+
+test prepared_ring_is_reused_across_data_and_zero_fallback_extents ... test result: FAILEDok
+. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out
+failures:
+; finished in 0.00s
+failures:
+
+
+    prepared_ring_is_reused_across_data_and_zero_fallback_extents
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+
+thread 'denied_setup_falls_back_before_progress_for_auto_only' (1407192) panicked at crates/rvvdk-datamover/tests/native_runtime.rs:213:29:
+assertion `left == right` failed
+  left: 16384
+ right: 8192
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test denied_setup_falls_back_before_progress_for_auto_only ... FAILED
+
+failures:
+
+failures:
+    denied_setup_falls_back_before_progress_for_auto_only
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+test observer_panic_releases_unsubmitted_native_resources ... ok
+test invalid_or_exhausted_ring_setup_does_not_fallback ... ok
+test sparse_only_and_empty_plans_do_not_require_a_ring ... FAILED
+test denied_setup_falls_back_before_progress_for_auto_only ... FAILED
+test prepared_ring_is_reused_across_data_and_zero_fallback_extents ... FAILED
+test runtime_fallback_checks_the_threaded_budget_before_observation ... ok
+test submission_failure_after_sparse_prefix_never_retries_threaded ... FAILED
+
+failures:
+
+---- sparse_only_and_empty_plans_do_not_require_a_ring stdout ----
+
+thread 'sparse_only_and_empty_plans_do_not_require_a_ring' (1407183) panicked at crates/rvvdk-datamover/tests/native_runtime.rs:127:13:
+assertion failed: status.success()
+
+---- denied_setup_falls_back_before_progress_for_auto_only stdout ----
+
+thread 'denied_setup_falls_back_before_progress_for_auto_only' (1407178) panicked at crates/rvvdk-datamover/tests/native_runtime.rs:127:13:
+assertion failed: status.success()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- prepared_ring_is_reused_across_data_and_zero_fallback_extents stdout ----
+
+thread 'prepared_ring_is_reused_across_data_and_zero_fallback_extents' (1407181) panicked at crates/rvvdk-datamover/tests/native_runtime.rs:127:13:
+assertion failed: status.success()
+
+---- submission_failure_after_sparse_prefix_never_retries_threaded stdout ----
+
+thread 'submission_failure_after_sparse_prefix_never_retries_threaded' (1407184) panicked at crates/rvvdk-datamover/tests/native_runtime.rs:127:13:
+assertion failed: status.success()
+
+
+failures:
+    denied_setup_falls_back_before_progress_for_auto_only
+    prepared_ring_is_reused_across_data_and_zero_fallback_extents
+    sparse_only_and_empty_plans_do_not_require_a_ring
+    submission_failure_after_sparse_prefix_never_retries_threaded
+
+test result: FAILED. 3 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p rvvdk-datamover --test native_runtime`

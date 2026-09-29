@@ -1,0 +1,353 @@
+{
+  "main": [
+    {
+      "benchmark": "preflight/plan_native",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          2746.0606469002696,
+          2950.2592207143452,
+          2866.89980806142
+        ],
+        "candidate": [
+          2707.4784562110985,
+          2745.878883143743,
+          2849.1605550309514
+        ]
+      },
+      "baseline_ns": 2866.89980806142,
+      "candidate_ns": 2745.878883143743,
+      "change_percent": -4.221316858628221,
+      "paired_changes_percent": [
+        -1.405001405658035,
+        -6.92753830360423,
+        -0.6187608294014213
+      ]
+    },
+    {
+      "benchmark": "preflight_copy/threaded",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          6843345.800000001,
+          6881982.6,
+          9552087.0
+        ],
+        "candidate": [
+          6838574.800000001,
+          6803634.2,
+          9519665.5
+        ]
+      },
+      "baseline_ns": 6881982.6,
+      "candidate_ns": 6838574.800000001,
+      "change_percent": -0.6307455645121585,
+      "paired_changes_percent": [
+        -0.06971735959916403,
+        -1.1384568162087438,
+        -0.33941797221905823
+      ]
+    },
+    {
+      "benchmark": "preflight_copy/native",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          7045991.699999999,
+          7050041.2,
+          7272290.699999999
+        ],
+        "candidate": [
+          7055705.9,
+          6999630.4,
+          10047569.75
+        ]
+      },
+      "baseline_ns": 7050041.2,
+      "candidate_ns": 7055705.9,
+      "change_percent": 0.08034988504748153,
+      "paired_changes_percent": [
+        0.13786845647294488,
+        -0.7150426298217938,
+        38.162377777335024
+      ]
+    },
+    {
+      "benchmark": "native_validation/data_1mib_16extents",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          7690378.699999999,
+          7695283.5,
+          7933394.699999999
+        ],
+        "candidate": [
+          7165870.5,
+          7185567.5,
+          7384079.4
+        ]
+      },
+      "baseline_ns": 7695283.5,
+      "candidate_ns": 7185567.5,
+      "change_percent": -6.623745570907169,
+      "paired_changes_percent": [
+        -6.820316924054715,
+        -6.623745570907169,
+        -6.924088877110812
+      ]
+    },
+    {
+      "benchmark": "native_validation/zero_destination_1mib_16extents",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          48848.69736842105,
+          51477.22123893806,
+          47538.55309734513
+        ],
+        "candidate": [
+          37524.14876033058,
+          36229.39743589744,
+          36520.092920353985
+        ]
+      },
+      "baseline_ns": 48848.69736842105,
+      "candidate_ns": 36520.092920353985,
+      "change_percent": -25.23834843554512,
+      "paired_changes_percent": [
+        -23.182908077731856,
+        -29.62052619791948,
+        -23.17794602294383
+      ]
+    },
+    {
+      "benchmark": "local_sparse/native",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          12367531.0,
+          11771688.0,
+          16046627.25
+        ],
+        "candidate": [
+          11550822.25,
+          11578349.0,
+          12966934.0
+        ]
+      },
+      "baseline_ns": 12367531.0,
+      "candidate_ns": 11578349.0,
+      "change_percent": -6.381079618882701,
+      "paired_changes_percent": [
+        -6.603652337722055,
+        -1.6424067644334461,
+        -19.192152980309306
+      ]
+    },
+    {
+      "benchmark": "native_runtime/fragmented_unobserved",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          41991621.0,
+          42650811.0,
+          42977512.5
+        ],
+        "candidate": [
+          16796669.5,
+          17290287.5,
+          19972528.0
+        ]
+      },
+      "baseline_ns": 42650811.0,
+      "candidate_ns": 17290287.5,
+      "change_percent": -59.46082361716405,
+      "paired_changes_percent": [
+        -59.99994975188025,
+        -59.46082361716405,
+        -53.52795720785376
+      ]
+    },
+    {
+      "benchmark": "native_runtime/fragmented_noop",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          41361809.0,
+          39540704.5,
+          42696166.0
+        ],
+        "candidate": [
+          16878195.0,
+          16500319.25,
+          20236837.25
+        ]
+      },
+      "baseline_ns": 41361809.0,
+      "candidate_ns": 16878195.0,
+      "change_percent": -59.19376978893742,
+      "paired_changes_percent": [
+        -59.19376978893742,
+        -58.270042330682294,
+        -52.60268275610508
+      ]
+    },
+    {
+      "benchmark": "native_requests_copy/direct_source",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          17003075.0,
+          16855592.5,
+          24313733.25
+        ],
+        "candidate": [
+          16964171.25,
+          17014603.5,
+          24191222.25
+        ]
+      },
+      "baseline_ns": 17003075.0,
+      "candidate_ns": 17014603.5,
+      "change_percent": 0.06780244161717075,
+      "paired_changes_percent": [
+        -0.228804201592947,
+        0.9433723554956641,
+        -0.5038757262832094
+      ]
+    },
+    {
+      "benchmark": "native_requests_copy/direct_destination",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          29784192.5,
+          29109182.5,
+          32893882.75
+        ],
+        "candidate": [
+          29794294.0,
+          29433476.5,
+          33203810.0
+        ]
+      },
+      "baseline_ns": 29784192.5,
+      "candidate_ns": 29794294.0,
+      "change_percent": 0.03391564166126404,
+      "paired_changes_percent": [
+        0.03391564166126404,
+        1.1140608294307075,
+        0.9422033037434607
+      ]
+    },
+    {
+      "benchmark": "native_lifetime/direct/q1_b65536",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          49623717.5,
+          53214550.0,
+          55490703.5
+        ],
+        "candidate": [
+          51385976.0,
+          54874874.0,
+          53230883.5
+        ]
+      },
+      "baseline_ns": 53214550.0,
+      "candidate_ns": 53230883.5,
+      "change_percent": 0.030693673064985383,
+      "paired_changes_percent": [
+        3.551242407423416,
+        3.1200564507263495,
+        -4.07242989809996
+      ]
+    }
+  ],
+  "followup": [
+    {
+      "benchmark": "preflight_copy/native",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          9890028.3,
+          7012453.25,
+          7041183.75
+        ],
+        "candidate": [
+          9751239.666666668,
+          9733087.0,
+          7032442.928571429
+        ]
+      },
+      "baseline_ns": 7041183.75,
+      "candidate_ns": 9733087.0,
+      "change_percent": 38.23083370037035,
+      "paired_changes_percent": [
+        -1.4033188695054877,
+        38.797174868866335,
+        -0.12413852185821916
+      ]
+    }
+  ],
+  "candidate_only": [
+    {
+      "benchmark": "native_runtime/unavailable_fallback",
+      "candidate_ns": 13628957.666666668,
+      "run_medians_ns": [
+        13823661.0,
+        13628957.666666668,
+        13524157.0
+      ]
+    }
+  ]
+}

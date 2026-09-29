@@ -4,7 +4,7 @@ use rvvdk_core::{BufferPool, CopyOperation, CopyProgress, Error, Extent, Result,
 
 use crate::planner::ExtentWorkIter;
 #[cfg(target_os = "linux")]
-use crate::preparation::{PreparedExecution, PreparedExecutor};
+use crate::preparation::PreparedExecutor;
 use crate::{concurrent, sequential};
 
 use crate::{
@@ -21,8 +21,7 @@ use rvvdk_platform::LinuxFdBackend;
 
 #[cfg(target_os = "linux")]
 use crate::io_uring::{
-    NativeExtentPlan, copy_extent_plan_with_destination, copy_file_range_with_options,
-    evaluate_compatibility,
+    NativeExtentPlan, PreparedNativeExtents, copy_file_range_with_options, evaluate_compatibility,
 };
 
 pub struct DataMover {
@@ -116,7 +115,7 @@ impl DataMover {
     {
         let prepared = self.prepare_portable(plan, source, destination)?;
         let (plan, source, destination, _) = prepared.parts();
-        Self::observe_plan(plan, observer, || {
+        Self::observe_plan(plan, ExecutionBackend::Threaded, observer, || {
             if self.options.concurrency() == 1 {
                 self.execute_threaded_plan_with_observer(plan, source, destination, observer)
             } else {
@@ -342,26 +341,33 @@ impl DataMover {
         D: BlockDevice + LinuxFdBackend,
     {
         let prepared = self.prepare_raw(plan, source, destination)?;
-        self.execute_prepared_raw_plan(&prepared)
+        let (plan, source, destination, executor) = prepared.parts();
+        self.execute_prepared_raw_plan(plan, source, destination, executor)
     }
 
     /// Dispatch only a fresh preparation tied to this plan and endpoint borrows.
     #[cfg(target_os = "linux")]
     fn execute_prepared_raw_plan<S, D>(
         &self,
-        prepared: &PreparedExecution<'_, RawDisk<S>, RawDisk<D>>,
+        plan: &CopyPlan,
+        source: &RawDisk<S>,
+        destination: &RawDisk<D>,
+        executor: PreparedExecutor,
     ) -> Result<CopyReport>
     where
         S: BlockDevice + LinuxFdBackend,
         D: BlockDevice + LinuxFdBackend,
     {
-        let (plan, source, destination, executor) = prepared.parts();
         match executor {
             PreparedExecutor::Threaded => self.execute_threaded_plan(plan, source, destination),
+            PreparedExecutor::NativeFallback(reason) => self
+                .execute_threaded_plan(plan, source, destination)
+                .map(|report| report.with_runtime_fallback(Some(reason))),
             PreparedExecutor::IoUring {
                 native_plan,
-                options,
-            } => self.execute_io_uring_plan(plan, source, destination, native_plan, *options),
+                resources,
+                setup_elapsed,
+            } => self.execute_io_uring_plan(destination, &native_plan, *resources, setup_elapsed),
         }
     }
 
@@ -379,22 +385,29 @@ impl DataMover {
         O: ProgressObserver + ?Sized,
     {
         let prepared = self.prepare_raw(plan, source, destination)?;
-        let (plan, source, destination, _) = prepared.parts();
-        Self::observe_plan(plan, observer, || {
-            if plan.backend() == ExecutionBackend::Threaded && self.options.concurrency() == 1 {
+        let (plan, source, destination, executor) = prepared.parts();
+        let (backend, fallback) = match &executor {
+            PreparedExecutor::Threaded => (ExecutionBackend::Threaded, None),
+            PreparedExecutor::NativeFallback(reason) => (ExecutionBackend::Threaded, Some(*reason)),
+            PreparedExecutor::IoUring { .. } => (ExecutionBackend::IoUring, None),
+        };
+        Self::observe_plan(plan, backend, observer, || {
+            if backend == ExecutionBackend::Threaded && self.options.concurrency() == 1 {
                 self.execute_threaded_plan_with_observer(plan, source, destination, observer)
+                    .map(|report| report.with_runtime_fallback(fallback))
             } else {
-                self.execute_prepared_raw_plan(&prepared)
+                self.execute_prepared_raw_plan(plan, source, destination, executor)
             }
         })
     }
 
     fn observe_plan<O: ProgressObserver + ?Sized>(
         plan: &CopyPlan,
+        backend: ExecutionBackend,
         observer: &O,
         execute: impl FnOnce() -> Result<CopyReport>,
     ) -> Result<CopyReport> {
-        observer.on_progress(&ProgressSnapshot::initial(plan));
+        observer.on_progress(&ProgressSnapshot::initial(plan, backend));
         let report = execute()?;
         let stats = report.stats();
         let completed = ProgressCompleted::new(
@@ -471,32 +484,18 @@ impl DataMover {
     }
 
     #[cfg(target_os = "linux")]
-    fn execute_io_uring_plan<S, D>(
+    fn execute_io_uring_plan<D>(
         &self,
-        plan: &CopyPlan,
-        source: &RawDisk<S>,
         destination: &RawDisk<D>,
         native_plan: &NativeExtentPlan,
-        execution_options: crate::IoUringExecutionOptions,
+        resources: PreparedNativeExtents,
+        setup_elapsed: std::time::Duration,
     ) -> Result<CopyReport>
     where
-        S: BlockDevice + LinuxFdBackend,
         D: BlockDevice + LinuxFdBackend,
     {
-        let source_backend = source.device();
-        let destination_backend = destination.device();
-
         let started = Instant::now();
-
-        let stats = copy_extent_plan_with_destination(
-            source_backend.as_fd(),
-            destination_backend.as_fd(),
-            destination,
-            native_plan,
-            plan.block_size(),
-            plan.alignment(),
-            execution_options,
-        )?;
+        let stats = resources.execute(destination, native_plan)?;
 
         destination.flush().map_err(|e| {
             crate::failure::execution("io_uring", CopyOperation::Flush, None, stats.progress(), e)
@@ -504,7 +503,7 @@ impl DataMover {
 
         Ok(CopyReport::new(
             ExecutionBackend::IoUring,
-            CopyStats::from_io_uring_extents(stats, started.elapsed()),
+            CopyStats::from_io_uring_extents(stats, setup_elapsed + started.elapsed()),
         ))
     }
 

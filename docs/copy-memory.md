@@ -45,8 +45,9 @@ or configuration checks can still reject first.
 The worker formula includes active items and a producer blocked on send. These
 logical entry charges are conservative about items on the stack, but exclude
 opaque container overhead. Native submission/completion ring mappings are kernel
-resources, excluded below. Sparse fallback buffers and native Data pools have
-disjoint lifetimes, so the larger phase is charged rather than their sum.
+resources, excluded below. As of R2.5, Data jobs borrow a pool buffer for sparse
+write fallback; sparse-only jobs reserve one scratch block. No separate scratch
+payload overlaps a Data pool.
 
 1. **Planning:** inspect and charge the returned extent Vec before retaining the
    plan. Planning does not reserve executor resources. A plan may fit while
@@ -61,7 +62,10 @@ disjoint lifetimes, so the larger phase is charged rather than their sum.
    charged while native payload execution runs.
 4. **Direct portable copy:** one extent Vec remains live with buffers and worker
    scheduling; there is no additional structural revalidation Vec.
-5. **Direct native range copy:** charge the native pool and operation entries;
+5. **Runtime Auto fallback (R2.5):** after admitted native setup is unavailable,
+   release the native plan clone and separately admit the Threaded buffers/queue
+   before observation. Native planning admission is still required.
+6. **Direct native range copy:** charge the native pool and operation entries;
    there is no extent plan. An empty native range has zero accounted storage.
 
 Empty threaded execution still constructs its configured pool and therefore
@@ -95,7 +99,7 @@ boundaries remain unchanged. Planning can perform endpoint/metadata inspection.
   their existing validation/allocation contracts. Use DataMover for this budget.
 
 The default is a conservative admission policy, not a benchmark-derived optimum.
-Buffer sizes, worker count, queue capacity, native queue depth/read window, and
-per-Data-extent ring creation remain unchanged. Their tuning and reuse require
-separate performance evidence. [R1.6 measurements](benchmark-results/2026-09-29-r16/README.md)
+Buffer sizes, worker count, queue capacity, and native queue depth/read window
+remain unchanged. R2.5 [prepares and reuses native resources per job](native-runtime-preparation.md);
+[its measurements](benchmark-results/2026-09-29-r25/README.md) record the effect. [R1.6 measurements](benchmark-results/2026-09-29-r16/README.md)
 record admission overhead and the removed concurrent clone.

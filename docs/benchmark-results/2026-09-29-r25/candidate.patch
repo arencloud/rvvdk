@@ -1,0 +1,1438 @@
+diff --git a/crates/rvvdk-datamover/Cargo.toml b/crates/rvvdk-datamover/Cargo.toml
+index fd1ebe0..ba35f76 100644
+--- a/crates/rvvdk-datamover/Cargo.toml
++++ b/crates/rvvdk-datamover/Cargo.toml
+@@ -11,7 +11,6 @@ rvvdk-platform = { path = "../rvvdk-platform" }
+ [target.'cfg(target_os = "linux")'.dependencies]
+ io-uring = "0.7.15"
+ 
+-[target.'cfg(target_os = "linux")'.dev-dependencies]
+ libc = "0.2.189"
+ 
+ [dev-dependencies]
+@@ -77,3 +76,7 @@ harness = false
+ [[bench]]
+ name = "native_requests"
+ harness = false
++
++[[bench]]
++name = "native_runtime"
++harness = false
+diff --git a/crates/rvvdk-datamover/src/execution.rs b/crates/rvvdk-datamover/src/execution.rs
+index b525bed..35d75a2 100644
+--- a/crates/rvvdk-datamover/src/execution.rs
++++ b/crates/rvvdk-datamover/src/execution.rs
+@@ -230,3 +230,13 @@ mod tests {
+         assert!(IoUringExecutionOptions::with_read_window(8, 9,).is_none());
+     }
+ }
++
++/// A preparation-time fallback; CopyPlan still records its planning decision.
++#[cfg(target_os = "linux")]
++#[derive(Debug, Clone, Copy, PartialEq, Eq)]
++#[non_exhaustive]
++pub enum NativeRuntimeFallback {
++    /// Ring construction was unavailable or denied. Resource exhaustion and
++    /// invalid configuration are errors instead; no I/O was submitted.
++    RingUnavailable { os_error: i32 },
++}
+diff --git a/crates/rvvdk-datamover/src/io_uring/copy.rs b/crates/rvvdk-datamover/src/io_uring/copy.rs
+index bd109f9..b85a3e9 100644
+--- a/crates/rvvdk-datamover/src/io_uring/copy.rs
++++ b/crates/rvvdk-datamover/src/io_uring/copy.rs
+@@ -186,51 +186,134 @@ pub(super) fn copy_file_range_preflighted(
+     alignment: usize,
+     options: crate::IoUringExecutionOptions,
+ ) -> Result<IoUringCopyStats> {
+-    let queue_depth = options.queue_depth();
+-
+-    let setup = |operation, error| {
+-        crate::failure::execution(
+-            "io_uring",
+-            operation,
+-            Some((offset, length)),
+-            CopyProgress {
+-                extents_completed: Some(0),
+-                ..CopyProgress::default()
+-            },
+-            error,
+-        )
+-    };
+-    let pool = BufferPool::new(queue_depth as usize, block_size, alignment)
+-        .map_err(|e| setup(CopyOperation::Allocate, e))?;
+-
+-    let mut engine =
+-        IoUringEngine::new(queue_depth).map_err(|e| setup(CopyOperation::NativeSetup, e))?;
+-
+-    let context = CopyContext {
+-        source_fd: IoUringFile::new(source_fd).map_err(|e| setup(CopyOperation::NativeSetup, e))?,
+-        destination_fd: IoUringFile::new(destination_fd)
+-            .map_err(|e| setup(CopyOperation::NativeSetup, e))?,
+-        start_offset: offset,
+-        length,
+-        block_size,
+-        queue_depth,
+-        read_window: options.read_window(),
+-    };
+-
+-    let result = copy_with_engine(&mut engine, &pool, &context);
+-    let cleanup = engine.shutdown();
+-    match (result, cleanup) {
+-        (Err(original), Err(Error::IoUringShutdownUnconfirmed { operations })) => {
+-            Err(Error::IoUringCleanup {
+-                original: Box::new(original),
+-                operations,
+-            })
++    let mut session =
++        NativeCopySession::new(source_fd, destination_fd, block_size, alignment, options)
++            .map_err(|failure| failure.error)?;
++    let result = session.copy_range(offset, length);
++    session.finish(result, IoUringCopyStats::progress)
++}
++
++/// A job owns one engine, pool, and descriptor pair until confirmed shutdown.
++/// No SQE is submitted by construction. Drop retains the engine's unwind safety.
++pub(crate) struct NativeCopySession {
++    engine: IoUringEngine,
++    pool: BufferPool,
++    context: CopyContext,
++}
++
++pub(crate) struct NativeSetupFailure {
++    pub(crate) error: Error,
++    pub(crate) fallback: Option<crate::NativeRuntimeFallback>,
++}
++
++impl NativeSetupFailure {
++    pub(super) fn new(operation: CopyOperation, error: Error) -> Self {
++        Self {
++            error: crate::failure::execution(
++                "io_uring",
++                operation,
++                None,
++                CopyProgress {
++                    extents_completed: Some(0),
++                    ..CopyProgress::default()
++                },
++                error,
++            ),
++            fallback: None,
+         }
+-        (Err(error), _) => Err(error),
+-        (Ok(stats), Err(error)) => {
+-            Err(stats.failure(CopyOperation::NativeShutdown, Some((offset, length)), error))
++    }
++}
++
++impl NativeCopySession {
++    pub(crate) fn new(
++        source: BorrowedFd<'_>,
++        destination: BorrowedFd<'_>,
++        block_size: usize,
++        alignment: usize,
++        options: crate::IoUringExecutionOptions,
++    ) -> std::result::Result<Self, NativeSetupFailure> {
++        // Only failure to create the engine is eligible for runtime fallback.
++        // Invalid configuration and resource exhaustion are intentionally excluded.
++        let engine = IoUringEngine::new(options.queue_depth()).map_err(|error| {
++            let fallback = match &error {
++                Error::Io(e) => match e.raw_os_error() {
++                    Some(code @ (libc::ENOSYS | libc::EPERM | libc::EACCES | libc::EOPNOTSUPP)) => {
++                        Some(crate::NativeRuntimeFallback::RingUnavailable { os_error: code })
++                    }
++                    _ => None,
++                },
++                _ => None,
++            };
++            NativeSetupFailure {
++                fallback,
++                ..NativeSetupFailure::new(CopyOperation::NativeSetup, error)
++            }
++        })?;
++        let pool = BufferPool::new(options.queue_depth() as usize, block_size, alignment)
++            .map_err(|e| NativeSetupFailure::new(CopyOperation::Allocate, e))?;
++        let duplicate = |fd, role| {
++            IoUringFile::new(fd).map_err(|e| {
++                NativeSetupFailure::new(
++                    CopyOperation::NativeSetup,
++                    crate::preflight::context(role, e),
++                )
++            })
++        };
++        Ok(Self {
++            engine,
++            pool,
++            context: CopyContext {
++                source_fd: duplicate(source, "source descriptor")?,
++                destination_fd: duplicate(destination, "destination descriptor")?,
++                start_offset: 0,
++                length: 0,
++                block_size,
++                queue_depth: options.queue_depth(),
++                read_window: options.read_window(),
++            },
++        })
++    }
++
++    pub(crate) fn copy_range(&mut self, offset: u64, length: u64) -> Result<IoUringCopyStats> {
++        self.context.start_offset = offset;
++        self.context.length = length;
++        copy_with_engine(&mut self.engine, &self.pool, &self.context)
++    }
++
++    pub(crate) fn zero_buffer(&self) -> rvvdk_core::BufferGuard {
++        // Every preceding Data range completed before semantic sparse execution.
++        let mut buffer = self.pool.acquire();
++        buffer.as_mut_slice().fill(0);
++        buffer
++    }
++
++    pub(crate) fn finish<T>(
++        mut self,
++        result: Result<T>,
++        progress: impl FnOnce(&T) -> CopyProgress,
++    ) -> Result<T> {
++        let cleanup = self.engine.shutdown();
++        match (result, cleanup) {
++            (Err(original), Err(Error::IoUringShutdownUnconfirmed { operations })) => {
++                Err(Error::IoUringCleanup {
++                    original: Box::new(original),
++                    operations,
++                })
++            }
++            (Err(error), _) => Err(error),
++            (Ok(stats), Err(error)) => {
++                let mut progress = progress(&stats);
++                progress.unconfirmed_io = true;
++                Err(crate::failure::execution(
++                    "io_uring",
++                    CopyOperation::NativeShutdown,
++                    None,
++                    progress,
++                    error,
++                ))
++            }
++            (Ok(stats), Ok(())) => Ok(stats),
+         }
+-        (Ok(stats), Ok(())) => Ok(stats),
+     }
+ }
+ 
+diff --git a/crates/rvvdk-datamover/src/io_uring/extent_copy.rs b/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
+index b03c839..b38c771 100644
+--- a/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
++++ b/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
+@@ -5,7 +5,7 @@ use rvvdk_core::{CopyOperation, CopyProgress, Error, Extent, ExtentKind, Result,
+ use crate::IoUringExecutionOptions;
+ use crate::policy::{self, Operation};
+ 
+-use super::copy::copy_file_range_preflighted;
++use super::copy::{NativeCopySession, NativeSetupFailure};
+ use super::validation::{validate_copy_configuration, validate_file_range};
+ use super::{IoUringCopyStats, NativeExtentPlan};
+ 
+@@ -184,22 +184,20 @@ pub fn copy_extent_plan(
+     }
+     crate::preflight::files(source_fd, destination_fd, 0, plan.disk_size())?;
+ 
+-    let mut aggregate = IoUringExtentCopyStats::default();
+-    for extent in plan.extents() {
+-        let stats = copy_file_range_preflighted(
+-            source_fd,
+-            destination_fd,
+-            extent.offset(),
+-            extent.length(),
+-            block_size,
+-            alignment,
+-            options,
+-        )
+-        .map_err(|e| crate::failure::native_prior(e, aggregate.progress()))?;
+-        aggregate.add_data_extent(stats)?;
+-    }
+-
+-    Ok(aggregate)
++    let mut session =
++        NativeCopySession::new(source_fd, destination_fd, block_size, alignment, options)
++            .map_err(|failure| failure.error)?;
++    let result = (|| {
++        let mut aggregate = IoUringExtentCopyStats::default();
++        for extent in plan.extents() {
++            let stats = session
++                .copy_range(extent.offset(), extent.length())
++                .map_err(|e| crate::failure::native_prior(e, aggregate.progress()))?;
++            aggregate.add_data_extent(stats)?;
++        }
++        Ok(aggregate)
++    })();
++    session.finish(result, IoUringExtentCopyStats::progress)
+ }
+ 
+ /// Copy Data/Zero/Hole extents using destination capabilities. Configuration and
+@@ -253,69 +251,156 @@ where
+         }
+     }
+ 
+-    let mut aggregate = IoUringExtentCopyStats::default();
++    PreparedNativeExtents::new(
++        source_fd,
++        destination_fd,
++        plan,
++        block_size,
++        alignment,
++        options,
++    )
++    .map_err(|failure| failure.error)?
++    .execute(destination, plan)
++}
+ 
+-    for extent in plan.extents() {
+-        match policy::select(extent.kind(), || destination.capabilities()) {
+-            Operation::Copy => {
+-                let stats = copy_file_range_preflighted(
+-                    source_fd,
+-                    destination_fd,
+-                    extent.offset(),
+-                    extent.length(),
+-                    block_size,
+-                    alignment,
+-                    options,
+-                )
+-                .map_err(|e| crate::failure::native_prior(e, aggregate.progress()))?;
++/// Invocation-owned resources, prepared before callbacks and sparse prefixes.
++/// A data pool also supplies zero fallback scratch, so lifetimes do not increase
++/// the existing payload budget. Sparse-only plans need no ring or descriptor dup.
++pub(crate) struct PreparedNativeExtents {
++    session: Option<NativeCopySession>,
++    sparse_buffer: Option<rvvdk_core::AlignedBuffer>,
++}
+ 
+-                aggregate.add_data_extent(stats)?;
+-            }
++impl PreparedNativeExtents {
++    pub(crate) fn new(
++        source_fd: BorrowedFd<'_>,
++        destination_fd: BorrowedFd<'_>,
++        plan: &NativeExtentPlan,
++        block_size: usize,
++        alignment: usize,
++        options: IoUringExecutionOptions,
++    ) -> std::result::Result<Self, NativeSetupFailure> {
++        let data = plan.extents().iter().any(|e| e.kind() == ExtentKind::Data);
++        let session = if data {
++            Some(NativeCopySession::new(
++                source_fd,
++                destination_fd,
++                block_size,
++                alignment,
++                options,
++            )?)
++        } else {
++            None
++        };
++        let sparse_buffer = if !data && !plan.is_empty() {
++            Some(
++                rvvdk_core::AlignedBuffer::new(block_size, alignment)
++                    .map_err(|e| NativeSetupFailure::new(CopyOperation::Allocate, e))?,
++            )
++        } else {
++            None
++        };
++        Ok(Self {
++            session,
++            sparse_buffer,
++        })
++    }
+ 
+-            Operation::Zero => {
+-                destination
+-                    .write_zero_at(extent.offset(), extent.length())
+-                    .map_err(|e| {
+-                        aggregate.failure(
+-                            CopyOperation::WriteZero,
+-                            extent.offset(),
+-                            extent.length(),
+-                            e,
+-                        )
+-                    })?;
+-                aggregate.add_zero_extent(extent.length())?;
+-            }
+-            Operation::Discard => {
+-                destination
+-                    .discard(extent.offset(), extent.length())
+-                    .map_err(|e| {
+-                        aggregate.failure(
+-                            CopyOperation::Discard,
+-                            extent.offset(),
+-                            extent.length(),
+-                            e,
+-                        )
+-                    })?;
+-                aggregate.add_discard_extent(extent.length())?;
+-            }
+-            Operation::WriteZero => {
+-                write_zero_fallback(destination, *extent, block_size, &mut aggregate)?
++    pub(crate) fn execute<D: VirtualDisk>(
++        mut self,
++        destination: &D,
++        plan: &NativeExtentPlan,
++    ) -> Result<IoUringExtentCopyStats> {
++        let result = self.execute_inner(destination, plan);
++        match self.session {
++            Some(session) => session.finish(result, IoUringExtentCopyStats::progress),
++            None => result,
++        }
++    }
++
++    fn execute_inner<D: VirtualDisk>(
++        &mut self,
++        destination: &D,
++        plan: &NativeExtentPlan,
++    ) -> Result<IoUringExtentCopyStats> {
++        let mut aggregate = IoUringExtentCopyStats::default();
++
++        for extent in plan.extents() {
++            match policy::select(extent.kind(), || destination.capabilities()) {
++                Operation::Copy => {
++                    let stats = self
++                        .session
++                        .as_mut()
++                        .expect("Data plan has a prepared session")
++                        .copy_range(extent.offset(), extent.length())
++                        .map_err(|e| crate::failure::native_prior(e, aggregate.progress()))?;
++
++                    aggregate.add_data_extent(stats)?;
++                }
++
++                Operation::Zero => {
++                    destination
++                        .write_zero_at(extent.offset(), extent.length())
++                        .map_err(|e| {
++                            aggregate.failure(
++                                CopyOperation::WriteZero,
++                                extent.offset(),
++                                extent.length(),
++                                e,
++                            )
++                        })?;
++                    aggregate.add_zero_extent(extent.length())?;
++                }
++                Operation::Discard => {
++                    destination
++                        .discard(extent.offset(), extent.length())
++                        .map_err(|e| {
++                            aggregate.failure(
++                                CopyOperation::Discard,
++                                extent.offset(),
++                                extent.length(),
++                                e,
++                            )
++                        })?;
++                    aggregate.add_discard_extent(extent.length())?;
++                }
++                Operation::WriteZero => {
++                    if let Some(session) = &self.session {
++                        let buffer = session.zero_buffer();
++                        write_zero_fallback(
++                            destination,
++                            *extent,
++                            buffer.as_slice(),
++                            &mut aggregate,
++                        )?;
++                    } else {
++                        write_zero_fallback(
++                            destination,
++                            *extent,
++                            self.sparse_buffer
++                                .as_ref()
++                                .expect("nonempty sparse plan")
++                                .as_slice(),
++                            &mut aggregate,
++                        )?;
++                    }
++                }
+             }
+         }
++        Ok(aggregate)
+     }
+-    Ok(aggregate)
+ }
+ 
+ fn write_zero_fallback<D>(
+     destination: &D,
+     extent: Extent,
+-    block_size: usize,
++    buffer: &[u8],
+     stats: &mut IoUringExtentCopyStats,
+ ) -> Result<()>
+ where
+     D: VirtualDisk,
+ {
+-    let buffer = vec![0_u8; block_size];
++    let block_size = buffer.len();
+ 
+     let mut offset = extent.offset();
+ 
+diff --git a/crates/rvvdk-datamover/src/io_uring/mod.rs b/crates/rvvdk-datamover/src/io_uring/mod.rs
+index fa6ff4a..194a0af 100644
+--- a/crates/rvvdk-datamover/src/io_uring/mod.rs
++++ b/crates/rvvdk-datamover/src/io_uring/mod.rs
+@@ -26,3 +26,5 @@ pub use extent_plan::NativeExtentPlan;
+ // Payload size used by the DataMover budget; hash-table overhead is external.
+ pub(crate) const OPERATION_BYTES: usize =
+     std::mem::size_of::<(u64, operation::InFlightOperation)>();
++
++pub(crate) use extent_copy::PreparedNativeExtents;
+diff --git a/crates/rvvdk-datamover/src/lib.rs b/crates/rvvdk-datamover/src/lib.rs
+index cb98bd5..b62f19f 100644
+--- a/crates/rvvdk-datamover/src/lib.rs
++++ b/crates/rvvdk-datamover/src/lib.rs
+@@ -31,7 +31,7 @@ pub use options::{
+ pub use stats::{CopyReport, CopyStats};
+ 
+ #[cfg(target_os = "linux")]
+-pub use execution::IoUringExecutionOptions;
++pub use execution::{IoUringExecutionOptions, NativeRuntimeFallback};
+ 
+ pub use native::{NativeCopyReport, NativeCopyStats};
+ pub use observer::{NoopProgressObserver, ProgressObserver};
+diff --git a/crates/rvvdk-datamover/src/memory.rs b/crates/rvvdk-datamover/src/memory.rs
+index 0f1d04c..e6983e5 100644
+--- a/crates/rvvdk-datamover/src/memory.rs
++++ b/crates/rvvdk-datamover/src/memory.rs
+@@ -147,7 +147,8 @@ impl DataMover {
+         } else {
+             (0, 0)
+         };
+-        // Data pools and sparse fallback buffers have disjoint lifetimes.
++        // Data jobs reuse a pool buffer for zero fallback; sparse-only jobs
++        // reserve one scratch block. No second payload buffer overlaps the pool.
+         CopyMemoryUsage::new(add(resident, cloned)?, buffers, queue)
+     }
+ }
+diff --git a/crates/rvvdk-datamover/src/mover.rs b/crates/rvvdk-datamover/src/mover.rs
+index 4be234b..67e5176 100644
+--- a/crates/rvvdk-datamover/src/mover.rs
++++ b/crates/rvvdk-datamover/src/mover.rs
+@@ -4,7 +4,7 @@ use rvvdk_core::{BufferPool, CopyOperation, CopyProgress, Error, Extent, Result,
+ 
+ use crate::planner::ExtentWorkIter;
+ #[cfg(target_os = "linux")]
+-use crate::preparation::{PreparedExecution, PreparedExecutor};
++use crate::preparation::PreparedExecutor;
+ use crate::{concurrent, sequential};
+ 
+ use crate::{
+@@ -21,8 +21,7 @@ use rvvdk_platform::LinuxFdBackend;
+ 
+ #[cfg(target_os = "linux")]
+ use crate::io_uring::{
+-    NativeExtentPlan, copy_extent_plan_with_destination, copy_file_range_with_options,
+-    evaluate_compatibility,
++    NativeExtentPlan, PreparedNativeExtents, copy_file_range_with_options, evaluate_compatibility,
+ };
+ 
+ pub struct DataMover {
+@@ -116,7 +115,7 @@ impl DataMover {
+     {
+         let prepared = self.prepare_portable(plan, source, destination)?;
+         let (plan, source, destination, _) = prepared.parts();
+-        Self::observe_plan(plan, observer, || {
++        Self::observe_plan(plan, ExecutionBackend::Threaded, observer, || {
+             if self.options.concurrency() == 1 {
+                 self.execute_threaded_plan_with_observer(plan, source, destination, observer)
+             } else {
+@@ -342,26 +341,33 @@ impl DataMover {
+         D: BlockDevice + LinuxFdBackend,
+     {
+         let prepared = self.prepare_raw(plan, source, destination)?;
+-        self.execute_prepared_raw_plan(&prepared)
++        let (plan, source, destination, executor) = prepared.parts();
++        self.execute_prepared_raw_plan(plan, source, destination, executor)
+     }
+ 
+     /// Dispatch only a fresh preparation tied to this plan and endpoint borrows.
+     #[cfg(target_os = "linux")]
+     fn execute_prepared_raw_plan<S, D>(
+         &self,
+-        prepared: &PreparedExecution<'_, RawDisk<S>, RawDisk<D>>,
++        plan: &CopyPlan,
++        source: &RawDisk<S>,
++        destination: &RawDisk<D>,
++        executor: PreparedExecutor,
+     ) -> Result<CopyReport>
+     where
+         S: BlockDevice + LinuxFdBackend,
+         D: BlockDevice + LinuxFdBackend,
+     {
+-        let (plan, source, destination, executor) = prepared.parts();
+         match executor {
+             PreparedExecutor::Threaded => self.execute_threaded_plan(plan, source, destination),
++            PreparedExecutor::NativeFallback(reason) => self
++                .execute_threaded_plan(plan, source, destination)
++                .map(|report| report.with_runtime_fallback(Some(reason))),
+             PreparedExecutor::IoUring {
+                 native_plan,
+-                options,
+-            } => self.execute_io_uring_plan(plan, source, destination, native_plan, *options),
++                resources,
++                setup_elapsed,
++            } => self.execute_io_uring_plan(destination, &native_plan, *resources, setup_elapsed),
+         }
+     }
+ 
+@@ -379,22 +385,29 @@ impl DataMover {
+         O: ProgressObserver + ?Sized,
+     {
+         let prepared = self.prepare_raw(plan, source, destination)?;
+-        let (plan, source, destination, _) = prepared.parts();
+-        Self::observe_plan(plan, observer, || {
+-            if plan.backend() == ExecutionBackend::Threaded && self.options.concurrency() == 1 {
++        let (plan, source, destination, executor) = prepared.parts();
++        let (backend, fallback) = match &executor {
++            PreparedExecutor::Threaded => (ExecutionBackend::Threaded, None),
++            PreparedExecutor::NativeFallback(reason) => (ExecutionBackend::Threaded, Some(*reason)),
++            PreparedExecutor::IoUring { .. } => (ExecutionBackend::IoUring, None),
++        };
++        Self::observe_plan(plan, backend, observer, || {
++            if backend == ExecutionBackend::Threaded && self.options.concurrency() == 1 {
+                 self.execute_threaded_plan_with_observer(plan, source, destination, observer)
++                    .map(|report| report.with_runtime_fallback(fallback))
+             } else {
+-                self.execute_prepared_raw_plan(&prepared)
++                self.execute_prepared_raw_plan(plan, source, destination, executor)
+             }
+         })
+     }
+ 
+     fn observe_plan<O: ProgressObserver + ?Sized>(
+         plan: &CopyPlan,
++        backend: ExecutionBackend,
+         observer: &O,
+         execute: impl FnOnce() -> Result<CopyReport>,
+     ) -> Result<CopyReport> {
+-        observer.on_progress(&ProgressSnapshot::initial(plan));
++        observer.on_progress(&ProgressSnapshot::initial(plan, backend));
+         let report = execute()?;
+         let stats = report.stats();
+         let completed = ProgressCompleted::new(
+@@ -471,32 +484,18 @@ impl DataMover {
+     }
+ 
+     #[cfg(target_os = "linux")]
+-    fn execute_io_uring_plan<S, D>(
++    fn execute_io_uring_plan<D>(
+         &self,
+-        plan: &CopyPlan,
+-        source: &RawDisk<S>,
+         destination: &RawDisk<D>,
+         native_plan: &NativeExtentPlan,
+-        execution_options: crate::IoUringExecutionOptions,
++        resources: PreparedNativeExtents,
++        setup_elapsed: std::time::Duration,
+     ) -> Result<CopyReport>
+     where
+-        S: BlockDevice + LinuxFdBackend,
+         D: BlockDevice + LinuxFdBackend,
+     {
+-        let source_backend = source.device();
+-        let destination_backend = destination.device();
+-
+         let started = Instant::now();
+-
+-        let stats = copy_extent_plan_with_destination(
+-            source_backend.as_fd(),
+-            destination_backend.as_fd(),
+-            destination,
+-            native_plan,
+-            plan.block_size(),
+-            plan.alignment(),
+-            execution_options,
+-        )?;
++        let stats = resources.execute(destination, native_plan)?;
+ 
+         destination.flush().map_err(|e| {
+             crate::failure::execution("io_uring", CopyOperation::Flush, None, stats.progress(), e)
+@@ -504,7 +503,7 @@ impl DataMover {
+ 
+         Ok(CopyReport::new(
+             ExecutionBackend::IoUring,
+-            CopyStats::from_io_uring_extents(stats, started.elapsed()),
++            CopyStats::from_io_uring_extents(stats, setup_elapsed + started.elapsed()),
+         ))
+     }
+ 
+diff --git a/crates/rvvdk-datamover/src/preparation.rs b/crates/rvvdk-datamover/src/preparation.rs
+index 64f81ba..7a7c7dd 100644
+--- a/crates/rvvdk-datamover/src/preparation.rs
++++ b/crates/rvvdk-datamover/src/preparation.rs
+@@ -2,16 +2,16 @@ use crate::{CopyPlan, DataMover, ExecutionBackend};
+ use rvvdk_core::{Error, Result, VirtualDisk};
+ 
+ #[cfg(target_os = "linux")]
+-use crate::io_uring::{NativeExtentPlan, evaluate_compatibility};
++use crate::ExecutionStrategy;
+ #[cfg(target_os = "linux")]
+-use crate::{ExecutionStrategy, IoUringExecutionOptions};
++use crate::io_uring::{NativeExtentPlan, PreparedNativeExtents, evaluate_compatibility};
+ #[cfg(target_os = "linux")]
+ use rvvdk_core::{BlockDevice, ExtentKind, RawDisk};
+ #[cfg(target_os = "linux")]
+ use rvvdk_platform::LinuxFdBackend;
+ 
+ /// Invocation-scoped checked dispatch state, bound to the validated borrows.
+-/// This does not claim runtime ring/buffer allocation or snapshot consistency.
++/// Native resources are owned here; structural validation is not a snapshot.
+ pub(crate) struct PreparedExecution<'a, S: ?Sized, D: ?Sized> {
+     plan: &'a CopyPlan,
+     source: &'a S,
+@@ -22,15 +22,18 @@ pub(crate) struct PreparedExecution<'a, S: ?Sized, D: ?Sized> {
+ pub(crate) enum PreparedExecutor {
+     Threaded,
+     #[cfg(target_os = "linux")]
++    NativeFallback(crate::NativeRuntimeFallback),
++    #[cfg(target_os = "linux")]
+     IoUring {
+         native_plan: NativeExtentPlan,
+-        options: IoUringExecutionOptions,
++        resources: Box<PreparedNativeExtents>,
++        setup_elapsed: std::time::Duration,
+     },
+ }
+ 
+ impl<'a, S: ?Sized, D: ?Sized> PreparedExecution<'a, S, D> {
+-    pub(crate) fn parts(&self) -> (&'a CopyPlan, &'a S, &'a D, &PreparedExecutor) {
+-        (self.plan, self.source, self.destination, &self.executor)
++    pub(crate) fn parts(self) -> (&'a CopyPlan, &'a S, &'a D, PreparedExecutor) {
++        (self.plan, self.source, self.destination, self.executor)
+     }
+ }
+ 
+@@ -120,9 +123,34 @@ impl DataMover {
+                 .check(self.options.memory_budget(), "native plan")?;
+                 let native_plan = NativeExtentPlan::new(native_extents, plan.logical_bytes())?;
+ 
+-                PreparedExecutor::IoUring {
+-                    native_plan,
+-                    options: execution_options,
++                let started = std::time::Instant::now();
++                match PreparedNativeExtents::new(
++                    source.device().as_fd(),
++                    destination.device().as_fd(),
++                    &native_plan,
++                    plan.block_size(),
++                    plan.alignment(),
++                    execution_options,
++                ) {
++                    Ok(resources) => PreparedExecutor::IoUring {
++                        native_plan,
++                        resources: Box::new(resources),
++                        setup_elapsed: started.elapsed(),
++                    },
++                    Err(failure) => {
++                        if let (ExecutionStrategy::Auto(_), Some(reason)) =
++                            (self.execution_strategy(), failure.fallback)
++                        {
++                            // Discard native-only extent storage before admitting Threaded.
++                            // The immutable plan keeps its planning-time provenance.
++                            drop(native_plan);
++                            self.threaded_memory(plan.extent_capacity())?
++                                .check(self.options.memory_budget(), "runtime fallback")?;
++                            PreparedExecutor::NativeFallback(reason)
++                        } else {
++                            return Err(failure.error);
++                        }
++                    }
+                 }
+             }
+         };
+diff --git a/crates/rvvdk-datamover/src/progress.rs b/crates/rvvdk-datamover/src/progress.rs
+index 993b801..ba31310 100644
+--- a/crates/rvvdk-datamover/src/progress.rs
++++ b/crates/rvvdk-datamover/src/progress.rs
+@@ -127,9 +127,9 @@ impl ProgressSnapshot {
+         }
+     }
+ 
+-    pub(crate) fn initial(plan: &CopyPlan) -> Self {
++    pub(crate) fn initial(plan: &CopyPlan, backend: ExecutionBackend) -> Self {
+         Self::new(
+-            plan.backend(),
++            backend,
+             ProgressTotals::from_plan(plan),
+             ProgressCompleted::default(),
+             Duration::ZERO,
+diff --git a/crates/rvvdk-datamover/src/stats.rs b/crates/rvvdk-datamover/src/stats.rs
+index be25984..0ead835 100644
+--- a/crates/rvvdk-datamover/src/stats.rs
++++ b/crates/rvvdk-datamover/src/stats.rs
+@@ -75,6 +75,8 @@ use crate::ExecutionBackend;
+ 
+ #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+ pub struct CopyReport {
++    #[cfg(target_os = "linux")]
++    runtime_fallback: Option<crate::NativeRuntimeFallback>,
+     backend: ExecutionBackend,
+     stats: CopyStats,
+ }
+@@ -89,7 +91,27 @@ impl CopyReport {
+     }
+ 
+     pub(crate) const fn new(backend: ExecutionBackend, stats: CopyStats) -> Self {
+-        Self { backend, stats }
++        Self {
++            backend,
++            stats,
++            #[cfg(target_os = "linux")]
++            runtime_fallback: None,
++        }
++    }
++
++    /// Why preparation changed native execution to Threaded, if it did.
++    #[cfg(target_os = "linux")]
++    pub const fn runtime_fallback(&self) -> Option<crate::NativeRuntimeFallback> {
++        self.runtime_fallback
++    }
++
++    #[cfg(target_os = "linux")]
++    pub(crate) fn with_runtime_fallback(
++        mut self,
++        reason: Option<crate::NativeRuntimeFallback>,
++    ) -> Self {
++        self.runtime_fallback = reason;
++        self
+     }
+ }
+ 
+diff --git a/crates/rvvdk-datamover/benches/native_runtime.rs b/crates/rvvdk-datamover/benches/native_runtime.rs
+new file mode 100644
+index 0000000..a1f9856
+--- /dev/null
++++ b/crates/rvvdk-datamover/benches/native_runtime.rs
+@@ -0,0 +1,135 @@
++mod support;
++#[path = "../tests/support/test_block_device.rs"]
++mod test_block_device;
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use rvvdk_core::{BlockDevice, Capabilities, Extent, ExtentKind, RawDisk, VirtualDisk};
++use rvvdk_datamover::{
++    CopyOptions, DataMover, ExecutionBackend, ExecutionStrategy, IoUringExecutionOptions,
++    NoopProgressObserver,
++};
++use rvvdk_local::LocalFileBlockDevice;
++use std::time::{Duration, Instant};
++use test_block_device::TestExtentBlockDevice;
++
++fn native_runtime(c: &mut Criterion) {
++    support::ensure_benchmark_directory();
++    let unavailable = std::env::var_os("RVVDK_BENCH_NATIVE_UNAVAILABLE").is_some();
++    let size = 16 * support::MIB;
++    let source_path = support::benchmark_path("native-runtime-source");
++    let destination_path = support::benchmark_path("native-runtime-destination");
++    let extents: Vec<_> = (0..256)
++        .map(|i| {
++            Extent::new(
++                i * 65536,
++                65536,
++                if unavailable || i % 2 == 0 {
++                    ExtentKind::Data
++                } else {
++                    ExtentKind::Hole
++                },
++            )
++            .unwrap()
++        })
++        .collect();
++    let mut expected = support::incompressible_buffer(size, 0x52562501);
++    for extent in &extents {
++        if extent.kind() == ExtentKind::Hole {
++            expected[extent.offset() as usize..extent.end() as usize].fill(0);
++        }
++    }
++    let device = TestExtentBlockDevice::create(
++        &source_path,
++        size as u64,
++        Capabilities::READ | Capabilities::WRITE | Capabilities::FLUSH | Capabilities::EXTENTS,
++        extents.clone(),
++    )
++    .unwrap();
++    device.write_all_at(0, &expected).unwrap();
++    device.flush().unwrap();
++    drop(device);
++    let source = RawDisk::new(
++        TestExtentBlockDevice::open_read_only(
++            &source_path,
++            size as u64,
++            Capabilities::READ | Capabilities::EXTENTS,
++            extents,
++        )
++        .unwrap(),
++    );
++    let reset = support::incompressible_buffer(size, 0x52562502);
++    std::fs::write(&destination_path, &reset).unwrap();
++    let destination =
++        RawDisk::new(LocalFileBlockDevice::open_read_write(&destination_path).unwrap());
++    let options = IoUringExecutionOptions::new(8).unwrap();
++    let mover = DataMover::with_execution_strategy(
++        CopyOptions::new(65536).unwrap(),
++        if unavailable {
++            ExecutionStrategy::Auto(options)
++        } else {
++            ExecutionStrategy::IoUring(options)
++        },
++    );
++    let plan = mover
++        .plan_raw_with_destination(&source, &destination)
++        .unwrap();
++    let mut actual = vec![0; size];
++    let mut group = c.benchmark_group("native_runtime");
++    group.sampling_mode(SamplingMode::Flat);
++    let cases: &[(&str, bool)] = if unavailable {
++        &[("unavailable_fallback", false)]
++    } else {
++        &[("fragmented_unobserved", false), ("fragmented_noop", true)]
++    };
++    for &(name, observed) in cases {
++        group.bench_function(name, |b| {
++            b.iter_custom(|iterations| {
++                let mut elapsed = Duration::ZERO;
++                for _ in 0..iterations {
++                    destination.write_all_at(0, &reset).unwrap();
++                    destination.flush().unwrap();
++                    let started = Instant::now();
++                    let report = if observed {
++                        mover.execute_raw_plan_with_observer(
++                            &plan,
++                            &source,
++                            &destination,
++                            &NoopProgressObserver,
++                        )
++                    } else {
++                        mover.execute_raw_plan(&plan, &source, &destination)
++                    }
++                    .unwrap();
++                    elapsed += started.elapsed();
++                    assert_eq!(
++                        report.backend(),
++                        if unavailable {
++                            ExecutionBackend::Threaded
++                        } else {
++                            ExecutionBackend::IoUring
++                        }
++                    );
++                    assert_eq!(
++                        report.stats().bytes_read(),
++                        if unavailable { size } else { size / 2 } as u64
++                    );
++                    assert_eq!(
++                        report.stats().bytes_written()
++                            + report.stats().bytes_zeroed()
++                            + report.stats().bytes_discarded(),
++                        size as u64
++                    );
++                    destination.read_exact_at(0, &mut actual).unwrap();
++                    assert_eq!(actual, expected);
++                }
++                elapsed
++            })
++        });
++    }
++    group.finish();
++    drop(source);
++    drop(destination);
++    support::remove_file(source_path);
++    support::remove_file(destination_path);
++}
++criterion_group! { name=benches; config=Criterion::default().sample_size(30).warm_up_time(Duration::from_millis(300)).measurement_time(Duration::from_secs(2)); targets=native_runtime }
++criterion_main!(benches);
+diff --git a/crates/rvvdk-datamover/tests/native_runtime.rs b/crates/rvvdk-datamover/tests/native_runtime.rs
+new file mode 100644
+index 0000000..80b403a
+--- /dev/null
++++ b/crates/rvvdk-datamover/tests/native_runtime.rs
+@@ -0,0 +1,486 @@
++#![cfg(target_os = "linux")]
++use rvvdk_core::{
++    BlockDevice, Capabilities, CopyEndpoint, CopyOperation, DiskGeometry, Error, Extent,
++    ExtentKind, RawDisk, Result, VirtualDisk,
++};
++use rvvdk_datamover::{
++    CopyOptions, DataMover, ExecutionBackend, ExecutionStrategy, IoUringExecutionOptions,
++    NativeRuntimeFallback, ProgressSnapshot,
++};
++use rvvdk_local::LocalFileBlockDevice;
++use rvvdk_platform::{LinuxFdBackend, LinuxFdCapabilities};
++use std::{
++    cell::Cell,
++    fs,
++    os::fd::{AsFd, BorrowedFd},
++    process::Command,
++    sync::atomic::{AtomicUsize, Ordering},
++    time::{Duration, Instant},
++};
++
++struct Disk {
++    file: LocalFileBlockDevice,
++    map: Vec<Extent>,
++    reads: AtomicUsize,
++}
++impl AsFd for Disk {
++    fn as_fd(&self) -> BorrowedFd<'_> {
++        self.file.as_fd()
++    }
++}
++impl LinuxFdBackend for Disk {
++    fn linux_fd_capabilities(&self) -> LinuxFdCapabilities {
++        self.file.linux_fd_capabilities()
++    }
++}
++impl BlockDevice for Disk {
++    fn geometry(&self) -> DiskGeometry {
++        self.file.geometry()
++    }
++    fn capabilities(&self) -> Capabilities {
++        self.file.capabilities()
++            & (Capabilities::READ
++                | Capabilities::WRITE
++                | Capabilities::FLUSH
++                | Capabilities::EXTENTS)
++    }
++    fn copy_endpoint(&self) -> Result<CopyEndpoint> {
++        self.file.copy_endpoint()
++    }
++    fn extents(&self, _: u64, _: u64) -> Result<Vec<Extent>> {
++        Ok(self.map.clone())
++    }
++    fn read_at(&self, offset: u64, bytes: &mut [u8]) -> Result<usize> {
++        self.reads.fetch_add(1, Ordering::Relaxed);
++        self.file.read_at(offset, bytes)
++    }
++    fn write_at(&self, offset: u64, bytes: &[u8]) -> Result<usize> {
++        self.file.write_at(offset, bytes)
++    }
++    fn flush(&self) -> Result<()> {
++        self.file.flush()
++    }
++}
++fn fixture(kinds: &[ExtentKind]) -> (RawDisk<Disk>, RawDisk<Disk>, Vec<u8>) {
++    static NEXT: AtomicUsize = AtomicUsize::new(0);
++    let path = std::env::var_os("RVVDK_TEST_DIR")
++        .map(std::path::PathBuf::from)
++        .unwrap_or_else(std::env::temp_dir)
++        .join(format!(
++            "rvvdk-r25-{}-{}",
++            std::process::id(),
++            NEXT.fetch_add(1, Ordering::Relaxed)
++        ));
++    let src = path.with_extension("src");
++    let dst = path.with_extension("dst");
++    let expected: Vec<_> = kinds
++        .iter()
++        .flat_map(|k| vec![if *k == ExtentKind::Data { 0x5a } else { 0 }; 4096])
++        .collect();
++    fs::write(&src, &expected).unwrap();
++    fs::write(&dst, vec![0xa5; expected.len()]).unwrap();
++    let source = LocalFileBlockDevice::open_read_only(&src).unwrap();
++    let destination = LocalFileBlockDevice::open_read_write(&dst).unwrap();
++    fs::remove_file(src).unwrap();
++    fs::remove_file(dst).unwrap();
++    let wrap = |file| {
++        RawDisk::new(Disk {
++            file,
++            map: kinds
++                .iter()
++                .enumerate()
++                .map(|(i, k)| Extent::new(i as u64 * 4096, 4096, *k).unwrap())
++                .collect(),
++            reads: AtomicUsize::new(0),
++        })
++    };
++    (wrap(source), wrap(destination), expected)
++}
++fn mover(auto: bool, options: CopyOptions) -> DataMover {
++    let native = IoUringExecutionOptions::new(2).unwrap();
++    DataMover::with_execution_strategy(
++        options,
++        if auto {
++            ExecutionStrategy::Auto(native)
++        } else {
++            ExecutionStrategy::IoUring(native)
++        },
++    )
++}
++fn bytes(disk: &RawDisk<Disk>) -> Vec<u8> {
++    let mut bytes = vec![0; disk.size() as usize];
++    disk.read_exact_at(0, &mut bytes).unwrap();
++    bytes
++}
++
++// Irreversible syscall filtering is isolated in a bounded child process.
++fn isolated(name: &str, test: impl FnOnce()) {
++    const CHILD: &str = "RVVDK_NATIVE_RUNTIME_CHILD";
++    if std::env::var(CHILD).as_deref() == Ok(name) {
++        test();
++        return;
++    }
++    let mut child = Command::new(std::env::current_exe().unwrap())
++        .args(["--exact", name, "--nocapture"])
++        .env(CHILD, name)
++        .spawn()
++        .unwrap();
++    let until = Instant::now() + Duration::from_secs(15);
++    loop {
++        if let Some(status) = child.try_wait().unwrap() {
++            assert!(status.success());
++            break;
++        }
++        if Instant::now() > until {
++            child.kill().unwrap();
++            child.wait().unwrap();
++            panic!("runtime test timed out");
++        }
++        std::thread::sleep(Duration::from_millis(10));
++    }
++}
++fn deny(syscall: libc::c_long, errno: i32) {
++    let instruction = |code, jt, jf, k| libc::sock_filter { code, jt, jf, k };
++    let mut filter = [
++        instruction(0x20, 0, 0, 0),
++        instruction(0x15, 0, 1, syscall as u32),
++        instruction(0x06, 0, 0, libc::SECCOMP_RET_ERRNO | errno as u32),
++        instruction(0x06, 0, 0, libc::SECCOMP_RET_ALLOW),
++    ];
++    let program = libc::sock_fprog {
++        len: filter.len() as u16,
++        filter: filter.as_mut_ptr(),
++    };
++    // SAFETY: valid filter pointers live through prctl; only this disposable test thread is filtered.
++    unsafe {
++        assert_eq!(libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0), 0);
++        assert_eq!(
++            libc::prctl(libc::PR_SET_SECCOMP, libc::SECCOMP_MODE_FILTER, &program),
++            0
++        );
++    }
++}
++fn fd_count() -> usize {
++    fs::read_dir("/proc/self/fd").unwrap().count()
++}
++
++#[test]
++fn denied_setup_falls_back_before_progress_for_auto_only() {
++    isolated(
++        "denied_setup_falls_back_before_progress_for_auto_only",
++        || {
++            deny(libc::SYS_io_uring_setup, libc::EPERM);
++            for auto in [false, true] {
++                for workers in [1, 4] {
++                    for observed in [false, true] {
++                        let (source, destination, expected) = fixture(&[
++                            ExtentKind::Zero,
++                            ExtentKind::Data,
++                            ExtentKind::Hole,
++                            ExtentKind::Data,
++                        ]);
++                        let mover = mover(
++                            auto,
++                            CopyOptions::with_execution(4096, 4096, workers, 2).unwrap(),
++                        );
++                        let plan = mover
++                            .plan_raw_with_destination(&source, &destination)
++                            .unwrap();
++                        assert_eq!(plan.backend(), ExecutionBackend::IoUring);
++                        let callbacks = Cell::new(0);
++                        let observer = |s: &ProgressSnapshot| {
++                            callbacks.set(callbacks.get() + 1);
++                            assert_eq!(s.backend(), ExecutionBackend::Threaded);
++                        };
++                        let before = fd_count();
++                        let result = if observed {
++                            mover.execute_raw_plan_with_observer(
++                                &plan,
++                                &source,
++                                &destination,
++                                &observer,
++                            )
++                        } else {
++                            mover.execute_raw_plan(&plan, &source, &destination)
++                        };
++                        assert_eq!(fd_count(), before);
++                        if auto {
++                            let report = result.unwrap();
++                            assert_eq!(report.backend(), ExecutionBackend::Threaded);
++                            assert_eq!(
++                                report.runtime_fallback(),
++                                Some(NativeRuntimeFallback::RingUnavailable {
++                                    os_error: libc::EPERM
++                                })
++                            );
++                            assert_eq!(bytes(&destination), expected);
++                            assert_eq!(report.stats().bytes_read(), 8192);
++                            assert_eq!(report.stats().bytes_written(), 16384);
++                            assert!(source.device().reads.load(Ordering::Relaxed) > 0);
++                            assert_eq!(observed, callbacks.get() > 0);
++                        } else {
++                            let error = result.unwrap_err();
++                            let failure = error.copy_failure().unwrap();
++                            assert_eq!(failure.operation, CopyOperation::NativeSetup);
++                            assert_eq!(failure.progress.bytes_written, 0);
++                            assert!(!failure.progress.unconfirmed_io);
++                            assert!(
++                                matches!(&failure.cause,Error::Io(e) if e.raw_os_error()==Some(libc::EPERM))
++                            );
++                            assert_eq!(callbacks.get(), 0);
++                            assert_eq!(bytes(&destination), vec![0xa5; expected.len()]);
++                        }
++                        assert_eq!(
++                            plan.backend(),
++                            ExecutionBackend::IoUring,
++                            "planning provenance is immutable"
++                        );
++                    }
++                }
++            }
++        },
++    );
++}
++
++#[test]
++fn prepared_ring_is_reused_across_data_and_zero_fallback_extents() {
++    isolated(
++        "prepared_ring_is_reused_across_data_and_zero_fallback_extents",
++        || {
++            let (source, destination, expected) = fixture(&[
++                ExtentKind::Zero,
++                ExtentKind::Data,
++                ExtentKind::Hole,
++                ExtentKind::Data,
++                ExtentKind::Zero,
++            ]);
++            let mover = mover(false, CopyOptions::new(4096).unwrap());
++            let plan = mover
++                .plan_raw_with_destination(&source, &destination)
++                .unwrap();
++            let before = fd_count();
++            let calls = Cell::new(0);
++            let report = mover
++                .execute_raw_plan_with_observer(
++                    &plan,
++                    &source,
++                    &destination,
++                    &|s: &ProgressSnapshot| {
++                        assert_eq!(s.backend(), ExecutionBackend::IoUring);
++                        if calls.replace(calls.get() + 1) == 0 {
++                            deny(libc::SYS_io_uring_setup, libc::EPERM);
++                        }
++                    },
++                )
++                .unwrap();
++            assert_eq!(calls.get(), 2);
++            assert_eq!(fd_count(), before);
++            assert_eq!(report.runtime_fallback(), None);
++            assert_eq!(report.stats().bytes_read(), 8192);
++            assert_eq!(report.stats().bytes_written(), 20480);
++            assert_eq!(source.device().reads.load(Ordering::Relaxed), 0);
++            assert_eq!(bytes(&destination), expected);
++        },
++    );
++}
++
++#[test]
++fn sparse_only_and_empty_plans_do_not_require_a_ring() {
++    isolated("sparse_only_and_empty_plans_do_not_require_a_ring", || {
++        deny(libc::SYS_io_uring_setup, libc::EPERM);
++        for kinds in [&[][..], &[ExtentKind::Zero, ExtentKind::Hole][..]] {
++            let (source, destination, expected) = fixture(kinds);
++            let mover = mover(false, CopyOptions::new(4096).unwrap());
++            let report = mover.copy_raw_with_report(&source, &destination).unwrap();
++            assert_eq!(report.backend(), ExecutionBackend::IoUring);
++            assert_eq!(report.runtime_fallback(), None);
++            assert_eq!(bytes(&destination), expected);
++        }
++    });
++}
++
++#[test]
++fn invalid_or_exhausted_ring_setup_does_not_fallback() {
++    isolated("invalid_or_exhausted_ring_setup_does_not_fallback", || {
++        for errno in [libc::EINVAL, libc::ENOMEM, libc::EMFILE] {
++            deny(libc::SYS_io_uring_setup, errno);
++            let (source, destination, expected) = fixture(&[ExtentKind::Zero, ExtentKind::Data]);
++            let mover = mover(true, CopyOptions::new(4096).unwrap());
++            let plan = mover
++                .plan_raw_with_destination(&source, &destination)
++                .unwrap();
++            let calls = Cell::new(0);
++            let error = mover
++                .execute_raw_plan_with_observer(
++                    &plan,
++                    &source,
++                    &destination,
++                    &|_: &ProgressSnapshot| calls.set(calls.get() + 1),
++                )
++                .unwrap_err();
++            assert!(
++                matches!(&error.copy_failure().unwrap().cause,Error::Io(e) if e.raw_os_error()==Some(errno))
++            );
++            assert_eq!(calls.get(), 0);
++            assert_eq!(bytes(&destination), vec![0xa5; expected.len()]);
++        }
++    });
++}
++
++#[test]
++fn runtime_fallback_checks_the_threaded_budget_before_observation() {
++    isolated(
++        "runtime_fallback_checks_the_threaded_budget_before_observation",
++        || {
++            let (source, destination, expected) = fixture(&[ExtentKind::Data]);
++            let options = CopyOptions::with_execution(4096, 4096, 16, 2).unwrap();
++            let planner = mover(true, options);
++            let plan = planner
++                .plan_raw_with_destination(&source, &destination)
++                .unwrap();
++            let budget = planner.execution_memory(&plan).unwrap().total_bytes();
++            let mover = mover(true, options.with_memory_budget(budget));
++            deny(libc::SYS_io_uring_setup, libc::ENOSYS);
++            let calls = Cell::new(0);
++            let error = mover
++                .execute_raw_plan_with_observer(
++                    &plan,
++                    &source,
++                    &destination,
++                    &|_: &ProgressSnapshot| calls.set(calls.get() + 1),
++                )
++                .unwrap_err();
++            assert!(matches!(
++                error,
++                Error::MemoryBudgetExceeded {
++                    phase: "runtime fallback",
++                    ..
++                }
++            ));
++            assert_eq!(calls.get(), 0);
++            assert_eq!(bytes(&destination), vec![0xa5; expected.len()]);
++        },
++    );
++}
++
++#[test]
++fn observer_panic_releases_unsubmitted_native_resources() {
++    isolated(
++        "observer_panic_releases_unsubmitted_native_resources",
++        || {
++            let (source, destination, expected) = fixture(&[ExtentKind::Data]);
++            let mover = mover(false, CopyOptions::new(4096).unwrap());
++            let plan = mover
++                .plan_raw_with_destination(&source, &destination)
++                .unwrap();
++            let before = fd_count();
++            for _ in 0..4 {
++                let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++                    mover.execute_raw_plan_with_observer(
++                        &plan,
++                        &source,
++                        &destination,
++                        &|_: &ProgressSnapshot| panic!("observer"),
++                    )
++                }));
++                assert!(result.is_err());
++                assert_eq!(fd_count(), before);
++                assert_eq!(bytes(&destination), vec![0xa5; expected.len()]);
++            }
++        },
++    );
++}
++
++#[test]
++fn submission_failure_after_sparse_prefix_never_retries_threaded() {
++    isolated(
++        "submission_failure_after_sparse_prefix_never_retries_threaded",
++        || {
++            let (source, destination, _) = fixture(&[ExtentKind::Zero, ExtentKind::Data]);
++            let mover = mover(true, CopyOptions::new(4096).unwrap());
++            let plan = mover
++                .plan_raw_with_destination(&source, &destination)
++                .unwrap();
++            deny(libc::SYS_io_uring_enter, libc::EIO);
++            let calls = Cell::new(0);
++            let error = mover
++                .execute_raw_plan_with_observer(
++                    &plan,
++                    &source,
++                    &destination,
++                    &|s: &ProgressSnapshot| {
++                        calls.set(calls.get() + 1);
++                        assert_eq!(s.backend(), ExecutionBackend::IoUring);
++                    },
++                )
++                .unwrap_err();
++            let failure = error.copy_failure().unwrap();
++            assert_eq!(failure.progress.bytes_written, 4096);
++            assert_eq!(failure.progress.extents_completed, Some(1));
++            assert_eq!(calls.get(), 1);
++            assert_eq!(source.device().reads.load(Ordering::Relaxed), 0);
++            assert_eq!(&bytes(&destination)[..4096], &[0; 4096]);
++        },
++    );
++}
++
++#[test]
++fn descriptor_duplication_denial_is_not_ring_unavailability() {
++    isolated(
++        "descriptor_duplication_denial_is_not_ring_unavailability",
++        || {
++            let (source, destination, expected) = fixture(&[ExtentKind::Zero, ExtentKind::Data]);
++            let mover = mover(true, CopyOptions::new(4096).unwrap());
++            let plan = mover
++                .plan_raw_with_destination(&source, &destination)
++                .unwrap();
++            let instruction = |code, jt, jf, k| libc::sock_filter { code, jt, jf, k };
++            let mut filter = [
++                instruction(0x20, 0, 0, 0), // seccomp_data.nr
++                instruction(0x15, 0, 3, libc::SYS_fcntl as u32),
++                instruction(0x20, 0, 0, 24), // low word of args[1]: fcntl command (little endian)
++                instruction(0x15, 0, 1, libc::F_DUPFD_CLOEXEC as u32),
++                instruction(0x06, 0, 0, libc::SECCOMP_RET_ERRNO | libc::EPERM as u32),
++                instruction(0x06, 0, 0, libc::SECCOMP_RET_ALLOW),
++            ];
++            // Adjust the command word for big-endian Linux targets.
++            if cfg!(target_endian = "big") {
++                filter[2].k = 28;
++            }
++            let program = libc::sock_fprog {
++                len: filter.len() as u16,
++                filter: filter.as_mut_ptr(),
++            };
++            // SAFETY: filter storage remains live during prctl, in an isolated child.
++            unsafe {
++                assert_eq!(libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0), 0);
++                assert_eq!(
++                    libc::prctl(libc::PR_SET_SECCOMP, libc::SECCOMP_MODE_FILTER, &program),
++                    0
++                );
++            }
++            let before = fd_count();
++            let calls = Cell::new(0);
++            let error = mover
++                .execute_raw_plan_with_observer(
++                    &plan,
++                    &source,
++                    &destination,
++                    &|_: &ProgressSnapshot| calls.set(calls.get() + 1),
++                )
++                .unwrap_err();
++            let failure = error.copy_failure().unwrap();
++            assert_eq!(failure.operation, CopyOperation::NativeSetup);
++            assert!(matches!(
++                &failure.cause,
++                Error::EndpointPreflight {
++                    endpoint: "source descriptor",
++                    ..
++                }
++            ));
++            assert_eq!(calls.get(), 0);
++            assert_eq!(fd_count(), before);
++            assert_eq!(bytes(&destination), vec![0xa5; expected.len()]);
++        },
++    );
++}

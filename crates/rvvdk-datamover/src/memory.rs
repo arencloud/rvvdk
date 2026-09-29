@@ -147,7 +147,8 @@ impl DataMover {
         } else {
             (0, 0)
         };
-        // Data pools and sparse fallback buffers have disjoint lifetimes.
+        // Data jobs reuse a pool buffer for zero fallback; sparse-only jobs
+        // reserve one scratch block. No second payload buffer overlaps the pool.
         CopyMemoryUsage::new(add(resident, cloned)?, buffers, queue)
     }
 }

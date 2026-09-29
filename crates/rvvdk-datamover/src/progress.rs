@@ -127,9 +127,9 @@ impl ProgressSnapshot {
         }
     }
 
-    pub(crate) fn initial(plan: &CopyPlan) -> Self {
+    pub(crate) fn initial(plan: &CopyPlan, backend: ExecutionBackend) -> Self {
         Self::new(
-            plan.backend(),
+            backend,
             ProgressTotals::from_plan(plan),
             ProgressCompleted::default(),
             Duration::ZERO,

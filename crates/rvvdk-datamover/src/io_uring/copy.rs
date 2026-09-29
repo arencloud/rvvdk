@@ -186,51 +186,134 @@ pub(super) fn copy_file_range_preflighted(
     alignment: usize,
     options: crate::IoUringExecutionOptions,
 ) -> Result<IoUringCopyStats> {
-    let queue_depth = options.queue_depth();
+    let mut session =
+        NativeCopySession::new(source_fd, destination_fd, block_size, alignment, options)
+            .map_err(|failure| failure.error)?;
+    let result = session.copy_range(offset, length);
+    session.finish(result, IoUringCopyStats::progress)
+}
 
-    let setup = |operation, error| {
-        crate::failure::execution(
-            "io_uring",
-            operation,
-            Some((offset, length)),
-            CopyProgress {
-                extents_completed: Some(0),
-                ..CopyProgress::default()
-            },
-            error,
-        )
-    };
-    let pool = BufferPool::new(queue_depth as usize, block_size, alignment)
-        .map_err(|e| setup(CopyOperation::Allocate, e))?;
+/// A job owns one engine, pool, and descriptor pair until confirmed shutdown.
+/// No SQE is submitted by construction. Drop retains the engine's unwind safety.
+pub(crate) struct NativeCopySession {
+    engine: IoUringEngine,
+    pool: BufferPool,
+    context: CopyContext,
+}
 
-    let mut engine =
-        IoUringEngine::new(queue_depth).map_err(|e| setup(CopyOperation::NativeSetup, e))?;
+pub(crate) struct NativeSetupFailure {
+    pub(crate) error: Error,
+    pub(crate) fallback: Option<crate::NativeRuntimeFallback>,
+}
 
-    let context = CopyContext {
-        source_fd: IoUringFile::new(source_fd).map_err(|e| setup(CopyOperation::NativeSetup, e))?,
-        destination_fd: IoUringFile::new(destination_fd)
-            .map_err(|e| setup(CopyOperation::NativeSetup, e))?,
-        start_offset: offset,
-        length,
-        block_size,
-        queue_depth,
-        read_window: options.read_window(),
-    };
+impl NativeSetupFailure {
+    pub(super) fn new(operation: CopyOperation, error: Error) -> Self {
+        Self {
+            error: crate::failure::execution(
+                "io_uring",
+                operation,
+                None,
+                CopyProgress {
+                    extents_completed: Some(0),
+                    ..CopyProgress::default()
+                },
+                error,
+            ),
+            fallback: None,
+        }
+    }
+}
 
-    let result = copy_with_engine(&mut engine, &pool, &context);
-    let cleanup = engine.shutdown();
-    match (result, cleanup) {
-        (Err(original), Err(Error::IoUringShutdownUnconfirmed { operations })) => {
-            Err(Error::IoUringCleanup {
-                original: Box::new(original),
-                operations,
+impl NativeCopySession {
+    pub(crate) fn new(
+        source: BorrowedFd<'_>,
+        destination: BorrowedFd<'_>,
+        block_size: usize,
+        alignment: usize,
+        options: crate::IoUringExecutionOptions,
+    ) -> std::result::Result<Self, NativeSetupFailure> {
+        // Only failure to create the engine is eligible for runtime fallback.
+        // Invalid configuration and resource exhaustion are intentionally excluded.
+        let engine = IoUringEngine::new(options.queue_depth()).map_err(|error| {
+            let fallback = match &error {
+                Error::Io(e) => match e.raw_os_error() {
+                    Some(code @ (libc::ENOSYS | libc::EPERM | libc::EACCES | libc::EOPNOTSUPP)) => {
+                        Some(crate::NativeRuntimeFallback::RingUnavailable { os_error: code })
+                    }
+                    _ => None,
+                },
+                _ => None,
+            };
+            NativeSetupFailure {
+                fallback,
+                ..NativeSetupFailure::new(CopyOperation::NativeSetup, error)
+            }
+        })?;
+        let pool = BufferPool::new(options.queue_depth() as usize, block_size, alignment)
+            .map_err(|e| NativeSetupFailure::new(CopyOperation::Allocate, e))?;
+        let duplicate = |fd, role| {
+            IoUringFile::new(fd).map_err(|e| {
+                NativeSetupFailure::new(
+                    CopyOperation::NativeSetup,
+                    crate::preflight::context(role, e),
+                )
             })
+        };
+        Ok(Self {
+            engine,
+            pool,
+            context: CopyContext {
+                source_fd: duplicate(source, "source descriptor")?,
+                destination_fd: duplicate(destination, "destination descriptor")?,
+                start_offset: 0,
+                length: 0,
+                block_size,
+                queue_depth: options.queue_depth(),
+                read_window: options.read_window(),
+            },
+        })
+    }
+
+    pub(crate) fn copy_range(&mut self, offset: u64, length: u64) -> Result<IoUringCopyStats> {
+        self.context.start_offset = offset;
+        self.context.length = length;
+        copy_with_engine(&mut self.engine, &self.pool, &self.context)
+    }
+
+    pub(crate) fn zero_buffer(&self) -> rvvdk_core::BufferGuard {
+        // Every preceding Data range completed before semantic sparse execution.
+        let mut buffer = self.pool.acquire();
+        buffer.as_mut_slice().fill(0);
+        buffer
+    }
+
+    pub(crate) fn finish<T>(
+        mut self,
+        result: Result<T>,
+        progress: impl FnOnce(&T) -> CopyProgress,
+    ) -> Result<T> {
+        let cleanup = self.engine.shutdown();
+        match (result, cleanup) {
+            (Err(original), Err(Error::IoUringShutdownUnconfirmed { operations })) => {
+                Err(Error::IoUringCleanup {
+                    original: Box::new(original),
+                    operations,
+                })
+            }
+            (Err(error), _) => Err(error),
+            (Ok(stats), Err(error)) => {
+                let mut progress = progress(&stats);
+                progress.unconfirmed_io = true;
+                Err(crate::failure::execution(
+                    "io_uring",
+                    CopyOperation::NativeShutdown,
+                    None,
+                    progress,
+                    error,
+                ))
+            }
+            (Ok(stats), Ok(())) => Ok(stats),
         }
-        (Err(error), _) => Err(error),
-        (Ok(stats), Err(error)) => {
-            Err(stats.failure(CopyOperation::NativeShutdown, Some((offset, length)), error))
-        }
-        (Ok(stats), Ok(())) => Ok(stats),
     }
 }
 

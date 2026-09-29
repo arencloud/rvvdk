@@ -75,6 +75,8 @@ use crate::ExecutionBackend;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CopyReport {
+    #[cfg(target_os = "linux")]
+    runtime_fallback: Option<crate::NativeRuntimeFallback>,
     backend: ExecutionBackend,
     stats: CopyStats,
 }
@@ -89,7 +91,27 @@ impl CopyReport {
     }
 
     pub(crate) const fn new(backend: ExecutionBackend, stats: CopyStats) -> Self {
-        Self { backend, stats }
+        Self {
+            backend,
+            stats,
+            #[cfg(target_os = "linux")]
+            runtime_fallback: None,
+        }
+    }
+
+    /// Why preparation changed native execution to Threaded, if it did.
+    #[cfg(target_os = "linux")]
+    pub const fn runtime_fallback(&self) -> Option<crate::NativeRuntimeFallback> {
+        self.runtime_fallback
+    }
+
+    #[cfg(target_os = "linux")]
+    pub(crate) fn with_runtime_fallback(
+        mut self,
+        reason: Option<crate::NativeRuntimeFallback>,
+    ) -> Self {
+        self.runtime_fallback = reason;
+        self
     }
 }
 

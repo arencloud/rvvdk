@@ -2,16 +2,16 @@ use crate::{CopyPlan, DataMover, ExecutionBackend};
 use rvvdk_core::{Error, Result, VirtualDisk};
 
 #[cfg(target_os = "linux")]
-use crate::io_uring::{NativeExtentPlan, evaluate_compatibility};
+use crate::ExecutionStrategy;
 #[cfg(target_os = "linux")]
-use crate::{ExecutionStrategy, IoUringExecutionOptions};
+use crate::io_uring::{NativeExtentPlan, PreparedNativeExtents, evaluate_compatibility};
 #[cfg(target_os = "linux")]
 use rvvdk_core::{BlockDevice, ExtentKind, RawDisk};
 #[cfg(target_os = "linux")]
 use rvvdk_platform::LinuxFdBackend;
 
 /// Invocation-scoped checked dispatch state, bound to the validated borrows.
-/// This does not claim runtime ring/buffer allocation or snapshot consistency.
+/// Native resources are owned here; structural validation is not a snapshot.
 pub(crate) struct PreparedExecution<'a, S: ?Sized, D: ?Sized> {
     plan: &'a CopyPlan,
     source: &'a S,
@@ -22,15 +22,18 @@ pub(crate) struct PreparedExecution<'a, S: ?Sized, D: ?Sized> {
 pub(crate) enum PreparedExecutor {
     Threaded,
     #[cfg(target_os = "linux")]
+    NativeFallback(crate::NativeRuntimeFallback),
+    #[cfg(target_os = "linux")]
     IoUring {
         native_plan: NativeExtentPlan,
-        options: IoUringExecutionOptions,
+        resources: Box<PreparedNativeExtents>,
+        setup_elapsed: std::time::Duration,
     },
 }
 
 impl<'a, S: ?Sized, D: ?Sized> PreparedExecution<'a, S, D> {
-    pub(crate) fn parts(&self) -> (&'a CopyPlan, &'a S, &'a D, &PreparedExecutor) {
-        (self.plan, self.source, self.destination, &self.executor)
+    pub(crate) fn parts(self) -> (&'a CopyPlan, &'a S, &'a D, PreparedExecutor) {
+        (self.plan, self.source, self.destination, self.executor)
     }
 }
 
@@ -120,9 +123,34 @@ impl DataMover {
                 .check(self.options.memory_budget(), "native plan")?;
                 let native_plan = NativeExtentPlan::new(native_extents, plan.logical_bytes())?;
 
-                PreparedExecutor::IoUring {
-                    native_plan,
-                    options: execution_options,
+                let started = std::time::Instant::now();
+                match PreparedNativeExtents::new(
+                    source.device().as_fd(),
+                    destination.device().as_fd(),
+                    &native_plan,
+                    plan.block_size(),
+                    plan.alignment(),
+                    execution_options,
+                ) {
+                    Ok(resources) => PreparedExecutor::IoUring {
+                        native_plan,
+                        resources: Box::new(resources),
+                        setup_elapsed: started.elapsed(),
+                    },
+                    Err(failure) => {
+                        if let (ExecutionStrategy::Auto(_), Some(reason)) =
+                            (self.execution_strategy(), failure.fallback)
+                        {
+                            // Discard native-only extent storage before admitting Threaded.
+                            // The immutable plan keeps its planning-time provenance.
+                            drop(native_plan);
+                            self.threaded_memory(plan.extent_capacity())?
+                                .check(self.options.memory_budget(), "runtime fallback")?;
+                            PreparedExecutor::NativeFallback(reason)
+                        } else {
+                            return Err(failure.error);
+                        }
+                    }
                 }
             }
         };

@@ -1,0 +1,21 @@
+{
+  "compiler": "cc (GCC) 16.2.1 20260819 (Red Hat 16.2.1-2)",
+  "compile_command": [
+    "cc",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "/home/egevorky/RustroverProjects/rvvdk/docs/benchmark-results/2026-09-29-r25/deny-uring-setup.c",
+    "-o",
+    "/tmp/rvvdk-r25-rwj2orgi/deny-uring-setup"
+  ],
+  "launcher": "/tmp/rvvdk-r25-rwj2orgi/deny-uring-setup",
+  "source_sha256": "e41b3eff3b77f47a7bebd0e4d0999f5e6a3469bb0f77eb6480104448d5cd4dc8",
+  "launcher_sha256": "f02d580562bf20c5d2a87f74094f2d35ddcd80fdbf33220042a4512432729d1d",
+  "fault": "io_uring_setup returns EPERM via process-local inherited seccomp filter",
+  "environment": {
+    "RVVDK_BENCH_NATIVE_UNAVAILABLE": "1",
+    "RVVDK_BENCH_DIR": "/home/egevorky/RustroverProjects/rvvdk/target/r25-benchmark-storage"
+  }
+}

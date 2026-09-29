@@ -1,0 +1,1 @@
+The first new integration test fixture omitted EXTENTS from its capability mask, so RawDisk correctly exposed dense Data instead of the supplied sparse map. The resulting four failures are retained. The fixture mask was corrected; final runtime tests and workspace validation pass. This was a test fixture issue, before release measurement.

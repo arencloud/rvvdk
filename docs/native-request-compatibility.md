@@ -91,9 +91,10 @@ prevent concurrent endpoint/content/status changes during copying.
 - Standalone low-level `io_uring::copy_*` functions retain their existing
   configuration/range contracts. They have borrowed FDs rather than the backend
   alignment declarations; callers remain responsible for direct compatibility.
-- Runtime ring creation/allocation can still fail after preparation/observation.
-  No runtime Auto fallback, resource reservation, ring reuse, or retry after
-  mutation is introduced here. R2.5 will address prepared native resources.
+- R2.5 now [prepares runtime resources](native-runtime-preparation.md) before
+  observation, reuses them per job, and reports Auto fallback for defined ring
+  unavailability. Request incompatibility still requires replanning; no retry
+  after mutation is permitted.
 - Threaded fallback invokes logical backend methods; custom backends must
   support those requests or propagate their usual errors. Local fallback uses
   existing aligned/direct or unaligned/buffered backend methods. This step exercises one/four-worker nonoverlapping requests;

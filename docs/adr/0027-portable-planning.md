@@ -201,3 +201,19 @@ rediscovery, native runtime readiness, low-level FD request negotiation, or a
 general concurrent buffered/direct alias policy. See the
 [R2.4 contract](../native-request-compatibility.md) and
 [measurements](../benchmark-results/2026-09-29-r24/README.md).
+
+## R2.5 — Prepared native ownership and runtime selection, 2026-09-29
+
+Invocation-scoped preparation now owns a usable native ring, pool, and descriptor
+pair; dispatch consumes it and reuses it across Data extents. Sparse-only jobs
+prepare scratch without native setup. Immutable CopyPlan retains structural
+intent and planning provenance. No resource is cached in the reusable plan.
+
+The executing Auto strategy may choose Threaded for ENOSYS/EPERM/EACCES/EOPNOTSUPP
+from ring construction only, after separate payload admission. Explicit native,
+invalid configuration, resource exhaustion, descriptor errors, and request or
+endpoint revalidation failures remain errors. CopyReport::runtime_fallback()
+explains the change, and all progress identifies the actual backend. This is a
+runtime selection stage distinct from R2.4's request compatibility/replan rule.
+Prepared resources are consumed exactly once; shutdown and ownership quarantine
+remain mandatory, with no retry after mutation. [Contract](../native-runtime-preparation.md).

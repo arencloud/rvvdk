@@ -156,17 +156,23 @@ R2.4 retains +15.57% native RAW and +16.61% mixed direct-source pairs despite
 smaller aggregates. Longer-repeat aggregates are -0.07%/-2.68%;
 same-binary controls do not rule out candidate effects. [Evidence and plots](benchmark-results/2026-09-29-r24/README.md).
 
+R2.5 reduces fragmented native elapsed time by 59.46%/59.19% on this host, while
+retaining a +38.16% dense native pair for qualification. Longer-repeat aggregate:
++38.23%; same-binary controls do not resolve attribution.
+[Evidence and plots](benchmark-results/2026-09-29-r25/README.md).
+
 - [x] **R2.1:** Define logical Zero/Hole zero reads and require DISCARD plus DISCARD_ZEROES before selecting discard. Cover fallback, partial failures, portable/native parity, and explicit backend migration. [ADR-0026](adr/0026-logical-hole-guarantee.md); [evidence](benchmark-results/2026-09-29-r21/README.md).
 - [x] **R2.2:** Implement local zeroing and zero-guaranteed hole punching with fresh range/access checks, exact partial-block boundaries, bounded unsupported-mode fallback, and storage-backed allocation/readback tests. [Contract](local-sparse-output.md); [evidence](benchmark-results/2026-09-29-r22/README.md).
 - [x] **R2.3:** Fall back to one Data extent when sparse discovery is unavailable; validate fresh size and seek results, preserve real errors, and discard partial maps. [Contract](local-sparse-discovery.md); [evidence](benchmark-results/2026-09-29-r23/README.md).
 - [x] **R2.4:** Validate DataMover native request intent and fresh RAW descriptor modes before callbacks or mutation. Auto records whole-plan Threaded fallback; explicit native rejects incompatibility. Native plans that become incompatible require replanning. [Contract](native-request-compatibility.md); [evidence](benchmark-results/2026-09-29-r24/README.md).
-- [ ] **R2.5 (next):** Prepare native runtime resources before observation/mutation, with explicit native errors and observable Auto fallback on supported unavailability cases. Transfer ownership into execution rather than probing and discarding a ring; preserve budgets and confirmed cleanup. Integrate per-job reuse where required by this ownership boundary.
+- [x] **R2.5:** Prepare native runtime resources before callbacks/mutation, reuse one ring/pool/descriptor pair per invocation, and report defined Auto runtime fallback after Threaded budget admission. [Contract](native-runtime-preparation.md); [evidence](benchmark-results/2026-09-29-r25/README.md).
+- [ ] **R2.6 (next):** Define the local concurrent buffered/direct alias contract and enforce the supported in-process policy. Cover aligned/unaligned overlapping requests, sparse operations, and shutdown; explicitly bound external-writer responsibility. Measure serialization/admission costs without weakening byte correctness.
 - [x] Verify direct/buffered descriptors refer to the same underlying file (R0.5).
 - [ ] Define how concurrent buffered/direct ranges are handled.
-- [ ] Integrate runtime io_uring initialization and request compatibility into preparation. Make Auto fallback reasons observable and explicit IoUring errors precise.
+- [x] Integrate runtime io_uring initialization and request compatibility into preparation (R2.4/R2.5). Make Auto fallback reasons observable and explicit IoUring errors precise.
 - [x] Handle unaligned DataMover native requests with whole-plan Threaded selection before mutation (R2.4); aligned bulk plus safe tails and low-level FD-only direct-alignment discovery remain future work.
 - [x] Validate source READ and destination WRITE/FLUSH requirements even when native FD access bypasses backend methods (R0.5). Operation-specific sparse guarantees remain below the R2 acceptance criteria.
-- [ ] Reuse a ring and bounded buffer pool per prepared job instead of recreating them per Data extent, once correctness tests pass.
+- [x] Reuse a ring and bounded buffer pool per prepared job instead of recreating them per Data extent (R2.5).
 
 Acceptance: byte equality on nonzero-prefilled destinations; demonstrable hole preservation on a supporting filesystem; safe behavior on a filesystem without sparse operations; tests for mixed direct/buffered endpoints, tiny/odd disk sizes, unaligned extent boundaries, and io_uring unavailability. Verify actual storage behavior separately from tmpfs.
 
@@ -322,7 +328,7 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 
 ## First implementation session — R0.1 completed
 
-The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, R2.3 source discovery fallback, and R2.4 native request compatibility are complete; continue with R2.5 runtime resource preparation next.
+The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation are complete; continue with R2.6 concurrent buffered/direct alias policy next.
 
 R0.1 was the bounded change directly related to the observer work:
 
@@ -337,7 +343,7 @@ R0.1 was the bounded change directly related to the observer work:
    tradeoff in the implementation log. Update this checklist and ADR-0025 with
    the implemented behavior and remaining limitations.
 
-R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, and R2.4 native request compatibility are complete. Start **R2.5** with native runtime resource preparation. Keep PERF.0 and the prior performance follow-ups open.
+R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation are complete. Start **R2.6** with concurrent buffered/direct alias policy. Keep PERF.0 and the prior performance follow-ups open.
 
 ## Decisions to record before their milestone
 

@@ -1,0 +1,430 @@
+[
+  {
+    "variant": "baseline",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "strace",
+      "-qq",
+      "-ttt",
+      "-T",
+      "-yy",
+      "-e",
+      "trace=io_uring_setup,io_uring_enter,close,fsync,fdatasync",
+      "-o",
+      "/home/egevorky/RustroverProjects/rvvdk/docs/benchmark-results/2026-09-29-r25/trace-baseline-syscalls.txt",
+      "/tmp/rvvdk-r25-rwj2orgi/baseline-target/release/deps/preflight-f6883f68126b9060",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "10",
+      "--warm-up-time",
+      "0.1",
+      "--measurement-time",
+      "0.5",
+      "preflight_copy/native$"
+    ],
+    "cycles": [
+      {
+        "setup_through_flush_seconds": 0.010192155838012695,
+        "flush_seconds": 0.006897
+      },
+      {
+        "setup_through_flush_seconds": 0.008573055267333984,
+        "flush_seconds": 0.006721
+      },
+      {
+        "setup_through_flush_seconds": 0.00932002067565918,
+        "flush_seconds": 0.007422
+      },
+      {
+        "setup_through_flush_seconds": 0.008653879165649414,
+        "flush_seconds": 0.006768
+      },
+      {
+        "setup_through_flush_seconds": 0.008574962615966797,
+        "flush_seconds": 0.006778
+      },
+      {
+        "setup_through_flush_seconds": 0.008929729461669922,
+        "flush_seconds": 0.006523
+      },
+      {
+        "setup_through_flush_seconds": 0.008630037307739258,
+        "flush_seconds": 0.006661
+      },
+      {
+        "setup_through_flush_seconds": 0.01001882553100586,
+        "flush_seconds": 0.006801
+      },
+      {
+        "setup_through_flush_seconds": 0.008565902709960938,
+        "flush_seconds": 0.006656
+      },
+      {
+        "setup_through_flush_seconds": 0.008746147155761719,
+        "flush_seconds": 0.006843
+      },
+      {
+        "setup_through_flush_seconds": 0.00928807258605957,
+        "flush_seconds": 0.007088
+      },
+      {
+        "setup_through_flush_seconds": 0.009217262268066406,
+        "flush_seconds": 0.007378
+      },
+      {
+        "setup_through_flush_seconds": 0.008331060409545898,
+        "flush_seconds": 0.006551
+      },
+      {
+        "setup_through_flush_seconds": 0.008599042892456055,
+        "flush_seconds": 0.006752
+      },
+      {
+        "setup_through_flush_seconds": 0.008581161499023438,
+        "flush_seconds": 0.006681
+      },
+      {
+        "setup_through_flush_seconds": 0.008907079696655273,
+        "flush_seconds": 0.006737
+      },
+      {
+        "setup_through_flush_seconds": 0.008757829666137695,
+        "flush_seconds": 0.006672
+      },
+      {
+        "setup_through_flush_seconds": 0.008422136306762695,
+        "flush_seconds": 0.006519
+      },
+      {
+        "setup_through_flush_seconds": 0.008633136749267578,
+        "flush_seconds": 0.006691
+      },
+      {
+        "setup_through_flush_seconds": 0.00951385498046875,
+        "flush_seconds": 0.00729
+      },
+      {
+        "setup_through_flush_seconds": 0.008707046508789062,
+        "flush_seconds": 0.00666
+      },
+      {
+        "setup_through_flush_seconds": 0.008719205856323242,
+        "flush_seconds": 0.006735
+      },
+      {
+        "setup_through_flush_seconds": 0.008606910705566406,
+        "flush_seconds": 0.006598
+      },
+      {
+        "setup_through_flush_seconds": 0.008857011795043945,
+        "flush_seconds": 0.006789
+      },
+      {
+        "setup_through_flush_seconds": 0.009083032608032227,
+        "flush_seconds": 0.006834
+      },
+      {
+        "setup_through_flush_seconds": 0.010225057601928711,
+        "flush_seconds": 0.007698
+      },
+      {
+        "setup_through_flush_seconds": 0.009092092514038086,
+        "flush_seconds": 0.00665
+      },
+      {
+        "setup_through_flush_seconds": 0.010294914245605469,
+        "flush_seconds": 0.00823
+      },
+      {
+        "setup_through_flush_seconds": 0.008857011795043945,
+        "flush_seconds": 0.006782
+      },
+      {
+        "setup_through_flush_seconds": 0.008812189102172852,
+        "flush_seconds": 0.006725
+      },
+      {
+        "setup_through_flush_seconds": 0.009772062301635742,
+        "flush_seconds": 0.006781
+      },
+      {
+        "setup_through_flush_seconds": 0.00877690315246582,
+        "flush_seconds": 0.006968
+      },
+      {
+        "setup_through_flush_seconds": 0.00852823257446289,
+        "flush_seconds": 0.006709
+      },
+      {
+        "setup_through_flush_seconds": 0.009540081024169922,
+        "flush_seconds": 0.007509
+      },
+      {
+        "setup_through_flush_seconds": 0.009639263153076172,
+        "flush_seconds": 0.007312
+      },
+      {
+        "setup_through_flush_seconds": 0.008769989013671875,
+        "flush_seconds": 0.00651
+      },
+      {
+        "setup_through_flush_seconds": 0.008989095687866211,
+        "flush_seconds": 0.006951
+      }
+    ],
+    "summary": {
+      "cycles": 37,
+      "median_setup_through_flush_seconds": 0.008812189102172852,
+      "median_flush_seconds": 0.006768
+    },
+    "syscalls": {
+      "close": {
+        "count": 153,
+        "total_seconds": 0.001199,
+        "median_seconds": 6e-06,
+        "max_seconds": 6.8e-05
+      },
+      "fsync": {
+        "count": 2,
+        "total_seconds": 0.014246,
+        "median_seconds": 0.007123,
+        "max_seconds": 0.007626
+      },
+      "fdatasync": {
+        "count": 74,
+        "total_seconds": 0.5084,
+        "median_seconds": 0.006758500000000001,
+        "max_seconds": 0.00823
+      },
+      "io_uring_setup": {
+        "count": 37,
+        "total_seconds": 0.001178,
+        "median_seconds": 2.7e-05,
+        "max_seconds": 5.3e-05
+      },
+      "io_uring_enter": {
+        "count": 2405,
+        "total_seconds": 0.016906,
+        "median_seconds": 4e-06,
+        "max_seconds": 0.000956
+      }
+    }
+  },
+  {
+    "variant": "candidate",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "strace",
+      "-qq",
+      "-ttt",
+      "-T",
+      "-yy",
+      "-e",
+      "trace=io_uring_setup,io_uring_enter,close,fsync,fdatasync",
+      "-o",
+      "/home/egevorky/RustroverProjects/rvvdk/docs/benchmark-results/2026-09-29-r25/trace-candidate-syscalls.txt",
+      "/tmp/rvvdk-r25-rwj2orgi/candidate-target/release/deps/preflight-df94444c3cf5a6bc",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "10",
+      "--warm-up-time",
+      "0.1",
+      "--measurement-time",
+      "0.5",
+      "preflight_copy/native$"
+    ],
+    "cycles": [
+      {
+        "setup_through_flush_seconds": 0.010174036026000977,
+        "flush_seconds": 0.007062
+      },
+      {
+        "setup_through_flush_seconds": 0.009231805801391602,
+        "flush_seconds": 0.007089
+      },
+      {
+        "setup_through_flush_seconds": 0.009174823760986328,
+        "flush_seconds": 0.006799
+      },
+      {
+        "setup_through_flush_seconds": 0.009071826934814453,
+        "flush_seconds": 0.006698
+      },
+      {
+        "setup_through_flush_seconds": 0.008627176284790039,
+        "flush_seconds": 0.006658
+      },
+      {
+        "setup_through_flush_seconds": 0.010000944137573242,
+        "flush_seconds": 0.007405
+      },
+      {
+        "setup_through_flush_seconds": 0.009634971618652344,
+        "flush_seconds": 0.007007
+      },
+      {
+        "setup_through_flush_seconds": 0.008677959442138672,
+        "flush_seconds": 0.006736
+      },
+      {
+        "setup_through_flush_seconds": 0.009661197662353516,
+        "flush_seconds": 0.006735
+      },
+      {
+        "setup_through_flush_seconds": 0.009181976318359375,
+        "flush_seconds": 0.007
+      },
+      {
+        "setup_through_flush_seconds": 0.009776115417480469,
+        "flush_seconds": 0.006849
+      },
+      {
+        "setup_through_flush_seconds": 0.009784936904907227,
+        "flush_seconds": 0.006862
+      },
+      {
+        "setup_through_flush_seconds": 0.010457992553710938,
+        "flush_seconds": 0.007372
+      },
+      {
+        "setup_through_flush_seconds": 0.011011123657226562,
+        "flush_seconds": 0.007754
+      },
+      {
+        "setup_through_flush_seconds": 0.010358810424804688,
+        "flush_seconds": 0.007211
+      },
+      {
+        "setup_through_flush_seconds": 0.01016688346862793,
+        "flush_seconds": 0.006867
+      },
+      {
+        "setup_through_flush_seconds": 0.010807991027832031,
+        "flush_seconds": 0.007478
+      },
+      {
+        "setup_through_flush_seconds": 0.009119033813476562,
+        "flush_seconds": 0.006908
+      },
+      {
+        "setup_through_flush_seconds": 0.009105920791625977,
+        "flush_seconds": 0.006795
+      },
+      {
+        "setup_through_flush_seconds": 0.009462118148803711,
+        "flush_seconds": 0.006694
+      },
+      {
+        "setup_through_flush_seconds": 0.008781909942626953,
+        "flush_seconds": 0.006676
+      },
+      {
+        "setup_through_flush_seconds": 0.009657144546508789,
+        "flush_seconds": 0.00738
+      },
+      {
+        "setup_through_flush_seconds": 0.009374141693115234,
+        "flush_seconds": 0.007054
+      },
+      {
+        "setup_through_flush_seconds": 0.009092092514038086,
+        "flush_seconds": 0.006869
+      },
+      {
+        "setup_through_flush_seconds": 0.009266138076782227,
+        "flush_seconds": 0.006994
+      },
+      {
+        "setup_through_flush_seconds": 0.013575077056884766,
+        "flush_seconds": 0.00909
+      },
+      {
+        "setup_through_flush_seconds": 0.00908517837524414,
+        "flush_seconds": 0.006808
+      },
+      {
+        "setup_through_flush_seconds": 0.00898599624633789,
+        "flush_seconds": 0.006626
+      },
+      {
+        "setup_through_flush_seconds": 0.00893402099609375,
+        "flush_seconds": 0.007035
+      },
+      {
+        "setup_through_flush_seconds": 0.008836030960083008,
+        "flush_seconds": 0.006937
+      },
+      {
+        "setup_through_flush_seconds": 0.008573055267333984,
+        "flush_seconds": 0.006722
+      },
+      {
+        "setup_through_flush_seconds": 0.008828878402709961,
+        "flush_seconds": 0.006826
+      },
+      {
+        "setup_through_flush_seconds": 0.008922100067138672,
+        "flush_seconds": 0.006808
+      },
+      {
+        "setup_through_flush_seconds": 0.008814096450805664,
+        "flush_seconds": 0.006744
+      },
+      {
+        "setup_through_flush_seconds": 0.010293960571289062,
+        "flush_seconds": 0.007151
+      },
+      {
+        "setup_through_flush_seconds": 0.009666204452514648,
+        "flush_seconds": 0.006442
+      },
+      {
+        "setup_through_flush_seconds": 0.010934114456176758,
+        "flush_seconds": 0.007558
+      }
+    ],
+    "summary": {
+      "cycles": 37,
+      "median_setup_through_flush_seconds": 0.009266138076782227,
+      "median_flush_seconds": 0.006869
+    },
+    "syscalls": {
+      "close": {
+        "count": 153,
+        "total_seconds": 0.002464,
+        "median_seconds": 7e-06,
+        "max_seconds": 0.001076
+      },
+      "fsync": {
+        "count": 2,
+        "total_seconds": 0.013576000000000001,
+        "median_seconds": 0.006788000000000001,
+        "max_seconds": 0.006927
+      },
+      "fdatasync": {
+        "count": 74,
+        "total_seconds": 0.512763,
+        "median_seconds": 0.006838,
+        "max_seconds": 0.00909
+      },
+      "io_uring_setup": {
+        "count": 37,
+        "total_seconds": 0.001112,
+        "median_seconds": 2.9e-05,
+        "max_seconds": 6.2e-05
+      },
+      "io_uring_enter": {
+        "count": 2405,
+        "total_seconds": 0.020249,
+        "median_seconds": 5e-06,
+        "max_seconds": 0.001182
+      }
+    }
+  }
+]

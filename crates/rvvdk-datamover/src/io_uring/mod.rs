@@ -26,3 +26,5 @@ pub use extent_plan::NativeExtentPlan;
 // Payload size used by the DataMover budget; hash-table overhead is external.
 pub(crate) const OPERATION_BYTES: usize =
     std::mem::size_of::<(u64, operation::InFlightOperation)>();
+
+pub(crate) use extent_copy::PreparedNativeExtents;

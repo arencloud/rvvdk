@@ -1,0 +1,24 @@
+[
+  {
+    "tag": "unavailable-baseline-smoke",
+    "command": [
+      "/tmp/rvvdk-r25-rwj2orgi/deny-uring-setup",
+      "/tmp/rvvdk-r25-rwj2orgi/baseline-target/release/deps/native_runtime-c6f9f7e470d89ccf",
+      "--test",
+      "native_runtime/unavailable_fallback$"
+    ],
+    "exit_code": 101,
+    "expected_success": false
+  },
+  {
+    "tag": "unavailable-candidate-smoke",
+    "command": [
+      "/tmp/rvvdk-r25-rwj2orgi/deny-uring-setup",
+      "/tmp/rvvdk-r25-rwj2orgi/candidate-target/release/deps/native_runtime-0b93584ff8530711",
+      "--test",
+      "native_runtime/unavailable_fallback$"
+    ],
+    "exit_code": 0,
+    "expected_success": true
+  }
+]

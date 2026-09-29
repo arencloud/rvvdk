@@ -5,7 +5,7 @@ use rvvdk_core::{CopyOperation, CopyProgress, Error, Extent, ExtentKind, Result,
 use crate::IoUringExecutionOptions;
 use crate::policy::{self, Operation};
 
-use super::copy::copy_file_range_preflighted;
+use super::copy::{NativeCopySession, NativeSetupFailure};
 use super::validation::{validate_copy_configuration, validate_file_range};
 use super::{IoUringCopyStats, NativeExtentPlan};
 
@@ -184,22 +184,20 @@ pub fn copy_extent_plan(
     }
     crate::preflight::files(source_fd, destination_fd, 0, plan.disk_size())?;
 
-    let mut aggregate = IoUringExtentCopyStats::default();
-    for extent in plan.extents() {
-        let stats = copy_file_range_preflighted(
-            source_fd,
-            destination_fd,
-            extent.offset(),
-            extent.length(),
-            block_size,
-            alignment,
-            options,
-        )
-        .map_err(|e| crate::failure::native_prior(e, aggregate.progress()))?;
-        aggregate.add_data_extent(stats)?;
-    }
-
-    Ok(aggregate)
+    let mut session =
+        NativeCopySession::new(source_fd, destination_fd, block_size, alignment, options)
+            .map_err(|failure| failure.error)?;
+    let result = (|| {
+        let mut aggregate = IoUringExtentCopyStats::default();
+        for extent in plan.extents() {
+            let stats = session
+                .copy_range(extent.offset(), extent.length())
+                .map_err(|e| crate::failure::native_prior(e, aggregate.progress()))?;
+            aggregate.add_data_extent(stats)?;
+        }
+        Ok(aggregate)
+    })();
+    session.finish(result, IoUringExtentCopyStats::progress)
 }
 
 /// Copy Data/Zero/Hole extents using destination capabilities. Configuration and
@@ -253,69 +251,156 @@ where
         }
     }
 
-    let mut aggregate = IoUringExtentCopyStats::default();
+    PreparedNativeExtents::new(
+        source_fd,
+        destination_fd,
+        plan,
+        block_size,
+        alignment,
+        options,
+    )
+    .map_err(|failure| failure.error)?
+    .execute(destination, plan)
+}
 
-    for extent in plan.extents() {
-        match policy::select(extent.kind(), || destination.capabilities()) {
-            Operation::Copy => {
-                let stats = copy_file_range_preflighted(
-                    source_fd,
-                    destination_fd,
-                    extent.offset(),
-                    extent.length(),
-                    block_size,
-                    alignment,
-                    options,
-                )
-                .map_err(|e| crate::failure::native_prior(e, aggregate.progress()))?;
+/// Invocation-owned resources, prepared before callbacks and sparse prefixes.
+/// A data pool also supplies zero fallback scratch, so lifetimes do not increase
+/// the existing payload budget. Sparse-only plans need no ring or descriptor dup.
+pub(crate) struct PreparedNativeExtents {
+    session: Option<NativeCopySession>,
+    sparse_buffer: Option<rvvdk_core::AlignedBuffer>,
+}
 
-                aggregate.add_data_extent(stats)?;
-            }
+impl PreparedNativeExtents {
+    pub(crate) fn new(
+        source_fd: BorrowedFd<'_>,
+        destination_fd: BorrowedFd<'_>,
+        plan: &NativeExtentPlan,
+        block_size: usize,
+        alignment: usize,
+        options: IoUringExecutionOptions,
+    ) -> std::result::Result<Self, NativeSetupFailure> {
+        let data = plan.extents().iter().any(|e| e.kind() == ExtentKind::Data);
+        let session = if data {
+            Some(NativeCopySession::new(
+                source_fd,
+                destination_fd,
+                block_size,
+                alignment,
+                options,
+            )?)
+        } else {
+            None
+        };
+        let sparse_buffer = if !data && !plan.is_empty() {
+            Some(
+                rvvdk_core::AlignedBuffer::new(block_size, alignment)
+                    .map_err(|e| NativeSetupFailure::new(CopyOperation::Allocate, e))?,
+            )
+        } else {
+            None
+        };
+        Ok(Self {
+            session,
+            sparse_buffer,
+        })
+    }
 
-            Operation::Zero => {
-                destination
-                    .write_zero_at(extent.offset(), extent.length())
-                    .map_err(|e| {
-                        aggregate.failure(
-                            CopyOperation::WriteZero,
-                            extent.offset(),
-                            extent.length(),
-                            e,
-                        )
-                    })?;
-                aggregate.add_zero_extent(extent.length())?;
-            }
-            Operation::Discard => {
-                destination
-                    .discard(extent.offset(), extent.length())
-                    .map_err(|e| {
-                        aggregate.failure(
-                            CopyOperation::Discard,
-                            extent.offset(),
-                            extent.length(),
-                            e,
-                        )
-                    })?;
-                aggregate.add_discard_extent(extent.length())?;
-            }
-            Operation::WriteZero => {
-                write_zero_fallback(destination, *extent, block_size, &mut aggregate)?
-            }
+    pub(crate) fn execute<D: VirtualDisk>(
+        mut self,
+        destination: &D,
+        plan: &NativeExtentPlan,
+    ) -> Result<IoUringExtentCopyStats> {
+        let result = self.execute_inner(destination, plan);
+        match self.session {
+            Some(session) => session.finish(result, IoUringExtentCopyStats::progress),
+            None => result,
         }
     }
-    Ok(aggregate)
+
+    fn execute_inner<D: VirtualDisk>(
+        &mut self,
+        destination: &D,
+        plan: &NativeExtentPlan,
+    ) -> Result<IoUringExtentCopyStats> {
+        let mut aggregate = IoUringExtentCopyStats::default();
+
+        for extent in plan.extents() {
+            match policy::select(extent.kind(), || destination.capabilities()) {
+                Operation::Copy => {
+                    let stats = self
+                        .session
+                        .as_mut()
+                        .expect("Data plan has a prepared session")
+                        .copy_range(extent.offset(), extent.length())
+                        .map_err(|e| crate::failure::native_prior(e, aggregate.progress()))?;
+
+                    aggregate.add_data_extent(stats)?;
+                }
+
+                Operation::Zero => {
+                    destination
+                        .write_zero_at(extent.offset(), extent.length())
+                        .map_err(|e| {
+                            aggregate.failure(
+                                CopyOperation::WriteZero,
+                                extent.offset(),
+                                extent.length(),
+                                e,
+                            )
+                        })?;
+                    aggregate.add_zero_extent(extent.length())?;
+                }
+                Operation::Discard => {
+                    destination
+                        .discard(extent.offset(), extent.length())
+                        .map_err(|e| {
+                            aggregate.failure(
+                                CopyOperation::Discard,
+                                extent.offset(),
+                                extent.length(),
+                                e,
+                            )
+                        })?;
+                    aggregate.add_discard_extent(extent.length())?;
+                }
+                Operation::WriteZero => {
+                    if let Some(session) = &self.session {
+                        let buffer = session.zero_buffer();
+                        write_zero_fallback(
+                            destination,
+                            *extent,
+                            buffer.as_slice(),
+                            &mut aggregate,
+                        )?;
+                    } else {
+                        write_zero_fallback(
+                            destination,
+                            *extent,
+                            self.sparse_buffer
+                                .as_ref()
+                                .expect("nonempty sparse plan")
+                                .as_slice(),
+                            &mut aggregate,
+                        )?;
+                    }
+                }
+            }
+        }
+        Ok(aggregate)
+    }
 }
 
 fn write_zero_fallback<D>(
     destination: &D,
     extent: Extent,
-    block_size: usize,
+    buffer: &[u8],
     stats: &mut IoUringExtentCopyStats,
 ) -> Result<()>
 where
     D: VirtualDisk,
 {
-    let buffer = vec![0_u8; block_size];
+    let block_size = buffer.len();
 
     let mut offset = extent.offset();
 

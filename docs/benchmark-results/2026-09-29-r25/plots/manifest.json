@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R2.5 \u00b7 Native runtime preparation",
+    "candidate": "patch 13209a65",
+    "conditions": "Btrfs except memory-zero fixture \u00b7 CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 copy flush included",
+    "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "repeat_sampling": "3 adjacent pairs \u00b7 40 samples/run \u00b7 0.5 s warmup \u00b7 4 s target",
+    "candidate_only": {
+      "title": "Denied ring setup \u00b7 candidate-only fallback",
+      "note": "Seccomp injects EPERM. Baseline fails setup; no speedup comparison. Whole plan executes Threaded.",
+      "sampling": "3 candidate runs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target"
+    },
+    "workloads": {
+      "preflight/plan_native": {
+        "label": "Native planning \u00b7 1 MiB \u00b7 buffered",
+        "phase": "planning"
+      },
+      "preflight_copy/threaded": {
+        "label": "Threaded copy \u00b7 1 MiB \u00b7 buffered",
+        "phase": "copy"
+      },
+      "preflight_copy/native": {
+        "label": "Native copy \u00b7 1 MiB \u00b7 buffered",
+        "phase": "copy"
+      },
+      "native_validation/data_1mib_16extents": {
+        "label": "16 Data extents \u00b7 1 MiB \u00b7 buffered",
+        "phase": "copy"
+      },
+      "native_validation/zero_destination_1mib_16extents": {
+        "label": "16 Zero extents \u00b7 1 MiB \u00b7 memory",
+        "phase": "copy"
+      },
+      "local_sparse/native": {
+        "label": "Data/Zero/Hole copy \u00b7 32 MiB \u00b7 buffered",
+        "phase": "copy"
+      },
+      "native_runtime/fragmented_unobserved": {
+        "label": "256 extents \u00b7 16 MiB \u00b7 unobserved",
+        "phase": "copy"
+      },
+      "native_runtime/fragmented_noop": {
+        "label": "256 extents \u00b7 16 MiB \u00b7 no-op observer",
+        "phase": "copy"
+      },
+      "native_requests_copy/direct_source": {
+        "label": "Native copy \u00b7 16 MiB \u00b7 direct source",
+        "phase": "copy"
+      },
+      "native_requests_copy/direct_destination": {
+        "label": "Native copy \u00b7 16 MiB \u00b7 direct destination",
+        "phase": "copy"
+      },
+      "native_lifetime/direct/q1_b65536": {
+        "label": "Native QD1 \u00b7 16 MiB \u00b7 both direct",
+        "phase": "copy"
+      },
+      "native_runtime/unavailable_fallback": {
+        "label": "Unavailable-ring fallback \u00b7 16 MiB \u00b7 buffered",
+        "phase": "copy"
+      }
+    }
+  },
+  "input_sha256": {
+    "plot-config.json": "502f0e0282ebcacf35211d2f5c51c4615e5adcc9bdc838880ad691b99b6902b9",
+    "environment.json": "cfdb54cbd1362e9e29cc879ee2f79811f48256aa1d2f7e3cebde3329d0538ae6",
+    "measurements.json": "b52a390b1eb39189fbb63fb4ca856eeb5b7b4a6233b7cd8be4b852f5a8dc0bce",
+    "summary.json": "90e2b0e2fd45a057c6df65cec8298bfca22eab3a7fc03049804c4ef8d7bd05e6",
+    "followup-measurements.json": "b56b2d7672143c67dc6f8e0af288ae18d8185a91899ed878ce7d96beb1f26859",
+    "followup-summary.json": "8d04f700d0e41eb1575ad0bf1156e1efccef73c22438043fa8dc3c4f496a838b",
+    "candidate-only-measurements.json": "dd3d05bb42eddb1157d30bb9e312f38c0a6f2c1986b985de324e5c1a10e3e39a"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "50c9a9e04082882c2973a03140d54ad153656ee69499ea0f1d0b22339876482d",
+    "planning-latency.png": "0529994959a911b4568f4d46e143e98aa40a81dd2788cd7dc662eb54f435b90e",
+    "copy-latency.svg": "dd919412a31d345fed21bfb5efc600d94b7960c213699472c88e8a4129412693",
+    "copy-latency.png": "0a5c53f0e16284b74681774bba155cea23346ff8600a9124c7e432bae6a611ee",
+    "relative-change.svg": "1a58ec736313a7736b84f1ca07b67111584b4f3c07657630ba7c20a63f309c39",
+    "relative-change.png": "77bffa3043949ba8e85416fba1622ca60022945c8e8ea5cdf5ac89691ad07142",
+    "sample-distributions.svg": "1927106a757dcd368715736d74383911b7cb2437e229a114bcc9e8fffa930532",
+    "sample-distributions.png": "bf6beed34773883ff7e0f0868226e1f38c31d919650ab261e798175349f39b73",
+    "followup-change.svg": "91f198c1d0f3b6c358f4d540d4b569c04832e9ec343fbc904f0d6d72ca620aee",
+    "followup-change.png": "3acedc605844c793582fe1c40a07042d53dc1e4b16f8bb2eb4d2033c1afb8608",
+    "candidate-only.svg": "40d5a508ffcf8dcfe7be98ea5bedfbc951270cc65503f34fc28f564a1771c250",
+    "candidate-only.png": "29ab4608b962ff1e8cafa9a993b5b89afb0d12224e7760a86b2ddbe21edb1b60",
+    "computed.json": "a13a1ba9c7a001491ace48c290fdc0e7971d109916e881103f3fb81a14735f86"
+  }
+}

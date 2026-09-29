@@ -42,8 +42,8 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 | R0.5 | Complete | Endpoint capabilities/live capacity, known aliases, native binding, and contextual preflight errors | Required correctness cost accepted: planning +2.08–2.15 µs; final copy aggregates −1.93% to +2.37%; general qualification provisional |
 | V0 | Planned | Independent VMware access feasibility; licensed/evaluation host needed for representative API workflows | Pending — first transport baseline follows functional proof |
 
-R1.1–R1.6 and R2.1–R2.4 are complete within their documented scopes; their detailed
-records appear below. R2.5 onward and V0 remain planned in the roadmap. Performance qualification
+R1.1–R1.6 and R2.1–R2.5 are complete within their documented scopes; their detailed
+records appear below. R2.6 onward and V0 remain planned in the roadmap. Performance qualification
 remains provisional as recorded for each step.
 
 ## Per-step record template
@@ -1040,17 +1040,70 @@ qualification still open. The [report](benchmark-results/2026-09-29-r24/README.m
 retains all final/initial samples, controls, candidate-only fallback, plots, and
 limitations. No timing gain is attributed to boxing the diagnostic.
 
+## R2.5 — Native runtime preparation and per-job reuse
+
+Date: 2026-09-29. Status: **Complete within the documented runtime contract**.
+Baseline: `6680a0b`, initially clean. Source and matched harness identities are
+retained with the [benchmark evidence](benchmark-results/2026-09-29-r25/README.md).
+
+Moved native ring, pool, and descriptor setup before initial callbacks and sparse
+prefix writes. Invocation-scoped preparation transfers ownership into execution;
+all Data extents reuse that resource set. A Data pool buffer supplies zero-write
+fallback, while sparse-only jobs prepare one zeroed block and need no ring.
+Shutdown runs once per job, preserving lifetime quarantine and prior progress on
+failure. Observer panic drops unsubmitted resources. No payload scheduling,
+queue, worker, or read-window defaults changed.
+
+Auto runtime fallback is restricted to recognized ring-construction unavailable/
+denied errors. Explicit native, invalid configuration, exhaustion, descriptor
+failure, and post-submission errors never fall back. Threaded fallback gets its
+own budget check after native-only metadata is released. Planning selection stays
+immutable; successful reports expose runtime_fallback(), and every progress
+snapshot uses the actual backend. Native stats retain setup time explicitly.
+
+Added eight isolated integration tests, including syscall-denial fault injection,
+ring reuse after blocking further setup, sparse prefixes, one/four workers,
+observed/unobserved behavior, budget failure, and descriptor/panic cleanup.
+The first fixture omitted EXTENTS capability and exposed dense Data; its failed
+output is preserved, and the fixture was corrected before measurement. Strict
+Clippy identified a large dispatch enum; boxing its native-only resources keeps
+the portable dispatch small before benchmarking the final source.
+
+Added matched fragmented native benchmarks with and without a no-op observer,
+and a candidate-only unavailable-ring workload. Updated runtime/request/memory
+contracts, architecture, ADR-0027, README, and roadmap.
+
+Validation: **342 workspace tests pass**, one unchanged allocation test is gated
+(343 distinct tests). Formatting, strict all-target Clippy, and core/datamover
+wasm32 compilation pass. All eight runtime and six request integration tests also
+pass on Btrfs. Raw outputs and commands are retained with the report. No new
+physical-allocation or cross-kernel qualification is claimed.
+
+Performance: 66 matched runs show fragmented native elapsed time **−59.46%**
+unobserved / **−59.19%** with a no-op observer; 16 Data extents **−6.62%**;
+memory zero fallback **−25.24%**; mixed local sparse **−6.38%**. Dense RAW native,
+mixed directions, and direct QD1 aggregate changes are below 0.1%, but the
+**+38.16% native RAW pair** remains open. Six longer-repeat runs yield
+**+38.23%**, and same-baseline-binary controls retain
++3.22%, -0.48%, -0.98% paired changes. Controls do not
+explain away candidate effects. Candidate-only denied-ring fallback is
+**13.629 ms**, with no baseline speedup claim. Accept functionality and
+reuse while leaving controlled-runner performance qualification open. All raw
+runs, source/harness/binary identities, failed fixture output, and six SVG/PNG
+plots are in the [report](benchmark-results/2026-09-29-r25/README.md).
+Twelve additional short diagnostic runs yield +0.14% aggregate (paired −3.50%
+to +2.10%). Separate syscall traces show flush dominates their measured cycles;
+tracing perturbs timing and does not attribute the earlier regression. Both
+longer-repeat and main adverse results remain open.
+
 ## Next session
 
-Start **R2.5**: prepare native runtime resources before observer callbacks or
-mutation. Explicit native setup failures should be precise pre-execution errors;
-Auto fallback should cover defined unavailability cases and report the actual
-executor consistently. Transfer ownership of successfully prepared resources into
-execution instead of probing and discarding them. Preserve buffer/FD lifetimes,
-shutdown confirmation, memory admission, source validation, and no retry after
-mutation. Integrate per-job ring/buffer reuse where needed by this ownership
-boundary; general concurrent buffered/direct alias policy remains open.
+Start **R2.6**: define and enforce the supported in-process policy for concurrent
+buffered/direct local aliases, including overlapping aligned/unaligned ranges and
+sparse operations. State external-writer responsibility explicitly. Preserve
+runtime preparation, request validation, memory admission, and owned shutdown.
+Measure the cost of the chosen policy with raw evidence and plots.
 
-Keep PERF.0 and all recorded adverse timing pairs open for controlled-runner
-qualification. Track raw evidence and plots and commit each completed step.
-ESXi is still unnecessary; request the 60-day trial when V0 is ready.
+Keep PERF.0 and earlier adverse timing pairs open for controlled-runner
+qualification. Commit each completed step. ESXi remains unnecessary; request the
+60-day trial when V0 is ready.
