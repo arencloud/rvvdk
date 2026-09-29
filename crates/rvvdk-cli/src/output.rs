@@ -59,7 +59,7 @@ pub(crate) fn write(preview: &Preview, json: bool, out: &mut impl Write) -> Resu
         let report = Report {
             schema_version: 1,
             command: preview.command,
-            format: "raw",
+            format: preview.format,
             status: if preview.command == "plan" {
                 "preview"
             } else {
@@ -88,7 +88,12 @@ pub(crate) fn write(preview: &Preview, json: bool, out: &mut impl Write) -> Resu
 fn human(preview: &Preview, out: &mut impl Write) -> std::io::Result<()> {
     let path = preview.source.path.label();
     // Escaped path text keeps embedded control characters from changing terminal layout.
-    writeln!(out, "RAW {}: {path}", preview.command)?;
+    writeln!(
+        out,
+        "{} {}: {path}",
+        preview.format.to_ascii_uppercase(),
+        preview.command
+    )?;
     let plan = &preview.plan;
     writeln!(out, "Logical size: {} bytes", plan.logical_bytes())?;
     writeln!(

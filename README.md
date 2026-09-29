@@ -24,16 +24,17 @@ Virtual disk tools need to understand both **what a disk means** and **how its
 bytes are stored**. rvvdk separates logical disks, disk formats, backing storage,
 and execution so each can evolve independently.
 
-The current workspace provides a local RAW disk-copy engine with sparse source
+The current workspace provides a local RAW and read-only FLAT/ZERO VMDK copy engine with sparse source
 extent discovery, bounded concurrency, reusable aligned buffers, and Linux
 io_uring execution. The longer-term goal is an independent Rust toolkit for
 VMware disk access and migration, extensible to other platforms.
 
 > [!IMPORTANT]
-> **Active development.** The project exposes Rust libraries and a local RAW CLI.
+> **Active development.** The project exposes Rust libraries and a local disk CLI.
 > A [bounded VMDK descriptor parser](docs/vmdk-descriptor.md) is available.
-> [Read-only FLAT/ZERO VMDK disks](docs/vmdk-logical.md) are available through Rust APIs.
-> CLI VMDK integration, VMware remote access, CBT, and durable resume are planned.
+> [Read-only FLAT/ZERO VMDK disks](docs/vmdk-logical.md) are available through Rust APIs
+> and [all four CLI commands](docs/cli-vmdk.md), with RAW output.
+> VMware remote access, CBT, and durable resume are planned.
 > The [roadmap](docs/roadmap.md) tracks completed fixes and remaining work;
 > the [dated review](docs/project-review-2026-09-28.md) records the starting assessment.
 
@@ -162,7 +163,7 @@ migration and exceptional cleanup behavior.
 
 | Crate | Responsibility |
 |:---|:---|
-| [`rvvdk-cli`](crates/rvvdk-cli) | `rvddk` RAW inspect, plan, copy and bounded verify; human/JSON reports |
+| [`rvvdk-cli`](crates/rvvdk-cli) | `rvddk` RAW/VMDK inspect, plan, copy to RAW and bounded verify; human/JSON reports |
 | [`rvvdk-core`](crates/rvvdk-core) | Disk contracts, ranges, extents, RAW/memory devices, and buffer ownership |
 | [`rvvdk-vmdk`](crates/rvvdk-vmdk) | Bounded descriptors, backing resolution and read-only FLAT/ZERO logical disks |
 | [`rvvdk-local`](crates/rvvdk-local) | Local regular-file access, sparse discovery, and direct-I/O handling |
@@ -219,7 +220,7 @@ workloads. Measurements depend on the filesystem, page cache, hardware, and
 flush policy. See the [benchmark notes](docs/benchmarks.md) for historical results
 and the [review](docs/project-review-2026-09-28.md) for measurement gaps.
 
-Explore the [R4.3 benchmark charts](docs/benchmark-results/2026-09-29-r43/README.md)
+Explore the [R4.4 benchmark charts](docs/benchmark-results/2026-09-29-r44/README.md)
 for latency comparisons, paired changes, and sample distributions. A
 [reusable generator](scripts/benchmarks/README.md) exports SVG and PNG figures.
 
@@ -235,6 +236,13 @@ target/release/rvddk verify source.raw destination.raw --format raw
 
 Planning creates and writes nothing. Existing destinations require `--overwrite`
 to preview in-place changes; native selection and runtime readiness stay deferred.
+Convert a supported FLAT/ZERO VMDK to RAW:
+
+```bash
+target/release/rvddk copy disk.vmdk output.raw --format vmdk --verify --progress
+```
+
+See the [VMDK CLI contract](docs/cli-vmdk.md) for supported layouts and confinement.
 See the [CLI guide](docs/cli.md) for output fields, exit codes, and destination policy.
 Copy publishes new output only after successful copy, flush and requested verification.
 Explicit `--overwrite` modifies an existing file in place and preserves its tail.

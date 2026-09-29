@@ -1,7 +1,7 @@
 # VMDK backing acquisition and resolution (R4.2)
 
 R4.2 turns validated descriptor metadata into retained read-only sources. The [R4.3 logical reader](vmdk-logical.md) now consumes these sources.
-CLI VMDK support follows in a separate integration step. [Descriptor syntax](vmdk-descriptor.md) is unchanged.
+[CLI VMDK support](cli-vmdk.md) is available. [Descriptor syntax](vmdk-descriptor.md) is unchanged.
 
 ## API and ownership
 
@@ -102,7 +102,7 @@ let (text, resolver) = LocalResolver::open_descriptor("images/disk.vmdk", Limits
 let parsed = text.parse()?;
 let sources = ResolvedDescriptor::resolve(&parsed, &resolver, ResolutionLimits::default())?;
 sources.revalidate()?;
-// R4.3 will map logical reads over these retained FLAT/ZERO sources.
+// VmdkDisk maps logical reads over these retained FLAT/ZERO sources.
 ```
 
 ## Validation and next step

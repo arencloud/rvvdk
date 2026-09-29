@@ -37,6 +37,14 @@ impl LocalResolver {
         path: impl AsRef<Path>,
         limits: Limits,
     ) -> Result<(DescriptorText, Self), BackingError> {
+        let (file, resolver) = Self::open_descriptor_file(path)?;
+        let text = DescriptorText::read_from(file, limits)?;
+        Ok((text, resolver))
+    }
+
+    /// Open a confined descriptor and retain its file for caller consistency checks.
+    /// The caller must acquire/parse its text with bounded `DescriptorText` APIs.
+    pub fn open_descriptor_file(path: impl AsRef<Path>) -> Result<(File, Self), BackingError> {
         let path = path.as_ref();
         let name = path
             .file_name()
@@ -53,11 +61,13 @@ impl LocalResolver {
             .map_err(|e| BackingError::io("opening trusted descriptor directory", e))?;
         let resolver = Self::from_directory(directory)?;
         let file = resolver.open_regular(name)?;
-        let text = DescriptorText::read_from(file, limits)?;
-        Ok((text, resolver))
+        Ok((file, resolver))
     }
 
-    fn open_regular(&self, reference: &str) -> Result<File, BackingError> {
+    /// Open one regular file through the same confined namespace as `resolve`.
+    /// Useful for retaining descriptor-bound metadata observations; never reopen
+    /// a reference by joining it to a pathname.
+    pub fn open_regular(&self, reference: &str) -> Result<File, BackingError> {
         let name = local_name(reference)?;
         // O_PATH obtains an object identity without opening a FIFO/device for I/O.
         // SAFETY: open_how consists solely of integer fields; zero is valid.

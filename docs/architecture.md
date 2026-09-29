@@ -1128,7 +1128,7 @@ define accepted shapes and errors. Parsing validates offset arithmetic, not file
 lengths, path confinement, backing identity or decoded bytes. R4.2 resolves
 references through caller-supplied backing contracts; R4.3 maps logical reads over
 resolved FLAT/ZERO extents. Native RAW adapters cannot treat a VMDK container FD as
-logical disk data. The CLI remains RAW-only until reader integration is complete.
+logical disk data. The CLI supports explicit [VMDK sources](cli-vmdk.md).
 
 ## Owned VMDK backing resolution (R4.2)
 
@@ -1146,7 +1146,7 @@ regular objects through procfs with identity comparison. Existing local cooperat
 admission remains in use. Directory/entry rename cannot redirect a retained source;
 content stability is not promised. [Contract](vmdk-backing.md) and
 [ADR-0034](adr/0034-confined-vmdk-backing-resolution.md) define limits and trust boundaries.
-R4.3 still supplies the logical `VirtualDisk`; CLI and native RAW behavior are unchanged.
+R4.3 supplies the logical `VirtualDisk`; R4.4 integrates it into the CLI.
 
 ## Read-only VMDK logical disks (R4.3)
 
@@ -1163,4 +1163,16 @@ backing against the fresh destination identity and fails closed for unknowns.
 Wrappers must forward this hook. Endpoint checks are observations, not snapshots.
 See the [logical contract](vmdk-logical.md), [ADR-0035](adr/0035-read-only-vmdk-logical-mapping.md),
 and [reference evidence](benchmark-results/2026-09-29-r43/reference.json) for
-interoperability limits. CLI source-format selection remains R4.4.
+interoperability limits. [R4.4](cli-vmdk.md) provides CLI source-format selection.
+
+
+## CLI logical sources (R4.4)
+
+An owned source enum selects typed RawDisk native planning/execution or portable
+VmdkDisk planning/execution. The source loader retains descriptor-bound identity,
+size and timestamp observations for every file; target policy uses logical capacity
+and rejects aliases to the descriptor or any backing. No pathname is reopened for
+source checks. LocalResolver exposes confined file acquisition without weakening
+its namespace policy. VMDK has no native FD endpoint; explicit io-uring rejects
+before destination opening. Existing publication, verification and cancellation
+remain in the shared lifecycle. See [ADR-0036](adr/0036-cli-vmdk-sources.md).

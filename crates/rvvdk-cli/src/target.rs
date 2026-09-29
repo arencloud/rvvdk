@@ -79,7 +79,7 @@ pub(crate) struct Target {
     name: CString,
 }
 impl Target {
-    pub fn open(path: &Path, overwrite: bool, source: &File) -> Result<Self> {
+    pub fn open(path: &Path, overwrite: bool, source: &crate::source::Source) -> Result<Self> {
         let bytes = path.as_os_str().as_bytes();
         let leaf = path
             .file_name()
@@ -95,9 +95,7 @@ impl Target {
             .open(parent)
             .map_err(|e| Failure::io("open destination directory", e))?;
         let name = cstring(Path::new(leaf))?;
-        let src = source
-            .metadata()
-            .map_err(|e| Failure::io("inspect source", e))?;
+        let size = source.logical().size();
         let (file, existing) = match openat(&directory, &name, libc::O_PATH | libc::O_NOFOLLOW) {
             Ok(observed) => {
                 let observed = observed
@@ -109,12 +107,7 @@ impl Target {
                         "destination must be a regular file, not a symlink or special file",
                     ));
                 }
-                if (src.dev(), src.ino()) == (observed.dev(), observed.ino()) {
-                    return Err(Failure::new(
-                        "same_file",
-                        "source and destination refer to the same file",
-                    ));
-                }
+                source.validate_destination(&observed)?;
                 if !overwrite {
                     return Err(Failure::new(
                         "destination_exists",
@@ -136,7 +129,7 @@ impl Target {
                         "destination changed while opening",
                     ));
                 }
-                if live.len() < src.len() {
+                if live.len() < size {
                     return Err(Failure::new(
                         "destination_too_small",
                         "overwrite destination is smaller than source",
@@ -156,7 +149,7 @@ impl Target {
                         e,
                     )
                 })?;
-                file.set_len(src.len())
+                file.set_len(size)
                     .map_err(|e| Failure::io("size anonymous output", e))?;
                 (file, false)
             }

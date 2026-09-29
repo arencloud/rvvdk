@@ -1,5 +1,14 @@
 # rvvdk Benchmarks
 
+Latest step: [R4.4 CLI VMDK source benchmarks and plots](benchmark-results/2026-09-29-r44/README.md).
+Thirty matched RAW CLI runs, eighteen triggered longer repeats and fifteen new
+VMDK command runs retain exact source/binary/harness identities. RAW preview
+latency increases about 1–2 µs with stronger owned-source checks; copy/verify
+aggregate changes stay below 5% on this shared warm Btrfs host. See the report for
+every adverse pair and the accepted correctness cost; broader qualification and
+tuning remain open.
+
+
 ## Performance policy — adopted 2026-09-28
 
 Performance is a requirement throughout implementation. Every work package in

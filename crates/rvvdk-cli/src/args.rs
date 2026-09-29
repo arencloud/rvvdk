@@ -19,7 +19,7 @@ fn source(command: Command) -> Command {
             Arg::new("format")
                 .long("format")
                 .required(true)
-                .value_parser(["raw"])
+                .value_parser(["raw", "vmdk"])
                 .help("Explicit input format; no format autodetection"),
         )
         .arg(
@@ -98,17 +98,17 @@ pub(crate) fn command() -> Command {
     // Build only the selected command's options. The full list and summaries
     // remain available in root help, without cloning unrelated argument trees.
     Command::new("rvddk").version(env!("CARGO_PKG_VERSION"))
-        .about("Inspect, plan, copy, and verify local RAW disks")
+        .about("Inspect, plan, copy, and verify local RAW or FLAT/ZERO VMDK sources (RAW destinations)")
         .subcommand_required(true).arg_required_else_help(true)
         .arg(Arg::new("json").long("json").global(true).action(ArgAction::SetTrue)
             .help("Emit schema-versioned JSON; errors go to stderr"))
-        .subcommand(Command::new("inspect").about("Inspect a regular RAW file")
+        .subcommand(Command::new("inspect").about("Inspect a RAW file or FLAT/ZERO VMDK descriptor")
             .defer(|c| extents(source(c))))
         .subcommand(Command::new("plan").about("Preview logical work and destination policy; does not create or write output")
             .defer(|c| extents(copy_options(c))
                 .mut_arg("overwrite", |a| a.help("Preview in-place overwrite of an existing file; still performs no writes"))
                 .mut_arg("backend", |a| a.help("Requested copy backend; native selection is deferred until destination preparation"))))
-        .subcommand(Command::new("copy").about("Copy RAW bytes; publish new output without replacement")
+        .subcommand(Command::new("copy").about("Copy logical bytes to RAW; publish new output without replacement")
             .defer(|c| progress(copy_options(c)).arg(Arg::new("verify").long("verify").action(ArgAction::SetTrue)
                 .help("Read back and compare all logical bytes before publishing new output"))))
         .subcommand(Command::new("verify").about("Compare source bytes with the destination prefix; no writes")

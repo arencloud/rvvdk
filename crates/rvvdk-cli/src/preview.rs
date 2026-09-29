@@ -1,11 +1,10 @@
 use crate::error::Failure;
-use rvvdk_core::{EndpointIdentity, RawDisk, VirtualDisk};
+use crate::source::Source as OpenedSource;
 use rvvdk_datamover::{CopyOptions, CopyPlan, DataMover};
-use rvvdk_local::LocalFileBlockDevice;
 use serde::Serialize;
 use std::{
     fs,
-    os::unix::{ffi::OsStrExt, fs::MetadataExt},
+    os::unix::ffi::OsStrExt,
     path::{Path, PathBuf},
 };
 
@@ -47,7 +46,10 @@ pub(crate) struct Source {
     pub logical_bytes: u64,
     pub logical_block_size: u32,
     pub physical_block_size: u32,
-    identity: Identity,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    identity: Option<Identity>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    vmdk: Option<serde_json::Value>,
 }
 #[derive(Serialize)]
 pub(crate) struct Destination {
@@ -77,33 +79,22 @@ pub(crate) struct Execution {
 }
 pub(crate) struct Preview {
     pub command: &'static str,
+    pub format: &'static str,
     pub source: Source,
     pub plan: CopyPlan,
     pub destination: Option<Destination>,
     pub execution: Option<Execution>,
     pub include_extents: bool,
 }
-fn regular(path: &Path) -> Result<fs::Metadata> {
-    let metadata = fs::metadata(path).map_err(|e| Failure::io(&format!("inspect {path:?}"), e))?;
-    if !metadata.is_file() {
-        return Err(Failure::new(
-            "not_regular_file",
-            format!("expected a regular file: {path:?}"),
-        ));
-    }
-    Ok(metadata)
-}
-
 pub(crate) fn build(name: &str, args: &clap::ArgMatches) -> Result<Preview> {
     let source_path = args.get_one::<PathBuf>("source").expect("required source");
-    // Reject ordinary special-file paths before open (e.g. FIFOs). This path
-    // check is not a lease against concurrent namespace changes.
-    regular(source_path)?;
-    let source = RawDisk::new(LocalFileBlockDevice::open_read_only(source_path)?);
+    let opened = OpenedSource::open(source_path, args.get_one::<String>("format").unwrap())?;
+    let source = opened.logical();
     let endpoint = source.copy_endpoint()?;
-    let Some(EndpointIdentity::LocalFile { device, inode }) = endpoint.identity else {
-        return Err(Failure::new("planning", "missing local file identity"));
-    };
+    let (device, inode) = opened.identity();
+    if name == "plan" {
+        opened.validate_backend(args.get_one::<String>("backend").unwrap())?;
+    }
     let budget = *args.get_one::<usize>("memory-budget").unwrap();
     let options = if name == "plan" {
         CopyOptions::with_concurrency(
@@ -118,7 +109,7 @@ pub(crate) fn build(name: &str, args: &clap::ArgMatches) -> Result<Preview> {
     // Reuse canonical logical topology validation and metadata budget admission.
     // This portable selection is NOT presented as the future RAW native decision.
     let mover = DataMover::new(options);
-    let plan = mover.plan(&source)?;
+    let plan = mover.plan(source)?;
     let live = source.copy_endpoint()?;
     if live.size != source.size() || live.identity != endpoint.identity {
         return Err(Failure::new(
@@ -126,14 +117,17 @@ pub(crate) fn build(name: &str, args: &clap::ArgMatches) -> Result<Preview> {
             "source size or identity changed during inspection",
         ));
     }
+    opened.revalidate()?;
     let mut preview = Preview {
+        format: opened.format(),
         command: if name == "plan" { "plan" } else { "inspect" },
         source: Source {
             path: source_path.as_path().into(),
             logical_bytes: source.size(),
             logical_block_size: source.geometry().logical_block_size(),
             physical_block_size: source.geometry().physical_block_size(),
-            identity: Identity { device, inode },
+            identity: (opened.format() == "raw").then_some(Identity { device, inode }),
+            vmdk: opened.vmdk_report(),
         },
         plan,
         destination: None,
@@ -145,8 +139,7 @@ pub(crate) fn build(name: &str, args: &clap::ArgMatches) -> Result<Preview> {
         preview.destination = Some(destination_preview(
             destination,
             args.get_flag("overwrite"),
-            device,
-            inode,
+            &opened,
             source.size(),
         )?);
         let requested = args.get_one::<String>("backend").unwrap();
@@ -154,9 +147,12 @@ pub(crate) fn build(name: &str, args: &clap::ArgMatches) -> Result<Preview> {
         let queue = *args.get_one::<u32>("queue-depth").unwrap();
         preview.execution = Some(Execution {
             requested_backend: requested.clone(),
-            selected_backend: (requested == "threaded").then_some("threaded"),
+            selected_backend: (requested == "threaded" || opened.format() == "vmdk")
+                .then_some("threaded"),
             selection_reason: if requested == "threaded" {
                 "requested_threaded"
+            } else if opened.format() == "vmdk" {
+                "portable_api"
             } else {
                 "deferred_until_destination_preparation"
             },
@@ -177,8 +173,7 @@ pub(crate) fn build(name: &str, args: &clap::ArgMatches) -> Result<Preview> {
 fn destination_preview(
     path: &Path,
     overwrite: bool,
-    device: u64,
-    inode: u64,
+    source: &OpenedSource,
     size: u64,
 ) -> Result<Destination> {
     let bytes = path.as_os_str().as_bytes();
@@ -201,12 +196,7 @@ fn destination_preview(
                 "destination must be a regular file, not a symlink or special file",
             ));
         }
-        if (metadata.dev(), metadata.ino()) == (device, inode) {
-            return Err(Failure::new(
-                "same_file",
-                "source and destination refer to the same file",
-            ));
-        }
+        source.validate_destination(metadata)?;
         if !overwrite {
             return Err(Failure::new(
                 "destination_exists",

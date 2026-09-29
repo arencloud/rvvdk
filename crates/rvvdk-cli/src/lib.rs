@@ -1,10 +1,11 @@
-//! Linux RAW inspection, planning, copy and verification for the rvddk command.
+//! Linux RAW and read-only VMDK inspection, planning, copy and verification for the rvddk command.
 //! The JSON report is not a serialized executable CopyPlan.
 mod args;
 mod error;
 mod output;
 mod preview;
 mod progress;
+mod source;
 mod target;
 mod transfer;
 

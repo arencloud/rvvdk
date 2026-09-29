@@ -4,7 +4,7 @@
 `ResolvedDescriptor`. It consumes the retained sources, revalidates them at
 construction, and supplies logical reads and extent discovery. The
 [descriptor subset](vmdk-descriptor.md) and [backing policy](vmdk-backing.md) still
-apply. The public CLI remains RAW-only until R4.4.
+apply. The public CLI supports explicit [VMDK sources](cli-vmdk.md).
 
 ## Reads and layout
 
@@ -122,7 +122,7 @@ reads with contiguous/mixed/late-map requests and warm local FLAT/mixed copies w
 final flush. Existing planning, copy, verification, parser and resolver controls
 remain separately recorded; adverse pairs trigger longer repeats.
 
-Next is R4.4: explicit CLI VMDK source selection for inspect/plan/copy/verify while
+R4.4 provides [explicit CLI VMDK source selection](cli-vmdk.md) for inspect/plan/copy/verify while
 destination remains RAW, reusing these contracts. Padded-descriptor acceptance and
 additional custom-layout reference qualification remain explicit follow-up items.
 No ESXi trial is needed for this local stage.

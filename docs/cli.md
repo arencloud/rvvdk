@@ -1,10 +1,10 @@
-# Local RAW CLI
+# Local disk CLI
 
 The Linux command is **`rvddk`**, using the requested public spelling. Its crate
 is `rvvdk-cli`; existing `rvvdk-*` library and repository names are unchanged.
 Inspection and planning previews are read-only. R3.2 adds [copy and verification](cli-transfer.md).
-[Progress events and cancellation](cli-progress.md) are available for copy/verify. This page defines the unchanged
-inspect/plan contract; the linked transfer guide defines the new commands.
+[Progress events and cancellation](cli-progress.md) are available for copy/verify. [VMDK sources](cli-vmdk.md) are supported with explicit `--format vmdk`; that guide
+defines the additional confinement, identity and portable execution rules.
 
 ```bash
 cargo build --release -p rvvdk-cli
@@ -14,9 +14,9 @@ target/release/rvddk plan source.raw new.raw --format raw --backend auto --json
 target/release/rvddk plan source.raw existing.raw --format raw --overwrite
 ```
 
-Both commands require `--format raw`. They do not infer a format from an extension
+Both commands require `--format raw|vmdk`. They do not infer a format from an extension
 or signature. Inputs must be regular files; devices, directories, and ordinary
-FIFO paths reject before payload processing. Source symlinks are followed to their
+FIFO paths reject before payload processing. For RAW, source symlinks are followed to their
 regular-file target. Files are opened buffered and read-only. No payload copy,
 flush, ring setup, writable destination open, creation, or truncation occurs.
 Ordinary filesystem access can still update access metadata; no metadata snapshot
@@ -69,7 +69,7 @@ stable while inspecting; copy validates again with actual endpoints.
 
 `--backend threaded|auto|io-uring` defaults to `threaded`. The Threaded request
 records `selected_backend: "threaded"` and `selection_reason: "requested_threaded"`.
-Auto and explicit native record `selected_backend: null` with reason
+For RAW, Auto and explicit native record `selected_backend: null` with reason
 `"deferred_until_destination_preparation"`. The executable RAW library planner
 requires a writable destination, so the CLI does not fabricate a writable backend
 or pretend a portable Threaded selection is the future RAW decision.

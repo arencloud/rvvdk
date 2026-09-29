@@ -1,7 +1,8 @@
-# RAW copy and verification (R3.2)
+# Local copy and verification
 
-`rvddk copy` and `rvddk verify` operate on Linux regular RAW files. Explicit
-`--format raw` is required. The [inspect/plan guide](cli.md) remains applicable
+`rvddk copy` and `rvddk verify` operate on Linux RAW or supported
+[FLAT/ZERO VMDK sources](cli-vmdk.md), with RAW destinations. Explicit
+`--format raw|vmdk` is required. The [inspect/plan guide](cli.md) remains applicable
 to read-only previews; a preview is never replayed as an executable plan.
 
 ```bash

@@ -1,0 +1,1154 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 55a3c15..7aa44c5 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -434,6 +434,7 @@ dependencies = [
+  "rvvdk-core",
+  "rvvdk-datamover",
+  "rvvdk-local",
++ "rvvdk-vmdk",
+  "serde",
+  "serde_json",
+ ]
+diff --git a/crates/rvvdk-cli/Cargo.toml b/crates/rvvdk-cli/Cargo.toml
+index 3a14dca..af2b60e 100644
+--- a/crates/rvvdk-cli/Cargo.toml
++++ b/crates/rvvdk-cli/Cargo.toml
+@@ -10,6 +10,7 @@ name = "rvddk"
+ path = "src/main.rs"
+ 
+ [dependencies]
++rvvdk-vmdk = { path = "../rvvdk-vmdk" }
+ rvvdk-core = { path = "../rvvdk-core" }
+ rvvdk-datamover = { path = "../rvvdk-datamover" }
+ rvvdk-local = { path = "../rvvdk-local" }
+@@ -32,3 +33,7 @@ harness = false
+ [[bench]]
+ name = "lifecycle"
+ harness = false
++
++[[bench]]
++name = "vmdk"
++harness = false
+diff --git a/crates/rvvdk-cli/src/args.rs b/crates/rvvdk-cli/src/args.rs
+index 7b6abef..5c206a8 100644
+--- a/crates/rvvdk-cli/src/args.rs
++++ b/crates/rvvdk-cli/src/args.rs
+@@ -19,7 +19,7 @@ fn source(command: Command) -> Command {
+             Arg::new("format")
+                 .long("format")
+                 .required(true)
+-                .value_parser(["raw"])
++                .value_parser(["raw", "vmdk"])
+                 .help("Explicit input format; no format autodetection"),
+         )
+         .arg(
+@@ -98,17 +98,17 @@ pub(crate) fn command() -> Command {
+     // Build only the selected command's options. The full list and summaries
+     // remain available in root help, without cloning unrelated argument trees.
+     Command::new("rvddk").version(env!("CARGO_PKG_VERSION"))
+-        .about("Inspect, plan, copy, and verify local RAW disks")
++        .about("Inspect, plan, copy, and verify local RAW or FLAT/ZERO VMDK sources (RAW destinations)")
+         .subcommand_required(true).arg_required_else_help(true)
+         .arg(Arg::new("json").long("json").global(true).action(ArgAction::SetTrue)
+             .help("Emit schema-versioned JSON; errors go to stderr"))
+-        .subcommand(Command::new("inspect").about("Inspect a regular RAW file")
++        .subcommand(Command::new("inspect").about("Inspect a RAW file or FLAT/ZERO VMDK descriptor")
+             .defer(|c| extents(source(c))))
+         .subcommand(Command::new("plan").about("Preview logical work and destination policy; does not create or write output")
+             .defer(|c| extents(copy_options(c))
+                 .mut_arg("overwrite", |a| a.help("Preview in-place overwrite of an existing file; still performs no writes"))
+                 .mut_arg("backend", |a| a.help("Requested copy backend; native selection is deferred until destination preparation"))))
+-        .subcommand(Command::new("copy").about("Copy RAW bytes; publish new output without replacement")
++        .subcommand(Command::new("copy").about("Copy logical bytes to RAW; publish new output without replacement")
+             .defer(|c| progress(copy_options(c)).arg(Arg::new("verify").long("verify").action(ArgAction::SetTrue)
+                 .help("Read back and compare all logical bytes before publishing new output"))))
+         .subcommand(Command::new("verify").about("Compare source bytes with the destination prefix; no writes")
+diff --git a/crates/rvvdk-cli/src/lib.rs b/crates/rvvdk-cli/src/lib.rs
+index 047edd0..05fcdb5 100644
+--- a/crates/rvvdk-cli/src/lib.rs
++++ b/crates/rvvdk-cli/src/lib.rs
+@@ -1,10 +1,11 @@
+-//! Linux RAW inspection, planning, copy and verification for the rvddk command.
++//! Linux RAW and read-only VMDK inspection, planning, copy and verification for the rvddk command.
+ //! The JSON report is not a serialized executable CopyPlan.
+ mod args;
+ mod error;
+ mod output;
+ mod preview;
+ mod progress;
++mod source;
+ mod target;
+ mod transfer;
+ 
+diff --git a/crates/rvvdk-cli/src/output.rs b/crates/rvvdk-cli/src/output.rs
+index e677a0d..51b21a4 100644
+--- a/crates/rvvdk-cli/src/output.rs
++++ b/crates/rvvdk-cli/src/output.rs
+@@ -59,7 +59,7 @@ pub(crate) fn write(preview: &Preview, json: bool, out: &mut impl Write) -> Resu
+         let report = Report {
+             schema_version: 1,
+             command: preview.command,
+-            format: "raw",
++            format: preview.format,
+             status: if preview.command == "plan" {
+                 "preview"
+             } else {
+@@ -88,7 +88,12 @@ pub(crate) fn write(preview: &Preview, json: bool, out: &mut impl Write) -> Resu
+ fn human(preview: &Preview, out: &mut impl Write) -> std::io::Result<()> {
+     let path = preview.source.path.label();
+     // Escaped path text keeps embedded control characters from changing terminal layout.
+-    writeln!(out, "RAW {}: {path}", preview.command)?;
++    writeln!(
++        out,
++        "{} {}: {path}",
++        preview.format.to_ascii_uppercase(),
++        preview.command
++    )?;
+     let plan = &preview.plan;
+     writeln!(out, "Logical size: {} bytes", plan.logical_bytes())?;
+     writeln!(
+diff --git a/crates/rvvdk-cli/src/preview.rs b/crates/rvvdk-cli/src/preview.rs
+index ab65055..8aedcdd 100644
+--- a/crates/rvvdk-cli/src/preview.rs
++++ b/crates/rvvdk-cli/src/preview.rs
+@@ -1,11 +1,10 @@
+ use crate::error::Failure;
+-use rvvdk_core::{EndpointIdentity, RawDisk, VirtualDisk};
++use crate::source::Source as OpenedSource;
+ use rvvdk_datamover::{CopyOptions, CopyPlan, DataMover};
+-use rvvdk_local::LocalFileBlockDevice;
+ use serde::Serialize;
+ use std::{
+     fs,
+-    os::unix::{ffi::OsStrExt, fs::MetadataExt},
++    os::unix::ffi::OsStrExt,
+     path::{Path, PathBuf},
+ };
+ 
+@@ -47,7 +46,10 @@ pub(crate) struct Source {
+     pub logical_bytes: u64,
+     pub logical_block_size: u32,
+     pub physical_block_size: u32,
+-    identity: Identity,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    identity: Option<Identity>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    vmdk: Option<serde_json::Value>,
+ }
+ #[derive(Serialize)]
+ pub(crate) struct Destination {
+@@ -77,33 +79,22 @@ pub(crate) struct Execution {
+ }
+ pub(crate) struct Preview {
+     pub command: &'static str,
++    pub format: &'static str,
+     pub source: Source,
+     pub plan: CopyPlan,
+     pub destination: Option<Destination>,
+     pub execution: Option<Execution>,
+     pub include_extents: bool,
+ }
+-fn regular(path: &Path) -> Result<fs::Metadata> {
+-    let metadata = fs::metadata(path).map_err(|e| Failure::io(&format!("inspect {path:?}"), e))?;
+-    if !metadata.is_file() {
+-        return Err(Failure::new(
+-            "not_regular_file",
+-            format!("expected a regular file: {path:?}"),
+-        ));
+-    }
+-    Ok(metadata)
+-}
+-
+ pub(crate) fn build(name: &str, args: &clap::ArgMatches) -> Result<Preview> {
+     let source_path = args.get_one::<PathBuf>("source").expect("required source");
+-    // Reject ordinary special-file paths before open (e.g. FIFOs). This path
+-    // check is not a lease against concurrent namespace changes.
+-    regular(source_path)?;
+-    let source = RawDisk::new(LocalFileBlockDevice::open_read_only(source_path)?);
++    let opened = OpenedSource::open(source_path, args.get_one::<String>("format").unwrap())?;
++    let source = opened.logical();
+     let endpoint = source.copy_endpoint()?;
+-    let Some(EndpointIdentity::LocalFile { device, inode }) = endpoint.identity else {
+-        return Err(Failure::new("planning", "missing local file identity"));
+-    };
++    let (device, inode) = opened.identity();
++    if name == "plan" {
++        opened.validate_backend(args.get_one::<String>("backend").unwrap())?;
++    }
+     let budget = *args.get_one::<usize>("memory-budget").unwrap();
+     let options = if name == "plan" {
+         CopyOptions::with_concurrency(
+@@ -118,7 +109,7 @@ pub(crate) fn build(name: &str, args: &clap::ArgMatches) -> Result<Preview> {
+     // Reuse canonical logical topology validation and metadata budget admission.
+     // This portable selection is NOT presented as the future RAW native decision.
+     let mover = DataMover::new(options);
+-    let plan = mover.plan(&source)?;
++    let plan = mover.plan(source)?;
+     let live = source.copy_endpoint()?;
+     if live.size != source.size() || live.identity != endpoint.identity {
+         return Err(Failure::new(
+@@ -126,14 +117,17 @@ pub(crate) fn build(name: &str, args: &clap::ArgMatches) -> Result<Preview> {
+             "source size or identity changed during inspection",
+         ));
+     }
++    opened.revalidate()?;
+     let mut preview = Preview {
++        format: opened.format(),
+         command: if name == "plan" { "plan" } else { "inspect" },
+         source: Source {
+             path: source_path.as_path().into(),
+             logical_bytes: source.size(),
+             logical_block_size: source.geometry().logical_block_size(),
+             physical_block_size: source.geometry().physical_block_size(),
+-            identity: Identity { device, inode },
++            identity: (opened.format() == "raw").then_some(Identity { device, inode }),
++            vmdk: opened.vmdk_report(),
+         },
+         plan,
+         destination: None,
+@@ -145,8 +139,7 @@ pub(crate) fn build(name: &str, args: &clap::ArgMatches) -> Result<Preview> {
+         preview.destination = Some(destination_preview(
+             destination,
+             args.get_flag("overwrite"),
+-            device,
+-            inode,
++            &opened,
+             source.size(),
+         )?);
+         let requested = args.get_one::<String>("backend").unwrap();
+@@ -154,9 +147,12 @@ pub(crate) fn build(name: &str, args: &clap::ArgMatches) -> Result<Preview> {
+         let queue = *args.get_one::<u32>("queue-depth").unwrap();
+         preview.execution = Some(Execution {
+             requested_backend: requested.clone(),
+-            selected_backend: (requested == "threaded").then_some("threaded"),
++            selected_backend: (requested == "threaded" || opened.format() == "vmdk")
++                .then_some("threaded"),
+             selection_reason: if requested == "threaded" {
+                 "requested_threaded"
++            } else if opened.format() == "vmdk" {
++                "portable_api"
+             } else {
+                 "deferred_until_destination_preparation"
+             },
+@@ -177,8 +173,7 @@ pub(crate) fn build(name: &str, args: &clap::ArgMatches) -> Result<Preview> {
+ fn destination_preview(
+     path: &Path,
+     overwrite: bool,
+-    device: u64,
+-    inode: u64,
++    source: &OpenedSource,
+     size: u64,
+ ) -> Result<Destination> {
+     let bytes = path.as_os_str().as_bytes();
+@@ -201,12 +196,7 @@ fn destination_preview(
+                 "destination must be a regular file, not a symlink or special file",
+             ));
+         }
+-        if (metadata.dev(), metadata.ino()) == (device, inode) {
+-            return Err(Failure::new(
+-                "same_file",
+-                "source and destination refer to the same file",
+-            ));
+-        }
++        source.validate_destination(metadata)?;
+         if !overwrite {
+             return Err(Failure::new(
+                 "destination_exists",
+diff --git a/crates/rvvdk-cli/src/target.rs b/crates/rvvdk-cli/src/target.rs
+index f2905e9..ca2ca81 100644
+--- a/crates/rvvdk-cli/src/target.rs
++++ b/crates/rvvdk-cli/src/target.rs
+@@ -79,7 +79,7 @@ pub(crate) struct Target {
+     name: CString,
+ }
+ impl Target {
+-    pub fn open(path: &Path, overwrite: bool, source: &File) -> Result<Self> {
++    pub fn open(path: &Path, overwrite: bool, source: &crate::source::Source) -> Result<Self> {
+         let bytes = path.as_os_str().as_bytes();
+         let leaf = path
+             .file_name()
+@@ -95,9 +95,7 @@ impl Target {
+             .open(parent)
+             .map_err(|e| Failure::io("open destination directory", e))?;
+         let name = cstring(Path::new(leaf))?;
+-        let src = source
+-            .metadata()
+-            .map_err(|e| Failure::io("inspect source", e))?;
++        let size = source.logical().size();
+         let (file, existing) = match openat(&directory, &name, libc::O_PATH | libc::O_NOFOLLOW) {
+             Ok(observed) => {
+                 let observed = observed
+@@ -109,12 +107,7 @@ impl Target {
+                         "destination must be a regular file, not a symlink or special file",
+                     ));
+                 }
+-                if (src.dev(), src.ino()) == (observed.dev(), observed.ino()) {
+-                    return Err(Failure::new(
+-                        "same_file",
+-                        "source and destination refer to the same file",
+-                    ));
+-                }
++                source.validate_destination(&observed)?;
+                 if !overwrite {
+                     return Err(Failure::new(
+                         "destination_exists",
+@@ -136,7 +129,7 @@ impl Target {
+                         "destination changed while opening",
+                     ));
+                 }
+-                if live.len() < src.len() {
++                if live.len() < size {
+                     return Err(Failure::new(
+                         "destination_too_small",
+                         "overwrite destination is smaller than source",
+@@ -156,7 +149,7 @@ impl Target {
+                         e,
+                     )
+                 })?;
+-                file.set_len(src.len())
++                file.set_len(size)
+                     .map_err(|e| Failure::io("size anonymous output", e))?;
+                 (file, false)
+             }
+diff --git a/crates/rvvdk-cli/src/transfer.rs b/crates/rvvdk-cli/src/transfer.rs
+index 667f19f..846845c 100644
+--- a/crates/rvvdk-cli/src/transfer.rs
++++ b/crates/rvvdk-cli/src/transfer.rs
+@@ -1,4 +1,5 @@
+ use crate::progress::{Combined, Feedback, check};
++use crate::source::{Disk, Source};
+ use crate::{
+     error::Failure,
+     preview::PathReport,
+@@ -12,7 +13,7 @@ use rvvdk_datamover::{
+ };
+ use rvvdk_local::LocalFileBlockDevice;
+ use serde_json::{Value, json};
+-use std::{fs::File, io::Write, os::unix::fs::MetadataExt, path::PathBuf, time::Instant};
++use std::{fs::File, io::Write, path::PathBuf, time::Instant};
+ 
+ type Result<T> = std::result::Result<T, Failure>;
+ fn disk(file: &File) -> Result<RawDisk<LocalFileBlockDevice>> {
+@@ -22,18 +23,7 @@ fn disk(file: &File) -> Result<RawDisk<LocalFileBlockDevice>> {
+     )?))
+ }
+ fn stamp(file: &File) -> Result<(u64, u64, u64, i64, i64, i64, i64)> {
+-    let m = file
+-        .metadata()
+-        .map_err(|e| Failure::io("inspect live file", e))?;
+-    Ok((
+-        m.dev(),
+-        m.ino(),
+-        m.len(),
+-        m.mtime(),
+-        m.mtime_nsec(),
+-        m.ctime(),
+-        m.ctime_nsec(),
+-    ))
++    crate::source::stamp(file).map_err(|e| Failure::io("inspect live file", e))
+ }
+ fn backend(value: ExecutionBackend) -> &'static str {
+     match value {
+@@ -116,7 +106,8 @@ pub(crate) fn run<C: Cancellation>(
+     } else {
+         writeln!(
+             out,
+-            "RAW {name}: {} ({} logical bytes)",
++            "{} {name}: {} ({} logical bytes)",
++            report["format"].as_str().unwrap().to_ascii_uppercase(),
+             report["status"].as_str().unwrap(),
+             report["logical_bytes"]
+         )
+@@ -156,11 +147,15 @@ fn verify<C: Cancellation>(
+     let started = Instant::now();
+     let source_path = args.get_one::<PathBuf>("source").unwrap();
+     let destination_path = args.get_one::<PathBuf>("destination").unwrap();
+-    let source_file = target::source(source_path)?;
++    let opened = Source::open(source_path, args.get_one::<String>("format").unwrap())?;
++    let source = opened.logical();
+     let destination_file = target::verify_destination(destination_path)?;
+-    let source_stamp = stamp(&source_file)?;
+     let destination_stamp = stamp(&destination_file)?;
+-    let source = disk(&source_file)?;
++    opened.validate_destination(
++        &destination_file
++            .metadata()
++            .map_err(|e| Failure::io("inspect destination", e))?,
++    )?;
+     let destination = disk(&destination_file)?;
+     let mut verifier = Verifier::new(
+         source.size(),
+@@ -169,7 +164,7 @@ fn verify<C: Cancellation>(
+     )?;
+     feedback.emit("verifying", source.size(), None, None);
+     let report = verifier
+-        .verify_controlled(&source, &destination, cancellation, |n| {
++        .verify_controlled(source, &destination, cancellation, |n| {
+             feedback.verification(n, source.size())
+         })
+         .map_err(|e| {
+@@ -179,7 +174,8 @@ fn verify<C: Cancellation>(
+             details["bytes_verified"] = json!(feedback.verified.get());
+             failure
+         })?;
+-    if stamp(&source_file)? != source_stamp || stamp(&destination_file)? != destination_stamp {
++    opened.revalidate()?;
++    if stamp(&destination_file)? != destination_stamp {
+         return Err(Failure::new(
+             "source_changed",
+             "verification endpoint changed during comparison",
+@@ -187,7 +183,7 @@ fn verify<C: Cancellation>(
+     }
+     check(cancellation)?;
+     Ok(
+-        json!({"schema_version":1,"command":"verify","format":"raw","status":"verified", "source":PathReport::from(source_path.as_path()),"destination":PathReport::from(destination_path.as_path()),"logical_bytes":report.bytes_verified,"destination_tail_bytes":destination.size()-source.size(),"verification_payload_bytes":verifier.storage_bytes(),"elapsed_seconds":started.elapsed().as_secs_f64()}),
++        json!({"schema_version":1,"command":"verify","format":opened.format(),"status":"verified", "source":PathReport::from(source_path.as_path()),"destination":PathReport::from(destination_path.as_path()),"logical_bytes":report.bytes_verified,"destination_tail_bytes":destination.size()-source.size(),"verification_payload_bytes":verifier.storage_bytes(),"elapsed_seconds":started.elapsed().as_secs_f64()}),
+     )
+ }
+ #[cfg(test)]
+@@ -211,9 +207,8 @@ fn copy_controlled<C: Cancellation>(
+     let started = Instant::now();
+     let source_path = args.get_one::<PathBuf>("source").unwrap();
+     let destination_path = args.get_one::<PathBuf>("destination").unwrap();
+-    let source_file = target::source(source_path)?;
+-    let initial = stamp(&source_file)?;
+-    let source = disk(&source_file)?;
++    let opened = Source::open(source_path, args.get_one::<String>("format").unwrap())?;
++    let source = opened.logical();
+     let budget = *args.get_one::<usize>("memory-budget").unwrap();
+     let block = *args.get_one::<usize>("block-size").unwrap();
+     let mut verifier = if args.get_flag("verify") {
+@@ -226,35 +221,43 @@ fn copy_controlled<C: Cancellation>(
+         .with_memory_budget(budget - reserved);
+     let native = IoUringExecutionOptions::new(*args.get_one("queue-depth").unwrap()).unwrap();
+     let requested = args.get_one::<String>("backend").unwrap();
++    opened.validate_backend(requested)?;
+     let strategy = match requested.as_str() {
+         "threaded" => ExecutionStrategy::Threaded,
+         "auto" => ExecutionStrategy::Auto(native),
+         _ => ExecutionStrategy::IoUring(native),
+     };
+     let mover = DataMover::with_execution_strategy(options, strategy);
+-    let mut target = Target::open(destination_path, args.get_flag("overwrite"), &source_file)?;
++    let mut target = Target::open(destination_path, args.get_flag("overwrite"), &opened)?;
+     let mut phase = "planning";
+     let mut counters = Value::Null;
+     let outcome = (|| {
+         check(cancellation)?;
+         let destination = disk(&target.file)?;
+-        let plan = mover.plan_raw_with_destination(&source, &destination)?;
++        let plan = match &opened.disk {
++            Disk::Raw(raw) => mover.plan_raw_with_destination(raw, &destination)?,
++            Disk::Vmdk(vmdk) => mover.plan_with_destination(vmdk, &destination)?,
++        };
+         if target.existing {
+             target.check_name()?;
+         }
+-        if stamp(&source_file)? != initial {
+-            return Err(Failure::new("source_changed", "source changed before copy"));
+-        }
++        opened.revalidate()?;
+         phase = "copy";
+         check(cancellation)?;
+         target.mutation_started = true;
+-        let report = mover.execute_raw_plan_controlled(
+-            &plan,
+-            &source,
+-            &destination,
+-            cancellation,
+-            &|e: &rvvdk_datamover::CopyEvent| feedback.engine(e),
+-        )?;
++        let observer = |e: &rvvdk_datamover::CopyEvent| feedback.engine(e);
++        let report = match &opened.disk {
++            Disk::Raw(raw) => mover.execute_raw_plan_controlled(
++                &plan,
++                raw,
++                &destination,
++                cancellation,
++                &observer,
++            )?,
++            Disk::Vmdk(vmdk) => {
++                mover.execute_plan_controlled(&plan, vmdk, &destination, cancellation, &observer)?
++            }
++        };
+         let stats = report.stats();
+         counters = json!({"bytes_read":stats.bytes_read(),"bytes_written":stats.bytes_written(),"bytes_zeroed":stats.bytes_zeroed(),"bytes_discarded":stats.bytes_discarded(),"blocks_copied":stats.blocks_copied(),"extents_processed":stats.extents_processed()});
+         phase = "verification";
+@@ -263,19 +266,14 @@ fn copy_controlled<C: Cancellation>(
+         check(cancellation)?;
+         let verification = match &mut verifier {
+             Some(v) => {
+-                let r = v.verify_controlled(&source, &destination, cancellation, |n| {
++                let r = v.verify_controlled(source, &destination, cancellation, |n| {
+                     feedback.verification(n, source.size())
+                 })?;
+                 json!({"bytes_verified":r.bytes_verified,"elapsed_seconds":r.elapsed.as_secs_f64()})
+             }
+             None => Value::Null,
+         };
+-        if stamp(&source_file)? != initial {
+-            return Err(Failure::new(
+-                "source_changed",
+-                "source changed during copy or verification",
+-            ));
+-        }
++        opened.revalidate()?;
+         phase = "file_sync";
+         hook(phase, &target)?;
+         feedback.emit(phase, source.size(), None, Some(target.failure_state()));
+@@ -308,7 +306,7 @@ fn copy_controlled<C: Cancellation>(
+             None => Value::Null,
+         };
+         Ok(
+-            json!({"schema_version":1,"command":"copy","format":"raw","status":"completed", "source":PathReport::from(source_path.as_path()),"destination":PathReport::from(destination_path.as_path()),"destination_policy":if target.existing { "overwrite_in_place" } else { "create_new_no_clobber" },"logical_bytes":source.size(),"destination_tail_bytes":destination.size()-source.size(),"requested_backend":requested,"planned_backend":backend(plan.backend()),"selection_reason":reason(plan.execution_selection().reason()),"backend":backend(report.backend()),"runtime_fallback":runtime_fallback,"stats":counters,"verification":verification,"verification_payload_bytes":reserved,"copy_memory_budget_bytes":budget-reserved,"durability":if target.existing { "file_synced" } else { "file_and_directory_synced" },"elapsed_seconds":started.elapsed().as_secs_f64()}),
++            json!({"schema_version":1,"command":"copy","format":opened.format(),"status":"completed", "source":PathReport::from(source_path.as_path()),"destination":PathReport::from(destination_path.as_path()),"destination_policy":if target.existing { "overwrite_in_place" } else { "create_new_no_clobber" },"logical_bytes":source.size(),"destination_tail_bytes":destination.size()-source.size(),"requested_backend":requested,"planned_backend":backend(plan.backend()),"selection_reason":reason(plan.execution_selection().reason()),"backend":backend(report.backend()),"runtime_fallback":runtime_fallback,"stats":counters,"verification":verification,"verification_payload_bytes":reserved,"copy_memory_budget_bytes":budget-reserved,"durability":if target.existing { "file_synced" } else { "file_and_directory_synced" },"elapsed_seconds":started.elapsed().as_secs_f64()}),
+         )
+     })();
+     outcome.map_err(|mut error: Failure| {
+diff --git a/crates/rvvdk-vmdk/src/local.rs b/crates/rvvdk-vmdk/src/local.rs
+index a07aedf..f84aacf 100644
+--- a/crates/rvvdk-vmdk/src/local.rs
++++ b/crates/rvvdk-vmdk/src/local.rs
+@@ -37,6 +37,14 @@ impl LocalResolver {
+         path: impl AsRef<Path>,
+         limits: Limits,
+     ) -> Result<(DescriptorText, Self), BackingError> {
++        let (file, resolver) = Self::open_descriptor_file(path)?;
++        let text = DescriptorText::read_from(file, limits)?;
++        Ok((text, resolver))
++    }
++
++    /// Open a confined descriptor and retain its file for caller consistency checks.
++    /// The caller must acquire/parse its text with bounded `DescriptorText` APIs.
++    pub fn open_descriptor_file(path: impl AsRef<Path>) -> Result<(File, Self), BackingError> {
+         let path = path.as_ref();
+         let name = path
+             .file_name()
+@@ -53,11 +61,13 @@ impl LocalResolver {
+             .map_err(|e| BackingError::io("opening trusted descriptor directory", e))?;
+         let resolver = Self::from_directory(directory)?;
+         let file = resolver.open_regular(name)?;
+-        let text = DescriptorText::read_from(file, limits)?;
+-        Ok((text, resolver))
++        Ok((file, resolver))
+     }
+ 
+-    fn open_regular(&self, reference: &str) -> Result<File, BackingError> {
++    /// Open one regular file through the same confined namespace as `resolve`.
++    /// Useful for retaining descriptor-bound metadata observations; never reopen
++    /// a reference by joining it to a pathname.
++    pub fn open_regular(&self, reference: &str) -> Result<File, BackingError> {
+         let name = local_name(reference)?;
+         // O_PATH obtains an object identity without opening a FIFO/device for I/O.
+         // SAFETY: open_how consists solely of integer fields; zero is valid.
+diff --git a/crates/rvvdk-cli/benches/vmdk.rs b/crates/rvvdk-cli/benches/vmdk.rs
+new file mode 100644
+index 0000000..7b06fc6
+--- /dev/null
++++ b/crates/rvvdk-cli/benches/vmdk.rs
+@@ -0,0 +1,108 @@
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use std::{
++    fs,
++    time::{Duration, Instant},
++};
++fn vmdk(c: &mut Criterion) {
++    let dir = std::env::var_os("RVVDK_BENCH_DIR")
++        .map(std::path::PathBuf::from)
++        .unwrap_or_else(std::env::temp_dir);
++    let root = dir.join(format!("rvddk-vmdk-bench-{}", std::process::id()));
++    fs::create_dir_all(&root).unwrap();
++    let bytes: Vec<_> = (0..1024 * 1024).map(|n| (n * 29 + n / 251) as u8).collect();
++    fs::write(root.join("backing"), &bytes).unwrap();
++    let header = "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\n";
++    fs::write(
++        root.join("flat.vmdk"),
++        format!("{header}RW 2048 FLAT \"backing\" 0\n"),
++    )
++    .unwrap();
++    let mut text = header.to_owned();
++    let mut mixed = Vec::new();
++    for i in 0..64 {
++        if i % 2 == 0 {
++            text.push_str(&format!("RW 32 FLAT \"backing\" {}\n", i * 32));
++            mixed.extend_from_slice(&bytes[i * 16384..(i + 1) * 16384]);
++        } else {
++            text.push_str("RW 32 ZERO\n");
++            mixed.extend([0; 16384]);
++        }
++    }
++    fs::write(root.join("mixed.vmdk"), text).unwrap();
++    let destination = root.join("output.raw");
++    let mut group = c.benchmark_group("cli_vmdk");
++    group.sampling_mode(SamplingMode::Flat);
++    for (name, command, source, expected) in [
++        ("inspect_mixed", "inspect", "mixed.vmdk", &mixed),
++        ("plan_mixed", "plan", "mixed.vmdk", &mixed),
++        ("copy_flat_verify", "copy", "flat.vmdk", &bytes),
++        ("copy_mixed_verify", "copy", "mixed.vmdk", &mixed),
++        ("verify_mixed", "verify", "mixed.vmdk", &mixed),
++    ] {
++        let mut args = vec![
++            "rvddk".into(),
++            command.into(),
++            root.join(source).into_os_string(),
++        ];
++        if command != "inspect" {
++            args.push(destination.clone().into_os_string());
++        }
++        args.extend(["--format".into(), "vmdk".into(), "--json".into()]);
++        if command != "inspect" {
++            args.extend(["--block-size".into(), "65536".into()]);
++        }
++        if command == "plan" || command == "copy" {
++            args.extend([
++                "--backend".into(),
++                "auto".into(),
++                "--workers".into(),
++                "4".into(),
++            ]);
++        }
++        if command == "copy" {
++            args.push("--verify".into());
++        }
++        if command == "verify" {
++            fs::write(&destination, expected).unwrap();
++        }
++        let mut output = Vec::new();
++        let mut errors = Vec::new();
++        assert_eq!(
++            rvvdk_cli::run(args.clone(), &mut output, &mut errors),
++            0,
++            "{}",
++            String::from_utf8_lossy(&errors)
++        );
++        let report: serde_json::Value = serde_json::from_slice(&output).unwrap();
++        assert_eq!(report["format"], "vmdk");
++        if command == "copy" {
++            assert_eq!(report["backend"], "threaded");
++            assert_eq!(fs::read(&destination).unwrap(), *expected);
++            fs::remove_file(&destination).unwrap();
++        }
++        group.bench_function(name, |b| {
++            b.iter_custom(|n| {
++                let mut elapsed = Duration::ZERO;
++                for _ in 0..n {
++                    let started = Instant::now();
++                    let code =
++                        rvvdk_cli::run(args.clone(), &mut std::io::sink(), &mut std::io::sink());
++                    elapsed += started.elapsed();
++                    assert_eq!(code, 0);
++                    if command == "copy" {
++                        assert_eq!(fs::read(&destination).unwrap(), *expected);
++                        fs::remove_file(&destination).unwrap();
++                    }
++                }
++                elapsed
++            })
++        });
++        if command == "verify" {
++            fs::remove_file(&destination).unwrap();
++        }
++    }
++    group.finish();
++    fs::remove_dir_all(root).unwrap();
++}
++criterion_group! {name=benches; config=Criterion::default().sample_size(30).warm_up_time(Duration::from_millis(300)).measurement_time(Duration::from_secs(2)); targets=vmdk}
++criterion_main!(benches);
+diff --git a/crates/rvvdk-cli/src/source.rs b/crates/rvvdk-cli/src/source.rs
+new file mode 100644
+index 0000000..2aa7984
+--- /dev/null
++++ b/crates/rvvdk-cli/src/source.rs
+@@ -0,0 +1,178 @@
++//! Owned logical source and descriptor-bound observations. No backing pathname
++//! is reopened for metadata or identity checks.
++use crate::{error::Failure, target};
++use rvvdk_core::{BlockDevice, RawDisk, VirtualDisk};
++use rvvdk_local::LocalFileBlockDevice;
++use rvvdk_vmdk::{
++    BackingError, BackingResolver, DescriptorText, Limits, LocalResolver, ResolutionLimits,
++    ResolvedDescriptor, VmdkDisk,
++};
++use std::{
++    fs::{File, Metadata},
++    os::unix::fs::MetadataExt,
++    path::Path,
++    sync::{Arc, Mutex},
++};
++
++type Result<T> = std::result::Result<T, Failure>;
++type Stamp = (u64, u64, u64, i64, i64, i64, i64);
++pub(crate) fn stamp(file: &File) -> std::io::Result<Stamp> {
++    let m = file.metadata()?;
++    Ok((
++        m.dev(),
++        m.ino(),
++        m.len(),
++        m.mtime(),
++        m.mtime_nsec(),
++        m.ctime(),
++        m.ctime_nsec(),
++    ))
++}
++struct Observed {
++    file: File,
++    initial: Stamp,
++}
++impl Observed {
++    fn new(file: File) -> std::io::Result<Self> {
++        let initial = stamp(&file)?;
++        Ok(Self { file, initial })
++    }
++}
++pub(crate) enum Disk {
++    Raw(RawDisk<LocalFileBlockDevice>),
++    Vmdk(VmdkDisk),
++}
++pub(crate) struct Source {
++    pub disk: Disk,
++    files: Vec<Observed>,
++}
++struct ObservingResolver {
++    local: LocalResolver,
++    files: Mutex<Vec<Observed>>,
++}
++fn observation_error(source: std::io::Error) -> BackingError {
++    BackingError::Io {
++        operation: "retain source observation",
++        source,
++    }
++}
++impl BackingResolver for ObservingResolver {
++    fn resolve(&self, reference: &str) -> std::result::Result<Arc<dyn BlockDevice>, BackingError> {
++        let file = self.local.open_regular(reference)?;
++        let observed = Observed::new(file).map_err(observation_error)?;
++        let device = LocalFileBlockDevice::from_buffered_file(
++            observed.file.try_clone().map_err(observation_error)?,
++        )
++        .map_err(BackingError::Adopt)?;
++        self.files.lock().unwrap().push(observed);
++        Ok(Arc::new(device))
++    }
++}
++impl Source {
++    pub fn open(path: &Path, format: &str) -> Result<Self> {
++        let source = if format == "raw" {
++            let file = Observed::new(target::source(path)?)
++                .map_err(|e| Failure::io("inspect source", e))?;
++            let disk = RawDisk::new(LocalFileBlockDevice::from_buffered_file(
++                file.file
++                    .try_clone()
++                    .map_err(|e| Failure::io("retain source", e))?,
++            )?);
++            Self {
++                disk: Disk::Raw(disk),
++                files: vec![file],
++            }
++        } else {
++            let (file, local) = LocalResolver::open_descriptor_file(path)?;
++            let mut descriptor =
++                Observed::new(file).map_err(|e| Failure::io("inspect descriptor", e))?;
++            let text = DescriptorText::read_from(&mut descriptor.file, Limits::default())?;
++            let resolver = ObservingResolver {
++                local,
++                files: Mutex::new(vec![descriptor]),
++            };
++            let resolved = ResolvedDescriptor::resolve(
++                &text.parse()?,
++                &resolver,
++                ResolutionLimits::default(),
++            )?;
++            let disk = VmdkDisk::new(resolved)?;
++            Self {
++                disk: Disk::Vmdk(disk),
++                files: resolver.files.into_inner().unwrap(),
++            }
++        };
++        source.revalidate()?;
++        Ok(source)
++    }
++    pub fn logical(&self) -> &dyn VirtualDisk {
++        match &self.disk {
++            Disk::Raw(d) => d,
++            Disk::Vmdk(d) => d,
++        }
++    }
++    pub fn format(&self) -> &'static str {
++        match self.disk {
++            Disk::Raw(_) => "raw",
++            Disk::Vmdk(_) => "vmdk",
++        }
++    }
++    pub fn validate_backend(&self, requested: &str) -> Result<()> {
++        if matches!(self.disk, Disk::Vmdk(_)) && requested == "io-uring" {
++            return Err(Failure::new(
++                "unsupported_backend",
++                "VMDK logical sources require threaded or auto execution",
++            ));
++        }
++        Ok(())
++    }
++    pub fn revalidate(&self) -> Result<()> {
++        for file in &self.files {
++            if stamp(&file.file).map_err(|e| Failure::io("recheck source", e))? != file.initial {
++                return Err(Failure::new(
++                    "source_changed",
++                    "opened source metadata changed during operation",
++                ));
++            }
++        }
++        Ok(())
++    }
++    pub fn validate_destination(&self, metadata: &Metadata) -> Result<()> {
++        if self
++            .files
++            .iter()
++            .any(|f| (f.initial.0, f.initial.1) == (metadata.dev(), metadata.ino()))
++        {
++            return Err(Failure::new(
++                "same_file",
++                "destination aliases the source descriptor or a backing file",
++            ));
++        }
++        Ok(())
++    }
++    pub fn identity(&self) -> (u64, u64) {
++        (self.files[0].initial.0, self.files[0].initial.1)
++    }
++    pub fn vmdk_report(&self) -> Option<serde_json::Value> {
++        let Disk::Vmdk(disk) = &self.disk else {
++            return None;
++        };
++        Some(serde_json::json!({
++            "descriptor_identity": {"device":self.identity().0,"inode":self.identity().1},
++            "backing_file_count":disk.resolved().backings().len(),
++            "descriptor_extent_count":disk.resolved().extents().len(),
++            "cid":format!("{:08x}", disk.resolved().cid()),
++            "backing_identities":self.files.iter().skip(1).map(|f| serde_json::json!({"device":f.initial.0,"inode":f.initial.1})).collect::<Vec<_>>()
++        }))
++    }
++}
++impl From<BackingError> for Failure {
++    fn from(error: BackingError) -> Self {
++        Self::new("vmdk", error.to_string())
++    }
++}
++impl From<rvvdk_vmdk::DescriptorError> for Failure {
++    fn from(error: rvvdk_vmdk::DescriptorError) -> Self {
++        Self::new("vmdk", error.to_string())
++    }
++}
+diff --git a/crates/rvvdk-cli/tests/vmdk.rs b/crates/rvvdk-cli/tests/vmdk.rs
+new file mode 100644
+index 0000000..41a0798
+--- /dev/null
++++ b/crates/rvvdk-cli/tests/vmdk.rs
+@@ -0,0 +1,306 @@
++#![cfg(target_os = "linux")]
++use serde_json::Value;
++use std::{
++    ffi::OsString,
++    fs,
++    io::Write,
++    os::unix::fs::{FileExt, symlink},
++    path::PathBuf,
++    sync::atomic::{AtomicUsize, Ordering},
++};
++struct Fixture {
++    root: PathBuf,
++    source: PathBuf,
++    destination: PathBuf,
++    expected: Vec<u8>,
++}
++impl Fixture {
++    fn new() -> Self {
++        static NEXT: AtomicUsize = AtomicUsize::new(0);
++        let root = std::env::var_os("RVVDK_TEST_DIR")
++            .map(PathBuf::from)
++            .unwrap_or_else(std::env::temp_dir)
++            .join(format!(
++                "rvddk-vmdk-{}-{}",
++                std::process::id(),
++                NEXT.fetch_add(1, Ordering::Relaxed)
++            ));
++        fs::create_dir(&root).unwrap();
++        let source = root.join("disk.vmdk");
++        let destination = root.join("output.raw");
++        let a: Vec<u8> = (0..4096).map(|n| (n * 29 + n / 251) as u8).collect();
++        let b: Vec<u8> = a.iter().copied().rev().collect();
++        fs::write(root.join("a"), &a).unwrap();
++        fs::write(root.join("b"), &b).unwrap();
++        fs::write(&source, "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\nRW 3 FLAT \"a\" 1\nRW 4 ZERO\nRDONLY 2 FLAT \"b\" 3\nRW 1 FLAT \"a\" 0\n").unwrap();
++        let mut expected = a[512..2048].to_vec();
++        expected.extend([0; 2048]);
++        expected.extend(&b[1536..2560]);
++        expected.extend(&a[..512]);
++        Self {
++            root,
++            source,
++            destination,
++            expected,
++        }
++    }
++    fn args(&self, command: &str, extras: &[&str]) -> Vec<OsString> {
++        let mut a = vec![
++            "rvddk".into(),
++            command.into(),
++            self.source.clone().into_os_string(),
++        ];
++        if command != "inspect" {
++            a.push(self.destination.clone().into_os_string());
++        }
++        a.extend(["--format".into(), "vmdk".into(), "--json".into()]);
++        a.extend(extras.iter().map(OsString::from));
++        a
++    }
++    fn run(&self, command: &str, extras: &[&str]) -> (i32, Value) {
++        let (mut out, mut err) = (Vec::new(), Vec::new());
++        let code = rvvdk_cli::run(self.args(command, extras), &mut out, &mut err);
++        if code != 0 {
++            assert!(out.is_empty());
++        }
++        (
++            code,
++            serde_json::from_slice(if code == 0 { &out } else { &err }).unwrap(),
++        )
++    }
++}
++impl Drop for Fixture {
++    fn drop(&mut self) {
++        fs::remove_dir_all(&self.root).unwrap();
++    }
++}
++#[test]
++fn logical_inspection_and_preview_use_capacity_and_portable_selection() {
++    let f = Fixture::new();
++    let (code, r) = f.run("inspect", &["--extents"]);
++    assert_eq!(code, 0, "{r}");
++    assert_eq!(r["format"], "vmdk");
++    assert_eq!(r["source"]["logical_bytes"], 5120);
++    assert!(r["source"].get("identity").is_none());
++    assert_eq!(r["source"]["vmdk"]["backing_file_count"], 2);
++    assert_eq!(r["summary"]["data_bytes"], 3072);
++    assert_eq!(r["summary"]["zero_bytes"], 2048);
++    assert_eq!(r["summary"]["hole_bytes"], 0);
++    assert_eq!(r["extents"].as_array().unwrap().len(), 3);
++    let (code, r) = f.run("plan", &["--backend", "auto"]);
++    assert_eq!(code, 0, "{r}");
++    assert_eq!(r["execution"]["selected_backend"], "threaded");
++    assert_eq!(r["execution"]["selection_reason"], "portable_api");
++    assert_eq!(r["destination"]["copy_range_bytes"], 5120);
++    assert!(!f.destination.exists());
++}
++#[test]
++fn copies_verify_logical_bytes_and_preserve_overwrite_tail() {
++    for backend in ["threaded", "auto"] {
++        for overwrite in [false, true] {
++            let f = Fixture::new();
++            if overwrite {
++                fs::write(&f.destination, vec![0xa5; 6000]).unwrap();
++            }
++            let mut extra = vec![
++                "--verify",
++                "--backend",
++                backend,
++                "--workers",
++                "4",
++                "--block-size",
++                "777",
++            ];
++            if overwrite {
++                extra.push("--overwrite");
++            }
++            let (code, r) = f.run("copy", &extra);
++            assert_eq!(code, 0, "{r}");
++            assert_eq!(r["backend"], "threaded");
++            assert_eq!(r["format"], "vmdk");
++            assert_eq!(r["verification"]["bytes_verified"], 5120);
++            let bytes = fs::read(&f.destination).unwrap();
++            assert_eq!(&bytes[..5120], f.expected);
++            assert!(bytes[5120..].iter().all(|b| *b == 0xa5));
++            let (code, r) = f.run("verify", &["--block-size", "513"]);
++            assert_eq!(code, 0, "{r}");
++            assert_eq!(r["logical_bytes"], 5120);
++            fs::OpenOptions::new()
++                .write(true)
++                .open(&f.destination)
++                .unwrap()
++                .write_all_at(&[1], 2000)
++                .unwrap();
++            let (code, r) = f.run("verify", &[]);
++            assert_eq!(code, 1);
++            assert_eq!(r["error"]["code"], "verification_mismatch");
++            assert_eq!(r["error"]["details"]["mismatch_offset"], 2000);
++        }
++    }
++}
++#[test]
++fn descriptor_and_every_backing_hardlink_are_rejected_without_mutation() {
++    for alias in ["disk.vmdk", "a", "b"] {
++        for command in ["plan", "copy", "verify"] {
++            let f = Fixture::new();
++            let path = f.root.join(alias);
++            let before = fs::read(&path).unwrap();
++            fs::hard_link(&path, &f.destination).unwrap();
++            let extras = if command == "verify" {
++                vec![]
++            } else {
++                vec!["--overwrite"]
++            };
++            let (code, r) = f.run(command, &extras);
++            assert_eq!(code, 1, "{r}");
++            assert_eq!(r["error"]["code"], "same_file");
++            assert_eq!(fs::read(path).unwrap(), before);
++        }
++    }
++}
++#[test]
++fn native_rejection_precedes_destination_open_and_budget_failure_does_not_publish() {
++    let mut f = Fixture::new();
++    f.destination = f.root.join("missing-parent/out");
++    for command in ["plan", "copy"] {
++        let (code, r) = f.run(command, &["--backend", "io-uring"]);
++        assert_eq!(code, 1);
++        assert_eq!(r["error"]["code"], "unsupported_backend");
++    }
++    f.destination = f.root.join("output.raw");
++    let (code, r) = f.run("copy", &["--memory-budget", "1"]);
++    assert_eq!(code, 1, "{r}");
++    assert!(!f.destination.exists());
++}
++#[test]
++fn zero_only_source_and_explicit_raw_selection() {
++    let f = Fixture::new();
++    fs::write(
++        &f.source,
++        "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\nRW 10 ZERO\n",
++    )
++    .unwrap();
++    let (code, r) = f.run("copy", &["--verify"]);
++    assert_eq!(code, 0, "{r}");
++    assert_eq!(fs::read(&f.destination).unwrap(), vec![0; 5120]);
++    let mut args = f.args("inspect", &[]);
++    let pos = args.iter().position(|a| a == "vmdk").unwrap();
++    args[pos] = "raw".into();
++    let mut out = Vec::new();
++    assert_eq!(rvvdk_cli::run(args, &mut out, &mut Vec::new()), 0);
++    let r: Value = serde_json::from_slice(&out).unwrap();
++    assert_eq!(
++        r["source"]["logical_bytes"],
++        fs::metadata(&f.source).unwrap().len()
++    );
++}
++#[test]
++fn malformed_unsupported_and_unconfined_sources_fail_without_output() {
++    for text in [
++        "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"monolithicSparse\"\nRW 1 SPARSE \"a\"\n",
++        "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\nRW 1 FLAT \"../a\" 0\n",
++        "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\nRW 1 ZERO\n\0",
++    ] {
++        let f = Fixture::new();
++        fs::write(&f.source, text).unwrap();
++        let (code, r) = f.run("copy", &[]);
++        assert_eq!(code, 1);
++        assert_eq!(r["error"]["code"], "vmdk");
++        assert!(!f.destination.exists());
++    }
++    let f = Fixture::new();
++    fs::rename(f.root.join("a"), f.root.join("actual")).unwrap();
++    symlink("actual", f.root.join("a")).unwrap();
++    assert_eq!(f.run("copy", &[]).0, 1);
++    assert!(!f.destination.exists());
++    fs::remove_file(f.root.join("a")).unwrap();
++    fs::rename(f.root.join("actual"), f.root.join("a")).unwrap();
++    fs::rename(&f.source, f.root.join("actual.vmdk")).unwrap();
++    symlink("actual.vmdk", &f.source).unwrap();
++    assert_eq!(f.run("inspect", &[]).0, 1);
++}
++struct Events<F> {
++    buffer: Vec<u8>,
++    hook: F,
++}
++impl<F: FnMut(&Value)> Write for Events<F> {
++    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
++        self.buffer.extend(bytes);
++        while let Some(end) = self.buffer.iter().position(|b| *b == b'\n') {
++            let line: Vec<_> = self.buffer.drain(..=end).collect();
++            (self.hook)(&serde_json::from_slice(&line).unwrap());
++        }
++        Ok(bytes.len())
++    }
++    fn flush(&mut self) -> std::io::Result<()> {
++        Ok(())
++    }
++}
++#[test]
++fn same_size_backing_or_descriptor_mutation_prevents_publication() {
++    for name in ["a", "b", "disk.vmdk"] {
++        let f = Fixture::new();
++        let path = f.root.join(name);
++        let mut error = Value::Null;
++        let mut events = Events {
++            buffer: vec![],
++            hook: |v: &Value| {
++                if v["phase"] == "verification" {
++                    let file = fs::OpenOptions::new().write(true).open(&path).unwrap();
++                    file.write_all_at(b"#", 0).unwrap();
++                }
++                if !v["error"].is_null() {
++                    error = v.clone();
++                }
++            },
++        };
++        let mut out = Vec::new();
++        let code = rvvdk_cli::run(f.args("copy", &["--progress"]), &mut out, &mut events);
++        assert_eq!(code, 1);
++        assert!(out.is_empty());
++        assert!(!f.destination.exists());
++        assert_eq!(error["error"]["code"], "source_changed");
++    }
++}
++#[test]
++fn cancellation_and_publication_collision_preserve_output_policy() {
++    let f = Fixture::new();
++    let token = rvvdk_datamover::CancellationToken::new();
++    let mut events = Events {
++        buffer: vec![],
++        hook: |v: &Value| {
++            if v["phase"] == "publication" {
++                token.cancel();
++            }
++        },
++    };
++    let mut out = Vec::new();
++    assert_eq!(
++        rvvdk_cli::run_with_cancellation(
++            f.args("copy", &["--verify", "--progress"]),
++            &mut out,
++            &mut events,
++            &token
++        ),
++        130
++    );
++    assert!(!f.destination.exists());
++    assert!(out.is_empty());
++    let mut events = Events {
++        buffer: vec![],
++        hook: |v: &Value| {
++            if v["phase"] == "publication" {
++                fs::write(&f.destination, b"winner").unwrap();
++            }
++        },
++    };
++    assert_eq!(
++        rvvdk_cli::run(
++            f.args("copy", &["--progress", "--overwrite"]),
++            &mut Vec::new(),
++            &mut events
++        ),
++        1
++    );
++    assert_eq!(fs::read(&f.destination).unwrap(), b"winner");
++}

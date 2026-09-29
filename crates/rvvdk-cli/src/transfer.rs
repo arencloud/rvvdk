@@ -1,4 +1,5 @@
 use crate::progress::{Combined, Feedback, check};
+use crate::source::{Disk, Source};
 use crate::{
     error::Failure,
     preview::PathReport,
@@ -12,7 +13,7 @@ use rvvdk_datamover::{
 };
 use rvvdk_local::LocalFileBlockDevice;
 use serde_json::{Value, json};
-use std::{fs::File, io::Write, os::unix::fs::MetadataExt, path::PathBuf, time::Instant};
+use std::{fs::File, io::Write, path::PathBuf, time::Instant};
 
 type Result<T> = std::result::Result<T, Failure>;
 fn disk(file: &File) -> Result<RawDisk<LocalFileBlockDevice>> {
@@ -22,18 +23,7 @@ fn disk(file: &File) -> Result<RawDisk<LocalFileBlockDevice>> {
     )?))
 }
 fn stamp(file: &File) -> Result<(u64, u64, u64, i64, i64, i64, i64)> {
-    let m = file
-        .metadata()
-        .map_err(|e| Failure::io("inspect live file", e))?;
-    Ok((
-        m.dev(),
-        m.ino(),
-        m.len(),
-        m.mtime(),
-        m.mtime_nsec(),
-        m.ctime(),
-        m.ctime_nsec(),
-    ))
+    crate::source::stamp(file).map_err(|e| Failure::io("inspect live file", e))
 }
 fn backend(value: ExecutionBackend) -> &'static str {
     match value {
@@ -116,7 +106,8 @@ pub(crate) fn run<C: Cancellation>(
     } else {
         writeln!(
             out,
-            "RAW {name}: {} ({} logical bytes)",
+            "{} {name}: {} ({} logical bytes)",
+            report["format"].as_str().unwrap().to_ascii_uppercase(),
             report["status"].as_str().unwrap(),
             report["logical_bytes"]
         )
@@ -156,11 +147,15 @@ fn verify<C: Cancellation>(
     let started = Instant::now();
     let source_path = args.get_one::<PathBuf>("source").unwrap();
     let destination_path = args.get_one::<PathBuf>("destination").unwrap();
-    let source_file = target::source(source_path)?;
+    let opened = Source::open(source_path, args.get_one::<String>("format").unwrap())?;
+    let source = opened.logical();
     let destination_file = target::verify_destination(destination_path)?;
-    let source_stamp = stamp(&source_file)?;
     let destination_stamp = stamp(&destination_file)?;
-    let source = disk(&source_file)?;
+    opened.validate_destination(
+        &destination_file
+            .metadata()
+            .map_err(|e| Failure::io("inspect destination", e))?,
+    )?;
     let destination = disk(&destination_file)?;
     let mut verifier = Verifier::new(
         source.size(),
@@ -169,7 +164,7 @@ fn verify<C: Cancellation>(
     )?;
     feedback.emit("verifying", source.size(), None, None);
     let report = verifier
-        .verify_controlled(&source, &destination, cancellation, |n| {
+        .verify_controlled(source, &destination, cancellation, |n| {
             feedback.verification(n, source.size())
         })
         .map_err(|e| {
@@ -179,7 +174,8 @@ fn verify<C: Cancellation>(
             details["bytes_verified"] = json!(feedback.verified.get());
             failure
         })?;
-    if stamp(&source_file)? != source_stamp || stamp(&destination_file)? != destination_stamp {
+    opened.revalidate()?;
+    if stamp(&destination_file)? != destination_stamp {
         return Err(Failure::new(
             "source_changed",
             "verification endpoint changed during comparison",
@@ -187,7 +183,7 @@ fn verify<C: Cancellation>(
     }
     check(cancellation)?;
     Ok(
-        json!({"schema_version":1,"command":"verify","format":"raw","status":"verified", "source":PathReport::from(source_path.as_path()),"destination":PathReport::from(destination_path.as_path()),"logical_bytes":report.bytes_verified,"destination_tail_bytes":destination.size()-source.size(),"verification_payload_bytes":verifier.storage_bytes(),"elapsed_seconds":started.elapsed().as_secs_f64()}),
+        json!({"schema_version":1,"command":"verify","format":opened.format(),"status":"verified", "source":PathReport::from(source_path.as_path()),"destination":PathReport::from(destination_path.as_path()),"logical_bytes":report.bytes_verified,"destination_tail_bytes":destination.size()-source.size(),"verification_payload_bytes":verifier.storage_bytes(),"elapsed_seconds":started.elapsed().as_secs_f64()}),
     )
 }
 #[cfg(test)]
@@ -211,9 +207,8 @@ fn copy_controlled<C: Cancellation>(
     let started = Instant::now();
     let source_path = args.get_one::<PathBuf>("source").unwrap();
     let destination_path = args.get_one::<PathBuf>("destination").unwrap();
-    let source_file = target::source(source_path)?;
-    let initial = stamp(&source_file)?;
-    let source = disk(&source_file)?;
+    let opened = Source::open(source_path, args.get_one::<String>("format").unwrap())?;
+    let source = opened.logical();
     let budget = *args.get_one::<usize>("memory-budget").unwrap();
     let block = *args.get_one::<usize>("block-size").unwrap();
     let mut verifier = if args.get_flag("verify") {
@@ -226,35 +221,43 @@ fn copy_controlled<C: Cancellation>(
         .with_memory_budget(budget - reserved);
     let native = IoUringExecutionOptions::new(*args.get_one("queue-depth").unwrap()).unwrap();
     let requested = args.get_one::<String>("backend").unwrap();
+    opened.validate_backend(requested)?;
     let strategy = match requested.as_str() {
         "threaded" => ExecutionStrategy::Threaded,
         "auto" => ExecutionStrategy::Auto(native),
         _ => ExecutionStrategy::IoUring(native),
     };
     let mover = DataMover::with_execution_strategy(options, strategy);
-    let mut target = Target::open(destination_path, args.get_flag("overwrite"), &source_file)?;
+    let mut target = Target::open(destination_path, args.get_flag("overwrite"), &opened)?;
     let mut phase = "planning";
     let mut counters = Value::Null;
     let outcome = (|| {
         check(cancellation)?;
         let destination = disk(&target.file)?;
-        let plan = mover.plan_raw_with_destination(&source, &destination)?;
+        let plan = match &opened.disk {
+            Disk::Raw(raw) => mover.plan_raw_with_destination(raw, &destination)?,
+            Disk::Vmdk(vmdk) => mover.plan_with_destination(vmdk, &destination)?,
+        };
         if target.existing {
             target.check_name()?;
         }
-        if stamp(&source_file)? != initial {
-            return Err(Failure::new("source_changed", "source changed before copy"));
-        }
+        opened.revalidate()?;
         phase = "copy";
         check(cancellation)?;
         target.mutation_started = true;
-        let report = mover.execute_raw_plan_controlled(
-            &plan,
-            &source,
-            &destination,
-            cancellation,
-            &|e: &rvvdk_datamover::CopyEvent| feedback.engine(e),
-        )?;
+        let observer = |e: &rvvdk_datamover::CopyEvent| feedback.engine(e);
+        let report = match &opened.disk {
+            Disk::Raw(raw) => mover.execute_raw_plan_controlled(
+                &plan,
+                raw,
+                &destination,
+                cancellation,
+                &observer,
+            )?,
+            Disk::Vmdk(vmdk) => {
+                mover.execute_plan_controlled(&plan, vmdk, &destination, cancellation, &observer)?
+            }
+        };
         let stats = report.stats();
         counters = json!({"bytes_read":stats.bytes_read(),"bytes_written":stats.bytes_written(),"bytes_zeroed":stats.bytes_zeroed(),"bytes_discarded":stats.bytes_discarded(),"blocks_copied":stats.blocks_copied(),"extents_processed":stats.extents_processed()});
         phase = "verification";
@@ -263,19 +266,14 @@ fn copy_controlled<C: Cancellation>(
         check(cancellation)?;
         let verification = match &mut verifier {
             Some(v) => {
-                let r = v.verify_controlled(&source, &destination, cancellation, |n| {
+                let r = v.verify_controlled(source, &destination, cancellation, |n| {
                     feedback.verification(n, source.size())
                 })?;
                 json!({"bytes_verified":r.bytes_verified,"elapsed_seconds":r.elapsed.as_secs_f64()})
             }
             None => Value::Null,
         };
-        if stamp(&source_file)? != initial {
-            return Err(Failure::new(
-                "source_changed",
-                "source changed during copy or verification",
-            ));
-        }
+        opened.revalidate()?;
         phase = "file_sync";
         hook(phase, &target)?;
         feedback.emit(phase, source.size(), None, Some(target.failure_state()));
@@ -308,7 +306,7 @@ fn copy_controlled<C: Cancellation>(
             None => Value::Null,
         };
         Ok(
-            json!({"schema_version":1,"command":"copy","format":"raw","status":"completed", "source":PathReport::from(source_path.as_path()),"destination":PathReport::from(destination_path.as_path()),"destination_policy":if target.existing { "overwrite_in_place" } else { "create_new_no_clobber" },"logical_bytes":source.size(),"destination_tail_bytes":destination.size()-source.size(),"requested_backend":requested,"planned_backend":backend(plan.backend()),"selection_reason":reason(plan.execution_selection().reason()),"backend":backend(report.backend()),"runtime_fallback":runtime_fallback,"stats":counters,"verification":verification,"verification_payload_bytes":reserved,"copy_memory_budget_bytes":budget-reserved,"durability":if target.existing { "file_synced" } else { "file_and_directory_synced" },"elapsed_seconds":started.elapsed().as_secs_f64()}),
+            json!({"schema_version":1,"command":"copy","format":opened.format(),"status":"completed", "source":PathReport::from(source_path.as_path()),"destination":PathReport::from(destination_path.as_path()),"destination_policy":if target.existing { "overwrite_in_place" } else { "create_new_no_clobber" },"logical_bytes":source.size(),"destination_tail_bytes":destination.size()-source.size(),"requested_backend":requested,"planned_backend":backend(plan.backend()),"selection_reason":reason(plan.execution_selection().reason()),"backend":backend(report.backend()),"runtime_fallback":runtime_fallback,"stats":counters,"verification":verification,"verification_payload_bytes":reserved,"copy_memory_budget_bytes":budget-reserved,"durability":if target.existing { "file_synced" } else { "file_and_directory_synced" },"elapsed_seconds":started.elapsed().as_secs_f64()}),
         )
     })();
     outcome.map_err(|mut error: Failure| {

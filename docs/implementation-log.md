@@ -43,7 +43,8 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 | V0 | Planned | Independent VMware access feasibility; licensed/evaluation host needed for representative API workflows | Pending — first transport baseline follows functional proof |
 
 R1.1–R1.6 and R2.1–R2.6 are complete within their documented scopes; their detailed
-records appear below. R3 local CLI is complete within its documented contracts; R4 onward and V0 remain planned in the roadmap. Performance qualification
+records appear below. R3 local CLI and R4.1–R4.4 local FLAT/ZERO VMDK workflows are complete within their
+documented contracts; R4.5, later milestones and V0 remain planned. Performance qualification
 remains provisional as recorded for each step.
 
 ## Per-step record template
@@ -1396,15 +1397,56 @@ for memory FLAT 64 KiB, mixed 64 KiB, final-of-1,024 4 KiB, local FLAT 1 MiB cop
 and local mixed 1 MiB copy respectively. Copy includes final flush; memory reads
 exclude construction/revalidation. No speedup or earlier qualification closure.
 
+## R4.4 — Explicit CLI VMDK sources
+
+Date: 2026-09-29. Status: **Complete within the documented local subset**.
+Baseline: `e60a3eb`, initially clean. The enclosing commit records this step.
+[Evidence](benchmark-results/2026-09-29-r44/README.md) retains source/harness/binary
+identities, all samples and pairs, validation and reproducible SVG/PNG plots.
+
+Added explicit `--format vmdk` to inspect/plan/copy/verify, with RAW destinations.
+An owned source enum preserves typed native RAW execution and uses portable
+VmdkDisk execution. VMDK Auto selects Threaded; explicit io-uring rejects before
+destination effects. Logical reports include capacity, Data/Zero ranges and
+bounded source identity details. The confined resolver exposes file acquisition
+so the CLI can retain observations of the exact descriptor/backing objects.
+Every source alias rejects before overwrite; size/mtime/ctime observations detect
+changes during acquisition and copy/verification. Existing private publication,
+verification, cancellation and overwrite-tail policies apply unchanged.
+[Contract](cli-vmdk.md); [ADR-0036](adr/0036-cli-vmdk-sources.md).
+
+Validation: **440 distinct passed, one existing gated allocation test** (441 total).
+Eight integration tests cover logical reports, mixed reads/verified copies,
+overwrite tails, mismatch offsets, every descriptor/backing alias, early native
+rejection, strict format/confinement errors, budgets, Zero-only/explicit RAW input,
+same-size source changes, cancellation and publication races. A separate 76-test
+CLI/VMDK run passes with integration fixtures on Btrfs; five existing CLI unit
+fault tests retain their system-temporary fixtures. Formatting, strict all-target Clippy and core/datamover/VMDK wasm32
+checks pass (existing control::sum warning). A test-only byte-string Clippy style
+correction is retained in the evidence. No parser/mapping algorithms or dependency
+versions changed; no ESXi or VMware SDK was used.
+
+Performance: 30 matched runs show +9.86%, +8.31%, -0.48%, +1.42%, +0.82%
+for RAW inspect, RAW plan, Threaded copy+verify, native copy+verify and verify-only.
+Adverse preview aggregates/pairs and one +5.72% native pair triggered 18 longer
+runs: +10.67%, +5.36%, +1.44% respectively. All original/repeat pairs remain visible.
+The persistent preview cost is about 1–2 µs, accepted for nonblocking owned-file
+acquisition, descriptor adoption/retention and stronger metadata observations.
+Code inspection identifies the additional work; no isolated syscall attribution
+is claimed. No per-block scan was added. Controlled-runner tuning remains open.
+Fifteen new-mode runs yield 53.367 µs / 61.726 µs for mixed VMDK inspect/plan,
+22.453 ms / 24.671 ms for 1 MiB FLAT/mixed copy+verify with full publication, and
+159.038 µs for mixed verification. These are distinct workloads, not engine speedups.
+
 ## Next session
 
-Start **R4.4**: explicit CLI VMDK source selection for inspect/plan/copy/verify,
-with RAW destinations, existing publication/cancellation behavior, logical reports,
-and preflight alias/identity protection. Keep VMDK out of native RAW endpoints.
-Preserve explicit trailing-NUL input and custom reference-decoder limitations;
-extend either only with a documented bounded policy and validation.
+Start **R4.5**: define and implement bounded trailing-NUL descriptor acquisition
+compatibility, with unmodified generated hosted descriptor reference comparisons.
+Keep parser/resource/error rules explicit and custom independent-decoder
+qualification separate; neither limitation is silently closed by CLI integration.
 Each step gets tests, benchmarks, plots and a commit.
 
 ESXi remains unnecessary for local work; request the 60-day trial when V0's lab
-proof is ready. Keep PERF.0 and earlier adverse timing pairs open for a controlled
-runner. Do not infer VMware live-access compatibility from local format support.
+proof is ready. Keep PERF.0, R4.4 preview overhead/tuning and earlier adverse timing
+pairs open for a controlled runner. Do not infer VMware live-access compatibility
+from local format support.

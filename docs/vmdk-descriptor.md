@@ -1,8 +1,8 @@
 # VMDK descriptor subset (R4.1)
 
 `rvvdk-vmdk::Descriptor::parse(&[u8])` validates text and returns borrowed metadata.
-It opens no files and implements no `VirtualDisk` yet. The [logical reader](vmdk-logical.md) consumes resolved metadata; the CLI still
-accepts RAW only. This is the first format layer, independently implemented in Rust.
+It opens no files and implements no `VirtualDisk` yet. The [logical reader](vmdk-logical.md) consumes resolved metadata; the CLI
+also accepts explicit [VMDK sources](cli-vmdk.md). This is the first format layer, independently implemented in Rust.
 
 The format reference is VMware's [Virtual Disk Format 5.0, pages 3–5](https://github.com/vmware/open-vmdk/blob/master/vmdk_50_technote.pdf).
 The specification describes headers, ordered extents, 512-byte sector units,
@@ -89,7 +89,7 @@ absolute/traversal escapes and symlinks, bounds resource use, validates backing
 offset/end against live file length, and retains identities.
 Transport-neutral references remain supported. [R4.3](vmdk-logical.md) provides
 read-only FLAT/ZERO logical mapping, cross-extent reads and scoped reference-byte
-comparisons. CLI integration follows in R4.4. Container descriptors must not be
+comparisons. [R4.4 CLI integration](cli-vmdk.md) is available. Container descriptors must not be
 offered as native RAW endpoints.
 
 ## Fixtures and qualification

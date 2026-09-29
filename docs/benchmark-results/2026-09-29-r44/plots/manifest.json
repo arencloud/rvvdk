@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R4.4 \u00b7 Explicit CLI VMDK sources",
+    "candidate": "patch 74d64ce2",
+    "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm Btrfs \u00b7 full CLI invocation",
+    "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "repeat_sampling": "3 adjacent pairs \u00b7 40 flat samples/run \u00b7 0.5 s warmup \u00b7 4 s target",
+    "candidate_only": {
+      "title": "VMDK commands \u00b7 first cost baselines",
+      "note": "1 MiB sources \u00b7 copies include verification, file/directory sync and publication \u00b7 independent scales",
+      "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+    },
+    "workloads": {
+      "cli_preview/inspect_dense_json": {
+        "label": "RAW inspect \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "cli_preview/plan_new_json": {
+        "label": "RAW plan \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "cli_transfer/threaded_new_verify": {
+        "label": "RAW threaded copy + verify \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/native_new_verify": {
+        "label": "RAW native copy + verify \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/verify_only": {
+        "label": "RAW verify \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "cli_vmdk/inspect_mixed": {
+        "label": "VMDK inspect \u00b7 mixed 1 MiB",
+        "phase": "planning"
+      },
+      "cli_vmdk/plan_mixed": {
+        "label": "VMDK plan \u00b7 mixed 1 MiB",
+        "phase": "planning"
+      },
+      "cli_vmdk/copy_flat_verify": {
+        "label": "VMDK FLAT copy + verify \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "cli_vmdk/copy_mixed_verify": {
+        "label": "VMDK mixed copy + verify \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "cli_vmdk/verify_mixed": {
+        "label": "VMDK mixed verify \u00b7 1 MiB",
+        "phase": "copy"
+      }
+    }
+  },
+  "input_sha256": {
+    "plot-config.json": "4a98bf96a993f89834c02a7531d752f8463a22915f8b21ce98e14c09d5a0f3dd",
+    "environment.json": "3d25d280932bba1569b74c77d6152621b4a80701f9e9c7662c27b05a873d2060",
+    "measurements.json": "f1e7cd888b7e972e6eda15dd653301ddd43ff81791725eb308d107972a055810",
+    "summary.json": "0e639045cb779d7de9c7873f3de2cbebb1b913a0bc7fa0b1ce89268925d70fa7",
+    "followup-measurements.json": "0f5384acc9d7aabd67f6d21d40c608d6106c33ab0de948d6bef1ee29da17736a",
+    "followup-summary.json": "300f4bd36a602d6fd34a5a054c5a89e10749d93f55dd54eda198e6e5f0b34e92",
+    "candidate-only-measurements.json": "85fb7de352b9988b943beea11b0ea7d9a648aa82c7879a52b3e1851e65e618f3"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "394775d08cbd14d0eacb6894d09b56ae1b054d7445c6ac186340264bd28a12d9",
+    "planning-latency.png": "59d401b6033a591b70300180e6b07d9210dd935e5de1c46551d6425b7e37e97a",
+    "copy-latency.svg": "6fbd92e17dc026b1460863022a51558ba2e6318888cbd029efb21b18da21c2d1",
+    "copy-latency.png": "c0890bedf463857571538f77616499aef83b9685a1ff72fdcdbf1b433cf339cd",
+    "relative-change.svg": "b397d5ad149a84ffbdeb32680f08016db49ac07bbcdb69827b01021b8e426537",
+    "relative-change.png": "b50f0fdd1e0f9d3940cebce0783c9002bc036ccf644eabc82464ef03b4181392",
+    "sample-distributions.svg": "de3a394488053905e9c4db85f8885bd47ac38de2ed7878efb2ad502089048eab",
+    "sample-distributions.png": "c7f0bd4ed9e6415036785c9ed5ef65610d7ba086d67095b1fd51ba57a8f8a5f8",
+    "followup-change.svg": "1933652b4396f4a3119f16e18d0388524122c2087075280d36b8118708515ca1",
+    "followup-change.png": "6616289a85542d5ede0d6c1066e97f12b9f78976d10590ed925bc8079c36c952",
+    "candidate-only.svg": "01f80f12455cb36479818d0a631e1c414f52c2026421633060c66c1111f56f48",
+    "candidate-only.png": "d8e97b3934965f8a4e132d1eb9460a60b020bfc54ac08609959488545a97cafb",
+    "computed.json": "86d42351118f09831933ad183132c681dceeb58988861896da85cbd3dd61d563"
+  }
+}

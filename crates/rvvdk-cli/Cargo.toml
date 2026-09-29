@@ -10,6 +10,7 @@ name = "rvddk"
 path = "src/main.rs"
 
 [dependencies]
+rvvdk-vmdk = { path = "../rvvdk-vmdk" }
 rvvdk-core = { path = "../rvvdk-core" }
 rvvdk-datamover = { path = "../rvvdk-datamover" }
 rvvdk-local = { path = "../rvvdk-local" }
@@ -31,4 +32,8 @@ harness = false
 
 [[bench]]
 name = "lifecycle"
+harness = false
+
+[[bench]]
+name = "vmdk"
 harness = false
