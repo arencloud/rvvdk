@@ -1,9 +1,11 @@
+use crate::progress::{Combined, Feedback, check};
 use crate::{
     error::Failure,
     preview::PathReport,
     target::{self, Target},
 };
 use rvvdk_core::{RawDisk, VirtualDisk};
+use rvvdk_datamover::Cancellation;
 use rvvdk_datamover::{
     CopyOptions, DataMover, ExecutionBackend, ExecutionSelectionReason, ExecutionStrategy,
     IoUringExecutionOptions, NativeRuntimeFallback, Verifier,
@@ -50,17 +52,63 @@ fn reason(value: ExecutionSelectionReason) -> &'static str {
         _ => "unknown",
     }
 }
-pub(crate) fn run(
+pub(crate) fn run<C: Cancellation>(
     name: &str,
     args: &clap::ArgMatches,
     json_output: bool,
     out: &mut impl Write,
+    err: &mut impl Write,
+    cancellation: &C,
 ) -> Result<()> {
-    let report = if name == "copy" {
-        copy(args, |_, _| Ok(()))?
-    } else {
-        verify(args)?
+    let feedback = Feedback::new(err, args.get_flag("progress"), json_output);
+    let cancellation = Combined {
+        external: cancellation,
+        output_failed: &feedback.stopped,
     };
+    let outcome = if name == "copy" {
+        copy_controlled(args, |_, _| Ok(()), &cancellation, &feedback)
+    } else {
+        verify(args, &cancellation, &feedback)
+    };
+    let report = match outcome {
+        Ok(report) => report,
+        Err(error) => {
+            let mut error = feedback.output_error(error);
+            let state = error
+                .details
+                .as_ref()
+                .and_then(|d| d["destination_state"].as_str());
+            feedback.emit(
+                if error.code == "cancelled" {
+                    "cancelled"
+                } else {
+                    "failed"
+                },
+                0,
+                None,
+                state,
+            );
+            // A terminal progress write can also fail, without losing primary context.
+            error = feedback.output_error(error);
+            return Err(error);
+        }
+    };
+    feedback.emit(
+        "completed",
+        report["logical_bytes"].as_u64().unwrap(),
+        report["backend"].as_str(),
+        Some(if report["destination_policy"] == "create_new_no_clobber" {
+            "published"
+        } else {
+            "existing"
+        }),
+    );
+    if feedback.stopped.load(std::sync::atomic::Ordering::Acquire) {
+        let mut error = feedback.output_error(Failure::new("output", "write completed progress"));
+        error.details =
+            Some(json!({"phase":"report_output","operation_completed":true,"result":report}));
+        return Err(error);
+    }
     let result = if json_output {
         serde_json::to_writer_pretty(&mut *out, &report)
             .map_err(|e| Failure::new("output", e.to_string()))
@@ -98,7 +146,13 @@ pub(crate) fn run(
         e
     })
 }
-fn verify(args: &clap::ArgMatches) -> Result<Value> {
+fn verify<C: Cancellation>(
+    args: &clap::ArgMatches,
+    cancellation: &C,
+    feedback: &Feedback<impl Write>,
+) -> Result<Value> {
+    feedback.emit("preparing", 0, None, None);
+    check(cancellation)?;
     let started = Instant::now();
     let source_path = args.get_one::<PathBuf>("source").unwrap();
     let destination_path = args.get_one::<PathBuf>("destination").unwrap();
@@ -113,21 +167,47 @@ fn verify(args: &clap::ArgMatches) -> Result<Value> {
         *args.get_one("block-size").unwrap(),
         *args.get_one("memory-budget").unwrap(),
     )?;
-    let report = verifier.verify(&source, &destination)?;
+    feedback.emit("verifying", source.size(), None, None);
+    let report = verifier
+        .verify_controlled(&source, &destination, cancellation, |n| {
+            feedback.verification(n, source.size())
+        })
+        .map_err(|e| {
+            let mut failure = Failure::from(e);
+            let details = failure.details.get_or_insert_with(|| json!({}));
+            details["phase"] = json!("verification");
+            details["bytes_verified"] = json!(feedback.verified.get());
+            failure
+        })?;
     if stamp(&source_file)? != source_stamp || stamp(&destination_file)? != destination_stamp {
         return Err(Failure::new(
             "source_changed",
             "verification endpoint changed during comparison",
         ));
     }
+    check(cancellation)?;
     Ok(
         json!({"schema_version":1,"command":"verify","format":"raw","status":"verified", "source":PathReport::from(source_path.as_path()),"destination":PathReport::from(destination_path.as_path()),"logical_bytes":report.bytes_verified,"destination_tail_bytes":destination.size()-source.size(),"verification_payload_bytes":verifier.storage_bytes(),"elapsed_seconds":started.elapsed().as_secs_f64()}),
     )
 }
-fn copy(
+#[cfg(test)]
+fn copy(args: &clap::ArgMatches, hook: impl FnMut(&str, &Target) -> Result<()>) -> Result<Value> {
+    let mut sink = std::io::sink();
+    copy_controlled(
+        args,
+        hook,
+        &rvvdk_datamover::NoCancellation,
+        &Feedback::new(&mut sink, false, false),
+    )
+}
+fn copy_controlled<C: Cancellation>(
     args: &clap::ArgMatches,
     mut hook: impl FnMut(&str, &Target) -> Result<()>,
+    cancellation: &C,
+    feedback: &Feedback<impl Write>,
 ) -> Result<Value> {
+    feedback.emit("planning", 0, None, None);
+    check(cancellation)?;
     let started = Instant::now();
     let source_path = args.get_one::<PathBuf>("source").unwrap();
     let destination_path = args.get_one::<PathBuf>("destination").unwrap();
@@ -156,6 +236,7 @@ fn copy(
     let mut phase = "planning";
     let mut counters = Value::Null;
     let outcome = (|| {
+        check(cancellation)?;
         let destination = disk(&target.file)?;
         let plan = mover.plan_raw_with_destination(&source, &destination)?;
         if target.existing {
@@ -165,15 +246,26 @@ fn copy(
             return Err(Failure::new("source_changed", "source changed before copy"));
         }
         phase = "copy";
+        check(cancellation)?;
         target.mutation_started = true;
-        let report = mover.execute_raw_plan(&plan, &source, &destination)?;
+        let report = mover.execute_raw_plan_controlled(
+            &plan,
+            &source,
+            &destination,
+            cancellation,
+            &|e: &rvvdk_datamover::CopyEvent| feedback.engine(e),
+        )?;
         let stats = report.stats();
         counters = json!({"bytes_read":stats.bytes_read(),"bytes_written":stats.bytes_written(),"bytes_zeroed":stats.bytes_zeroed(),"bytes_discarded":stats.bytes_discarded(),"blocks_copied":stats.blocks_copied(),"extents_processed":stats.extents_processed()});
         phase = "verification";
         hook(phase, &target)?;
+        feedback.emit(phase, source.size(), None, Some(target.failure_state()));
+        check(cancellation)?;
         let verification = match &mut verifier {
             Some(v) => {
-                let r = v.verify(&source, &destination)?;
+                let r = v.verify_controlled(&source, &destination, cancellation, |n| {
+                    feedback.verification(n, source.size())
+                })?;
                 json!({"bytes_verified":r.bytes_verified,"elapsed_seconds":r.elapsed.as_secs_f64()})
             }
             None => Value::Null,
@@ -186,6 +278,8 @@ fn copy(
         }
         phase = "file_sync";
         hook(phase, &target)?;
+        feedback.emit(phase, source.size(), None, Some(target.failure_state()));
+        check(cancellation)?;
         target
             .file
             .sync_all()
@@ -195,12 +289,17 @@ fn copy(
         } else {
             phase = "publication";
             hook(phase, &target)?;
+            feedback.emit(phase, source.size(), None, Some(target.failure_state()));
+            check(cancellation)?;
             target.publish()?;
             phase = "directory_sync";
             hook(phase, &target)?;
+            feedback.emit(phase, source.size(), None, Some(target.failure_state()));
+            // Once linked, finish directory durability even if cancellation arrives.
             target.sync_parent()?;
             target.check_name()?;
         }
+        check(cancellation)?;
         let runtime_fallback = match report.runtime_fallback() {
             Some(NativeRuntimeFallback::RingUnavailable { os_error }) => {
                 json!({"reason":"ring_unavailable","os_error":os_error})
@@ -213,7 +312,7 @@ fn copy(
         )
     })();
     outcome.map_err(|mut error: Failure| {
-        error.details = Some(json!({"phase":phase,"destination_state":target.failure_state(),"confirmed_copy_stats":counters,"cause":error.details})); error
+        error.details = Some(json!({"phase":phase,"destination_state":target.failure_state(),"confirmed_copy_stats":counters,"bytes_verified":feedback.verified.get(),"cause":error.details})); error
     })
 }
 

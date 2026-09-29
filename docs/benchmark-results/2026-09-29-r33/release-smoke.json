@@ -1,0 +1,60 @@
+[
+  {
+    "argv": [
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/rvddk",
+      "--help"
+    ],
+    "exit_code": 0,
+    "stdout": "Inspect, plan, copy, and verify local RAW disks\n\nUsage: rvddk [OPTIONS] <COMMAND>\n\nCommands:\n  inspect  Inspect a regular RAW file\n  plan     Preview logical work and destination policy; does not create or write output\n  copy     Copy RAW bytes; publish new output without replacement\n  verify   Compare source bytes with the destination prefix; no writes\n  help     Print this message or the help of the given subcommand(s)\n\nOptions:\n      --json     Emit schema-versioned JSON; errors go to stderr\n  -h, --help     Print help\n  -V, --version  Print version\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/rvddk",
+      "copy",
+      "--help"
+    ],
+    "exit_code": 0,
+    "stdout": "Copy RAW bytes; publish new output without replacement\n\nUsage: rvddk copy [OPTIONS] --format <format> <source> <destination>\n\nArguments:\n  <source>       \n  <destination>  \n\nOptions:\n      --format <format>                Explicit input format; no format autodetection [possible values: raw]\n      --json                           Emit schema-versioned JSON; errors go to stderr\n      --memory-budget <memory-budget>  Planning/execution payload budget in bytes; not an RSS limit [default: 268435456]\n      --block-size <block-size>        Copy/comparison block size in bytes [default: 1048576]\n      --overwrite                      Modify an existing destination in place; failures may leave partial changes\n      --backend <backend>              Execution backend; Auto can fall back before mutation [default: threaded] [possible values: threaded, auto, io-uring]\n      --workers <workers>              Threaded worker count [default: 1]\n      --queue-depth <queue-depth>      Requested native queue depth [default: 8]\n      --progress                       Write lifecycle progress to stderr; JSON lines with --json\n      --verify                         Read back and compare all logical bytes before publishing new output\n  -h, --help                           Print help\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/rvddk",
+      "verify",
+      "--help"
+    ],
+    "exit_code": 0,
+    "stdout": "Compare source bytes with the destination prefix; no writes\n\nUsage: rvddk verify [OPTIONS] --format <format> <source> <destination>\n\nArguments:\n  <source>       \n  <destination>  \n\nOptions:\n      --format <format>                Explicit input format; no format autodetection [possible values: raw]\n      --json                           Emit schema-versioned JSON; errors go to stderr\n      --memory-budget <memory-budget>  Planning/execution payload budget in bytes; not an RSS limit [default: 268435456]\n      --block-size <block-size>        Copy/comparison block size in bytes [default: 1048576]\n      --progress                       Write lifecycle progress to stderr; JSON lines with --json\n  -h, --help                           Print help\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/rvddk",
+      "copy",
+      "/home/egevorky/RustroverProjects/rvvdk/target/r33-benchmark-storage/tmp3zke2ni8/source",
+      "/home/egevorky/RustroverProjects/rvvdk/target/r33-benchmark-storage/tmp3zke2ni8/dest",
+      "--format",
+      "raw",
+      "--progress",
+      "--verify"
+    ],
+    "exit_code": 0,
+    "stdout": "RAW copy: completed (8283 logical bytes)\nBackend: threaded; verification: true; durability: file_and_directory_synced\n",
+    "stderr": "planning: 0/0 bytes processed, 0 bytes verified\ncopy_preparing: 0/8283 bytes processed, 0 bytes verified\ncopy_started: 0/8283 bytes processed, 0 bytes verified\ncopying: 8283/8283 bytes processed, 0 bytes verified\ncopy_flushing: 8283/8283 bytes processed, 0 bytes verified\ncopy_flushed: 8283/8283 bytes processed, 0 bytes verified\nverification: 8283/8283 bytes processed, 0 bytes verified\nverifying: 8283/8283 bytes processed, 8283 bytes verified\nfile_sync: 8283/8283 bytes processed, 8283 bytes verified\npublication: 8283/8283 bytes processed, 8283 bytes verified\ndirectory_sync: 8283/8283 bytes processed, 8283 bytes verified\ncompleted: 8283/8283 bytes processed, 8283 bytes verified\n"
+  },
+  {
+    "argv": [
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/rvddk",
+      "verify",
+      "/home/egevorky/RustroverProjects/rvvdk/target/r33-benchmark-storage/tmp3zke2ni8/source",
+      "/home/egevorky/RustroverProjects/rvvdk/target/r33-benchmark-storage/tmp3zke2ni8/dest",
+      "--format",
+      "raw",
+      "--progress"
+    ],
+    "exit_code": 0,
+    "stdout": "RAW verify: verified (8283 logical bytes)\nVerified source-length prefix; destination tail: 0 bytes\n",
+    "stderr": "preparing: 0/0 bytes processed, 0 bytes verified\nverifying: 0/8283 bytes processed, 0 bytes verified\nverifying: 0/8283 bytes processed, 8283 bytes verified\ncompleted: 0/8283 bytes processed, 8283 bytes verified\n"
+  }
+]

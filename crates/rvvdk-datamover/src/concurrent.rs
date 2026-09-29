@@ -91,12 +91,40 @@ where
     D: VirtualDisk + ?Sized,
     P: FnOnce(&SyncSender<WorkItem>) -> Result<()>,
 {
+    execute_controlled(
+        source,
+        destination,
+        worker_count,
+        queue_capacity,
+        pool,
+        &(),
+        |sender, _| producer(sender),
+    )
+}
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn execute_controlled<S, D, P, C>(
+    source: &S,
+    destination: &D,
+    worker_count: usize,
+    queue_capacity: usize,
+    pool: &BufferPool,
+    control: &C,
+    producer: P,
+) -> Result<WorkerStats>
+where
+    S: VirtualDisk + ?Sized,
+    D: VirtualDisk + ?Sized,
+    C: crate::control::Checkpoint,
+    P: FnOnce(&SyncSender<WorkItem>, &dyn Fn() -> Result<()>) -> Result<()>,
+{
     let (sender, receiver) = sync_channel::<WorkItem>(queue_capacity);
 
     let receiver = Arc::new(Mutex::new(receiver));
 
     let results = Mutex::new(Vec::<WorkerStats>::with_capacity(worker_count));
     let failure = Failure::default();
+    let observed = Mutex::new(WorkerStats::default());
+    let cancellation = control.cancellation();
 
     std::thread::scope(|scope| {
         for _ in 0..worker_count {
@@ -104,9 +132,18 @@ where
 
             let results = &results;
             let failure = &failure;
+            let observed = &observed;
 
             scope.spawn(move || {
-                let stats = run_worker(source, destination, &receiver, pool, failure);
+                let stats = run_worker_controlled::<_, _, C>(
+                    source,
+                    destination,
+                    &receiver,
+                    pool,
+                    failure,
+                    cancellation,
+                    observed,
+                );
                 results
                     .lock()
                     .unwrap_or_else(|p| p.into_inner())
@@ -118,7 +155,15 @@ where
         // wakes a producer blocked in send, even when the queue is full.
         drop(receiver);
 
-        if let Err(error) = producer(&sender) {
+        let checkpoint = || {
+            if C::ENABLED {
+                let stats = *observed.lock().unwrap_or_else(|p| p.into_inner());
+                control.check(stats.progress())
+            } else {
+                Ok(())
+            }
+        };
+        if let Err(error) = producer(&sender, &checkpoint) {
             failure.record(error);
         }
 
@@ -157,12 +202,15 @@ where
     Ok(total)
 }
 
-fn run_worker<S, D>(
+#[allow(clippy::too_many_arguments)]
+fn run_worker_controlled<S, D, C: crate::control::Checkpoint>(
     source: &S,
     destination: &D,
     receiver: &Arc<Mutex<Receiver<WorkItem>>>,
     pool: &BufferPool,
     failure: &Failure,
+    cancellation: &dyn crate::Cancellation,
+    observed: &Mutex<WorkerStats>,
 ) -> WorkerStats
 where
     S: VirtualDisk + ?Sized,
@@ -190,7 +238,28 @@ where
         if failure.is_stopped() {
             break;
         }
-        if let Err(error) = process_work(source, destination, work, pool, &mut stats) {
+        if C::ENABLED && cancellation.is_cancelled() {
+            failure.record(Error::Cancelled);
+            break;
+        }
+        let before = stats;
+        let result = process_work_controlled::<S, D, C>(
+            source,
+            destination,
+            work,
+            pool,
+            &mut stats,
+            cancellation,
+        );
+        if C::ENABLED {
+            let mut sum = observed.lock().unwrap_or_else(|p| p.into_inner());
+            sum.bytes_read += stats.bytes_read - before.bytes_read;
+            sum.bytes_written += stats.bytes_written - before.bytes_written;
+            sum.bytes_zeroed += stats.bytes_zeroed - before.bytes_zeroed;
+            sum.bytes_discarded += stats.bytes_discarded - before.bytes_discarded;
+            sum.blocks_copied += stats.blocks_copied - before.blocks_copied;
+        }
+        if let Err(error) = result {
             failure.record(error);
             break;
         }
@@ -199,12 +268,13 @@ where
     stats
 }
 
-fn process_work<S, D>(
+fn process_work_controlled<S, D, C: crate::control::Checkpoint>(
     source: &S,
     destination: &D,
     work: WorkItem,
     pool: &BufferPool,
     stats: &mut WorkerStats,
+    cancellation: &dyn crate::Cancellation,
 ) -> Result<()>
 where
     S: VirtualDisk + ?Sized,
@@ -225,6 +295,9 @@ where
                 .read_exact_at(work.offset(), buffer)
                 .map_err(|e| work_failure(CopyOperation::Read, work, e))?;
             stats.bytes_read += work.length() as u64;
+            if C::ENABLED && cancellation.is_cancelled() {
+                return Err(Error::Cancelled);
+            }
 
             destination
                 .write_all_at(work.offset(), buffer)

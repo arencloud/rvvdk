@@ -43,7 +43,7 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 | V0 | Planned | Independent VMware access feasibility; licensed/evaluation host needed for representative API workflows | Pending — first transport baseline follows functional proof |
 
 R1.1–R1.6 and R2.1–R2.6 are complete within their documented scopes; their detailed
-records appear below. R3.1 inspect/plan and R3.2 copy/verify are complete; R3.3 onward and V0 remain planned in the roadmap. Performance qualification
+records appear below. R3 local CLI is complete within its documented contracts; R4 onward and V0 remain planned in the roadmap. Performance qualification
 remains provisional as recorded for each step.
 
 ## Per-step record template
@@ -1251,16 +1251,60 @@ native new+verify and verify-only respectively. Copy timers include file and
 directory durability; verify-only has a different boundary. Earlier PERF.0 and
 adverse qualification results remain open.
 
+## R3.3 — Lifecycle progress and cancellation
+
+Date: 2026-09-29. Status: **Complete within the cooperative local contract**.
+Baseline: `d83dcc3`, initially clean. [Evidence](benchmark-results/2026-09-29-r33/README.md)
+retains initial/final source and binary identities, raw samples, diagnostics,
+resource logs, validation and reproducible SVG/PNG charts. The enclosing commit
+records this step; dependency versions and execution defaults are unchanged.
+
+Added controlled portable/RAW execution APIs, CancellationToken/predicate,
+coordinator CopyEvent lifecycle states and verification checkpoints. Concurrent
+workers aggregate counters and stop taking work; native cancellation preserves
+owned shutdown/quarantine. Unobserved APIs compile out generic checks and legacy
+snapshot cadence remains compatible. CLI --progress uses human lines or JSON
+lines on stderr. Binary-only SIGINT/SIGTERM handlers record an atomic request;
+programmatic cancellation is available without process-global handlers.
+
+Engine flush completion is distinct from CLI verification/publication completion.
+Before linking, cancellation leaves new output private. After linking, finish
+directory sync/name inspection and report published cancellation; never unlink.
+In-place partial effects and tails retain R3.2 semantics. Progress-output failure
+stops cooperatively. No hard deadline, forced syscall cancellation or rollback is
+promised. [Contract](cli-progress.md); [ADR-0032](adr/0032-copy-lifecycle-cancellation.md).
+
+Validation: **393 passed, one unchanged gated allocation test** (394 total).
+Eleven new tests cover progress/terminal order, flush failure and cancellation,
+worker counters/joins, native reuse, verification prefixes, sparse processing,
+publication boundaries, overwrite preservation and progress output failure.
+Three bounded real binary cases exercise SIGINT/SIGTERM. All 24 CLI integration
+and five controlled-execution tests pass on Btrfs. Formatting, strict all-target
+Clippy and core/datamover wasm32 checks pass. Initial test-helper/fixture compile
+errors and the missing platform guard are retained. After the guard fix, some
+release hashes changed; all timings were rerun on the final source.
+
+Final performance: 48 matched runs yield -4.20%, +1.55%, +1.76%, -0.88%,
+-1.83%, +1.62%, +0.34%, -0.58%
+for Threaded 1 MiB, native 1 MiB, four-worker 16 MiB, CLI plan, CLI new,
+CLI new+verify, CLI native+verify and verify-only respectively.
+The +5.60% four-worker pair triggered repeats: -6.07% aggregate, no adverse pair
+above +1.53%, and substantial timing spread; no speedup is claimed.
+Twelve candidate-only runs yield 48.785 ms, 48.697 ms, 772.529 µs, 817.444 µs for
+Threaded/native full progress and Threaded/native early stop respectively. Stop
+timers cover the whole invocation through cleanup, not signal reaction time.
+Sink/capture boundaries differ. No engine speedup or earlier qualification closure
+is claimed; PERF.0 and prior adverse results remain open.
+
 ## Next session
 
-Start **R3.3**: lifecycle progress across all backends, cooperative cancellation,
-signal/exit handling and partial-failure reports. Distinguish processed bytes from
-completion after flush/verification/publication. Preserve R3.1 preview schemas and
-R3.2 destination/durability contracts. Cover cancellation before mutation, during
-transfer, around flush/verification and publication; never falsely report success
-or unlink a published/racing destination. Measure matched controls and observer/
-cancellation overhead with the existing evidence/plot workflow.
+Start **R4.1**: decide and document the first read-only VMDK descriptor subset,
+fixture provenance and bounded parsing/validation. Follow with backing resolution
+and FLAT/ZERO logical mapping as separate measured commits. Preserve RAW CLI,
+publication/cancellation contracts and independent Rust implementation. Reject
+unsupported variants explicitly; do not infer VMware live-access compatibility
+from local parsing. Keep architecture, roadmap, benchmarks and plots synchronized.
 
-Keep PERF.0 and earlier adverse timing pairs open for controlled-runner
-qualification. Commit each completed step. ESXi remains unnecessary; request the
-60-day trial when V0 is ready.
+Commit each completed step. ESXi remains unnecessary for local descriptor work;
+request the 60-day trial when V0's lab proof is ready. Keep PERF.0 and previous
+adverse timing pairs open for controlled-runner qualification.

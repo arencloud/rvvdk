@@ -119,3 +119,13 @@ actual capacities afterward. Empty comparisons allocate no payload. CLI
 Standalone verify admits only its comparison buffers. This shares the exclusions
 above, including allocator metadata and backend working allocations; it is not an
 RSS limit. See [the transfer contract](cli-transfer.md).
+
+
+## Lifecycle bookkeeping (R3.3)
+
+Controlled copies retain a fixed lifecycle state and, for multiple workers, one
+mutex-protected cumulative WorkerStats aggregate. No event history or extra
+per-block queue is retained. These control objects and consumer callback/output
+allocations are runtime metadata outside the payload budget, as with existing
+worker handles and locks. Native cancellation retains the same shutdown/quarantine
+ownership rules and budget limits. See [the lifecycle contract](cli-progress.md).

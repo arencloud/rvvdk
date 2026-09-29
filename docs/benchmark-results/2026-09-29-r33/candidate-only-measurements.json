@@ -1,0 +1,1706 @@
+[
+  {
+    "tag": "transfer1-0",
+    "benchmark": "cli_lifecycle/threaded_progress",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/lifecycle-c70d48e63e84258e",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_lifecycle/threaded_progress$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_lifecycle",
+        "function_id": "threaded_progress",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_lifecycle/threaded_progress",
+        "directory_name": "cli_lifecycle/threaded_progress",
+        "title": "cli_lifecycle/threaded_progress"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 48096212.84166667,
+            "upper_bound": 51513392.45
+          },
+          "point_estimate": 49689272.25,
+          "standard_error": 877844.4772768038
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 47667176.0,
+            "upper_bound": 49931186.25
+          },
+          "point_estimate": 48808765.75,
+          "standard_error": 579432.0989862357
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1508916.8645113707,
+            "upper_bound": 5390975.168091059
+          },
+          "point_estimate": 2957103.468900919,
+          "standard_error": 982597.622342631
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2719849.8833003608,
+            "upper_bound": 6459393.090703863
+          },
+          "point_estimate": 4855236.134032451,
+          "standard_error": 962105.4773762652
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "times": [
+          123567228.0,
+          107078746.0,
+          101940511.0,
+          96836316.0,
+          96199720.0,
+          94111034.0,
+          86070568.0,
+          97673982.0,
+          90805587.0,
+          88722998.0,
+          90072973.0,
+          88744904.0,
+          97185027.0,
+          96557670.0,
+          93624778.0,
+          90730339.0,
+          95278291.0,
+          99349293.0,
+          92064506.0,
+          101177937.0,
+          98536106.0,
+          130365896.0,
+          100375452.0,
+          101602934.0,
+          104200855.0,
+          97561081.0,
+          112236759.0,
+          110309405.0,
+          99158961.0,
+          99216478.0
+        ]
+      },
+      "tukey.json": [
+        35247656.875,
+        41060413.9375,
+        56561099.4375,
+        62373856.5
+      ]
+    }
+  },
+  {
+    "tag": "transfer1-1",
+    "benchmark": "cli_lifecycle/native_progress",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/lifecycle-c70d48e63e84258e",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_lifecycle/native_progress$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_lifecycle",
+        "function_id": "native_progress",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_lifecycle/native_progress",
+        "directory_name": "cli_lifecycle/native_progress",
+        "title": "cli_lifecycle/native_progress"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 46389353.06583334,
+            "upper_bound": 49239690.46666667
+          },
+          "point_estimate": 47823442.5,
+          "standard_error": 726195.2337683875
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 45110331.0,
+            "upper_bound": 50789006.75
+          },
+          "point_estimate": 48696921.25,
+          "standard_error": 1514140.8081868186
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1500009.4038695097,
+            "upper_bound": 6143697.105127573
+          },
+          "point_estimate": 4391293.217588961,
+          "standard_error": 1384224.4143745257
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3294157.818115296,
+            "upper_bound": 4701419.922074489
+          },
+          "point_estimate": 4062970.967643558,
+          "standard_error": 358222.2604337564
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "times": [
+          95722230.0,
+          98831631.0,
+          103268211.0,
+          99670905.0,
+          95956054.0,
+          100631924.0,
+          101547136.0,
+          99991711.0,
+          104042129.0,
+          102182482.0,
+          112763932.0,
+          103367021.0,
+          92717340.0,
+          101608891.0,
+          103051709.0,
+          103555253.0,
+          102020228.0,
+          103585989.0,
+          93321157.0,
+          86767170.0,
+          85899187.0,
+          94459230.0,
+          87294405.0,
+          87027357.0,
+          87723984.0,
+          85126550.0,
+          86901064.0,
+          83877823.0,
+          83548320.0,
+          82945527.0
+        ]
+      },
+      "tukey.json": [
+        20975360.25,
+        32261209.875,
+        62356808.875,
+        73642658.5
+      ]
+    }
+  },
+  {
+    "tag": "transfer1-2",
+    "benchmark": "cli_lifecycle/threaded_cancel",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/lifecycle-c70d48e63e84258e",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_lifecycle/threaded_cancel$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_lifecycle",
+        "function_id": "threaded_cancel",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_lifecycle/threaded_cancel",
+        "directory_name": "cli_lifecycle/threaded_cancel",
+        "title": "cli_lifecycle/threaded_cancel"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 780452.374901961,
+            "upper_bound": 815141.4976470593
+          },
+          "point_estimate": 794267.8525490197,
+          "standard_error": 9191.02686116545
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 774293.8764705881,
+            "upper_bound": 790374.4411764706
+          },
+          "point_estimate": 782129.9941176471,
+          "standard_error": 5273.817424467203
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 10377.894574579142,
+            "upper_bound": 26926.44000901891
+          },
+          "point_estimate": 17533.00925931515,
+          "standard_error": 4070.031315962103
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 13723.149332791128,
+            "upper_bound": 82668.3208743049
+          },
+          "point_estimate": 51599.163695646326,
+          "standard_error": 21932.191490357418
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0,
+          85.0
+        ],
+        "times": [
+          64500988.0,
+          65330196.0,
+          88911294.0,
+          72598296.0,
+          70131212.0,
+          67186573.0,
+          65982759.0,
+          66103671.0,
+          66262390.0,
+          68183079.0,
+          68268492.0,
+          65655331.0,
+          67177082.0,
+          67923351.0,
+          67155680.0,
+          67433229.0,
+          68699419.0,
+          67924394.0,
+          65433217.0,
+          65974628.0,
+          66301413.0,
+          66660686.0,
+          65518487.0,
+          67070246.0,
+          65398524.0,
+          64628907.0,
+          67076032.0,
+          65561868.0,
+          65375825.0,
+          64955755.0
+        ]
+      },
+      "tukey.json": [
+        690763.1470588236,
+        730848.2338235294,
+        837741.7985294117,
+        877826.8852941175
+      ]
+    }
+  },
+  {
+    "tag": "transfer1-3",
+    "benchmark": "cli_lifecycle/native_cancel",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/lifecycle-c70d48e63e84258e",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_lifecycle/native_cancel$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_lifecycle",
+        "function_id": "native_cancel",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_lifecycle/native_cancel",
+        "directory_name": "cli_lifecycle/native_cancel",
+        "title": "cli_lifecycle/native_cancel"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 809538.8550200802,
+            "upper_bound": 837378.6418674699
+          },
+          "point_estimate": 822388.4919678716,
+          "standard_error": 7170.884342317095
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 807294.1987951808,
+            "upper_bound": 821656.6987951808
+          },
+          "point_estimate": 813831.3012048192,
+          "standard_error": 3664.260092402615
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 9774.844145738936,
+            "upper_bound": 40036.79060727723
+          },
+          "point_estimate": 20857.74337789385,
+          "standard_error": 7929.731077114802
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20799.118762932885,
+            "upper_bound": 53201.70799050987
+          },
+          "point_estimate": 40003.135138802485,
+          "standard_error": 8207.782249526665
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0,
+          83.0
+        ],
+        "times": [
+          64497657.0,
+          67614474.0,
+          66016432.0,
+          66758029.0,
+          64135985.0,
+          65050571.0,
+          65054347.0,
+          64878773.0,
+          66996532.0,
+          78647151.0,
+          67475054.0,
+          67481522.0,
+          67141550.0,
+          67014305.0,
+          67409424.0,
+          67936485.0,
+          68802465.0,
+          69975060.0,
+          67812966.0,
+          69537085.0,
+          76937448.0,
+          74144432.0,
+          68108750.0,
+          69947385.0,
+          71262736.0,
+          68286262.0,
+          68338681.0,
+          66218155.0,
+          66467118.0,
+          67800511.0
+        ]
+      },
+      "tukey.json": [
+        724094.2891566263,
+        762889.5888554216,
+        866343.7213855423,
+        905139.0210843375
+      ]
+    }
+  },
+  {
+    "tag": "transfer2-0",
+    "benchmark": "cli_lifecycle/threaded_progress",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/lifecycle-c70d48e63e84258e",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_lifecycle/threaded_progress$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_lifecycle",
+        "function_id": "threaded_progress",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_lifecycle/threaded_progress",
+        "directory_name": "cli_lifecycle/threaded_progress",
+        "title": "cli_lifecycle/threaded_progress"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 45981704.15958334,
+            "upper_bound": 47798914.81666667
+          },
+          "point_estimate": 46905361.31666667,
+          "standard_error": 463461.2383574516
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 46290949.75,
+            "upper_bound": 48223985.25
+          },
+          "point_estimate": 47257025.25,
+          "standard_error": 474682.8834801046
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1165850.2729520202,
+            "upper_bound": 3336668.706612289
+          },
+          "point_estimate": 2080184.5027193427,
+          "standard_error": 559829.4624818293
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1750755.782348966,
+            "upper_bound": 3300629.7026694654
+          },
+          "point_estimate": 2593405.0317363045,
+          "standard_error": 397267.0920883216
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "times": [
+          91537699.0,
+          93448336.0,
+          100409122.0,
+          97746708.0,
+          99240691.0,
+          98084678.0,
+          98956875.0,
+          93804267.0,
+          96480085.0,
+          85567253.0,
+          105353408.0,
+          93896850.0,
+          89339821.0,
+          86902960.0,
+          86935652.0,
+          95760523.0,
+          96759964.0,
+          96481015.0,
+          94788021.0,
+          92594357.0,
+          91878141.0,
+          98020913.0,
+          92569442.0,
+          95008538.0,
+          94240080.0,
+          95317018.0,
+          87700472.0,
+          79373508.0,
+          96415856.0,
+          89709426.0
+        ]
+      },
+      "tukey.json": [
+        38210278.875,
+        42010841.8125,
+        52145676.3125,
+        55946239.25
+      ]
+    }
+  },
+  {
+    "tag": "transfer2-1",
+    "benchmark": "cli_lifecycle/native_progress",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/lifecycle-c70d48e63e84258e",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_lifecycle/native_progress$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_lifecycle",
+        "function_id": "native_progress",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_lifecycle/native_progress",
+        "directory_name": "cli_lifecycle/native_progress",
+        "title": "cli_lifecycle/native_progress"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 48868935.61,
+            "upper_bound": 51113250.43083333
+          },
+          "point_estimate": 49843069.666666664,
+          "standard_error": 578622.5670349621
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 48781652.0,
+            "upper_bound": 49885164.75
+          },
+          "point_estimate": 49267143.75,
+          "standard_error": 272891.4399198305
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 693465.3812885284,
+            "upper_bound": 2577629.040437937
+          },
+          "point_estimate": 1580845.9435343742,
+          "standard_error": 457606.8945133507
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1391580.353008451,
+            "upper_bound": 4912572.485788254
+          },
+          "point_estimate": 3231042.3008705005,
+          "standard_error": 1054335.427531413
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "times": [
+          107064084.0,
+          105320930.0,
+          100267494.0,
+          128090978.0,
+          99106572.0,
+          95212900.0,
+          99273165.0,
+          100591958.0,
+          100810572.0,
+          91514787.0,
+          94030753.0,
+          94335249.0,
+          97444671.0,
+          97002945.0,
+          97252770.0,
+          98344845.0,
+          96098515.0,
+          97868805.0,
+          99067868.0,
+          93781929.0,
+          98390971.0,
+          98677604.0,
+          94706690.0,
+          99071596.0,
+          98369315.0,
+          101038241.0,
+          100741681.0,
+          102566258.0,
+          97681937.0,
+          106858097.0
+        ]
+      },
+      "tukey.json": [
+        43074427.125,
+        45803563.875,
+        53081261.875,
+        55810398.625
+      ]
+    }
+  },
+  {
+    "tag": "transfer2-2",
+    "benchmark": "cli_lifecycle/threaded_cancel",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/lifecycle-c70d48e63e84258e",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_lifecycle/threaded_cancel$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_lifecycle",
+        "function_id": "threaded_cancel",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_lifecycle/threaded_cancel",
+        "directory_name": "cli_lifecycle/threaded_cancel",
+        "title": "cli_lifecycle/threaded_cancel"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 768875.2567460317,
+            "upper_bound": 786376.4167658732
+          },
+          "point_estimate": 776452.503968254,
+          "standard_error": 4495.649679906699
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 765227.4166666667,
+            "upper_bound": 776588.2619047619
+          },
+          "point_estimate": 772528.7261904762,
+          "standard_error": 2767.927959170729
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7303.631645334557,
+            "upper_bound": 20447.242236989005
+          },
+          "point_estimate": 13434.261961494123,
+          "standard_error": 3424.0590380311983
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 11019.68003477069,
+            "upper_bound": 37784.40979249633
+          },
+          "point_estimate": 25010.977196739415,
+          "standard_error": 7959.185981199061
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0,
+          84.0
+        ],
+        "times": [
+          64950715.0,
+          66525509.0,
+          65310025.0,
+          64026544.0,
+          64801500.0,
+          64999130.0,
+          63976928.0,
+          64731290.0,
+          63534994.0,
+          62780475.0,
+          63680292.0,
+          62596594.0,
+          64482418.0,
+          64162600.0,
+          64240363.0,
+          63980949.0,
+          65037925.0,
+          65156803.0,
+          65089860.0,
+          68118320.0,
+          64834111.0,
+          64317843.0,
+          66908918.0,
+          74352728.0,
+          65341372.0,
+          66082002.0,
+          64170916.0,
+          66599479.0,
+          65684896.0,
+          66184811.0
+        ]
+      },
+      "tukey.json": [
+        712638.9404761906,
+        738252.0833333335,
+        806553.7976190476,
+        832166.9404761903
+      ]
+    }
+  },
+  {
+    "tag": "transfer2-3",
+    "benchmark": "cli_lifecycle/native_cancel",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/lifecycle-c70d48e63e84258e",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_lifecycle/native_cancel$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_lifecycle",
+        "function_id": "native_cancel",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_lifecycle/native_cancel",
+        "directory_name": "cli_lifecycle/native_cancel",
+        "title": "cli_lifecycle/native_cancel"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 822568.905,
+            "upper_bound": 854195.3334166664
+          },
+          "point_estimate": 837364.86375,
+          "standard_error": 8094.234526973722
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 813490.8125,
+            "upper_bound": 832129.34375
+          },
+          "point_estimate": 821287.125,
+          "standard_error": 5979.335579121283
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 9490.52088025947,
+            "upper_bound": 31601.74816645668
+          },
+          "point_estimate": 17332.955831028452,
+          "standard_error": 5868.151041114672
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 23801.71076056523,
+            "upper_bound": 58036.36937520237
+          },
+          "point_estimate": 44867.46139002027,
+          "standard_error": 8778.623007341148
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0
+        ],
+        "times": [
+          77360546.0,
+          67640833.0,
+          76105091.0,
+          66650241.0,
+          66447175.0,
+          74632247.0,
+          66435596.0,
+          64308032.0,
+          64980560.0,
+          72875066.0,
+          64805179.0,
+          66631589.0,
+          66509106.0,
+          64767144.0,
+          65258981.0,
+          65866626.0,
+          65290155.0,
+          67559309.0,
+          65539314.0,
+          64359611.0,
+          64813051.0,
+          64726615.0,
+          64768249.0,
+          67755142.0,
+          64009393.0,
+          69628682.0,
+          63411898.0,
+          65177970.0,
+          66051257.0,
+          65311015.0
+        ]
+      },
+      "tukey.json": [
+        715405.775,
+        762747.55625,
+        888992.30625,
+        936334.0875
+      ]
+    }
+  },
+  {
+    "tag": "transfer3-0",
+    "benchmark": "cli_lifecycle/threaded_progress",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/lifecycle-c70d48e63e84258e",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_lifecycle/threaded_progress$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_lifecycle",
+        "function_id": "threaded_progress",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_lifecycle/threaded_progress",
+        "directory_name": "cli_lifecycle/threaded_progress",
+        "title": "cli_lifecycle/threaded_progress"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 47156130.9,
+            "upper_bound": 48773700.78333333
+          },
+          "point_estimate": 47999848.28333333,
+          "standard_error": 414032.81983124634
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 47098391.0,
+            "upper_bound": 49325725.0
+          },
+          "point_estimate": 48784852.0,
+          "standard_error": 614333.0683933172
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 917114.8460179567,
+            "upper_bound": 2953488.519515097
+          },
+          "point_estimate": 1956864.0608087182,
+          "standard_error": 552479.1069167386
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1523987.9613234648,
+            "upper_bound": 2876054.6728796703
+          },
+          "point_estimate": 2307674.978459588,
+          "standard_error": 341132.36001312966
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "times": [
+          96926513.0,
+          98647800.0,
+          99115293.0,
+          93890878.0,
+          93264036.0,
+          98163684.0,
+          97508434.0,
+          102333810.0,
+          100965230.0,
+          99969038.0,
+          99884861.0,
+          97630974.0,
+          98325975.0,
+          93658680.0,
+          94502686.0,
+          96622000.0,
+          91181094.0,
+          85084330.0,
+          84123124.0,
+          92350519.0,
+          92741113.0,
+          94758321.0,
+          99814918.0,
+          93572065.0,
+          100037868.0,
+          87420017.0,
+          98655100.0,
+          101193458.0,
+          99155373.0,
+          98493705.0
+        ]
+      },
+      "tukey.json": [
+        38469408.0,
+        42633133.6875,
+        53736402.1875,
+        57900127.875
+      ]
+    }
+  },
+  {
+    "tag": "transfer3-1",
+    "benchmark": "cli_lifecycle/native_progress",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/lifecycle-c70d48e63e84258e",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_lifecycle/native_progress$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_lifecycle",
+        "function_id": "native_progress",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_lifecycle/native_progress",
+        "directory_name": "cli_lifecycle/native_progress",
+        "title": "cli_lifecycle/native_progress"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 41189764.416666664,
+            "upper_bound": 47138368.63333333
+          },
+          "point_estimate": 44069933.983333334,
+          "standard_error": 1520912.2027392383
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 37463587.25,
+            "upper_bound": 47053943.5
+          },
+          "point_estimate": 43824181.5,
+          "standard_error": 2134499.0201961575
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3946095.132292807,
+            "upper_bound": 14046307.823628187
+          },
+          "point_estimate": 9430216.867630184,
+          "standard_error": 2570294.2754788036
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 6148233.171891485,
+            "upper_bound": 10001532.830090342
+          },
+          "point_estimate": 8403061.581106426,
+          "standard_error": 985956.793163371
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "times": [
+          120719861.0,
+          88122891.0,
+          83920079.0,
+          90100044.0,
+          87173835.0,
+          90201914.0,
+          84813319.0,
+          122338793.0,
+          117290515.0,
+          103663550.0,
+          122534919.0,
+          95081984.0,
+          85912734.0,
+          96611494.0,
+          97561665.0,
+          94409559.0,
+          95459738.0,
+          93806215.0,
+          92704620.0,
+          68230348.0,
+          69370483.0,
+          69765706.0,
+          74737596.0,
+          68784887.0,
+          75116753.0,
+          69240366.0,
+          67493334.0,
+          74573624.0,
+          73756410.0,
+          70698803.0
+        ]
+      },
+      "tukey.json": [
+        4873477.75,
+        20926917.25,
+        63736089.25,
+        79789528.75
+      ]
+    }
+  },
+  {
+    "tag": "transfer3-2",
+    "benchmark": "cli_lifecycle/threaded_cancel",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/lifecycle-c70d48e63e84258e",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_lifecycle/threaded_cancel$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_lifecycle",
+        "function_id": "threaded_cancel",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_lifecycle/threaded_cancel",
+        "directory_name": "cli_lifecycle/threaded_cancel",
+        "title": "cli_lifecycle/threaded_cancel"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 717816.3099147727,
+            "upper_bound": 732013.0961931818
+          },
+          "point_estimate": 724701.3299242425,
+          "standard_error": 3617.6846968029668
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 712777.4204545454,
+            "upper_bound": 731452.8579545454
+          },
+          "point_estimate": 719173.2556818181,
+          "standard_error": 5276.456578561419
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7560.333240777254,
+            "upper_bound": 25399.515251341207
+          },
+          "point_estimate": 17016.692827438885,
+          "standard_error": 4545.245201512082
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 13851.160909609745,
+            "upper_bound": 25196.973489181357
+          },
+          "point_estimate": 20159.454661278553,
+          "standard_error": 2908.2919737017983
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0,
+          88.0
+        ],
+        "times": [
+          64456813.0,
+          66753061.0,
+          62364436.0,
+          63237241.0,
+          63465526.0,
+          65434886.0,
+          63337252.0,
+          67128393.0,
+          62644625.0,
+          63070171.0,
+          65684108.0,
+          64890578.0,
+          64273909.0,
+          64054622.0,
+          68563021.0,
+          64320642.0,
+          64517579.0,
+          62568036.0,
+          64415061.0,
+          63017490.0,
+          62130638.0,
+          62993767.0,
+          61203711.0,
+          60434071.0,
+          62668922.0,
+          62419982.0,
+          62627412.0,
+          65564141.0,
+          62191513.0,
+          62779904.0
+        ]
+      },
+      "tukey.json": [
+        647951.1193181819,
+        679837.578125,
+        764868.1349431816,
+        796754.5937499998
+      ]
+    }
+  },
+  {
+    "tag": "transfer3-3",
+    "benchmark": "cli_lifecycle/native_cancel",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/lifecycle-c70d48e63e84258e",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_lifecycle/native_cancel$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_lifecycle",
+        "function_id": "native_cancel",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_lifecycle/native_cancel",
+        "directory_name": "cli_lifecycle/native_cancel",
+        "title": "cli_lifecycle/native_cancel"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 810683.3608333335,
+            "upper_bound": 834627.1086145835
+          },
+          "point_estimate": 820424.0491666668,
+          "standard_error": 6270.652467026339
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 810919.15625,
+            "upper_bound": 822204.49375
+          },
+          "point_estimate": 817443.6375,
+          "standard_error": 2928.8815071925956
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7534.119019992615,
+            "upper_bound": 23294.147473946214
+          },
+          "point_estimate": 17011.53742298484,
+          "standard_error": 4143.746217574734
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 12411.796368828938,
+            "upper_bound": 55711.11966517609
+          },
+          "point_estimate": 34925.39968801496,
+          "standard_error": 13841.602862736789
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0,
+          80.0
+        ],
+        "times": [
+          65925673.0,
+          66367086.0,
+          66110316.0,
+          66706209.0,
+          78972561.0,
+          63878649.0,
+          63174785.0,
+          64387847.0,
+          62893973.0,
+          63335569.0,
+          63527357.0,
+          66259756.0,
+          64380186.0,
+          65369394.0,
+          65131219.0,
+          65636151.0,
+          63836634.0,
+          66554180.0,
+          66376900.0,
+          68059401.0,
+          65662123.0,
+          63556180.0,
+          65381153.0,
+          64872576.0,
+          65297245.0,
+          65696074.0,
+          64874489.0,
+          65409829.0,
+          65527558.0,
+          65856645.0
+        ]
+      },
+      "tukey.json": [
+        741699.2406250002,
+        773237.753125,
+        857340.4531249998,
+        888878.9656249997
+      ]
+    }
+  }
+]

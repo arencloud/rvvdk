@@ -1093,5 +1093,23 @@ sync succeed, then no-replace publication and directory sync. Explicit overwrite
 preserves the opened inode and tail, with conservative partial-effect reports on
 failure. Descriptor ownership protects I/O targets; concurrent external content
 and namespace stability are still caller obligations. Progress and cancellation
-remain R3.3. See [the transfer contract](cli-transfer.md) and
+are implemented in R3.3 below. See [the transfer contract](cli-transfer.md) and
 [ADR-0031](adr/0031-local-copy-publication.md).
+
+
+## Coordinator lifecycle and cancellation (R3.3)
+
+Controlled DataMover entry points emit CopyEvent lifecycle states on the invoking
+coordinator. Worker threads publish cumulative deltas to a fixed aggregate and
+only inspect cancellation; native pipelines check between completions/refills and
+retain existing owned shutdown/quarantine. Unobserved paths use generic no-op
+checkpoints. Legacy snapshot APIs keep their cadence. Verification adds block
+checkpoints and matching-prefix callbacks.
+
+The CLI maps engine completion to copy_flushed and completes only after its
+verification/publication protocol. JSON progress is opt-in stderr JSON lines,
+leaving success stdout unchanged. Binary SIGINT/SIGTERM handlers only set an atomic
+request. Publication followed by cancellation completes directory durability and
+reports the published state; no visible destination is removed. Blocking calls
+and callbacks can delay stopping. See [the lifecycle contract](cli-progress.md)
+and [ADR-0032](adr/0032-copy-lifecycle-cancellation.md).

@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R3.3 \u00b7 Copy lifecycle and cancellation",
+    "candidate": "patch 1d8bd328",
+    "conditions": "Btrfs \u00b7 CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm files \u00b7 copy includes flush",
+    "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "candidate_only": {
+      "title": "Progress and early controlled stop \u00b7 candidate-only",
+      "note": "16 MiB input \u00b7 whole invocation with in-memory JSON capture \u00b7 early stop is not signal-to-stop latency or full-copy throughput.",
+      "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+    },
+    "workloads": {
+      "preflight_copy/threaded": {
+        "label": "Threaded copy + flush \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "preflight_copy/native": {
+        "label": "Native copy + flush \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "native_lifetime/buffered/threaded_control": {
+        "label": "Threaded 4-worker control \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "cli_preview/plan_new_json": {
+        "label": "CLI plan new JSON \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "cli_transfer/threaded_new": {
+        "label": "CLI Threaded new \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/threaded_new_verify": {
+        "label": "CLI Threaded new + verify \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/native_new_verify": {
+        "label": "CLI native new + verify \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/verify_only": {
+        "label": "CLI verify only \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "cli_lifecycle/threaded_progress": {
+        "label": "Threaded copy + verify + progress",
+        "phase": "copy"
+      },
+      "cli_lifecycle/native_progress": {
+        "label": "Native copy + verify + progress",
+        "phase": "copy"
+      },
+      "cli_lifecycle/threaded_cancel": {
+        "label": "Threaded early stop + cleanup",
+        "phase": "copy"
+      },
+      "cli_lifecycle/native_cancel": {
+        "label": "Native early stop + cleanup",
+        "phase": "copy"
+      }
+    },
+    "repeat_sampling": "3 adjacent pairs \u00b7 40 samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+  },
+  "input_sha256": {
+    "plot-config.json": "fc000285ab7c8ee1b628520979866d473b115f996dab76563d0a4db0dbbe83f8",
+    "environment.json": "f3db3d5186122cd37d11b8f6478f57007777c0c9dc5ec6c5f8436b68047d54fd",
+    "measurements.json": "52f6396f69e405d95fe777b6865c074ad6a655cf788a1d2677e7d7c0d045fdb8",
+    "summary.json": "494a3426bd660cafe422c42aa9392e8110933e7ac7012524bcc7b7204816a85e",
+    "followup-measurements.json": "680f4ef7df79eb1d19d6ecf1b5859764aba7d82b153e6eae2f824fe09b415565",
+    "followup-summary.json": "04a1350a54d08c095354241ca5dc153d0d815aa60ec5392f4f5a4b6f8296681e",
+    "candidate-only-measurements.json": "0f7014a712af36870846a9a745e62ff6f9c9aa78e16df736fc6d656c72d2cf89"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "f84d3ac6afcef0219e8ad9cfaa1fbe9f81133d904c957e106ada2250200c6853",
+    "planning-latency.png": "18ecc0ebeeacbc42fce3dec054ba4933251aff2cc49b1909030bcddd02adc0cc",
+    "copy-latency.svg": "ba71102427287971debd2c74531f4b31ef4e2b1aa10fca54894b7451bfd7a1d2",
+    "copy-latency.png": "3af4472993e2ffbe394878d12247fbae559fb21ed22d998a7f11ca7140241e95",
+    "relative-change.svg": "1362ff31aa73bbcbb97b2363f63b56bf5bd011fff9360cf33ce3dfac8d009129",
+    "relative-change.png": "722274a51b629819ca0ceace8f5664f61624b34288a33ebf5008b133458aa8b7",
+    "sample-distributions.svg": "739cc8efcc3ded9c712eb5dd8d862140621982615316647b131f5393bcacf041",
+    "sample-distributions.png": "f9bedfccc1210a378598278c6823a182a93904a998d372942f3b2a7fb943e27c",
+    "followup-change.svg": "6e04cf17e37c3ef9e774a193997f2269690e549a96d6308aa306860a5505ab6d",
+    "followup-change.png": "5a8504364b16bbf60d1f44e00ddbb811ad39ef96d0c1cd52f635031c94922695",
+    "candidate-only.svg": "c58cbeaae04dfa850a4846ff73ff213ab0d3c2ef8617399fafb8f268f60ae66f",
+    "candidate-only.png": "f3064ffd4137ce1a9159ef71e44270ab79ccdf9f47169ccd8e3f7352f29b278a",
+    "computed.json": "25a1f25112fb5924af9b035ace8fb160201d84bcbf265b1b1f529c4a0d5a839f"
+  }
+}

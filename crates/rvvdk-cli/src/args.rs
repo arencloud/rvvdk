@@ -86,6 +86,14 @@ fn copy_options(command: Command) -> Command {
                 .help("Requested native queue depth"),
         )
 }
+fn progress(command: Command) -> Command {
+    command.arg(
+        Arg::new("progress")
+            .long("progress")
+            .action(ArgAction::SetTrue)
+            .help("Write lifecycle progress to stderr; JSON lines with --json"),
+    )
+}
 pub(crate) fn command() -> Command {
     // Build only the selected command's options. The full list and summaries
     // remain available in root help, without cloning unrelated argument trees.
@@ -101,8 +109,8 @@ pub(crate) fn command() -> Command {
                 .mut_arg("overwrite", |a| a.help("Preview in-place overwrite of an existing file; still performs no writes"))
                 .mut_arg("backend", |a| a.help("Requested copy backend; native selection is deferred until destination preparation"))))
         .subcommand(Command::new("copy").about("Copy RAW bytes; publish new output without replacement")
-            .defer(|c| copy_options(c).arg(Arg::new("verify").long("verify").action(ArgAction::SetTrue)
+            .defer(|c| progress(copy_options(c)).arg(Arg::new("verify").long("verify").action(ArgAction::SetTrue)
                 .help("Read back and compare all logical bytes before publishing new output"))))
         .subcommand(Command::new("verify").about("Compare source bytes with the destination prefix; no writes")
-            .defer(|c| block_size(destination(source(c)))))
+            .defer(|c| progress(block_size(destination(source(c))))))
 }

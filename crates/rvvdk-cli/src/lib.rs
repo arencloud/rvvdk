@@ -4,6 +4,7 @@ mod args;
 mod error;
 mod output;
 mod preview;
+mod progress;
 mod target;
 mod transfer;
 
@@ -16,6 +17,21 @@ pub fn run<I, T>(arguments: I, out: &mut impl Write, err: &mut impl Write) -> i3
 where
     I: IntoIterator<Item = T>,
     T: Into<OsString>,
+{
+    run_with_cancellation(arguments, out, err, &rvvdk_datamover::NoCancellation)
+}
+/// Embeddable cancellation entry point; installs no process signal handlers.
+/// Cancellation returns 130. A completed operation is not rolled back.
+pub fn run_with_cancellation<I, T, C>(
+    arguments: I,
+    out: &mut impl Write,
+    err: &mut impl Write,
+    cancellation: &C,
+) -> i32
+where
+    I: IntoIterator<Item = T>,
+    T: Into<OsString>,
+    C: rvvdk_datamover::Cancellation,
 {
     let arguments: Vec<OsString> = arguments.into_iter().map(Into::into).collect();
     let json = arguments
@@ -39,14 +55,14 @@ where
     };
     let (name, args) = matches.subcommand().expect("required subcommand");
     let result = match name {
-        "copy" | "verify" => transfer::run(name, args, json, out),
+        "copy" | "verify" => transfer::run(name, args, json, out, err, cancellation),
         _ => preview::build(name, args).and_then(|report| output::write(&report, json, out)),
     };
     match result {
         Ok(()) => 0,
         Err(error) => {
             emit_error(&error, json, err);
-            1
+            if error.code == "cancelled" { 130 } else { 1 }
         }
     }
 }

@@ -31,7 +31,7 @@ VMware disk access and migration, extensible to other platforms.
 
 > [!IMPORTANT]
 > **Active development.** The project exposes Rust libraries and a local RAW CLI.
-> VMDK parsing, VMware remote access, CBT, and CLI cancellation are planned.
+> VMDK parsing, VMware remote access, CBT, and durable resume are planned.
 > The [roadmap](docs/roadmap.md) tracks completed fixes and remaining work;
 > the [dated review](docs/project-review-2026-09-28.md) records the starting assessment.
 
@@ -39,7 +39,7 @@ VMware disk access and migration, extensible to other platforms.
 
 | Capability | Current state |
 |:---|:---|
-| **CLI** | [`rvddk inspect`/`plan`](docs/cli.md) and [copy/verify](docs/cli-transfer.md), human/JSON reports, private no-clobber publication |
+| **CLI** | [`rvddk inspect`/`plan`](docs/cli.md) and [copy/verify](docs/cli-transfer.md), human/JSON reports, private no-clobber publication, [progress/cancellation](docs/cli-progress.md) |
 | **Logical disk model** | `BlockDevice`, `VirtualDisk`, checked ranges, geometry, and capabilities |
 | **RAW disk access** | Memory devices and local regular files |
 | **Sparse source discovery** | Linux Data/Hole extents with [safe dense fallback](docs/local-sparse-discovery.md) when discovery is unavailable |
@@ -214,7 +214,7 @@ workloads. Measurements depend on the filesystem, page cache, hardware, and
 flush policy. See the [benchmark notes](docs/benchmarks.md) for historical results
 and the [review](docs/project-review-2026-09-28.md) for measurement gaps.
 
-Explore the [R3.2 benchmark charts](docs/benchmark-results/2026-09-29-r32/README.md#final-comparison)
+Explore the [R3.3 benchmark charts](docs/benchmark-results/2026-09-29-r33/README.md#final-comparison)
 for latency comparisons, paired changes, and sample distributions. A
 [reusable generator](scripts/benchmarks/README.md) exports SVG and PNG figures.
 
@@ -224,7 +224,7 @@ for latency comparisons, paired changes, and sample distributions. A
 cargo build --release -p rvvdk-cli
 target/release/rvddk inspect source.raw --format raw --json
 target/release/rvddk plan source.raw destination.raw --format raw --backend auto
-target/release/rvddk copy source.raw destination.raw --format raw --verify
+target/release/rvddk copy source.raw destination.raw --format raw --verify --progress
 target/release/rvddk verify source.raw destination.raw --format raw
 ```
 
@@ -234,6 +234,8 @@ See the [CLI guide](docs/cli.md) for output fields, exit codes, and destination 
 Copy publishes new output only after successful copy, flush and requested verification.
 Explicit `--overwrite` modifies an existing file in place and preserves its tail.
 See [transfer requirements and failure handling](docs/cli-transfer.md) before use.
+Ctrl-C requests cooperative cancellation; [progress and cancellation details](docs/cli-progress.md)
+explain partial output and the publication boundary.
 
 ## Documentation
 

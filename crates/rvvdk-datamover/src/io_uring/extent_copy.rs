@@ -307,32 +307,44 @@ impl PreparedNativeExtents {
     }
 
     pub(crate) fn execute<D: VirtualDisk>(
-        mut self,
+        self,
         destination: &D,
         plan: &NativeExtentPlan,
     ) -> Result<IoUringExtentCopyStats> {
-        let result = self.execute_inner(destination, plan);
+        self.execute_controlled(destination, plan, &())
+    }
+    pub(crate) fn execute_controlled<D: VirtualDisk, C: crate::control::Checkpoint>(
+        mut self,
+        destination: &D,
+        plan: &NativeExtentPlan,
+        control: &C,
+    ) -> Result<IoUringExtentCopyStats> {
+        let result = self.execute_inner(destination, plan, control);
         match self.session {
             Some(session) => session.finish(result, IoUringExtentCopyStats::progress),
             None => result,
         }
     }
 
-    fn execute_inner<D: VirtualDisk>(
+    fn execute_inner<D: VirtualDisk, C: crate::control::Checkpoint>(
         &mut self,
         destination: &D,
         plan: &NativeExtentPlan,
+        control: &C,
     ) -> Result<IoUringExtentCopyStats> {
         let mut aggregate = IoUringExtentCopyStats::default();
 
         for extent in plan.extents() {
+            checkpoint(control, aggregate.progress())?;
             match policy::select(extent.kind(), || destination.capabilities()) {
                 Operation::Copy => {
                     let stats = self
                         .session
                         .as_mut()
                         .expect("Data plan has a prepared session")
-                        .copy_range(extent.offset(), extent.length())
+                        .copy_range_controlled(extent.offset(), extent.length(), |p| {
+                            control.check(crate::control::sum(aggregate.progress(), p))
+                        })
                         .map_err(|e| crate::failure::native_prior(e, aggregate.progress()))?;
 
                     aggregate.add_data_extent(stats)?;
@@ -372,6 +384,7 @@ impl PreparedNativeExtents {
                             *extent,
                             buffer.as_slice(),
                             &mut aggregate,
+                            control,
                         )?;
                     } else {
                         write_zero_fallback(
@@ -382,20 +395,23 @@ impl PreparedNativeExtents {
                                 .expect("nonempty sparse plan")
                                 .as_slice(),
                             &mut aggregate,
+                            control,
                         )?;
                     }
                 }
             }
+            checkpoint(control, aggregate.progress())?;
         }
         Ok(aggregate)
     }
 }
 
-fn write_zero_fallback<D>(
+fn write_zero_fallback<D, C: crate::control::Checkpoint>(
     destination: &D,
     extent: Extent,
     buffer: &[u8],
     stats: &mut IoUringExtentCopyStats,
+    control: &C,
 ) -> Result<()>
 where
     D: VirtualDisk,
@@ -407,6 +423,7 @@ where
     let end = extent.end();
 
     while offset < end {
+        checkpoint(control, stats.progress())?;
         let remaining = end - offset;
 
         let request_length_u64 = remaining.min(block_size as u64);
@@ -429,6 +446,7 @@ where
             })?;
 
         stats.add_fallback_write(request_length_u64)?;
+        checkpoint(control, stats.progress())?;
     }
 
     /*
@@ -443,4 +461,10 @@ where
      * The extent itself still counts as processed.
      */
     stats.complete_extent()
+}
+
+fn checkpoint(control: &impl crate::control::Checkpoint, progress: CopyProgress) -> Result<()> {
+    control.check(progress).map_err(|e| {
+        crate::failure::execution("io_uring", CopyOperation::Cancel, None, progress, e)
+    })
 }

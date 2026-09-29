@@ -191,8 +191,9 @@ Acceptance: byte equality on nonzero-prefilled destinations; demonstrable hole p
 - [x] **R3.2:** Add bounded read-back verification and safe output creation,
   anonymous no-clobber publication, explicit overwrite semantics, and copy/verify commands.
   [Contract](cli-transfer.md); [evidence](benchmark-results/2026-09-29-r32/README.md).
-- [ ] **R3.3 (next):** Add progress lifecycle events, cancellation, and complete partial
+- [x] **R3.3:** Add progress lifecycle events, cancellation, and complete partial
   failure/exit-code reporting across execution backends.
+  [Contract](cli-progress.md); [evidence](benchmark-results/2026-09-29-r33/README.md).
 
 These increments must collectively satisfy the full acceptance criteria below.
 
@@ -208,13 +209,18 @@ rvddk verify source.raw destination.raw --format raw
 - [x] Introduce a thin CLI crate with explicit format and documented destination intent (R3.1). Output creation/overwrite is implemented in R3.2.
 - [x] Default new output creation to no-clobber; require an explicit overwrite option for existing destinations. Reject same-file/hard-link aliases.
 - [x] Expose actual execution backend, selection reason, logical bytes, payload read/written, zero/deallocation bytes, elapsed time, and completion state.
-- [ ] Complete intermediate progress across sequential/threaded/native paths through coordinator aggregation. Distinguish 100% bytes processed from a durable Completed event.
-- [ ] Add cancellation requests, partial failure reports, and meaningful process exit codes.
+- [x] Complete intermediate progress across sequential/threaded/native paths through coordinator aggregation. Distinguish 100% bytes processed from a durable Completed event.
+- [x] Add cancellation requests, partial failure reports, and meaningful process exit codes.
 - [x] Implement logical read-back verification with bounded memory. For new files, publish a temporary output only after the configured flush/verification steps; document partial-output handling for in-place destinations.
 
 Acceptance: a user can inspect, dry-run, copy, cancel, and verify a sparse RAW image entirely through supported public APIs. Failure/cancellation never reports success. Tests cover output preservation, injected corruption, and cancellation during transfer/flush boundaries.
 
 ### R4 — First real VMDK support: descriptor and flat extents
+
+Next bounded package **R4.1**: define the supported descriptor subset and fixture
+provenance, add bounded parsing and strict validation without writable VMDK support.
+Then add backing resolution and logical FLAT/ZERO mapping as separately tested,
+benchmarked and committed packages. Local fixtures do not require ESXi.
 
 - [ ] Add `rvvdk-vmdk` with read-only `VirtualDisk` behavior and explicit supported create/extent types.
 - [ ] Parse descriptors with bounded sizes and precise errors. Validate access modes, capacities, sector-to-byte arithmetic, extent offsets, and referenced-file lengths.
@@ -342,6 +348,7 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 | [0029](adr/0029-local-file-admission.md) | Accepted: cooperative local-file admission |
 | [0030](adr/0030-read-only-cli-preview.md) | Accepted: read-only RAW CLI previews |
 | [0031](adr/0031-local-copy-publication.md) | Accepted: descriptor-bound copy, bounded verification and private publication |
+| [0032](adr/0032-copy-lifecycle-cancellation.md) | Accepted: coordinator lifecycle and cooperative cancellation |
 | TBD | VMDK subset, backing resolver, parent-chain rules |
 | TBD | Independent VMware transport feasibility and first workflow |
 | TBD | Changed-range selection and CBT baseline identity |
@@ -349,7 +356,7 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 
 ## First implementation session — R0.1 completed
 
-The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete; R3.1 adds inspect/plan and R3.2 adds copy/verify; continue with R3.3 lifecycle progress and cancellation next.
+The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete; R3.1 adds inspect/plan and R3.2 adds copy/verify; R3.3 adds lifecycle progress and cancellation; continue with R4.1 descriptor parsing next.
 
 R0.1 was the bounded change directly related to the observer work:
 
@@ -364,7 +371,7 @@ R0.1 was the bounded change directly related to the observer work:
    tradeoff in the implementation log. Update this checklist and ADR-0025 with
    the implemented behavior and remaining limitations.
 
-R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete. R3.1 inspect/plan and R3.2 copy/verify are complete. Start **R3.3** with progress lifecycle and cancellation. Keep PERF.0 and the prior performance follow-ups open.
+R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete. R3.1 inspect/plan and R3.2 copy/verify are complete. R3.3 progress and cancellation are complete. Start **R4.1** with bounded descriptor parsing and fixture rules. Keep PERF.0 and the prior performance follow-ups open.
 
 ## Decisions to record before their milestone
 

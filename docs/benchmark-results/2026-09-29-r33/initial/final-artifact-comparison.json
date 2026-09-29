@@ -1,0 +1,66 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--release",
+    "-p",
+    "rvvdk-datamover",
+    "-p",
+    "rvvdk-cli",
+    "--bench",
+    "preflight",
+    "--bench",
+    "preview",
+    "--bench",
+    "transfer",
+    "--bench",
+    "native_lifetime",
+    "--bench",
+    "lifecycle",
+    "--bin",
+    "rvddk",
+    "--target-dir",
+    "/tmp/rvvdk-r33-26lzfue1/final-target",
+    "--message-format=json"
+  ],
+  "exit_code": 0,
+  "byte_identical": false,
+  "artifacts": {
+    "rvddk": {
+      "final_path": "/tmp/rvvdk-r33-26lzfue1/final-target/release/rvddk",
+      "final_sha256": "6441d11239be700d9e1fcd97a3be3732357c9cc6f9607940ffb4f710132d0508",
+      "measured_path": "/tmp/rvvdk-r33-26lzfue1/candidate-target/release/rvddk",
+      "measured_sha256": "6441d11239be700d9e1fcd97a3be3732357c9cc6f9607940ffb4f710132d0508"
+    },
+    "native_lifetime": {
+      "final_path": "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/native_lifetime-75b163ae15aa6791",
+      "final_sha256": "27451f9ed08da5e9c7d5010ad0757f35cc20b60b4f16f8244aa3abfea201ceb6",
+      "measured_path": "/tmp/rvvdk-r33-26lzfue1/candidate-target/release/deps/native_lifetime-75b163ae15aa6791",
+      "measured_sha256": "27451f9ed08da5e9c7d5010ad0757f35cc20b60b4f16f8244aa3abfea201ceb6"
+    },
+    "preflight": {
+      "final_path": "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/preflight-93c23442debe0ecd",
+      "final_sha256": "482e48778dae59218f6364e788f22c2ab8cd6f9cb500895e53f33eafd3c0a264",
+      "measured_path": "/tmp/rvvdk-r33-26lzfue1/candidate-target/release/deps/preflight-93c23442debe0ecd",
+      "measured_sha256": "482e48778dae59218f6364e788f22c2ab8cd6f9cb500895e53f33eafd3c0a264"
+    },
+    "transfer": {
+      "final_path": "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/transfer-7b69e53978e421d9",
+      "final_sha256": "2a2f8198345971d9226a4c0e20b689de133cbe04279595840c12bec9ae4f4cac",
+      "measured_path": "/tmp/rvvdk-r33-26lzfue1/candidate-target/release/deps/transfer-7b69e53978e421d9",
+      "measured_sha256": "f3725402251abb3a30d24c40381d2c92bf5104c196b146ceebeb0ed4f8d273d9"
+    },
+    "lifecycle": {
+      "final_path": "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/lifecycle-c70d48e63e84258e",
+      "final_sha256": "34677bbe9c3837105952ab386d73138b134472aae58917d1a7044f365144d4fe",
+      "measured_path": "/tmp/rvvdk-r33-26lzfue1/candidate-target/release/deps/lifecycle-c70d48e63e84258e",
+      "measured_sha256": "34677bbe9c3837105952ab386d73138b134472aae58917d1a7044f365144d4fe"
+    },
+    "preview": {
+      "final_path": "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/preview-142ae99d6eb44574",
+      "final_sha256": "ae8e77001ff599a43a95cfef1a683b6d4491c37adbd7e78e383c84b1d4225d41",
+      "measured_path": "/tmp/rvvdk-r33-26lzfue1/candidate-target/release/deps/preview-142ae99d6eb44574",
+      "measured_sha256": "847cdcbfbedb6f3f50fa7538af208be9e70a0a190e8d3c012b1eaf0837b8f12e"
+    }
+  }
+}

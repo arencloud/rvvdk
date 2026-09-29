@@ -63,6 +63,29 @@ impl Verifier {
         source: &S,
         destination: &D,
     ) -> Result<VerificationReport> {
+        self.verify_controlled(source, destination, &crate::NoCancellation, |_| {})
+    }
+    /// Compare at block checkpoints. Callbacks report a confirmed matching prefix,
+    /// on the caller's thread, and must not panic. Cancellation does not flush.
+    pub fn verify_controlled<
+        S: VirtualDisk + ?Sized,
+        D: VirtualDisk + ?Sized,
+        C: crate::Cancellation,
+    >(
+        &mut self,
+        source: &S,
+        destination: &D,
+        cancellation: &C,
+        progress: impl Fn(u64),
+    ) -> Result<VerificationReport> {
+        let check = || {
+            if cancellation.is_cancelled() {
+                Err(Error::Cancelled)
+            } else {
+                Ok(())
+            }
+        };
+        check()?;
         let started = Instant::now();
         let inspect = || -> Result<_> {
             let s = source.copy_endpoint()?;
@@ -94,8 +117,10 @@ impl Verifier {
         let before = inspect()?;
         let mut offset = 0;
         while offset < self.length {
+            check()?;
             let count = (self.length - offset).min(self.source.len() as u64) as usize;
             source.read_exact_at(offset, &mut self.source[..count])?;
+            check()?;
             destination.read_exact_at(offset, &mut self.destination[..count])?;
             if self.source[..count] != self.destination[..count] {
                 let index = self.source[..count]
@@ -108,12 +133,15 @@ impl Verifier {
                 });
             }
             offset += count as u64;
+            progress(offset);
+            check()?;
         }
         if inspect()? != before {
             return Err(Error::EndpointChanged(
                 "verification endpoint changed".into(),
             ));
         }
+        check()?;
         Ok(VerificationReport {
             bytes_verified: self.length,
             elapsed: started.elapsed(),

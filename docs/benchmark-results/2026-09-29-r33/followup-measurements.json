@@ -1,0 +1,998 @@
+[
+  {
+    "tag": "followup1-0-baseline",
+    "benchmark": "native_lifetime/buffered/threaded_control",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/baseline-target/release/deps/native_lifetime-75b163ae15aa6791",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "native_lifetime/buffered/threaded_control$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "native_lifetime/buffered",
+        "function_id": "threaded_control",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "native_lifetime/buffered/threaded_control",
+        "directory_name": "native_lifetime_buffered/threaded_control",
+        "title": "native_lifetime/buffered/threaded_control"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 11816243.88484375,
+            "upper_bound": 12192845.0
+          },
+          "point_estimate": 11995221.39375,
+          "standard_error": 95829.37560195907
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 11615391.375,
+            "upper_bound": 11937974.5
+          },
+          "point_estimate": 11786252.5,
+          "standard_error": 83887.39130215887
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 199322.22306132317,
+            "upper_bound": 622853.4070171416
+          },
+          "point_estimate": 373103.32572609186,
+          "standard_error": 105955.3956097846
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 423422.6886388716,
+            "upper_bound": 758684.4887588462
+          },
+          "point_estimate": 616082.1145033557,
+          "standard_error": 85583.97903363661
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          46120481.0,
+          45706700.0,
+          46437582.0,
+          45666308.0,
+          47106326.0,
+          45973649.0,
+          51340235.0,
+          47228259.0,
+          46009345.0,
+          45852220.0,
+          48596459.0,
+          46485549.0,
+          46230336.0,
+          45551711.0,
+          50367065.0,
+          46159822.0,
+          47670968.0,
+          46756172.0,
+          47194912.0,
+          46030798.0,
+          46305947.0,
+          46156301.0,
+          47832828.0,
+          46402919.0,
+          46579505.0,
+          46957814.0,
+          47183694.0,
+          47637201.0,
+          47281558.0,
+          46539184.0,
+          53448934.0,
+          50646632.0,
+          50932575.0,
+          53752201.0,
+          49774305.0,
+          47894991.0,
+          50248591.0,
+          48317483.0,
+          55293671.0,
+          51564192.0
+        ]
+      },
+      "tukey.json": [
+        9544517.125,
+        10548847.0,
+        13227060.0,
+        14231389.875
+      ]
+    },
+    "variant": "baseline",
+    "pair": 1
+  },
+  {
+    "tag": "followup1-0-candidate",
+    "benchmark": "native_lifetime/buffered/threaded_control",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/native_lifetime-75b163ae15aa6791",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "native_lifetime/buffered/threaded_control$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "native_lifetime/buffered",
+        "function_id": "threaded_control",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "native_lifetime/buffered/threaded_control",
+        "directory_name": "native_lifetime_buffered/threaded_control",
+        "title": "native_lifetime/buffered/threaded_control"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 12083216.431875002,
+            "upper_bound": 12579293.9875
+          },
+          "point_estimate": 12323454.3,
+          "standard_error": 126683.41566274906
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 11817549.25,
+            "upper_bound": 12641756.5
+          },
+          "point_estimate": 11965470.875,
+          "standard_error": 244450.58439451846
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 476676.4255473023,
+            "upper_bound": 1146071.648003161
+          },
+          "point_estimate": 755337.0580650866,
+          "standard_error": 165227.5954453147
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 625711.562989418,
+            "upper_bound": 950169.2983121052
+          },
+          "point_estimate": 809558.9676559182,
+          "standard_error": 83436.61763687649
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          51106064.0,
+          47605498.0,
+          47188517.0,
+          50095422.0,
+          56165525.0,
+          45707863.0,
+          46639605.0,
+          47850819.0,
+          49512340.0,
+          54347643.0,
+          51130033.0,
+          52814156.0,
+          55980663.0,
+          50694939.0,
+          57200166.0,
+          51689361.0,
+          51305995.0,
+          50439113.0,
+          53771568.0,
+          51955500.0,
+          45898807.0,
+          46663857.0,
+          49874148.0,
+          46193260.0,
+          47661403.0,
+          46727844.0,
+          47872948.0,
+          46883457.0,
+          47760990.0,
+          49044054.0,
+          45910719.0,
+          45748409.0,
+          47779185.0,
+          46025656.0,
+          45306052.0,
+          51394010.0,
+          46279439.0,
+          47351877.0,
+          52377378.0,
+          45798405.0
+        ]
+      },
+      "tukey.json": [
+        8161794.9375,
+        9913121.71875,
+        14583326.46875,
+        16334653.25
+      ]
+    },
+    "variant": "candidate",
+    "pair": 1
+  },
+  {
+    "tag": "followup2-0-candidate",
+    "benchmark": "native_lifetime/buffered/threaded_control",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/native_lifetime-75b163ae15aa6791",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "native_lifetime/buffered/threaded_control$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "native_lifetime/buffered",
+        "function_id": "threaded_control",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "native_lifetime/buffered/threaded_control",
+        "directory_name": "native_lifetime_buffered/threaded_control",
+        "title": "native_lifetime/buffered/threaded_control"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 11574800.56046875,
+            "upper_bound": 11815380.3875
+          },
+          "point_estimate": 11683291.5875,
+          "standard_error": 61937.60311829726
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 11517990.25,
+            "upper_bound": 11678163.625
+          },
+          "point_estimate": 11637963.75,
+          "standard_error": 45594.060551734685
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 154040.8399902284,
+            "upper_bound": 359812.74358704686
+          },
+          "point_estimate": 243130.27240857482,
+          "standard_error": 52027.00948804516
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 207072.58296052017,
+            "upper_bound": 577946.580955923
+          },
+          "point_estimate": 398068.7854535647,
+          "standard_error": 105131.5387412752
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          45770706.0,
+          46637532.0,
+          45992078.0,
+          46582269.0,
+          45441296.0,
+          45252534.0,
+          48416677.0,
+          45614545.0,
+          46528030.0,
+          46965411.0,
+          47301522.0,
+          46680558.0,
+          45577571.0,
+          54056403.0,
+          48140649.0,
+          44671868.0,
+          45911752.0,
+          47700580.0,
+          46742945.0,
+          45663252.0,
+          45233213.0,
+          49973621.0,
+          45880045.0,
+          46739125.0,
+          47119923.0,
+          47101266.0,
+          48415362.0,
+          46111626.0,
+          46686184.0,
+          46546401.0,
+          47393093.0,
+          46066989.0,
+          45147868.0,
+          46329466.0,
+          48098009.0,
+          46227485.0,
+          46076933.0,
+          46614559.0,
+          46557309.0,
+          45359999.0
+        ]
+      },
+      "tukey.json": [
+        10523262.5625,
+        10993220.0625,
+        12246440.0625,
+        12716397.5625
+      ]
+    },
+    "variant": "candidate",
+    "pair": 2
+  },
+  {
+    "tag": "followup2-0-baseline",
+    "benchmark": "native_lifetime/buffered/threaded_control",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/baseline-target/release/deps/native_lifetime-75b163ae15aa6791",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "native_lifetime/buffered/threaded_control$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "native_lifetime/buffered",
+        "function_id": "threaded_control",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "native_lifetime/buffered/threaded_control",
+        "directory_name": "native_lifetime_buffered/threaded_control",
+        "title": "native_lifetime/buffered/threaded_control"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 14699371.94375,
+            "upper_bound": 17794449.44375
+          },
+          "point_estimate": 16214026.9125,
+          "standard_error": 787713.5232211972
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 11528028.125,
+            "upper_bound": 20878410.0
+          },
+          "point_estimate": 12738561.25,
+          "standard_error": 3299364.934932911
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 382399.96886104345,
+            "upper_bound": 8485582.186225802
+          },
+          "point_estimate": 2311018.6469212174,
+          "standard_error": 2461036.4499493963
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 4485763.1834955625,
+            "upper_bound": 5565778.491888015
+          },
+          "point_estimate": 5068093.168891683,
+          "standard_error": 277106.5896780102
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          45646491.0,
+          46589629.0,
+          46230729.0,
+          45691062.0,
+          50017000.0,
+          51670080.0,
+          45485597.0,
+          44612496.0,
+          44998333.0,
+          45961843.0,
+          45633353.0,
+          45690930.0,
+          45597952.0,
+          50238410.0,
+          44825908.0,
+          46098225.0,
+          45465782.0,
+          45445385.0,
+          45880773.0,
+          46126000.0,
+          48128713.0,
+          67721665.0,
+          85871615.0,
+          88573320.0,
+          82492528.0,
+          89977722.0,
+          88242032.0,
+          85059812.0,
+          84190816.0,
+          87315930.0,
+          84341120.0,
+          84276533.0,
+          86077694.0,
+          84095088.0,
+          86869710.0,
+          85279302.0,
+          108635971.0,
+          82932192.0,
+          78156655.0,
+          78099910.0
+        ]
+      },
+      "tukey.json": [
+        -17699565.75,
+        -3138404.25,
+        35691359.75,
+        50252521.25
+      ]
+    },
+    "variant": "baseline",
+    "pair": 2
+  },
+  {
+    "tag": "followup3-0-baseline",
+    "benchmark": "native_lifetime/buffered/threaded_control",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/baseline-target/release/deps/native_lifetime-75b163ae15aa6791",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "native_lifetime/buffered/threaded_control$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "native_lifetime/buffered",
+        "function_id": "threaded_control",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "native_lifetime/buffered/threaded_control",
+        "directory_name": "native_lifetime_buffered/threaded_control",
+        "title": "native_lifetime/buffered/threaded_control"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 21149383.73041667,
+            "upper_bound": 21679070.55
+          },
+          "point_estimate": 21410014.166666664,
+          "standard_error": 135660.5184793284
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 21154176.166666664,
+            "upper_bound": 21673207.666666664
+          },
+          "point_estimate": 21333528.5,
+          "standard_error": 147248.51206283167
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 469600.93956291676,
+            "upper_bound": 985758.4834992886
+          },
+          "point_estimate": 694972.4441617727,
+          "standard_error": 134709.40023558398
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 636615.5796178188,
+            "upper_bound": 1055137.711450488
+          },
+          "point_estimate": 864296.8801427033,
+          "standard_error": 107053.51761863727
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0
+        ],
+        "times": [
+          65749739.0,
+          67329726.0,
+          68942437.0,
+          65338655.0,
+          67628217.0,
+          62803741.0,
+          63535159.0,
+          64054446.0,
+          64999483.0,
+          64905562.0,
+          66246858.0,
+          63626538.0,
+          63946725.0,
+          64597309.0,
+          62618998.0,
+          63359348.0,
+          63686689.0,
+          64577546.0,
+          59964811.0,
+          63432595.0,
+          62738772.0,
+          65594592.0,
+          61538201.0,
+          65039763.0,
+          63492462.0,
+          61691400.0,
+          65898437.0,
+          58587018.0,
+          62413145.0,
+          59826292.0,
+          69745850.0,
+          66498365.0,
+          71002533.0,
+          65572395.0,
+          64114846.0,
+          62598138.0,
+          65410653.0,
+          60331907.0,
+          63885714.0,
+          61876635.0
+        ]
+      },
+      "tukey.json": [
+        18033827.08333333,
+        19468384.95833333,
+        23293872.625,
+        24728430.500000004
+      ]
+    },
+    "variant": "baseline",
+    "pair": 3
+  },
+  {
+    "tag": "followup3-0-candidate",
+    "benchmark": "native_lifetime/buffered/threaded_control",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r33-26lzfue1/final-target/release/deps/native_lifetime-75b163ae15aa6791",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "native_lifetime/buffered/threaded_control$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "native_lifetime/buffered",
+        "function_id": "threaded_control",
+        "value_str": null,
+        "throughput": {
+          "Bytes": 16777216
+        },
+        "full_id": "native_lifetime/buffered/threaded_control",
+        "directory_name": "native_lifetime_buffered/threaded_control",
+        "title": "native_lifetime/buffered/threaded_control"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20707302.836666662,
+            "upper_bound": 21797840.783333335
+          },
+          "point_estimate": 21164986.025,
+          "standard_error": 283393.0623127704
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20611194.333333332,
+            "upper_bound": 21207138.333333336
+          },
+          "point_estimate": 21085518.666666664,
+          "standard_error": 154579.92899950306
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 432435.1234227419,
+            "upper_bound": 1258143.48036349
+          },
+          "point_estimate": 821927.9741078569,
+          "standard_error": 215920.19109275538
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 707120.6340065682,
+            "upper_bound": 2843036.175268468
+          },
+          "point_estimate": 1814061.544512882,
+          "standard_error": 662506.0291311705
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0
+        ],
+        "times": [
+          63359173.0,
+          63812385.0,
+          65878290.0,
+          64212333.0,
+          63270955.0,
+          61701943.0,
+          63642143.0,
+          63641834.0,
+          63600996.0,
+          62734316.0,
+          63937453.0,
+          64336484.0,
+          62662044.0,
+          63570374.0,
+          60076870.0,
+          62262722.0,
+          66674091.0,
+          67426504.0,
+          92575060.0,
+          61965223.0,
+          61691372.0,
+          60531345.0,
+          63380663.0,
+          59126848.0,
+          65168507.0,
+          65759264.0,
+          61495443.0,
+          62462292.0,
+          59181405.0,
+          63276006.0,
+          60443108.0,
+          65237508.0,
+          59815511.0,
+          61141372.0,
+          71706051.0,
+          63242157.0,
+          59558524.0,
+          57635321.0,
+          58116995.0,
+          59487438.0
+        ]
+      },
+      "tukey.json": [
+        17312314.0,
+        18820967.875,
+        22844044.875,
+        24352698.75
+      ]
+    },
+    "variant": "candidate",
+    "pair": 3
+  }
+]

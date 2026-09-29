@@ -1,0 +1,16 @@
+    Checking rvvdk-core v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-core)
+    Checking rvvdk-platform v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-platform)
+    Checking rvvdk-datamover v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-datamover)
+error[E0599]: no variant or associated item named `IoUring` found for enum `ExecutionBackend` in the current scope
+   --> crates/rvvdk-datamover/src/controlled_mover.rs:195:58
+    |
+195 |                 if report.backend() == ExecutionBackend::IoUring {
+    |                                                          ^^^^^^^ variant or associated item not found in `ExecutionBackend`
+    |
+   ::: crates/rvvdk-datamover/src/execution.rs:56:1
+    |
+ 56 | pub enum ExecutionBackend {
+    | ------------------------- variant or associated item `IoUring` not found for this enum
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `rvvdk-datamover` (lib) due to 1 previous error

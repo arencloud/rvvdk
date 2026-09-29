@@ -35,8 +35,16 @@ impl fmt::Display for Failure {
 }
 impl From<rvvdk_core::Error> for Failure {
     fn from(error: rvvdk_core::Error) -> Self {
+        let cancelled = error.is_cancelled();
         if let Some(failure) = error.copy_failure() {
-            let mut result = Self::new("copy_failed", error.to_string());
+            let mut result = Self::new(
+                if cancelled {
+                    "cancelled"
+                } else {
+                    "copy_failed"
+                },
+                error.to_string(),
+            );
             result.details = Some(serde_json::json!({
                 "backend": failure.backend, "operation": format!("{:?}", failure.operation),
                 "offset": failure.range.map(|r| r.offset()), "length": failure.range.map(|r| r.length()),
@@ -49,6 +57,7 @@ impl From<rvvdk_core::Error> for Failure {
             return result;
         }
         let code = match &error {
+            rvvdk_core::Error::Cancelled => "cancelled",
             rvvdk_core::Error::VerificationMismatch { offset } => {
                 let mut result = Self::new("verification_mismatch", error.to_string());
                 result.details = Some(serde_json::json!({"mismatch_offset": offset}));

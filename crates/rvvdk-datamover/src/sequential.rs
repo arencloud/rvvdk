@@ -84,6 +84,23 @@ struct Stats {
 }
 
 impl Stats {
+    fn progress(&self) -> CopyProgress {
+        CopyProgress {
+            bytes_read: self.read,
+            bytes_written: self.written,
+            bytes_zeroed: self.zeroed,
+            bytes_discarded: self.discarded,
+            blocks_completed: self.blocks,
+            extents_completed: Some(self.extents),
+            unconfirmed_io: false,
+        }
+    }
+    fn checkpoint(&self, control: &impl crate::control::Checkpoint) -> Result<()> {
+        control.check(self.progress()).map_err(|e| {
+            crate::failure::execution("threaded", CopyOperation::Cancel, None, self.progress(), e)
+        })
+    }
+
     #[cold]
     fn failure(&self, operation: CopyOperation, range: Option<(u64, u64)>, error: Error) -> Error {
         crate::failure::execution(
@@ -122,6 +139,31 @@ where
     D: VirtualDisk + ?Sized,
     P: Progress,
 {
+    execute_controlled(
+        source,
+        destination,
+        extents,
+        options,
+        started,
+        progress,
+        &(),
+    )
+}
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn execute_controlled<
+    S: VirtualDisk + ?Sized,
+    D: VirtualDisk + ?Sized,
+    P: Progress,
+    C: crate::control::Checkpoint,
+>(
+    source: &S,
+    destination: &D,
+    extents: &[Extent],
+    options: CopyOptions,
+    started: Instant,
+    progress: &mut P,
+    control: &C,
+) -> Result<CopyStats> {
     let mut stats = Stats::default();
     let pool = BufferPool::new(
         options.buffer_count(),
@@ -131,8 +173,9 @@ where
     .map_err(|e| stats.failure(CopyOperation::Allocate, None, e))?;
     let mut buffer = pool.acquire();
     for extent in extents {
+        stats.checkpoint(control)?;
         match policy::select(extent.kind(), || destination.capabilities()) {
-            Operation::Copy => transfer::<true, _, _, _>(
+            Operation::Copy => transfer::<true, _, _, _, _>(
                 source,
                 destination,
                 *extent,
@@ -140,10 +183,11 @@ where
                 options.block_size(),
                 &mut stats,
                 progress,
+                control,
             )?,
             Operation::WriteZero => {
                 buffer.as_mut_slice().fill(0);
-                transfer::<false, _, _, _>(
+                transfer::<false, _, _, _, _>(
                     source,
                     destination,
                     *extent,
@@ -151,6 +195,7 @@ where
                     options.block_size(),
                     &mut stats,
                     progress,
+                    control,
                 )?;
             }
             Operation::Zero => {
@@ -182,7 +227,11 @@ where
         }
         stats.extents += 1;
         progress.extent_completed();
+        stats.checkpoint(control)?;
     }
+    control.flushing(stats.progress()).map_err(|e| {
+        crate::failure::execution("threaded", CopyOperation::Cancel, None, stats.progress(), e)
+    })?;
     destination
         .flush()
         .map_err(|e| stats.failure(CopyOperation::Flush, None, e))?;
@@ -197,7 +246,8 @@ where
     ))
 }
 
-fn transfer<const READ: bool, S, D, P>(
+#[allow(clippy::too_many_arguments)]
+fn transfer<const READ: bool, S, D, P, C: crate::control::Checkpoint>(
     source: &S,
     destination: &D,
     extent: Extent,
@@ -205,6 +255,7 @@ fn transfer<const READ: bool, S, D, P>(
     block_size: usize,
     stats: &mut Stats,
     progress: &mut P,
+    control: &C,
 ) -> Result<()>
 where
     S: VirtualDisk + ?Sized,
@@ -213,6 +264,7 @@ where
 {
     let mut offset = extent.offset();
     while offset < extent.end() {
+        stats.checkpoint(control)?;
         let length = (extent.end() - offset).min(block_size as u64);
         let size = usize::try_from(length).map_err(|_| Error::RangeOverflow { offset, length })?;
         let bytes = &mut buffer[..size];
@@ -221,6 +273,7 @@ where
                 .read_exact_at(offset, bytes)
                 .map_err(|e| stats.failure(CopyOperation::Read, Some((offset, length)), e))?;
             stats.read += length;
+            stats.checkpoint(control)?;
         }
         destination
             .write_all_at(offset, bytes)
@@ -238,6 +291,7 @@ where
             },
             length,
         );
+        stats.checkpoint(control)?;
     }
     Ok(())
 }

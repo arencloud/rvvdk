@@ -14,6 +14,8 @@ Copy accepts the plan tuning flags: `--backend threaded|auto|io-uring` (Threaded
 default), `--block-size` (1 MiB), `--workers` (1), `--queue-depth` (8), and
 `--memory-budget` (256 MiB). `--verify` adds logical read-back before publication.
 Verify accepts block size and memory budget; it needs no execution backend.
+Both commands accept [`--progress`](cli-progress.md); copy/verify in the binary
+handle SIGINT/SIGTERM cooperatively.
 Neither command accepts `--extents`. Endpoints are buffered. Defaults are unchanged
 and are not claimed to be optimal for every storage device.
 
@@ -96,7 +98,8 @@ identity, durability and publication operations.
 ## Success reports
 
 Exit 0 means the requested operation and its output report completed. Usage errors
-return 2; all operational, verification and output errors return 1. Human output
+return 2; all operational, verification and output errors return 1. R3.3 adds
+cooperative cancellation exits 130 (SIGINT/programmatic) and 143 (binary SIGTERM). Human output
 is a short completion summary. With `--json`, schema version 1 uses these fields:
 
 | Field | Meaning |
@@ -121,7 +124,7 @@ Auto fallback. Explicit io-uring failure does not silently switch executors.
 ## Failures and partial effects
 
 The existing version-1 error envelope adds optional `details`. Added codes are
-`verification_mismatch`, `destination_changed`, and `copy_failed`. Existing `io`,
+`verification_mismatch`, `destination_changed`, `copy_failed`, and R3.3 `cancelled`. Existing `io`,
 `memory_budget`, `same_file` and other codes remain. Match codes, not diagnostic
 text. Standalone mismatch details contain `mismatch_offset`.
 
@@ -150,8 +153,9 @@ Output serialization/write/flush can fail **after successful mutation**. That
 error carries `phase: report_output`, `operation_completed: true`, and the completed
 `result` inside details. Stdout may contain partial JSON. A nonzero exit therefore
 does not imply that no destination was created; retain and inspect stderr.
-Progress streams, cooperative cancellation, signal handling and resumable jobs
-are future work, starting with R3.3.
+[R3.3 lifecycle progress and cooperative cancellation](cli-progress.md) add
+optional stderr progress and cancellation exits 130/143. Resumable jobs remain
+future work. The destination and durability guarantees above remain unchanged.
 
 See [ADR-0031](adr/0031-local-copy-publication.md),
 [tests and benchmarks](benchmark-results/2026-09-29-r32/README.md), and Linux

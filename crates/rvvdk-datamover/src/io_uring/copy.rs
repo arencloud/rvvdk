@@ -275,9 +275,17 @@ impl NativeCopySession {
     }
 
     pub(crate) fn copy_range(&mut self, offset: u64, length: u64) -> Result<IoUringCopyStats> {
+        self.copy_range_controlled(offset, length, |_| Ok(()))
+    }
+    pub(crate) fn copy_range_controlled(
+        &mut self,
+        offset: u64,
+        length: u64,
+        checkpoint: impl Fn(CopyProgress) -> Result<()>,
+    ) -> Result<IoUringCopyStats> {
         self.context.start_offset = offset;
         self.context.length = length;
-        copy_with_engine(&mut self.engine, &self.pool, &self.context)
+        copy_with_engine(&mut self.engine, &self.pool, &self.context, checkpoint)
     }
 
     pub(crate) fn zero_buffer(&self) -> rvvdk_core::BufferGuard {
@@ -321,6 +329,7 @@ fn copy_with_engine(
     engine: &mut IoUringEngine,
     pool: &BufferPool,
     context: &CopyContext,
+    checkpoint: impl Fn(CopyProgress) -> Result<()>,
 ) -> Result<IoUringCopyStats> {
     let end = context
         .start_offset
@@ -341,6 +350,7 @@ fn copy_with_engine(
          * Each submitted read owns one BufferGuard from the pool.
          */
         let mut state = PipelineState::default();
+        checkpoint(stats.progress())?;
 
         refill_reads(
             engine,
@@ -355,6 +365,7 @@ fn copy_with_engine(
         engine.submit()?;
 
         while state.total_in_flight() > 0 {
+            checkpoint(stats.progress())?;
             let completed = engine.wait_owned_completion()?;
 
             match completed.kind() {
@@ -373,6 +384,7 @@ fn copy_with_engine(
                      * The completed write has now dropped its BufferGuard,
                      * so one or more buffers may be available for new reads.
                      */
+                    checkpoint(stats.progress())?;
                     refill_reads(
                         engine,
                         pool,
@@ -384,6 +396,7 @@ fn copy_with_engine(
                     )?;
                 }
             }
+            checkpoint(stats.progress())?;
             debug_assert_eq!(state.total_in_flight(), engine.in_flight(),);
 
             engine.submit()?;
@@ -619,7 +632,7 @@ mod tests {
                 read_window: 1,
             };
             // Deliberately bypass public capacity preflight to exercise a runtime EOF.
-            let error = copy_with_engine(&mut engine, &pool, &context).unwrap_err();
+            let error = copy_with_engine(&mut engine, &pool, &context, |_| Ok(())).unwrap_err();
             engine.shutdown().unwrap();
             assert_eq!(pool.available(), 1);
             let f = error.copy_failure().unwrap();

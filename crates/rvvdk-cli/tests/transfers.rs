@@ -312,3 +312,306 @@ fn report_failure_retains_completed_operation_and_published_bytes() {
         fs::read(&f.source).unwrap()
     );
 }
+
+struct CancellingProgress {
+    bytes: Vec<u8>,
+    token: rvvdk_datamover::CancellationToken,
+    phase: &'static str,
+}
+impl std::io::Write for CancellingProgress {
+    fn write(&mut self, b: &[u8]) -> std::io::Result<usize> {
+        self.bytes.extend_from_slice(b);
+        if String::from_utf8_lossy(&self.bytes).contains(&format!("\"phase\":\"{}\"", self.phase)) {
+            self.token.cancel();
+        }
+        Ok(b.len())
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+#[test]
+fn progress_cancellation_preserves_private_and_published_destination_states() {
+    for phase in [
+        "planning",
+        "copy_started",
+        "copying",
+        "copy_flushing",
+        "verifying",
+        "file_sync",
+        "publication",
+        "directory_sync",
+    ] {
+        let f = Fixture::new(1024 * 1024 + 7);
+        let token = rvvdk_datamover::CancellationToken::new();
+        let mut err = CancellingProgress {
+            bytes: Vec::new(),
+            token: token.clone(),
+            phase,
+        };
+        let mut out = Vec::new();
+        let code = rvvdk_cli::run_with_cancellation(
+            f.args("copy", &["--verify", "--progress", "--block-size", "4096"]),
+            &mut out,
+            &mut err,
+            &token,
+        );
+        assert_eq!(
+            code,
+            130,
+            "{phase}: {}",
+            String::from_utf8_lossy(&err.bytes)
+        );
+        assert!(out.is_empty());
+        let events: Vec<Value> = String::from_utf8(err.bytes)
+            .unwrap()
+            .lines()
+            .map(|l| serde_json::from_str(l).unwrap())
+            .collect();
+        assert_eq!(events.last().unwrap()["error"]["code"], "cancelled");
+        assert!(!events.iter().any(|e| e["phase"] == "completed"));
+        assert_eq!(f.destination.exists(), phase == "directory_sync");
+        if phase == "directory_sync" {
+            assert_eq!(
+                events.last().unwrap()["error"]["details"]["destination_state"],
+                "published"
+            );
+            assert_eq!(
+                fs::read(&f.source).unwrap(),
+                fs::read(&f.destination).unwrap()
+            );
+        }
+        if phase == "verifying" {
+            assert!(
+                events.last().unwrap()["error"]["details"]["bytes_verified"]
+                    .as_u64()
+                    .unwrap()
+                    > 0
+            );
+        }
+    }
+}
+#[test]
+fn lifecycle_json_is_separate_from_success_and_actual_backend_is_reported() {
+    for backend in ["threaded", "io-uring"] {
+        let f = Fixture::new(1024 * 1024 + 7);
+        let mut out = Vec::new();
+        let mut err = Vec::new();
+        assert_eq!(
+            rvvdk_cli::run(
+                f.args(
+                    "copy",
+                    &[
+                        "--progress",
+                        "--verify",
+                        "--backend",
+                        backend,
+                        "--block-size",
+                        "4096",
+                        "--workers",
+                        "4"
+                    ]
+                ),
+                &mut out,
+                &mut err
+            ),
+            0
+        );
+        let report: Value = serde_json::from_slice(&out).unwrap();
+        assert_eq!(report["backend"], backend);
+        let events: Vec<Value> = String::from_utf8(err)
+            .unwrap()
+            .lines()
+            .map(|l| serde_json::from_str(l).unwrap())
+            .collect();
+        assert_eq!(events.last().unwrap()["phase"], "completed");
+        let mut previous = 0;
+        for (i, e) in events.iter().enumerate() {
+            assert_eq!(e["sequence"], i + 1);
+            let n = e["logical_bytes_processed"].as_u64().unwrap();
+            assert!(n >= previous);
+            previous = n;
+        }
+        assert!(
+            events
+                .iter()
+                .position(|e| e["phase"] == "copy_flushed")
+                .unwrap()
+                < events
+                    .iter()
+                    .position(|e| e["phase"] == "publication")
+                    .unwrap()
+        );
+        assert_eq!(events.last().unwrap()["bytes_verified"], 1024 * 1024 + 7);
+    }
+}
+#[test]
+fn cancelled_overwrite_keeps_inode_tail_and_reports_partial_effects() {
+    let f = Fixture::new(1024 * 1024 + 7);
+    fs::write(&f.destination, vec![0xa5; 1024 * 1024 + 16]).unwrap();
+    let inode = fs::metadata(&f.destination).unwrap().ino();
+    let token = rvvdk_datamover::CancellationToken::new();
+    let mut err = CancellingProgress {
+        bytes: Vec::new(),
+        token: token.clone(),
+        phase: "copying",
+    };
+    assert_eq!(
+        rvvdk_cli::run_with_cancellation(
+            f.args(
+                "copy",
+                &["--overwrite", "--progress", "--block-size", "4096"]
+            ),
+            &mut Vec::new(),
+            &mut err,
+            &token
+        ),
+        130
+    );
+    let bytes = fs::read(&f.destination).unwrap();
+    assert_eq!(&bytes[1024 * 1024 + 7..], &[0xa5; 9]);
+    assert_eq!(fs::metadata(&f.destination).unwrap().ino(), inode);
+    assert!(bytes[..4096].iter().all(|b| *b == 0x5a));
+    let text = String::from_utf8(err.bytes).unwrap();
+    let error: Value = serde_json::from_str(text.lines().last().unwrap()).unwrap();
+    assert_eq!(
+        error["error"]["details"]["destination_state"],
+        "existing_may_be_modified"
+    );
+}
+#[test]
+fn progress_output_failure_stops_before_publication() {
+    struct Broken;
+    impl std::io::Write for Broken {
+        fn write(&mut self, _: &[u8]) -> std::io::Result<usize> {
+            Err(std::io::Error::from_raw_os_error(libc::ENOSPC))
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+    let f = Fixture::new(8199);
+    assert_eq!(
+        rvvdk_cli::run(
+            f.args("copy", &["--progress"]),
+            &mut Vec::new(),
+            &mut Broken
+        ),
+        1
+    );
+    assert!(!f.destination.exists());
+}
+#[test]
+fn sigint_and_sigterm_cancel_binary_copy_and_verify_with_bounded_shutdown() {
+    for (command, backend, signal, code, phase) in [
+        ("copy", "threaded", libc::SIGINT, 130, "copying"),
+        ("copy", "io-uring", libc::SIGTERM, 143, "copying"),
+        ("verify", "threaded", libc::SIGTERM, 143, "verifying"),
+    ] {
+        let f = Fixture::new(16 * 1024 * 1024 + 7);
+        if command == "verify" {
+            fs::copy(&f.source, &f.destination).unwrap();
+        }
+        let stdout = f.root.join("out");
+        let stderr = f.root.join("err");
+        let mut cmd = Command::new(env!("CARGO_BIN_EXE_rvddk"));
+        let mut args = f.args(command, &["--progress", "--block-size", "512"]);
+        if command == "copy" {
+            args.extend(["--backend".into(), backend.into()]);
+        }
+        let mut child = cmd
+            .args(&args[1..])
+            .stdout(File::create(&stdout).unwrap())
+            .stderr(File::create(&stderr).unwrap())
+            .spawn()
+            .unwrap();
+        let deadline = Instant::now() + Duration::from_secs(15);
+        let mut sent = false;
+        let status = loop {
+            if let Some(status) = child.try_wait().unwrap() {
+                break status;
+            }
+            if !sent
+                && fs::read_to_string(&stderr)
+                    .unwrap()
+                    .contains(&format!("\"phase\":\"{phase}\""))
+            {
+                // SAFETY: send a cancellation signal to this owned, live child.
+                assert_eq!(unsafe { libc::kill(child.id() as i32, signal) }, 0);
+                sent = true;
+            }
+            if Instant::now() > deadline {
+                child.kill().unwrap();
+                child.wait().unwrap();
+                panic!("signal cancellation timed out");
+            }
+            std::thread::sleep(Duration::from_millis(1));
+        };
+        assert!(
+            sent,
+            "child exited before signal: {}",
+            fs::read_to_string(&stderr).unwrap()
+        );
+        assert_eq!(
+            status.code(),
+            Some(code),
+            "{}",
+            fs::read_to_string(&stderr).unwrap()
+        );
+        assert!(fs::read(&stdout).unwrap().is_empty());
+        let text = fs::read_to_string(&stderr).unwrap();
+        let error: Value = serde_json::from_str(text.lines().last().unwrap()).unwrap();
+        assert_eq!(error["error"]["code"], "cancelled");
+        assert_eq!(f.destination.exists(), command == "verify");
+    }
+}
+#[test]
+fn sparse_copy_cancellation_after_full_logical_processing_is_not_completion() {
+    for backend in ["threaded", "io-uring"] {
+        let f = Fixture::new(0);
+        File::options()
+            .write(true)
+            .open(&f.source)
+            .unwrap()
+            .set_len(1024 * 1024 + 7)
+            .unwrap();
+        let token = rvvdk_datamover::CancellationToken::new();
+        let mut err = CancellingProgress {
+            bytes: Vec::new(),
+            token: token.clone(),
+            phase: "copy_flushing",
+        };
+        assert_eq!(
+            rvvdk_cli::run_with_cancellation(
+                f.args(
+                    "copy",
+                    &[
+                        "--progress",
+                        "--backend",
+                        backend,
+                        "--workers",
+                        "4",
+                        "--block-size",
+                        "4096"
+                    ]
+                ),
+                &mut Vec::new(),
+                &mut err,
+                &token
+            ),
+            130
+        );
+        assert!(!f.destination.exists());
+        let text = String::from_utf8(err.bytes).unwrap();
+        let events: Vec<Value> = text
+            .lines()
+            .map(|l| serde_json::from_str(l).unwrap())
+            .collect();
+        assert!(
+            events
+                .iter()
+                .any(|e| e["logical_bytes_processed"] == 1024 * 1024 + 7)
+        );
+        assert!(!events.iter().any(|e| e["phase"] == "completed"));
+    }
+}

@@ -41,3 +41,10 @@ pub use progress::{ProgressCompleted, ProgressSnapshot, ProgressTotals};
 
 mod verify;
 pub use verify::{VerificationReport, Verifier};
+
+mod control;
+pub use control::{
+    Cancellation, CancellationToken, CopyEvent, CopyObserver, CopyPhase, NoCancellation,
+};
+
+mod controlled_mover;

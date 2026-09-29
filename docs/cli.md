@@ -3,7 +3,7 @@
 The Linux command is **`rvddk`**, using the requested public spelling. Its crate
 is `rvvdk-cli`; existing `rvvdk-*` library and repository names are unchanged.
 Inspection and planning previews are read-only. R3.2 adds [copy and verification](cli-transfer.md).
-Progress events and cancellation remain R3.3 work. This page defines the unchanged
+[Progress events and cancellation](cli-progress.md) are available for copy/verify. This page defines the unchanged
 inspect/plan contract; the linked transfer guide defines the new commands.
 
 ```bash
@@ -140,7 +140,8 @@ target/release/rvddk verify source.raw existing.raw --format raw --json
 The [transfer contract](cli-transfer.md) defines bounded verification, private
 new output, no-clobber publication, explicit in-place overwrite, durability,
 backend reporting, and additional version-1 error details. The read-only preview
-schema above remains unchanged. Progress and cancellation are the next increment.
+schema above remains unchanged. [Progress and cancellation](cli-progress.md) extend copy/verify without changing
+these preview contracts.
 
 [ADR-0030](adr/0030-read-only-cli-preview.md) records previews;
 [ADR-0031](adr/0031-local-copy-publication.md) records transfer decisions.

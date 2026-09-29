@@ -4,6 +4,9 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error("operation cancelled")]
+    Cancelled,
+
     #[error("verification mismatch at byte offset {offset}")]
     VerificationMismatch { offset: u64 },
 
@@ -167,6 +170,16 @@ pub enum Error {
 }
 
 impl Error {
+    /// Cleanup uncertainty takes precedence over a cancellation cause.
+    pub fn is_cancelled(&self) -> bool {
+        match self {
+            Self::Cancelled => true,
+            Self::CopyExecution(failure) => failure.cause.is_cancelled(),
+            Self::EndpointPreflight { source, .. } => source.is_cancelled(),
+            _ => false,
+        }
+    }
+
     /// Find copy execution context, including when native cleanup also failed.
     pub fn copy_failure(&self) -> Option<&crate::CopyFailure> {
         match self {

@@ -1,0 +1,2281 @@
+diff --git a/crates/rvvdk-cli/Cargo.toml b/crates/rvvdk-cli/Cargo.toml
+index 0e3745f..3a14dca 100644
+--- a/crates/rvvdk-cli/Cargo.toml
++++ b/crates/rvvdk-cli/Cargo.toml
+@@ -28,3 +28,7 @@ harness = false
+ [[bench]]
+ name = "transfer"
+ harness = false
++
++[[bench]]
++name = "lifecycle"
++harness = false
+diff --git a/crates/rvvdk-cli/src/args.rs b/crates/rvvdk-cli/src/args.rs
+index 9b1ebee..7b6abef 100644
+--- a/crates/rvvdk-cli/src/args.rs
++++ b/crates/rvvdk-cli/src/args.rs
+@@ -86,6 +86,14 @@ fn copy_options(command: Command) -> Command {
+                 .help("Requested native queue depth"),
+         )
+ }
++fn progress(command: Command) -> Command {
++    command.arg(
++        Arg::new("progress")
++            .long("progress")
++            .action(ArgAction::SetTrue)
++            .help("Write lifecycle progress to stderr; JSON lines with --json"),
++    )
++}
+ pub(crate) fn command() -> Command {
+     // Build only the selected command's options. The full list and summaries
+     // remain available in root help, without cloning unrelated argument trees.
+@@ -101,8 +109,8 @@ pub(crate) fn command() -> Command {
+                 .mut_arg("overwrite", |a| a.help("Preview in-place overwrite of an existing file; still performs no writes"))
+                 .mut_arg("backend", |a| a.help("Requested copy backend; native selection is deferred until destination preparation"))))
+         .subcommand(Command::new("copy").about("Copy RAW bytes; publish new output without replacement")
+-            .defer(|c| copy_options(c).arg(Arg::new("verify").long("verify").action(ArgAction::SetTrue)
++            .defer(|c| progress(copy_options(c)).arg(Arg::new("verify").long("verify").action(ArgAction::SetTrue)
+                 .help("Read back and compare all logical bytes before publishing new output"))))
+         .subcommand(Command::new("verify").about("Compare source bytes with the destination prefix; no writes")
+-            .defer(|c| block_size(destination(source(c)))))
++            .defer(|c| progress(block_size(destination(source(c))))))
+ }
+diff --git a/crates/rvvdk-cli/src/error.rs b/crates/rvvdk-cli/src/error.rs
+index e70a0f0..ea9b533 100644
+--- a/crates/rvvdk-cli/src/error.rs
++++ b/crates/rvvdk-cli/src/error.rs
+@@ -35,8 +35,16 @@ impl fmt::Display for Failure {
+ }
+ impl From<rvvdk_core::Error> for Failure {
+     fn from(error: rvvdk_core::Error) -> Self {
++        let cancelled = error.is_cancelled();
+         if let Some(failure) = error.copy_failure() {
+-            let mut result = Self::new("copy_failed", error.to_string());
++            let mut result = Self::new(
++                if cancelled {
++                    "cancelled"
++                } else {
++                    "copy_failed"
++                },
++                error.to_string(),
++            );
+             result.details = Some(serde_json::json!({
+                 "backend": failure.backend, "operation": format!("{:?}", failure.operation),
+                 "offset": failure.range.map(|r| r.offset()), "length": failure.range.map(|r| r.length()),
+@@ -49,6 +57,7 @@ impl From<rvvdk_core::Error> for Failure {
+             return result;
+         }
+         let code = match &error {
++            rvvdk_core::Error::Cancelled => "cancelled",
+             rvvdk_core::Error::VerificationMismatch { offset } => {
+                 let mut result = Self::new("verification_mismatch", error.to_string());
+                 result.details = Some(serde_json::json!({"mismatch_offset": offset}));
+diff --git a/crates/rvvdk-cli/src/lib.rs b/crates/rvvdk-cli/src/lib.rs
+index dfad2df..047edd0 100644
+--- a/crates/rvvdk-cli/src/lib.rs
++++ b/crates/rvvdk-cli/src/lib.rs
+@@ -4,6 +4,7 @@ mod args;
+ mod error;
+ mod output;
+ mod preview;
++mod progress;
+ mod target;
+ mod transfer;
+ 
+@@ -16,6 +17,21 @@ pub fn run<I, T>(arguments: I, out: &mut impl Write, err: &mut impl Write) -> i3
+ where
+     I: IntoIterator<Item = T>,
+     T: Into<OsString>,
++{
++    run_with_cancellation(arguments, out, err, &rvvdk_datamover::NoCancellation)
++}
++/// Embeddable cancellation entry point; installs no process signal handlers.
++/// Cancellation returns 130. A completed operation is not rolled back.
++pub fn run_with_cancellation<I, T, C>(
++    arguments: I,
++    out: &mut impl Write,
++    err: &mut impl Write,
++    cancellation: &C,
++) -> i32
++where
++    I: IntoIterator<Item = T>,
++    T: Into<OsString>,
++    C: rvvdk_datamover::Cancellation,
+ {
+     let arguments: Vec<OsString> = arguments.into_iter().map(Into::into).collect();
+     let json = arguments
+@@ -39,14 +55,14 @@ where
+     };
+     let (name, args) = matches.subcommand().expect("required subcommand");
+     let result = match name {
+-        "copy" | "verify" => transfer::run(name, args, json, out),
++        "copy" | "verify" => transfer::run(name, args, json, out, err, cancellation),
+         _ => preview::build(name, args).and_then(|report| output::write(&report, json, out)),
+     };
+     match result {
+         Ok(()) => 0,
+         Err(error) => {
+             emit_error(&error, json, err);
+-            1
++            if error.code == "cancelled" { 130 } else { 1 }
+         }
+     }
+ }
+diff --git a/crates/rvvdk-cli/src/main.rs b/crates/rvvdk-cli/src/main.rs
+index 84dab22..c6840db 100644
+--- a/crates/rvvdk-cli/src/main.rs
++++ b/crates/rvvdk-cli/src/main.rs
+@@ -1,5 +1,74 @@
++use rvvdk_datamover::Cancellation;
++use std::sync::atomic::{AtomicI32, Ordering};
++static SIGNAL: AtomicI32 = AtomicI32::new(0);
++extern "C" fn cancel(signal: libc::c_int) {
++    // Lock-free atomic only: no allocation, locks, formatting or cleanup in handler.
++    let _ = SIGNAL.compare_exchange(0, signal, Ordering::Relaxed, Ordering::Relaxed);
++}
++struct Signals;
++impl Cancellation for Signals {
++    fn is_cancelled(&self) -> bool {
++        SIGNAL.load(Ordering::Relaxed) != 0
++    }
++}
++struct Handlers(Vec<(libc::c_int, libc::sigaction)>);
++impl Handlers {
++    fn install() -> std::io::Result<Self> {
++        let mut guard = Self(Vec::new());
++        for signal in [libc::SIGINT, libc::SIGTERM] {
++            // SAFETY: valid initialized sigaction structures; handler has C ABI and
++            // static lifetime. Main owns installation before creating job workers.
++            unsafe {
++                let mut action: libc::sigaction = std::mem::zeroed();
++                let mut old: libc::sigaction = std::mem::zeroed();
++                action.sa_sigaction = cancel as *const () as usize;
++                action.sa_flags = libc::SA_RESTART;
++                libc::sigemptyset(&mut action.sa_mask);
++                if libc::sigaction(signal, &action, &mut old) != 0 {
++                    return Err(std::io::Error::last_os_error());
++                }
++                guard.0.push((signal, old));
++            }
++        }
++        Ok(guard)
++    }
++}
++impl Drop for Handlers {
++    fn drop(&mut self) {
++        for (signal, old) in self.0.iter().rev() {
++            // SAFETY: restore the previously returned dispositions.
++            unsafe {
++                libc::sigaction(*signal, old, std::ptr::null_mut());
++            }
++        }
++    }
++}
+ fn main() -> std::process::ExitCode {
++    let arguments: Vec<_> = std::env::args_os().collect();
++    let transfer = arguments
++        .iter()
++        .skip(1)
++        .find(|a| !a.as_encoded_bytes().starts_with(b"-"))
++        .is_some_and(|a| a == "copy" || a == "verify");
++    let _handlers = if transfer {
++        match Handlers::install() {
++            Ok(h) => Some(h),
++            Err(e) => {
++                eprintln!("rvddk: install cancellation handlers: {e}");
++                return 1.into();
++            }
++        }
++    } else {
++        None
++    };
+     let mut out = std::io::BufWriter::new(std::io::stdout().lock());
+     let mut err = std::io::stderr().lock();
+-    std::process::ExitCode::from(rvvdk_cli::run(std::env::args_os(), &mut out, &mut err) as u8)
++    let code = rvvdk_cli::run_with_cancellation(arguments, &mut out, &mut err, &Signals);
++    // Operational failures retain exit 1 even if a cancellation signal also arrived.
++    let code = if code == 130 && SIGNAL.load(Ordering::Relaxed) == libc::SIGTERM {
++        143
++    } else {
++        code
++    };
++    std::process::ExitCode::from(code as u8)
+ }
+diff --git a/crates/rvvdk-cli/src/transfer.rs b/crates/rvvdk-cli/src/transfer.rs
+index b25b327..667f19f 100644
+--- a/crates/rvvdk-cli/src/transfer.rs
++++ b/crates/rvvdk-cli/src/transfer.rs
+@@ -1,9 +1,11 @@
++use crate::progress::{Combined, Feedback, check};
+ use crate::{
+     error::Failure,
+     preview::PathReport,
+     target::{self, Target},
+ };
+ use rvvdk_core::{RawDisk, VirtualDisk};
++use rvvdk_datamover::Cancellation;
+ use rvvdk_datamover::{
+     CopyOptions, DataMover, ExecutionBackend, ExecutionSelectionReason, ExecutionStrategy,
+     IoUringExecutionOptions, NativeRuntimeFallback, Verifier,
+@@ -50,17 +52,63 @@ fn reason(value: ExecutionSelectionReason) -> &'static str {
+         _ => "unknown",
+     }
+ }
+-pub(crate) fn run(
++pub(crate) fn run<C: Cancellation>(
+     name: &str,
+     args: &clap::ArgMatches,
+     json_output: bool,
+     out: &mut impl Write,
++    err: &mut impl Write,
++    cancellation: &C,
+ ) -> Result<()> {
+-    let report = if name == "copy" {
+-        copy(args, |_, _| Ok(()))?
++    let feedback = Feedback::new(err, args.get_flag("progress"), json_output);
++    let cancellation = Combined {
++        external: cancellation,
++        output_failed: &feedback.stopped,
++    };
++    let outcome = if name == "copy" {
++        copy_controlled(args, |_, _| Ok(()), &cancellation, &feedback)
+     } else {
+-        verify(args)?
++        verify(args, &cancellation, &feedback)
++    };
++    let report = match outcome {
++        Ok(report) => report,
++        Err(error) => {
++            let mut error = feedback.output_error(error);
++            let state = error
++                .details
++                .as_ref()
++                .and_then(|d| d["destination_state"].as_str());
++            feedback.emit(
++                if error.code == "cancelled" {
++                    "cancelled"
++                } else {
++                    "failed"
++                },
++                0,
++                None,
++                state,
++            );
++            // A terminal progress write can also fail, without losing primary context.
++            error = feedback.output_error(error);
++            return Err(error);
++        }
+     };
++    feedback.emit(
++        "completed",
++        report["logical_bytes"].as_u64().unwrap(),
++        report["backend"].as_str(),
++        Some(if report["destination_policy"] == "create_new_no_clobber" {
++            "published"
++        } else {
++            "existing"
++        }),
++    );
++    if feedback.stopped.load(std::sync::atomic::Ordering::Acquire) {
++        let mut error = feedback.output_error(Failure::new("output", "write completed progress"));
++        error.details =
++            Some(json!({"phase":"report_output","operation_completed":true,"result":report}));
++        return Err(error);
++    }
+     let result = if json_output {
+         serde_json::to_writer_pretty(&mut *out, &report)
+             .map_err(|e| Failure::new("output", e.to_string()))
+@@ -98,7 +146,13 @@ pub(crate) fn run(
+         e
+     })
+ }
+-fn verify(args: &clap::ArgMatches) -> Result<Value> {
++fn verify<C: Cancellation>(
++    args: &clap::ArgMatches,
++    cancellation: &C,
++    feedback: &Feedback<impl Write>,
++) -> Result<Value> {
++    feedback.emit("preparing", 0, None, None);
++    check(cancellation)?;
+     let started = Instant::now();
+     let source_path = args.get_one::<PathBuf>("source").unwrap();
+     let destination_path = args.get_one::<PathBuf>("destination").unwrap();
+@@ -113,21 +167,47 @@ fn verify(args: &clap::ArgMatches) -> Result<Value> {
+         *args.get_one("block-size").unwrap(),
+         *args.get_one("memory-budget").unwrap(),
+     )?;
+-    let report = verifier.verify(&source, &destination)?;
++    feedback.emit("verifying", source.size(), None, None);
++    let report = verifier
++        .verify_controlled(&source, &destination, cancellation, |n| {
++            feedback.verification(n, source.size())
++        })
++        .map_err(|e| {
++            let mut failure = Failure::from(e);
++            let details = failure.details.get_or_insert_with(|| json!({}));
++            details["phase"] = json!("verification");
++            details["bytes_verified"] = json!(feedback.verified.get());
++            failure
++        })?;
+     if stamp(&source_file)? != source_stamp || stamp(&destination_file)? != destination_stamp {
+         return Err(Failure::new(
+             "source_changed",
+             "verification endpoint changed during comparison",
+         ));
+     }
++    check(cancellation)?;
+     Ok(
+         json!({"schema_version":1,"command":"verify","format":"raw","status":"verified", "source":PathReport::from(source_path.as_path()),"destination":PathReport::from(destination_path.as_path()),"logical_bytes":report.bytes_verified,"destination_tail_bytes":destination.size()-source.size(),"verification_payload_bytes":verifier.storage_bytes(),"elapsed_seconds":started.elapsed().as_secs_f64()}),
+     )
+ }
+-fn copy(
++#[cfg(test)]
++fn copy(args: &clap::ArgMatches, hook: impl FnMut(&str, &Target) -> Result<()>) -> Result<Value> {
++    let mut sink = std::io::sink();
++    copy_controlled(
++        args,
++        hook,
++        &rvvdk_datamover::NoCancellation,
++        &Feedback::new(&mut sink, false, false),
++    )
++}
++fn copy_controlled<C: Cancellation>(
+     args: &clap::ArgMatches,
+     mut hook: impl FnMut(&str, &Target) -> Result<()>,
++    cancellation: &C,
++    feedback: &Feedback<impl Write>,
+ ) -> Result<Value> {
++    feedback.emit("planning", 0, None, None);
++    check(cancellation)?;
+     let started = Instant::now();
+     let source_path = args.get_one::<PathBuf>("source").unwrap();
+     let destination_path = args.get_one::<PathBuf>("destination").unwrap();
+@@ -156,6 +236,7 @@ fn copy(
+     let mut phase = "planning";
+     let mut counters = Value::Null;
+     let outcome = (|| {
++        check(cancellation)?;
+         let destination = disk(&target.file)?;
+         let plan = mover.plan_raw_with_destination(&source, &destination)?;
+         if target.existing {
+@@ -165,15 +246,26 @@ fn copy(
+             return Err(Failure::new("source_changed", "source changed before copy"));
+         }
+         phase = "copy";
++        check(cancellation)?;
+         target.mutation_started = true;
+-        let report = mover.execute_raw_plan(&plan, &source, &destination)?;
++        let report = mover.execute_raw_plan_controlled(
++            &plan,
++            &source,
++            &destination,
++            cancellation,
++            &|e: &rvvdk_datamover::CopyEvent| feedback.engine(e),
++        )?;
+         let stats = report.stats();
+         counters = json!({"bytes_read":stats.bytes_read(),"bytes_written":stats.bytes_written(),"bytes_zeroed":stats.bytes_zeroed(),"bytes_discarded":stats.bytes_discarded(),"blocks_copied":stats.blocks_copied(),"extents_processed":stats.extents_processed()});
+         phase = "verification";
+         hook(phase, &target)?;
++        feedback.emit(phase, source.size(), None, Some(target.failure_state()));
++        check(cancellation)?;
+         let verification = match &mut verifier {
+             Some(v) => {
+-                let r = v.verify(&source, &destination)?;
++                let r = v.verify_controlled(&source, &destination, cancellation, |n| {
++                    feedback.verification(n, source.size())
++                })?;
+                 json!({"bytes_verified":r.bytes_verified,"elapsed_seconds":r.elapsed.as_secs_f64()})
+             }
+             None => Value::Null,
+@@ -186,6 +278,8 @@ fn copy(
+         }
+         phase = "file_sync";
+         hook(phase, &target)?;
++        feedback.emit(phase, source.size(), None, Some(target.failure_state()));
++        check(cancellation)?;
+         target
+             .file
+             .sync_all()
+@@ -195,12 +289,17 @@ fn copy(
+         } else {
+             phase = "publication";
+             hook(phase, &target)?;
++            feedback.emit(phase, source.size(), None, Some(target.failure_state()));
++            check(cancellation)?;
+             target.publish()?;
+             phase = "directory_sync";
+             hook(phase, &target)?;
++            feedback.emit(phase, source.size(), None, Some(target.failure_state()));
++            // Once linked, finish directory durability even if cancellation arrives.
+             target.sync_parent()?;
+             target.check_name()?;
+         }
++        check(cancellation)?;
+         let runtime_fallback = match report.runtime_fallback() {
+             Some(NativeRuntimeFallback::RingUnavailable { os_error }) => {
+                 json!({"reason":"ring_unavailable","os_error":os_error})
+@@ -213,7 +312,7 @@ fn copy(
+         )
+     })();
+     outcome.map_err(|mut error: Failure| {
+-        error.details = Some(json!({"phase":phase,"destination_state":target.failure_state(),"confirmed_copy_stats":counters,"cause":error.details})); error
++        error.details = Some(json!({"phase":phase,"destination_state":target.failure_state(),"confirmed_copy_stats":counters,"bytes_verified":feedback.verified.get(),"cause":error.details})); error
+     })
+ }
+ 
+diff --git a/crates/rvvdk-cli/tests/transfers.rs b/crates/rvvdk-cli/tests/transfers.rs
+index 89c5ebe..310500f 100644
+--- a/crates/rvvdk-cli/tests/transfers.rs
++++ b/crates/rvvdk-cli/tests/transfers.rs
+@@ -312,3 +312,306 @@ fn report_failure_retains_completed_operation_and_published_bytes() {
+         fs::read(&f.source).unwrap()
+     );
+ }
++
++struct CancellingProgress {
++    bytes: Vec<u8>,
++    token: rvvdk_datamover::CancellationToken,
++    phase: &'static str,
++}
++impl std::io::Write for CancellingProgress {
++    fn write(&mut self, b: &[u8]) -> std::io::Result<usize> {
++        self.bytes.extend_from_slice(b);
++        if String::from_utf8_lossy(&self.bytes).contains(&format!("\"phase\":\"{}\"", self.phase)) {
++            self.token.cancel();
++        }
++        Ok(b.len())
++    }
++    fn flush(&mut self) -> std::io::Result<()> {
++        Ok(())
++    }
++}
++#[test]
++fn progress_cancellation_preserves_private_and_published_destination_states() {
++    for phase in [
++        "planning",
++        "copy_started",
++        "copying",
++        "copy_flushing",
++        "verifying",
++        "file_sync",
++        "publication",
++        "directory_sync",
++    ] {
++        let f = Fixture::new(1024 * 1024 + 7);
++        let token = rvvdk_datamover::CancellationToken::new();
++        let mut err = CancellingProgress {
++            bytes: Vec::new(),
++            token: token.clone(),
++            phase,
++        };
++        let mut out = Vec::new();
++        let code = rvvdk_cli::run_with_cancellation(
++            f.args("copy", &["--verify", "--progress", "--block-size", "4096"]),
++            &mut out,
++            &mut err,
++            &token,
++        );
++        assert_eq!(
++            code,
++            130,
++            "{phase}: {}",
++            String::from_utf8_lossy(&err.bytes)
++        );
++        assert!(out.is_empty());
++        let events: Vec<Value> = String::from_utf8(err.bytes)
++            .unwrap()
++            .lines()
++            .map(|l| serde_json::from_str(l).unwrap())
++            .collect();
++        assert_eq!(events.last().unwrap()["error"]["code"], "cancelled");
++        assert!(!events.iter().any(|e| e["phase"] == "completed"));
++        assert_eq!(f.destination.exists(), phase == "directory_sync");
++        if phase == "directory_sync" {
++            assert_eq!(
++                events.last().unwrap()["error"]["details"]["destination_state"],
++                "published"
++            );
++            assert_eq!(
++                fs::read(&f.source).unwrap(),
++                fs::read(&f.destination).unwrap()
++            );
++        }
++        if phase == "verifying" {
++            assert!(
++                events.last().unwrap()["error"]["details"]["bytes_verified"]
++                    .as_u64()
++                    .unwrap()
++                    > 0
++            );
++        }
++    }
++}
++#[test]
++fn lifecycle_json_is_separate_from_success_and_actual_backend_is_reported() {
++    for backend in ["threaded", "io-uring"] {
++        let f = Fixture::new(1024 * 1024 + 7);
++        let mut out = Vec::new();
++        let mut err = Vec::new();
++        assert_eq!(
++            rvvdk_cli::run(
++                f.args(
++                    "copy",
++                    &[
++                        "--progress",
++                        "--verify",
++                        "--backend",
++                        backend,
++                        "--block-size",
++                        "4096",
++                        "--workers",
++                        "4"
++                    ]
++                ),
++                &mut out,
++                &mut err
++            ),
++            0
++        );
++        let report: Value = serde_json::from_slice(&out).unwrap();
++        assert_eq!(report["backend"], backend);
++        let events: Vec<Value> = String::from_utf8(err)
++            .unwrap()
++            .lines()
++            .map(|l| serde_json::from_str(l).unwrap())
++            .collect();
++        assert_eq!(events.last().unwrap()["phase"], "completed");
++        let mut previous = 0;
++        for (i, e) in events.iter().enumerate() {
++            assert_eq!(e["sequence"], i + 1);
++            let n = e["logical_bytes_processed"].as_u64().unwrap();
++            assert!(n >= previous);
++            previous = n;
++        }
++        assert!(
++            events
++                .iter()
++                .position(|e| e["phase"] == "copy_flushed")
++                .unwrap()
++                < events
++                    .iter()
++                    .position(|e| e["phase"] == "publication")
++                    .unwrap()
++        );
++        assert_eq!(events.last().unwrap()["bytes_verified"], 1024 * 1024 + 7);
++    }
++}
++#[test]
++fn cancelled_overwrite_keeps_inode_tail_and_reports_partial_effects() {
++    let f = Fixture::new(1024 * 1024 + 7);
++    fs::write(&f.destination, vec![0xa5; 1024 * 1024 + 16]).unwrap();
++    let inode = fs::metadata(&f.destination).unwrap().ino();
++    let token = rvvdk_datamover::CancellationToken::new();
++    let mut err = CancellingProgress {
++        bytes: Vec::new(),
++        token: token.clone(),
++        phase: "copying",
++    };
++    assert_eq!(
++        rvvdk_cli::run_with_cancellation(
++            f.args(
++                "copy",
++                &["--overwrite", "--progress", "--block-size", "4096"]
++            ),
++            &mut Vec::new(),
++            &mut err,
++            &token
++        ),
++        130
++    );
++    let bytes = fs::read(&f.destination).unwrap();
++    assert_eq!(&bytes[1024 * 1024 + 7..], &[0xa5; 9]);
++    assert_eq!(fs::metadata(&f.destination).unwrap().ino(), inode);
++    assert!(bytes[..4096].iter().all(|b| *b == 0x5a));
++    let text = String::from_utf8(err.bytes).unwrap();
++    let error: Value = serde_json::from_str(text.lines().last().unwrap()).unwrap();
++    assert_eq!(
++        error["error"]["details"]["destination_state"],
++        "existing_may_be_modified"
++    );
++}
++#[test]
++fn progress_output_failure_stops_before_publication() {
++    struct Broken;
++    impl std::io::Write for Broken {
++        fn write(&mut self, _: &[u8]) -> std::io::Result<usize> {
++            Err(std::io::Error::from_raw_os_error(libc::ENOSPC))
++        }
++        fn flush(&mut self) -> std::io::Result<()> {
++            Ok(())
++        }
++    }
++    let f = Fixture::new(8199);
++    assert_eq!(
++        rvvdk_cli::run(
++            f.args("copy", &["--progress"]),
++            &mut Vec::new(),
++            &mut Broken
++        ),
++        1
++    );
++    assert!(!f.destination.exists());
++}
++#[test]
++fn sigint_and_sigterm_cancel_binary_copy_and_verify_with_bounded_shutdown() {
++    for (command, backend, signal, code, phase) in [
++        ("copy", "threaded", libc::SIGINT, 130, "copying"),
++        ("copy", "io-uring", libc::SIGTERM, 143, "copying"),
++        ("verify", "threaded", libc::SIGTERM, 143, "verifying"),
++    ] {
++        let f = Fixture::new(16 * 1024 * 1024 + 7);
++        if command == "verify" {
++            fs::copy(&f.source, &f.destination).unwrap();
++        }
++        let stdout = f.root.join("out");
++        let stderr = f.root.join("err");
++        let mut cmd = Command::new(env!("CARGO_BIN_EXE_rvddk"));
++        let mut args = f.args(command, &["--progress", "--block-size", "512"]);
++        if command == "copy" {
++            args.extend(["--backend".into(), backend.into()]);
++        }
++        let mut child = cmd
++            .args(&args[1..])
++            .stdout(File::create(&stdout).unwrap())
++            .stderr(File::create(&stderr).unwrap())
++            .spawn()
++            .unwrap();
++        let deadline = Instant::now() + Duration::from_secs(15);
++        let mut sent = false;
++        let status = loop {
++            if let Some(status) = child.try_wait().unwrap() {
++                break status;
++            }
++            if !sent
++                && fs::read_to_string(&stderr)
++                    .unwrap()
++                    .contains(&format!("\"phase\":\"{phase}\""))
++            {
++                // SAFETY: send a cancellation signal to this owned, live child.
++                assert_eq!(unsafe { libc::kill(child.id() as i32, signal) }, 0);
++                sent = true;
++            }
++            if Instant::now() > deadline {
++                child.kill().unwrap();
++                child.wait().unwrap();
++                panic!("signal cancellation timed out");
++            }
++            std::thread::sleep(Duration::from_millis(1));
++        };
++        assert!(
++            sent,
++            "child exited before signal: {}",
++            fs::read_to_string(&stderr).unwrap()
++        );
++        assert_eq!(
++            status.code(),
++            Some(code),
++            "{}",
++            fs::read_to_string(&stderr).unwrap()
++        );
++        assert!(fs::read(&stdout).unwrap().is_empty());
++        let text = fs::read_to_string(&stderr).unwrap();
++        let error: Value = serde_json::from_str(text.lines().last().unwrap()).unwrap();
++        assert_eq!(error["error"]["code"], "cancelled");
++        assert_eq!(f.destination.exists(), command == "verify");
++    }
++}
++#[test]
++fn sparse_copy_cancellation_after_full_logical_processing_is_not_completion() {
++    for backend in ["threaded", "io-uring"] {
++        let f = Fixture::new(0);
++        File::options()
++            .write(true)
++            .open(&f.source)
++            .unwrap()
++            .set_len(1024 * 1024 + 7)
++            .unwrap();
++        let token = rvvdk_datamover::CancellationToken::new();
++        let mut err = CancellingProgress {
++            bytes: Vec::new(),
++            token: token.clone(),
++            phase: "copy_flushing",
++        };
++        assert_eq!(
++            rvvdk_cli::run_with_cancellation(
++                f.args(
++                    "copy",
++                    &[
++                        "--progress",
++                        "--backend",
++                        backend,
++                        "--workers",
++                        "4",
++                        "--block-size",
++                        "4096"
++                    ]
++                ),
++                &mut Vec::new(),
++                &mut err,
++                &token
++            ),
++            130
++        );
++        assert!(!f.destination.exists());
++        let text = String::from_utf8(err.bytes).unwrap();
++        let events: Vec<Value> = text
++            .lines()
++            .map(|l| serde_json::from_str(l).unwrap())
++            .collect();
++        assert!(
++            events
++                .iter()
++                .any(|e| e["logical_bytes_processed"] == 1024 * 1024 + 7)
++        );
++        assert!(!events.iter().any(|e| e["phase"] == "completed"));
++    }
++}
+diff --git a/crates/rvvdk-core/src/copy_failure.rs b/crates/rvvdk-core/src/copy_failure.rs
+index 7b21481..ee98fc0 100644
+--- a/crates/rvvdk-core/src/copy_failure.rs
++++ b/crates/rvvdk-core/src/copy_failure.rs
+@@ -4,6 +4,7 @@ use crate::{DiskRange, Error};
+ #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+ #[non_exhaustive]
+ pub enum CopyOperation {
++    Cancel,
+     Allocate,
+     Read,
+     Write,
+diff --git a/crates/rvvdk-core/src/error.rs b/crates/rvvdk-core/src/error.rs
+index 02e9907..53d50b2 100644
+--- a/crates/rvvdk-core/src/error.rs
++++ b/crates/rvvdk-core/src/error.rs
+@@ -4,6 +4,9 @@ pub type Result<T> = std::result::Result<T, Error>;
+ 
+ #[derive(Debug, Error)]
+ pub enum Error {
++    #[error("operation cancelled")]
++    Cancelled,
++
+     #[error("verification mismatch at byte offset {offset}")]
+     VerificationMismatch { offset: u64 },
+ 
+@@ -167,6 +170,16 @@ pub enum Error {
+ }
+ 
+ impl Error {
++    /// Cleanup uncertainty takes precedence over a cancellation cause.
++    pub fn is_cancelled(&self) -> bool {
++        match self {
++            Self::Cancelled => true,
++            Self::CopyExecution(failure) => failure.cause.is_cancelled(),
++            Self::EndpointPreflight { source, .. } => source.is_cancelled(),
++            _ => false,
++        }
++    }
++
+     /// Find copy execution context, including when native cleanup also failed.
+     pub fn copy_failure(&self) -> Option<&crate::CopyFailure> {
+         match self {
+diff --git a/crates/rvvdk-datamover/src/concurrent.rs b/crates/rvvdk-datamover/src/concurrent.rs
+index c5dfb21..a5ec4a8 100644
+--- a/crates/rvvdk-datamover/src/concurrent.rs
++++ b/crates/rvvdk-datamover/src/concurrent.rs
+@@ -90,6 +90,32 @@ where
+     S: VirtualDisk + ?Sized,
+     D: VirtualDisk + ?Sized,
+     P: FnOnce(&SyncSender<WorkItem>) -> Result<()>,
++{
++    execute_controlled(
++        source,
++        destination,
++        worker_count,
++        queue_capacity,
++        pool,
++        &(),
++        |sender, _| producer(sender),
++    )
++}
++#[allow(clippy::too_many_arguments)]
++pub(crate) fn execute_controlled<S, D, P, C>(
++    source: &S,
++    destination: &D,
++    worker_count: usize,
++    queue_capacity: usize,
++    pool: &BufferPool,
++    control: &C,
++    producer: P,
++) -> Result<WorkerStats>
++where
++    S: VirtualDisk + ?Sized,
++    D: VirtualDisk + ?Sized,
++    C: crate::control::Checkpoint,
++    P: FnOnce(&SyncSender<WorkItem>, &dyn Fn() -> Result<()>) -> Result<()>,
+ {
+     let (sender, receiver) = sync_channel::<WorkItem>(queue_capacity);
+ 
+@@ -97,6 +123,8 @@ where
+ 
+     let results = Mutex::new(Vec::<WorkerStats>::with_capacity(worker_count));
+     let failure = Failure::default();
++    let observed = Mutex::new(WorkerStats::default());
++    let cancellation = control.cancellation();
+ 
+     std::thread::scope(|scope| {
+         for _ in 0..worker_count {
+@@ -104,9 +132,18 @@ where
+ 
+             let results = &results;
+             let failure = &failure;
++            let observed = &observed;
+ 
+             scope.spawn(move || {
+-                let stats = run_worker(source, destination, &receiver, pool, failure);
++                let stats = run_worker_controlled::<_, _, C>(
++                    source,
++                    destination,
++                    &receiver,
++                    pool,
++                    failure,
++                    cancellation,
++                    observed,
++                );
+                 results
+                     .lock()
+                     .unwrap_or_else(|p| p.into_inner())
+@@ -118,7 +155,15 @@ where
+         // wakes a producer blocked in send, even when the queue is full.
+         drop(receiver);
+ 
+-        if let Err(error) = producer(&sender) {
++        let checkpoint = || {
++            if C::ENABLED {
++                let stats = *observed.lock().unwrap_or_else(|p| p.into_inner());
++                control.check(stats.progress())
++            } else {
++                Ok(())
++            }
++        };
++        if let Err(error) = producer(&sender, &checkpoint) {
+             failure.record(error);
+         }
+ 
+@@ -157,12 +202,15 @@ where
+     Ok(total)
+ }
+ 
+-fn run_worker<S, D>(
++#[allow(clippy::too_many_arguments)]
++fn run_worker_controlled<S, D, C: crate::control::Checkpoint>(
+     source: &S,
+     destination: &D,
+     receiver: &Arc<Mutex<Receiver<WorkItem>>>,
+     pool: &BufferPool,
+     failure: &Failure,
++    cancellation: &dyn crate::Cancellation,
++    observed: &Mutex<WorkerStats>,
+ ) -> WorkerStats
+ where
+     S: VirtualDisk + ?Sized,
+@@ -190,7 +238,28 @@ where
+         if failure.is_stopped() {
+             break;
+         }
+-        if let Err(error) = process_work(source, destination, work, pool, &mut stats) {
++        if C::ENABLED && cancellation.is_cancelled() {
++            failure.record(Error::Cancelled);
++            break;
++        }
++        let before = stats;
++        let result = process_work_controlled::<S, D, C>(
++            source,
++            destination,
++            work,
++            pool,
++            &mut stats,
++            cancellation,
++        );
++        if C::ENABLED {
++            let mut sum = observed.lock().unwrap_or_else(|p| p.into_inner());
++            sum.bytes_read += stats.bytes_read - before.bytes_read;
++            sum.bytes_written += stats.bytes_written - before.bytes_written;
++            sum.bytes_zeroed += stats.bytes_zeroed - before.bytes_zeroed;
++            sum.bytes_discarded += stats.bytes_discarded - before.bytes_discarded;
++            sum.blocks_copied += stats.blocks_copied - before.blocks_copied;
++        }
++        if let Err(error) = result {
+             failure.record(error);
+             break;
+         }
+@@ -199,12 +268,13 @@ where
+     stats
+ }
+ 
+-fn process_work<S, D>(
++fn process_work_controlled<S, D, C: crate::control::Checkpoint>(
+     source: &S,
+     destination: &D,
+     work: WorkItem,
+     pool: &BufferPool,
+     stats: &mut WorkerStats,
++    cancellation: &dyn crate::Cancellation,
+ ) -> Result<()>
+ where
+     S: VirtualDisk + ?Sized,
+@@ -225,6 +295,9 @@ where
+                 .read_exact_at(work.offset(), buffer)
+                 .map_err(|e| work_failure(CopyOperation::Read, work, e))?;
+             stats.bytes_read += work.length() as u64;
++            if C::ENABLED && cancellation.is_cancelled() {
++                return Err(Error::Cancelled);
++            }
+ 
+             destination
+                 .write_all_at(work.offset(), buffer)
+diff --git a/crates/rvvdk-datamover/src/io_uring/copy.rs b/crates/rvvdk-datamover/src/io_uring/copy.rs
+index 97880b0..7d41186 100644
+--- a/crates/rvvdk-datamover/src/io_uring/copy.rs
++++ b/crates/rvvdk-datamover/src/io_uring/copy.rs
+@@ -275,9 +275,17 @@ impl NativeCopySession {
+     }
+ 
+     pub(crate) fn copy_range(&mut self, offset: u64, length: u64) -> Result<IoUringCopyStats> {
++        self.copy_range_controlled(offset, length, |_| Ok(()))
++    }
++    pub(crate) fn copy_range_controlled(
++        &mut self,
++        offset: u64,
++        length: u64,
++        checkpoint: impl Fn(CopyProgress) -> Result<()>,
++    ) -> Result<IoUringCopyStats> {
+         self.context.start_offset = offset;
+         self.context.length = length;
+-        copy_with_engine(&mut self.engine, &self.pool, &self.context)
++        copy_with_engine(&mut self.engine, &self.pool, &self.context, checkpoint)
+     }
+ 
+     pub(crate) fn zero_buffer(&self) -> rvvdk_core::BufferGuard {
+@@ -321,6 +329,7 @@ fn copy_with_engine(
+     engine: &mut IoUringEngine,
+     pool: &BufferPool,
+     context: &CopyContext,
++    checkpoint: impl Fn(CopyProgress) -> Result<()>,
+ ) -> Result<IoUringCopyStats> {
+     let end = context
+         .start_offset
+@@ -341,6 +350,7 @@ fn copy_with_engine(
+          * Each submitted read owns one BufferGuard from the pool.
+          */
+         let mut state = PipelineState::default();
++        checkpoint(stats.progress())?;
+ 
+         refill_reads(
+             engine,
+@@ -355,6 +365,7 @@ fn copy_with_engine(
+         engine.submit()?;
+ 
+         while state.total_in_flight() > 0 {
++            checkpoint(stats.progress())?;
+             let completed = engine.wait_owned_completion()?;
+ 
+             match completed.kind() {
+@@ -373,6 +384,7 @@ fn copy_with_engine(
+                      * The completed write has now dropped its BufferGuard,
+                      * so one or more buffers may be available for new reads.
+                      */
++                    checkpoint(stats.progress())?;
+                     refill_reads(
+                         engine,
+                         pool,
+@@ -384,6 +396,7 @@ fn copy_with_engine(
+                     )?;
+                 }
+             }
++            checkpoint(stats.progress())?;
+             debug_assert_eq!(state.total_in_flight(), engine.in_flight(),);
+ 
+             engine.submit()?;
+@@ -619,7 +632,7 @@ mod tests {
+                 read_window: 1,
+             };
+             // Deliberately bypass public capacity preflight to exercise a runtime EOF.
+-            let error = copy_with_engine(&mut engine, &pool, &context).unwrap_err();
++            let error = copy_with_engine(&mut engine, &pool, &context, |_| Ok(())).unwrap_err();
+             engine.shutdown().unwrap();
+             assert_eq!(pool.available(), 1);
+             let f = error.copy_failure().unwrap();
+diff --git a/crates/rvvdk-datamover/src/io_uring/extent_copy.rs b/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
+index b38c771..6513575 100644
+--- a/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
++++ b/crates/rvvdk-datamover/src/io_uring/extent_copy.rs
+@@ -307,32 +307,44 @@ impl PreparedNativeExtents {
+     }
+ 
+     pub(crate) fn execute<D: VirtualDisk>(
++        self,
++        destination: &D,
++        plan: &NativeExtentPlan,
++    ) -> Result<IoUringExtentCopyStats> {
++        self.execute_controlled(destination, plan, &())
++    }
++    pub(crate) fn execute_controlled<D: VirtualDisk, C: crate::control::Checkpoint>(
+         mut self,
+         destination: &D,
+         plan: &NativeExtentPlan,
++        control: &C,
+     ) -> Result<IoUringExtentCopyStats> {
+-        let result = self.execute_inner(destination, plan);
++        let result = self.execute_inner(destination, plan, control);
+         match self.session {
+             Some(session) => session.finish(result, IoUringExtentCopyStats::progress),
+             None => result,
+         }
+     }
+ 
+-    fn execute_inner<D: VirtualDisk>(
++    fn execute_inner<D: VirtualDisk, C: crate::control::Checkpoint>(
+         &mut self,
+         destination: &D,
+         plan: &NativeExtentPlan,
++        control: &C,
+     ) -> Result<IoUringExtentCopyStats> {
+         let mut aggregate = IoUringExtentCopyStats::default();
+ 
+         for extent in plan.extents() {
++            checkpoint(control, aggregate.progress())?;
+             match policy::select(extent.kind(), || destination.capabilities()) {
+                 Operation::Copy => {
+                     let stats = self
+                         .session
+                         .as_mut()
+                         .expect("Data plan has a prepared session")
+-                        .copy_range(extent.offset(), extent.length())
++                        .copy_range_controlled(extent.offset(), extent.length(), |p| {
++                            control.check(crate::control::sum(aggregate.progress(), p))
++                        })
+                         .map_err(|e| crate::failure::native_prior(e, aggregate.progress()))?;
+ 
+                     aggregate.add_data_extent(stats)?;
+@@ -372,6 +384,7 @@ impl PreparedNativeExtents {
+                             *extent,
+                             buffer.as_slice(),
+                             &mut aggregate,
++                            control,
+                         )?;
+                     } else {
+                         write_zero_fallback(
+@@ -382,20 +395,23 @@ impl PreparedNativeExtents {
+                                 .expect("nonempty sparse plan")
+                                 .as_slice(),
+                             &mut aggregate,
++                            control,
+                         )?;
+                     }
+                 }
+             }
++            checkpoint(control, aggregate.progress())?;
+         }
+         Ok(aggregate)
+     }
+ }
+ 
+-fn write_zero_fallback<D>(
++fn write_zero_fallback<D, C: crate::control::Checkpoint>(
+     destination: &D,
+     extent: Extent,
+     buffer: &[u8],
+     stats: &mut IoUringExtentCopyStats,
++    control: &C,
+ ) -> Result<()>
+ where
+     D: VirtualDisk,
+@@ -407,6 +423,7 @@ where
+     let end = extent.end();
+ 
+     while offset < end {
++        checkpoint(control, stats.progress())?;
+         let remaining = end - offset;
+ 
+         let request_length_u64 = remaining.min(block_size as u64);
+@@ -429,6 +446,7 @@ where
+             })?;
+ 
+         stats.add_fallback_write(request_length_u64)?;
++        checkpoint(control, stats.progress())?;
+     }
+ 
+     /*
+@@ -444,3 +462,9 @@ where
+      */
+     stats.complete_extent()
+ }
++
++fn checkpoint(control: &impl crate::control::Checkpoint, progress: CopyProgress) -> Result<()> {
++    control.check(progress).map_err(|e| {
++        crate::failure::execution("io_uring", CopyOperation::Cancel, None, progress, e)
++    })
++}
+diff --git a/crates/rvvdk-datamover/src/lib.rs b/crates/rvvdk-datamover/src/lib.rs
+index b8dc263..2b8261f 100644
+--- a/crates/rvvdk-datamover/src/lib.rs
++++ b/crates/rvvdk-datamover/src/lib.rs
+@@ -41,3 +41,10 @@ pub use progress::{ProgressCompleted, ProgressSnapshot, ProgressTotals};
+ 
+ mod verify;
+ pub use verify::{VerificationReport, Verifier};
++
++mod control;
++pub use control::{
++    Cancellation, CancellationToken, CopyEvent, CopyObserver, CopyPhase, NoCancellation,
++};
++
++mod controlled_mover;
+diff --git a/crates/rvvdk-datamover/src/sequential.rs b/crates/rvvdk-datamover/src/sequential.rs
+index 8f7d51f..8f28656 100644
+--- a/crates/rvvdk-datamover/src/sequential.rs
++++ b/crates/rvvdk-datamover/src/sequential.rs
+@@ -84,6 +84,23 @@ struct Stats {
+ }
+ 
+ impl Stats {
++    fn progress(&self) -> CopyProgress {
++        CopyProgress {
++            bytes_read: self.read,
++            bytes_written: self.written,
++            bytes_zeroed: self.zeroed,
++            bytes_discarded: self.discarded,
++            blocks_completed: self.blocks,
++            extents_completed: Some(self.extents),
++            unconfirmed_io: false,
++        }
++    }
++    fn checkpoint(&self, control: &impl crate::control::Checkpoint) -> Result<()> {
++        control.check(self.progress()).map_err(|e| {
++            crate::failure::execution("threaded", CopyOperation::Cancel, None, self.progress(), e)
++        })
++    }
++
+     #[cold]
+     fn failure(&self, operation: CopyOperation, range: Option<(u64, u64)>, error: Error) -> Error {
+         crate::failure::execution(
+@@ -122,6 +139,31 @@ where
+     D: VirtualDisk + ?Sized,
+     P: Progress,
+ {
++    execute_controlled(
++        source,
++        destination,
++        extents,
++        options,
++        started,
++        progress,
++        &(),
++    )
++}
++#[allow(clippy::too_many_arguments)]
++pub(crate) fn execute_controlled<
++    S: VirtualDisk + ?Sized,
++    D: VirtualDisk + ?Sized,
++    P: Progress,
++    C: crate::control::Checkpoint,
++>(
++    source: &S,
++    destination: &D,
++    extents: &[Extent],
++    options: CopyOptions,
++    started: Instant,
++    progress: &mut P,
++    control: &C,
++) -> Result<CopyStats> {
+     let mut stats = Stats::default();
+     let pool = BufferPool::new(
+         options.buffer_count(),
+@@ -131,8 +173,9 @@ where
+     .map_err(|e| stats.failure(CopyOperation::Allocate, None, e))?;
+     let mut buffer = pool.acquire();
+     for extent in extents {
++        stats.checkpoint(control)?;
+         match policy::select(extent.kind(), || destination.capabilities()) {
+-            Operation::Copy => transfer::<true, _, _, _>(
++            Operation::Copy => transfer::<true, _, _, _, _>(
+                 source,
+                 destination,
+                 *extent,
+@@ -140,10 +183,11 @@ where
+                 options.block_size(),
+                 &mut stats,
+                 progress,
++                control,
+             )?,
+             Operation::WriteZero => {
+                 buffer.as_mut_slice().fill(0);
+-                transfer::<false, _, _, _>(
++                transfer::<false, _, _, _, _>(
+                     source,
+                     destination,
+                     *extent,
+@@ -151,6 +195,7 @@ where
+                     options.block_size(),
+                     &mut stats,
+                     progress,
++                    control,
+                 )?;
+             }
+             Operation::Zero => {
+@@ -182,7 +227,11 @@ where
+         }
+         stats.extents += 1;
+         progress.extent_completed();
++        stats.checkpoint(control)?;
+     }
++    control.flushing(stats.progress()).map_err(|e| {
++        crate::failure::execution("threaded", CopyOperation::Cancel, None, stats.progress(), e)
++    })?;
+     destination
+         .flush()
+         .map_err(|e| stats.failure(CopyOperation::Flush, None, e))?;
+@@ -197,7 +246,8 @@ where
+     ))
+ }
+ 
+-fn transfer<const READ: bool, S, D, P>(
++#[allow(clippy::too_many_arguments)]
++fn transfer<const READ: bool, S, D, P, C: crate::control::Checkpoint>(
+     source: &S,
+     destination: &D,
+     extent: Extent,
+@@ -205,6 +255,7 @@ fn transfer<const READ: bool, S, D, P>(
+     block_size: usize,
+     stats: &mut Stats,
+     progress: &mut P,
++    control: &C,
+ ) -> Result<()>
+ where
+     S: VirtualDisk + ?Sized,
+@@ -213,6 +264,7 @@ where
+ {
+     let mut offset = extent.offset();
+     while offset < extent.end() {
++        stats.checkpoint(control)?;
+         let length = (extent.end() - offset).min(block_size as u64);
+         let size = usize::try_from(length).map_err(|_| Error::RangeOverflow { offset, length })?;
+         let bytes = &mut buffer[..size];
+@@ -221,6 +273,7 @@ where
+                 .read_exact_at(offset, bytes)
+                 .map_err(|e| stats.failure(CopyOperation::Read, Some((offset, length)), e))?;
+             stats.read += length;
++            stats.checkpoint(control)?;
+         }
+         destination
+             .write_all_at(offset, bytes)
+@@ -238,6 +291,7 @@ where
+             },
+             length,
+         );
++        stats.checkpoint(control)?;
+     }
+     Ok(())
+ }
+diff --git a/crates/rvvdk-datamover/src/verify.rs b/crates/rvvdk-datamover/src/verify.rs
+index 0609c68..b4b9ad1 100644
+--- a/crates/rvvdk-datamover/src/verify.rs
++++ b/crates/rvvdk-datamover/src/verify.rs
+@@ -63,6 +63,29 @@ impl Verifier {
+         source: &S,
+         destination: &D,
+     ) -> Result<VerificationReport> {
++        self.verify_controlled(source, destination, &crate::NoCancellation, |_| {})
++    }
++    /// Compare at block checkpoints. Callbacks report a confirmed matching prefix,
++    /// on the caller's thread, and must not panic. Cancellation does not flush.
++    pub fn verify_controlled<
++        S: VirtualDisk + ?Sized,
++        D: VirtualDisk + ?Sized,
++        C: crate::Cancellation,
++    >(
++        &mut self,
++        source: &S,
++        destination: &D,
++        cancellation: &C,
++        progress: impl Fn(u64),
++    ) -> Result<VerificationReport> {
++        let check = || {
++            if cancellation.is_cancelled() {
++                Err(Error::Cancelled)
++            } else {
++                Ok(())
++            }
++        };
++        check()?;
+         let started = Instant::now();
+         let inspect = || -> Result<_> {
+             let s = source.copy_endpoint()?;
+@@ -94,8 +117,10 @@ impl Verifier {
+         let before = inspect()?;
+         let mut offset = 0;
+         while offset < self.length {
++            check()?;
+             let count = (self.length - offset).min(self.source.len() as u64) as usize;
+             source.read_exact_at(offset, &mut self.source[..count])?;
++            check()?;
+             destination.read_exact_at(offset, &mut self.destination[..count])?;
+             if self.source[..count] != self.destination[..count] {
+                 let index = self.source[..count]
+@@ -108,12 +133,15 @@ impl Verifier {
+                 });
+             }
+             offset += count as u64;
++            progress(offset);
++            check()?;
+         }
+         if inspect()? != before {
+             return Err(Error::EndpointChanged(
+                 "verification endpoint changed".into(),
+             ));
+         }
++        check()?;
+         Ok(VerificationReport {
+             bytes_verified: self.length,
+             elapsed: started.elapsed(),
+diff --git a/crates/rvvdk-cli/benches/lifecycle.rs b/crates/rvvdk-cli/benches/lifecycle.rs
+new file mode 100644
+index 0000000..5536c17
+--- /dev/null
++++ b/crates/rvvdk-cli/benches/lifecycle.rs
+@@ -0,0 +1,122 @@
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use rvvdk_datamover::CancellationToken;
++use std::{
++    fs,
++    io::Write,
++    time::{Duration, Instant},
++};
++struct Capture {
++    bytes: Vec<u8>,
++    token: CancellationToken,
++    cancel: bool,
++}
++impl Write for Capture {
++    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
++        self.bytes.extend_from_slice(bytes);
++        if self.cancel
++            && self
++                .bytes
++                .windows(b"\"phase\":\"copying\"".len())
++                .any(|w| w == b"\"phase\":\"copying\"")
++        {
++            self.token.cancel();
++        }
++        Ok(bytes.len())
++    }
++    fn flush(&mut self) -> std::io::Result<()> {
++        Ok(())
++    }
++}
++fn lifecycle(c: &mut Criterion) {
++    let dir = std::env::var_os("RVVDK_BENCH_DIR")
++        .map(std::path::PathBuf::from)
++        .unwrap_or_else(std::env::temp_dir)
++        .join(format!("rvddk-lifecycle-{}", std::process::id()));
++    fs::create_dir(&dir).unwrap();
++    let source = dir.join("source");
++    let dest = dir.join("destination");
++    let mut seed = 0x52563333u64;
++    let expected: Vec<_> = (0..16 * 1024 * 1024)
++        .map(|_| {
++            seed ^= seed << 13;
++            seed ^= seed >> 7;
++            seed ^= seed << 17;
++            seed as u8
++        })
++        .collect();
++    let mut file = fs::File::create(&source).unwrap();
++    file.write_all(&expected).unwrap();
++    file.sync_all().unwrap();
++    let mut group = c.benchmark_group("cli_lifecycle");
++    group.sampling_mode(SamplingMode::Flat);
++    for (name, backend, cancel) in [
++        ("threaded_progress", "threaded", false),
++        ("native_progress", "io-uring", false),
++        ("threaded_cancel", "threaded", true),
++        ("native_cancel", "io-uring", true),
++    ] {
++        let args: Vec<std::ffi::OsString> = vec![
++            "rvddk".into(),
++            "copy".into(),
++            source.as_os_str().into(),
++            dest.as_os_str().into(),
++            "--format".into(),
++            "raw".into(),
++            "--json".into(),
++            "--verify".into(),
++            "--progress".into(),
++            "--backend".into(),
++            backend.into(),
++            "--workers".into(),
++            "4".into(),
++            "--block-size".into(),
++            "65536".into(),
++        ];
++        group.bench_function(name, |b| {
++            b.iter_custom(|n| {
++                let mut elapsed = Duration::ZERO;
++                for _ in 0..n {
++                    let token = CancellationToken::new();
++                    let mut capture = Capture {
++                        bytes: Vec::new(),
++                        token: token.clone(),
++                        cancel,
++                    };
++                    let mut out = Vec::new();
++                    let started = Instant::now();
++                    let code = rvvdk_cli::run_with_cancellation(
++                        args.clone(),
++                        &mut out,
++                        &mut capture,
++                        &token,
++                    );
++                    elapsed += started.elapsed();
++                    let events: Vec<serde_json::Value> = std::str::from_utf8(&capture.bytes)
++                        .unwrap()
++                        .lines()
++                        .map(|l| serde_json::from_str(l).unwrap())
++                        .collect();
++                    if cancel {
++                        assert_eq!(code, 130);
++                        assert!(out.is_empty());
++                        assert!(!dest.exists());
++                        assert_eq!(events.last().unwrap()["error"]["code"], "cancelled");
++                        assert!(events.iter().any(|e| e["phase"] == "copying"));
++                    } else {
++                        assert_eq!(code, 0);
++                        let report: serde_json::Value = serde_json::from_slice(&out).unwrap();
++                        assert_eq!(report["backend"], backend);
++                        assert_eq!(events.last().unwrap()["phase"], "completed");
++                        assert_eq!(fs::read(&dest).unwrap(), expected);
++                        fs::remove_file(&dest).unwrap();
++                    }
++                }
++                elapsed
++            })
++        });
++    }
++    group.finish();
++    fs::remove_dir_all(dir).unwrap();
++}
++criterion_group! {name=benches;config=Criterion::default().sample_size(30).warm_up_time(Duration::from_millis(300)).measurement_time(Duration::from_secs(2));targets=lifecycle}
++criterion_main!(benches);
+diff --git a/crates/rvvdk-cli/src/progress.rs b/crates/rvvdk-cli/src/progress.rs
+new file mode 100644
+index 0000000..d3d183f
+--- /dev/null
++++ b/crates/rvvdk-cli/src/progress.rs
+@@ -0,0 +1,137 @@
++use crate::error::Failure;
++use rvvdk_core::CopyProgress;
++use rvvdk_datamover::{Cancellation, CopyEvent, CopyPhase};
++use serde_json::json;
++use std::{
++    cell::{Cell, RefCell},
++    io::Write,
++    sync::atomic::{AtomicBool, Ordering},
++    time::{Duration, Instant},
++};
++
++pub(crate) struct Feedback<'a, W> {
++    writer: RefCell<&'a mut W>,
++    enabled: bool,
++    json: bool,
++    pub stopped: AtomicBool,
++    pub error: RefCell<Option<std::io::Error>>,
++    pub copied: Cell<CopyProgress>,
++    pub verified: Cell<u64>,
++    started: Instant,
++    sequence: Cell<u64>,
++    total: Cell<u64>,
++    last_verify: Cell<(u64, Duration)>,
++}
++impl<'a, W: Write> Feedback<'a, W> {
++    pub fn new(writer: &'a mut W, enabled: bool, json: bool) -> Self {
++        Self {
++            writer: RefCell::new(writer),
++            enabled,
++            json,
++            stopped: AtomicBool::new(false),
++            error: RefCell::new(None),
++            copied: Cell::new(CopyProgress::default()),
++            verified: Cell::new(0),
++            started: Instant::now(),
++            sequence: Cell::new(0),
++            total: Cell::new(0),
++            last_verify: Cell::new((0, Duration::ZERO)),
++        }
++    }
++    pub fn emit(
++        &self,
++        phase: &str,
++        logical_bytes: u64,
++        backend: Option<&str>,
++        destination_state: Option<&str>,
++    ) {
++        if logical_bytes > 0 {
++            self.total.set(logical_bytes);
++        }
++        let logical_bytes = self.total.get();
++        if !self.enabled || self.stopped.load(Ordering::Relaxed) {
++            return;
++        }
++        let sequence = self.sequence.get() + 1;
++        self.sequence.set(sequence);
++        let p = self.copied.get();
++        let completed = p.bytes_written + p.bytes_zeroed + p.bytes_discarded;
++        let mut writer = self.writer.borrow_mut();
++        let result = if self.json {
++            let event = json!({"schema_version":1,"event":"progress","sequence":sequence,"phase":phase,"logical_bytes":logical_bytes,"logical_bytes_processed":completed,"bytes_verified":self.verified.get(),"backend":backend,"destination_state":destination_state,"elapsed_seconds":self.started.elapsed().as_secs_f64(),"confirmed":{"bytes_read":p.bytes_read,"bytes_written":p.bytes_written,"bytes_zeroed":p.bytes_zeroed,"bytes_discarded":p.bytes_discarded,"unconfirmed_io":p.unconfirmed_io}});
++            serde_json::to_writer(&mut **writer, &event)
++                .map_err(std::io::Error::other)
++                .and_then(|_| writeln!(writer))
++        } else {
++            writeln!(
++                writer,
++                "{phase}: {completed}/{logical_bytes} bytes processed, {} bytes verified",
++                self.verified.get()
++            )
++        };
++        if let Err(error) = result.and_then(|_| writer.flush()) {
++            *self.error.borrow_mut() = Some(error);
++            self.stopped.store(true, Ordering::Release);
++        }
++    }
++    pub fn engine(&self, event: &CopyEvent) {
++        self.copied.set(event.progress);
++        let phase = match event.phase {
++            CopyPhase::Preparing => "copy_preparing",
++            CopyPhase::Started => "copy_started",
++            CopyPhase::Transferring => "copying",
++            CopyPhase::Flushing => "copy_flushing",
++            CopyPhase::Completed => "copy_flushed",
++            _ => return,
++        };
++        self.emit(
++            phase,
++            event.logical_bytes,
++            event.backend.map(|b| {
++                if b == rvvdk_datamover::ExecutionBackend::IoUring {
++                    "io-uring"
++                } else {
++                    "threaded"
++                }
++            }),
++            None,
++        );
++    }
++    pub fn verification(&self, bytes: u64, total: u64) {
++        self.verified.set(bytes);
++        let (last, time) = self.last_verify.get();
++        let now = self.started.elapsed();
++        if last == 0
++            || bytes == total
++            || bytes - last >= 64 * 1024 * 1024
++            || now - time >= Duration::from_millis(100)
++        {
++            self.last_verify.set((bytes, now));
++            self.emit("verifying", total, None, None);
++        }
++    }
++    pub fn output_error(&self, mut error: Failure) -> Failure {
++        if let Some(io) = self.error.borrow_mut().take() {
++            error.code = "output";
++            error.message = format!("write progress: {io}");
++            error.os_error = io.raw_os_error();
++        }
++        error
++    }
++}
++pub(crate) struct Combined<'a, C> {
++    pub external: &'a C,
++    pub output_failed: &'a AtomicBool,
++}
++impl<C: Cancellation> Cancellation for Combined<'_, C> {
++    fn is_cancelled(&self) -> bool {
++        self.external.is_cancelled() || self.output_failed.load(Ordering::Acquire)
++    }
++}
++pub(crate) fn check(c: &impl Cancellation) -> Result<(), Failure> {
++    if c.is_cancelled() {
++        Err(Failure::new("cancelled", "operation cancelled"))
++    } else {
++        Ok(())
++    }
++}
+diff --git a/crates/rvvdk-datamover/src/control.rs b/crates/rvvdk-datamover/src/control.rs
+new file mode 100644
+index 0000000..be8b86a
+--- /dev/null
++++ b/crates/rvvdk-datamover/src/control.rs
+@@ -0,0 +1,170 @@
++//! Cooperative cancellation and coordinator-owned copy lifecycle notifications.
++use crate::ExecutionBackend;
++use rvvdk_core::{CopyProgress, Error, Result};
++use std::{
++    cell::Cell,
++    sync::{
++        Arc,
++        atomic::{AtomicBool, Ordering},
++    },
++    time::{Duration, Instant},
++};
++
++/// A cancellation request is sticky for the lifetime of an invocation. Implementors
++/// must be cheap and must not panic. Blocking backend calls cannot be interrupted.
++pub trait Cancellation: Sync {
++    fn is_cancelled(&self) -> bool;
++}
++#[derive(Clone, Default)]
++pub struct CancellationToken(Arc<AtomicBool>);
++impl CancellationToken {
++    pub fn new() -> Self {
++        Self::default()
++    }
++    pub fn cancel(&self) {
++        self.0.store(true, Ordering::Release);
++    }
++}
++impl Cancellation for CancellationToken {
++    fn is_cancelled(&self) -> bool {
++        self.0.load(Ordering::Acquire)
++    }
++}
++#[derive(Default)]
++pub struct NoCancellation;
++impl Cancellation for NoCancellation {
++    fn is_cancelled(&self) -> bool {
++        false
++    }
++}
++
++#[derive(Debug, Clone, Copy, PartialEq, Eq)]
++#[non_exhaustive]
++pub enum CopyPhase {
++    Preparing,
++    Started,
++    Transferring,
++    Flushing,
++    Completed,
++    Cancelled,
++    Failed,
++}
++/// Confirmed counters are lower bounds, never a contiguous or durable resume point.
++/// Completed means the engine's flush succeeded; external verification/publication
++/// are owned by the caller. Callbacks run on the invoking coordinator, not workers.
++#[derive(Debug, Clone, Copy)]
++pub struct CopyEvent {
++    pub phase: CopyPhase,
++    pub backend: Option<ExecutionBackend>,
++    pub logical_bytes: u64,
++    pub progress: CopyProgress,
++    pub elapsed: Duration,
++}
++pub trait CopyObserver {
++    fn on_event(&self, event: &CopyEvent);
++}
++impl<F: Fn(&CopyEvent)> CopyObserver for F {
++    fn on_event(&self, event: &CopyEvent) {
++        self(event);
++    }
++}
++
++pub(crate) trait Checkpoint {
++    const ENABLED: bool;
++    fn cancellation(&self) -> &dyn Cancellation;
++    fn check(&self, progress: CopyProgress) -> Result<()>;
++    fn flushing(&self, progress: CopyProgress) -> Result<()> {
++        self.check(progress)
++    }
++}
++impl Checkpoint for () {
++    const ENABLED: bool = false;
++    fn cancellation(&self) -> &dyn Cancellation {
++        &NoCancellation
++    }
++    fn check(&self, _: CopyProgress) -> Result<()> {
++        Ok(())
++    }
++}
++pub(crate) struct Lifecycle<'a, C: ?Sized, O: ?Sized> {
++    pub cancellation: &'a C,
++    pub observer: &'a O,
++    pub logical_bytes: u64,
++    pub backend: Cell<Option<ExecutionBackend>>,
++    started: Instant,
++    last_bytes: Cell<u64>,
++    last_checked_bytes: Cell<u64>,
++    last_time: Cell<Duration>,
++    pub progress: Cell<CopyProgress>,
++}
++impl<'a, C: Cancellation + ?Sized, O: CopyObserver + ?Sized> Lifecycle<'a, C, O> {
++    pub fn new(cancellation: &'a C, observer: &'a O, logical_bytes: u64) -> Self {
++        Self {
++            cancellation,
++            observer,
++            logical_bytes,
++            backend: Cell::new(None),
++            started: Instant::now(),
++            last_bytes: Cell::new(0),
++            last_checked_bytes: Cell::new(0),
++            last_time: Cell::new(Duration::ZERO),
++            progress: Cell::new(CopyProgress::default()),
++        }
++    }
++    pub fn emit(&self, phase: CopyPhase, progress: CopyProgress) {
++        self.progress.set(progress);
++        self.observer.on_event(&CopyEvent {
++            phase,
++            backend: self.backend.get(),
++            logical_bytes: self.logical_bytes,
++            progress,
++            elapsed: self.started.elapsed(),
++        });
++    }
++    pub fn cancelled(&self) -> Result<()> {
++        if self.cancellation.is_cancelled() {
++            Err(Error::Cancelled)
++        } else {
++            Ok(())
++        }
++    }
++}
++impl<C: Cancellation, O: CopyObserver + ?Sized> Checkpoint for Lifecycle<'_, C, O> {
++    const ENABLED: bool = true;
++    fn cancellation(&self) -> &dyn Cancellation {
++        self.cancellation
++    }
++    fn flushing(&self, progress: CopyProgress) -> Result<()> {
++        self.check(progress)?;
++        self.emit(CopyPhase::Flushing, progress);
++        self.cancelled()
++    }
++    fn check(&self, progress: CopyProgress) -> Result<()> {
++        self.progress.set(progress);
++        self.cancelled()?;
++        let bytes = progress.bytes_written + progress.bytes_zeroed + progress.bytes_discarded;
++        if bytes == self.last_checked_bytes.replace(bytes) {
++            return Ok(());
++        }
++        let elapsed = self.started.elapsed();
++        if bytes > self.last_bytes.get()
++            && (self.last_bytes.get() == 0
++                || bytes - self.last_bytes.get() >= 64 * 1024 * 1024
++                || elapsed - self.last_time.get() >= Duration::from_millis(100))
++        {
++            self.last_bytes.set(bytes);
++            self.last_time.set(elapsed);
++            self.emit(CopyPhase::Transferring, progress);
++        }
++        self.cancelled()
++    }
++}
++pub(crate) fn sum(mut a: CopyProgress, b: CopyProgress) -> CopyProgress {
++    a.bytes_read += b.bytes_read;
++    a.bytes_written += b.bytes_written;
++    a.bytes_zeroed += b.bytes_zeroed;
++    a.bytes_discarded += b.bytes_discarded;
++    a.blocks_completed += b.blocks_completed;
++    a.unconfirmed_io |= b.unconfirmed_io;
++    a
++}
+diff --git a/crates/rvvdk-datamover/src/controlled_mover.rs b/crates/rvvdk-datamover/src/controlled_mover.rs
+new file mode 100644
+index 0000000..393f89f
+--- /dev/null
++++ b/crates/rvvdk-datamover/src/controlled_mover.rs
+@@ -0,0 +1,223 @@
++use crate::control::{Checkpoint, Lifecycle};
++use crate::{
++    Cancellation, CopyObserver, CopyPhase, CopyPlan, CopyReport, CopyStats, DataMover,
++    ExecutionBackend,
++};
++use rvvdk_core::{BufferPool, CopyOperation, CopyProgress, Error, Result, VirtualDisk};
++use std::time::Instant;
++
++impl DataMover {
++    /// Execute with coordinator lifecycle events and cooperative cancellation.
++    /// Preparation errors also produce a terminal event. Callbacks must not panic.
++    pub fn execute_plan_controlled<
++        S: VirtualDisk + ?Sized,
++        D: VirtualDisk + ?Sized,
++        C: Cancellation,
++        O: CopyObserver + ?Sized,
++    >(
++        &self,
++        plan: &CopyPlan,
++        source: &S,
++        destination: &D,
++        cancellation: &C,
++        observer: &O,
++    ) -> Result<CopyReport> {
++        let life = Lifecycle::new(cancellation, observer, plan.logical_bytes());
++        lifecycle(&life, || {
++            life.cancelled()?;
++            self.prepare_portable(plan, source, destination)?;
++            life.backend.set(Some(ExecutionBackend::Threaded));
++            life.emit(CopyPhase::Started, CopyProgress::default());
++            life.cancelled()?;
++            self.threaded_controlled(plan, source, destination, &life)
++        })
++    }
++
++    #[cfg(target_os = "linux")]
++    pub fn execute_raw_plan_controlled<S, D, C: Cancellation, O: CopyObserver + ?Sized>(
++        &self,
++        plan: &CopyPlan,
++        source: &rvvdk_core::RawDisk<S>,
++        destination: &rvvdk_core::RawDisk<D>,
++        cancellation: &C,
++        observer: &O,
++    ) -> Result<CopyReport>
++    where
++        S: rvvdk_core::BlockDevice + rvvdk_platform::LinuxFdBackend,
++        D: rvvdk_core::BlockDevice + rvvdk_platform::LinuxFdBackend,
++    {
++        use crate::preparation::PreparedExecutor;
++        let life = Lifecycle::new(cancellation, observer, plan.logical_bytes());
++        lifecycle(&life, || {
++            life.cancelled()?;
++            let prepared = self.prepare_raw(plan, source, destination)?;
++            let (plan, source, destination, executor) = prepared.parts();
++            let backend = match &executor {
++                PreparedExecutor::IoUring { .. } => ExecutionBackend::IoUring,
++                _ => ExecutionBackend::Threaded,
++            };
++            life.backend.set(Some(backend));
++            life.emit(CopyPhase::Started, CopyProgress::default());
++            life.cancelled()?;
++            match executor {
++                PreparedExecutor::Threaded => {
++                    self.threaded_controlled(plan, source, destination, &life)
++                }
++                PreparedExecutor::NativeFallback(reason) => self
++                    .threaded_controlled(plan, source, destination, &life)
++                    .map(|r| r.with_runtime_fallback(Some(reason))),
++                PreparedExecutor::IoUring {
++                    native_plan,
++                    resources,
++                    setup_elapsed,
++                } => {
++                    let started = Instant::now();
++                    let stats = resources.execute_controlled(destination, &native_plan, &life)?;
++                    life.flushing(stats.progress()).map_err(|e| {
++                        crate::failure::execution(
++                            "io_uring",
++                            CopyOperation::Cancel,
++                            None,
++                            stats.progress(),
++                            e,
++                        )
++                    })?;
++                    destination.flush().map_err(|e| {
++                        crate::failure::execution(
++                            "io_uring",
++                            CopyOperation::Flush,
++                            None,
++                            stats.progress(),
++                            e,
++                        )
++                    })?;
++                    Ok(CopyReport::new(
++                        ExecutionBackend::IoUring,
++                        CopyStats::from_io_uring_extents(stats, setup_elapsed + started.elapsed()),
++                    ))
++                }
++            }
++        })
++    }
++
++    fn threaded_controlled<S: VirtualDisk + ?Sized, D: VirtualDisk + ?Sized, C: Checkpoint>(
++        &self,
++        plan: &CopyPlan,
++        source: &S,
++        destination: &D,
++        control: &C,
++    ) -> Result<CopyReport> {
++        let started = Instant::now();
++        let stats = if self.options.concurrency() == 1 {
++            crate::sequential::execute_controlled(
++                source,
++                destination,
++                plan.extents(),
++                self.options,
++                started,
++                &mut (),
++                control,
++            )?
++        } else {
++            let pool = BufferPool::new(
++                self.options.buffer_count(),
++                self.options.block_size(),
++                self.options.buffer_alignment(),
++            )
++            .map_err(|e| {
++                crate::failure::execution(
++                    "threaded",
++                    CopyOperation::Allocate,
++                    None,
++                    CopyProgress::default(),
++                    e,
++                )
++            })?;
++            let stats = crate::concurrent::execute_controlled(
++                source,
++                destination,
++                self.options.concurrency(),
++                self.options.queue_capacity(),
++                &pool,
++                control,
++                |sender, checkpoint| {
++                    for extent in plan.extents() {
++                        for work in
++                            crate::planner::ExtentWorkIter::new(*extent, self.options.block_size())
++                        {
++                            checkpoint()?;
++                            sender.send(work?).map_err(|_| Error::WorkQueueClosed)?;
++                        }
++                    }
++                    Ok(())
++                },
++            )?;
++            let mut p = stats.progress();
++            p.extents_completed = Some(plan.extent_count() as u64);
++            control.flushing(p).map_err(|e| {
++                crate::failure::execution("threaded", CopyOperation::Cancel, None, p, e)
++            })?;
++            destination.flush().map_err(|e| {
++                crate::failure::execution("threaded", CopyOperation::Flush, None, p, e)
++            })?;
++            CopyStats::new(
++                stats.bytes_read,
++                stats.bytes_written,
++                stats.bytes_zeroed,
++                stats.bytes_discarded,
++                stats.blocks_copied,
++                plan.extent_count() as u64,
++                started.elapsed(),
++            )
++        };
++        Ok(CopyReport::new(ExecutionBackend::Threaded, stats))
++    }
++}
++fn lifecycle<C: Cancellation, O: CopyObserver + ?Sized>(
++    life: &Lifecycle<'_, C, O>,
++    run: impl FnOnce() -> Result<CopyReport>,
++) -> Result<CopyReport> {
++    life.emit(CopyPhase::Preparing, CopyProgress::default());
++    let outcome = run().and_then(|report| {
++        let stats = report.stats();
++        let progress = CopyProgress {
++            bytes_read: stats.bytes_read(),
++            bytes_written: stats.bytes_written(),
++            bytes_zeroed: stats.bytes_zeroed(),
++            bytes_discarded: stats.bytes_discarded(),
++            blocks_completed: stats.blocks_copied(),
++            extents_completed: Some(stats.extents_processed()),
++            unconfirmed_io: false,
++        };
++        life.progress.set(progress);
++        life.cancelled().map_err(|e| {
++            crate::failure::execution(
++                if report.backend() == ExecutionBackend::IoUring {
++                    "io_uring"
++                } else {
++                    "threaded"
++                },
++                CopyOperation::Cancel,
++                None,
++                progress,
++                e,
++            )
++        })?;
++        life.emit(CopyPhase::Completed, progress);
++        Ok(report)
++    });
++    if let Err(error) = &outcome {
++        let progress = error
++            .copy_failure()
++            .map_or(life.progress.get(), |f| f.progress);
++        life.emit(
++            if error.is_cancelled() {
++                CopyPhase::Cancelled
++            } else {
++                CopyPhase::Failed
++            },
++            progress,
++        );
++    }
++    outcome
++}
+diff --git a/crates/rvvdk-datamover/tests/controlled.rs b/crates/rvvdk-datamover/tests/controlled.rs
+new file mode 100644
+index 0000000..e37dca2
+--- /dev/null
++++ b/crates/rvvdk-datamover/tests/controlled.rs
+@@ -0,0 +1,260 @@
++use rvvdk_core::{
++    Capabilities, DiskGeometry, Extent, MemoryBlockDevice, RawDisk, Result, VirtualDisk,
++};
++use rvvdk_datamover::{CancellationToken, CopyEvent, CopyOptions, CopyPhase, DataMover, Verifier};
++use std::{
++    cell::RefCell,
++    sync::atomic::{AtomicU64, Ordering},
++};
++const SIZE: usize = 2 * 1024 * 1024 + 7;
++struct Disk {
++    inner: RawDisk<MemoryBlockDevice>,
++    writes: AtomicU64,
++    flushes: AtomicU64,
++    mode: u8,
++    token: CancellationToken,
++}
++impl Disk {
++    fn new(mode: u8, token: CancellationToken) -> Self {
++        Self {
++            inner: RawDisk::new(MemoryBlockDevice::new(SIZE).unwrap()),
++            writes: AtomicU64::new(0),
++            flushes: AtomicU64::new(0),
++            mode,
++            token,
++        }
++    }
++}
++impl VirtualDisk for Disk {
++    fn geometry(&self) -> DiskGeometry {
++        self.inner.geometry()
++    }
++    fn capabilities(&self) -> Capabilities {
++        self.inner.capabilities()
++    }
++    fn read_at(&self, o: u64, b: &mut [u8]) -> Result<usize> {
++        self.inner.read_at(o, b)
++    }
++    fn write_at(&self, o: u64, b: &[u8]) -> Result<usize> {
++        let n = self.inner.write_at(o, b)?;
++        self.writes.fetch_add(n as u64, Ordering::Relaxed);
++        Ok(n)
++    }
++    fn write_zero_at(&self, o: u64, n: u64) -> Result<()> {
++        self.inner.write_zero_at(o, n)
++    }
++    fn discard(&self, o: u64, n: u64) -> Result<()> {
++        self.inner.discard(o, n)
++    }
++    fn flush(&self) -> Result<()> {
++        self.flushes.fetch_add(1, Ordering::Relaxed);
++        if self.mode == 1 {
++            return Err(std::io::Error::other("flush fault").into());
++        }
++        if self.mode == 2 {
++            self.token.cancel();
++        }
++        Ok(())
++    }
++    fn extents(&self, o: u64, n: u64) -> Result<Vec<Extent>> {
++        self.inner.extents(o, n)
++    }
++}
++fn source() -> RawDisk<MemoryBlockDevice> {
++    let d = RawDisk::new(MemoryBlockDevice::new(SIZE).unwrap());
++    d.write_all_at(0, &vec![0x5a; SIZE]).unwrap();
++    d
++}
++#[test]
++fn sequential_and_concurrent_callbacks_are_coordinated_and_complete_after_flush() {
++    for workers in [1, 4] {
++        let token = CancellationToken::new();
++        let source = source();
++        let dest = Disk::new(0, token.clone());
++        let mover = DataMover::new(CopyOptions::with_concurrency(4096, 4096, workers).unwrap());
++        let plan = mover.plan_with_destination(&source, &dest).unwrap();
++        let events = RefCell::new(Vec::new());
++        let coordinator = std::thread::current().id();
++        mover
++            .execute_plan_controlled(&plan, &source, &dest, &token, &|e: &CopyEvent| {
++                assert_eq!(std::thread::current().id(), coordinator);
++                if e.phase == CopyPhase::Completed {
++                    assert_eq!(dest.flushes.load(Ordering::Relaxed), 1);
++                }
++                events.borrow_mut().push(*e);
++            })
++            .unwrap();
++        let events = events.into_inner();
++        assert_eq!(events.first().unwrap().phase, CopyPhase::Preparing);
++        assert_eq!(events.last().unwrap().phase, CopyPhase::Completed);
++        assert!(events.iter().any(|e| e.phase == CopyPhase::Transferring
++            && e.progress.bytes_written > 0
++            && e.progress.bytes_written < SIZE as u64));
++        for pair in events.windows(2) {
++            assert!(pair[0].progress.bytes_written <= pair[1].progress.bytes_written);
++        }
++        let mut bytes = vec![0; SIZE];
++        dest.read_exact_at(0, &mut bytes).unwrap();
++        assert_eq!(bytes, vec![0x5a; SIZE]);
++    }
++}
++#[test]
++fn cancellation_at_start_transfer_and_flush_joins_workers_and_never_completes() {
++    for workers in [1, 4] {
++        for phase in [
++            CopyPhase::Preparing,
++            CopyPhase::Started,
++            CopyPhase::Transferring,
++            CopyPhase::Flushing,
++        ] {
++            let token = CancellationToken::new();
++            let source = source();
++            let dest = Disk::new(0, token.clone());
++            let mover = DataMover::new(CopyOptions::with_concurrency(4096, 4096, workers).unwrap());
++            let plan = mover.plan_with_destination(&source, &dest).unwrap();
++            let events = RefCell::new(Vec::new());
++            let error = mover
++                .execute_plan_controlled(&plan, &source, &dest, &token, &|e: &CopyEvent| {
++                    events.borrow_mut().push(e.phase);
++                    if e.phase == phase {
++                        token.cancel();
++                    }
++                })
++                .unwrap_err();
++            assert!(error.is_cancelled(), "{error}");
++            assert_eq!(events.borrow().last(), Some(&CopyPhase::Cancelled));
++            assert!(!events.borrow().contains(&CopyPhase::Completed));
++            assert_eq!(dest.flushes.load(Ordering::Relaxed), 0);
++            if phase == CopyPhase::Preparing || phase == CopyPhase::Started {
++                assert_eq!(dest.writes.load(Ordering::Relaxed), 0);
++            } else {
++                assert_eq!(
++                    error.copy_failure().unwrap().progress.bytes_written,
++                    dest.writes.load(Ordering::Relaxed)
++                );
++            }
++        }
++    }
++}
++#[test]
++fn flush_failure_and_cancellation_during_flush_are_terminal_without_success() {
++    for workers in [1, 4] {
++        for mode in [1, 2] {
++            let token = CancellationToken::new();
++            let source = source();
++            let dest = Disk::new(mode, token.clone());
++            let mover = DataMover::new(CopyOptions::with_concurrency(4096, 4096, workers).unwrap());
++            let plan = mover.plan_with_destination(&source, &dest).unwrap();
++            let events = RefCell::new(Vec::new());
++            let error = mover
++                .execute_plan_controlled(&plan, &source, &dest, &token, &|e: &CopyEvent| {
++                    events.borrow_mut().push(e.phase)
++                })
++                .unwrap_err();
++            assert_eq!(error.is_cancelled(), mode == 2);
++            assert_eq!(
++                error.copy_failure().unwrap().progress.bytes_written,
++                SIZE as u64
++            );
++            assert_eq!(
++                events.borrow().last(),
++                Some(&if mode == 2 {
++                    CopyPhase::Cancelled
++                } else {
++                    CopyPhase::Failed
++                })
++            );
++            assert!(!events.borrow().contains(&CopyPhase::Completed));
++        }
++    }
++}
++#[test]
++fn verification_stops_at_matching_prefix_and_pre_cancelled_input_is_untouched() {
++    let source = source();
++    let token = CancellationToken::new();
++    let mut v = Verifier::new(SIZE as u64, 4096, 8192).unwrap();
++    let dest = Disk::new(0, token.clone());
++    dest.inner.write_all_at(0, &vec![0x5a; SIZE]).unwrap();
++    let progress = RefCell::new(Vec::new());
++    let error = v
++        .verify_controlled(&source, &dest, &token, |n| {
++            progress.borrow_mut().push(n);
++            token.cancel();
++        })
++        .unwrap_err();
++    assert!(error.is_cancelled());
++    assert_eq!(&*progress.borrow(), &[4096]);
++    assert_eq!(dest.writes.load(Ordering::Relaxed), 0);
++    assert!(
++        v.verify_controlled(&source, &dest, &token, |_| panic!("pre-cancelled callback"))
++            .unwrap_err()
++            .is_cancelled()
++    );
++}
++#[cfg(target_os = "linux")]
++#[test]
++fn native_progress_cancellation_drains_or_reports_uncertainty_then_can_reuse_files() {
++    use rvvdk_datamover::{ExecutionStrategy, IoUringExecutionOptions};
++    use rvvdk_local::LocalFileBlockDevice;
++    let root = std::env::var_os("RVVDK_TEST_DIR")
++        .map(std::path::PathBuf::from)
++        .unwrap_or_else(std::env::temp_dir)
++        .join(format!("rvvdk-controlled-native-{}", std::process::id()));
++    std::fs::create_dir(&root).unwrap();
++    let a = root.join("a");
++    let b = root.join("b");
++    std::fs::write(&a, vec![0x5a; SIZE]).unwrap();
++    std::fs::write(&b, vec![0xa5; SIZE]).unwrap();
++    let source = RawDisk::new(LocalFileBlockDevice::open_read_only(&a).unwrap());
++    let dest = RawDisk::new(LocalFileBlockDevice::open_read_write(&b).unwrap());
++    let mover = DataMover::with_execution_strategy(
++        CopyOptions::new(4096).unwrap(),
++        ExecutionStrategy::IoUring(IoUringExecutionOptions::new(8).unwrap()),
++    );
++    let plan = mover.plan_raw_with_destination(&source, &dest).unwrap();
++    for phase in [
++        CopyPhase::Started,
++        CopyPhase::Transferring,
++        CopyPhase::Flushing,
++    ] {
++        let token = CancellationToken::new();
++        let events = RefCell::new(Vec::new());
++        let error = mover
++            .execute_raw_plan_controlled(&plan, &source, &dest, &token, &|e: &CopyEvent| {
++                events.borrow_mut().push(*e);
++                if e.phase == phase {
++                    token.cancel();
++                }
++            })
++            .unwrap_err();
++        assert!(error.is_cancelled(), "{error}");
++        assert_eq!(events.borrow().last().unwrap().phase, CopyPhase::Cancelled);
++        assert!(
++            !events
++                .borrow()
++                .iter()
++                .any(|e| e.phase == CopyPhase::Completed)
++        );
++        let done = RefCell::new(Vec::new());
++        mover
++            .execute_raw_plan_controlled(
++                &plan,
++                &source,
++                &dest,
++                &CancellationToken::new(),
++                &|e: &CopyEvent| done.borrow_mut().push(*e),
++            )
++            .unwrap();
++        assert!(
++            done.borrow()
++                .iter()
++                .any(|e| e.phase == CopyPhase::Transferring
++                    && e.progress.bytes_written > 0
++                    && e.progress.bytes_written < SIZE as u64)
++        );
++        assert_eq!(std::fs::read(&a).unwrap(), std::fs::read(&b).unwrap());
++    }
++    drop(source);
++    drop(dest);
++    std::fs::remove_dir_all(root).unwrap();
++}
