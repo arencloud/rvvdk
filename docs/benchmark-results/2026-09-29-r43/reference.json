@@ -1,0 +1,349 @@
+{
+  "qemu_version": "qemu-img version 10.2.2 (qemu-10.2.2-1.fc44)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+  "qemu_sha256": "4362e911c13bb90e39b69479462cd4adb840749b582f4892ca114eb7e94dcf2e",
+  "dump_sha256": "27a12a0a314c6689465a973d496c46aae25938b2537f8b8b5c23a63d431e9e8e",
+  "generator_sha256": "5849b95b649ef1bd615442a08457e5c0690b1ec8144df13925b22fa61caa2ca8",
+  "directory": "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured",
+  "cases": [
+    {
+      "name": "monolithic",
+      "status": "rvvdk, QEMU and byte oracle agree",
+      "bytes": 65536,
+      "output_sha256": "0c40af5f687c7eaee6fca0d0ef0d46183d3dd9c55ddaa6d89f19371f5eab411d",
+      "descriptor": "# Disk DescriptorFile\nversion=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"monolithicFlat\"\nRW 128 FLAT \"data.bin\" 0\n",
+      "descriptor_sha256": "4575129e810dc7d2e8c51454a4273f1283ab89efcd7ca46049f538240ac65773"
+    },
+    {
+      "name": "split",
+      "status": "rvvdk, QEMU and byte oracle agree",
+      "bytes": 11776,
+      "output_sha256": "3818b063e272834146049d7d08444f0d3a8d8a635582e98313d050b298c4ac16",
+      "descriptor": "# Disk DescriptorFile\nversion=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"twoGbMaxExtentFlat\"\nRW 5 FLAT \"data.bin\" 0\nRW 7 FLAT \"other.bin\" 0\nRW 11 FLAT \"data.bin\" 0\n",
+      "descriptor_sha256": "3e2e906a596e653954e2189682d4cdcac976fdec9629f9b0e6487d58c5692edd"
+    },
+    {
+      "name": "custom",
+      "status": "QEMU rejects custom; rvvdk matches independently constructed byte oracle only",
+      "bytes": 3584,
+      "output_sha256": "d6b2241c2274c39b68a8bc0ce6351e7c69292f18633d12a9f2b153c2af92220e",
+      "descriptor": "# Disk DescriptorFile\nversion=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\nRW 2 FLAT \"data.bin\" 3\nRW 4 ZERO\nRW 1 FLAT \"data.bin\" 0\n",
+      "descriptor_sha256": "3bf724ffc703263edde9d63e994fef04e1b6f78d1fa2741915d31f1e6bff2157"
+    },
+    {
+      "name": "qemu-monolithicFlat",
+      "status": "generated hosted layout matches source RAW and QEMU compare; any fixture normalization recorded explicitly",
+      "bytes": 1048576,
+      "output_sha256": "b79062c191b31e2d5e5d972238a6333409277ba1c29093f9748c0a119785110a",
+      "descriptor": "# Disk DescriptorFile\nversion=1\nCID=ae962a64\nparentCID=ffffffff\ncreateType=\"monolithicFlat\"\n\n# Extent description\nRW 2048 FLAT \"qemu-monolithicFlat-flat.vmdk\" 0\n\n# The Disk Data Base\n#DDB\n\nddb.virtualHWVersion = \"4\"\nddb.geometry.cylinders = \"2\"\nddb.geometry.heads = \"16\"\nddb.geometry.sectors = \"63\"\nddb.adapterType = \"ide\"\nddb.toolsVersion = \"2147483647\"\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "descriptor_sha256": "e368d9c4ef48db4ada9c030f6737bad9da2607fdd9a54f90451af80ad4f0d84c",
+      "trailing_nul_padding_removed": 157,
+      "rvvdk_descriptor": "# Disk DescriptorFile\nversion=1\nCID=ae962a64\nparentCID=ffffffff\ncreateType=\"monolithicFlat\"\n\n# Extent description\nRW 2048 FLAT \"qemu-monolithicFlat-flat.vmdk\" 0\n\n# The Disk Data Base\n#DDB\n\nddb.virtualHWVersion = \"4\"\nddb.geometry.cylinders = \"2\"\nddb.geometry.heads = \"16\"\nddb.geometry.sectors = \"63\"\nddb.adapterType = \"ide\"\nddb.toolsVersion = \"2147483647\"\n",
+      "rvvdk_descriptor_sha256": "39a2cc941020574afefb0e69746d1179af05305de0c966c956a772d286e80d8c"
+    },
+    {
+      "name": "qemu-twoGbMaxExtentFlat",
+      "status": "generated hosted layout matches source RAW and QEMU compare; any fixture normalization recorded explicitly",
+      "bytes": 1048576,
+      "output_sha256": "b79062c191b31e2d5e5d972238a6333409277ba1c29093f9748c0a119785110a",
+      "descriptor": "# Disk DescriptorFile\nversion=1\nCID=e4f575e1\nparentCID=ffffffff\ncreateType=\"twoGbMaxExtentFlat\"\n\n# Extent description\nRW 2048 FLAT \"qemu-twoGbMaxExtentFlat-f001.vmdk\" 0\n\n# The Disk Data Base\n#DDB\n\nddb.virtualHWVersion = \"4\"\nddb.geometry.cylinders = \"2\"\nddb.geometry.heads = \"16\"\nddb.geometry.sectors = \"63\"\nddb.adapterType = \"ide\"\nddb.toolsVersion = \"2147483647\"\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "descriptor_sha256": "f879a8efb8c0fdb582f01371559e3fb24bf3b06693820d5e5f0d6402adf50b41",
+      "trailing_nul_padding_removed": 149,
+      "rvvdk_descriptor": "# Disk DescriptorFile\nversion=1\nCID=e4f575e1\nparentCID=ffffffff\ncreateType=\"twoGbMaxExtentFlat\"\n\n# Extent description\nRW 2048 FLAT \"qemu-twoGbMaxExtentFlat-f001.vmdk\" 0\n\n# The Disk Data Base\n#DDB\n\nddb.virtualHWVersion = \"4\"\nddb.geometry.cylinders = \"2\"\nddb.geometry.heads = \"16\"\nddb.geometry.sectors = \"63\"\nddb.adapterType = \"ide\"\nddb.toolsVersion = \"2147483647\"\n",
+      "rvvdk_descriptor_sha256": "6c8fda2b17c63373311e607dc85c2c2c49ec7fb934a47308222f9d80b62c8606"
+    }
+  ],
+  "commands": [
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "qemu-img version 10.2.2 (qemu-10.2.2-1.fc44)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r43-ozp05je3/candidate-target/release/examples/dump_logical",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/monolithic.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/monolithic.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "vmdk",
+        "-O",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/monolithic.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/monolithic.qemu.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/monolithic.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/monolithic.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r43-ozp05je3/candidate-target/release/examples/dump_logical",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/split.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/split.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "vmdk",
+        "-O",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/split.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/split.qemu.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/split.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/split.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r43-ozp05je3/candidate-target/release/examples/dump_logical",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/custom.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/custom.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "vmdk",
+        "-O",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/custom.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/custom.qemu.raw"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "qemu-img: Could not open '/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/custom.vmdk': Unsupported image type 'custom'\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=monolithicFlat",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/data.bin",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/qemu-monolithicFlat.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r43-ozp05je3/candidate-target/release/examples/dump_logical",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/qemu-monolithicFlat.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/qemu-monolithicFlat.rvvdk.raw"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "Error: Descriptor(DescriptorError { line: 19, kind: Encoding })\n"
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r43-ozp05je3/candidate-target/release/examples/dump_logical",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/qemu-monolithicFlat.text.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/qemu-monolithicFlat.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/qemu-monolithicFlat.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/qemu-monolithicFlat.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentFlat",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/data.bin",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/qemu-twoGbMaxExtentFlat.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r43-ozp05je3/candidate-target/release/examples/dump_logical",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/qemu-twoGbMaxExtentFlat.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/qemu-twoGbMaxExtentFlat.rvvdk.raw"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "Error: Descriptor(DescriptorError { line: 19, kind: Encoding })\n"
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r43-ozp05je3/candidate-target/release/examples/dump_logical",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/qemu-twoGbMaxExtentFlat.text.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/qemu-twoGbMaxExtentFlat.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/qemu-twoGbMaxExtentFlat.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r43-reference-measured/qemu-twoGbMaxExtentFlat.rvvdk.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    }
+  ],
+  "files": {
+    "custom.rvvdk.raw": {
+      "bytes": 3584,
+      "sha256": "d6b2241c2274c39b68a8bc0ce6351e7c69292f18633d12a9f2b153c2af92220e"
+    },
+    "custom.vmdk": {
+      "bytes": 140,
+      "sha256": "3bf724ffc703263edde9d63e994fef04e1b6f78d1fa2741915d31f1e6bff2157"
+    },
+    "data.bin": {
+      "bytes": 1048576,
+      "sha256": "b79062c191b31e2d5e5d972238a6333409277ba1c29093f9748c0a119785110a"
+    },
+    "monolithic.qemu.raw": {
+      "bytes": 65536,
+      "sha256": "0c40af5f687c7eaee6fca0d0ef0d46183d3dd9c55ddaa6d89f19371f5eab411d"
+    },
+    "monolithic.rvvdk.raw": {
+      "bytes": 65536,
+      "sha256": "0c40af5f687c7eaee6fca0d0ef0d46183d3dd9c55ddaa6d89f19371f5eab411d"
+    },
+    "monolithic.vmdk": {
+      "bytes": 117,
+      "sha256": "4575129e810dc7d2e8c51454a4273f1283ab89efcd7ca46049f538240ac65773"
+    },
+    "other.bin": {
+      "bytes": 1048576,
+      "sha256": "a80bb131f679903d6eb5b5b39357bf6d5fa3b2f895e99e9252122d67a59823db"
+    },
+    "qemu-monolithicFlat-flat.vmdk": {
+      "bytes": 1048576,
+      "sha256": "b79062c191b31e2d5e5d972238a6333409277ba1c29093f9748c0a119785110a"
+    },
+    "qemu-monolithicFlat.rvvdk.raw": {
+      "bytes": 1048576,
+      "sha256": "b79062c191b31e2d5e5d972238a6333409277ba1c29093f9748c0a119785110a"
+    },
+    "qemu-monolithicFlat.text.vmdk": {
+      "bytes": 355,
+      "sha256": "39a2cc941020574afefb0e69746d1179af05305de0c966c956a772d286e80d8c"
+    },
+    "qemu-monolithicFlat.vmdk": {
+      "bytes": 512,
+      "sha256": "e368d9c4ef48db4ada9c030f6737bad9da2607fdd9a54f90451af80ad4f0d84c"
+    },
+    "qemu-twoGbMaxExtentFlat-f001.vmdk": {
+      "bytes": 1048576,
+      "sha256": "b79062c191b31e2d5e5d972238a6333409277ba1c29093f9748c0a119785110a"
+    },
+    "qemu-twoGbMaxExtentFlat.rvvdk.raw": {
+      "bytes": 1048576,
+      "sha256": "b79062c191b31e2d5e5d972238a6333409277ba1c29093f9748c0a119785110a"
+    },
+    "qemu-twoGbMaxExtentFlat.text.vmdk": {
+      "bytes": 363,
+      "sha256": "6c8fda2b17c63373311e607dc85c2c2c49ec7fb934a47308222f9d80b62c8606"
+    },
+    "qemu-twoGbMaxExtentFlat.vmdk": {
+      "bytes": 512,
+      "sha256": "f879a8efb8c0fdb582f01371559e3fb24bf3b06693820d5e5f0d6402adf50b41"
+    },
+    "split.qemu.raw": {
+      "bytes": 11776,
+      "sha256": "3818b063e272834146049d7d08444f0d3a8d8a635582e98313d050b298c4ac16"
+    },
+    "split.rvvdk.raw": {
+      "bytes": 11776,
+      "sha256": "3818b063e272834146049d7d08444f0d3a8d8a635582e98313d050b298c4ac16"
+    },
+    "split.vmdk": {
+      "bytes": 167,
+      "sha256": "3e2e906a596e653954e2189682d4cdcac976fdec9629f9b0e6487d58c5692edd"
+    }
+  }
+}

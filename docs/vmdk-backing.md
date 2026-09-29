@@ -1,8 +1,7 @@
 # VMDK backing acquisition and resolution (R4.2)
 
-R4.2 turns validated descriptor metadata into retained read-only sources. It does
-not implement logical VMDK reads or CLI VMDK support; those follow in R4.3 and a
-separate CLI integration step. [Descriptor syntax](vmdk-descriptor.md) is unchanged.
+R4.2 turns validated descriptor metadata into retained read-only sources. The [R4.3 logical reader](vmdk-logical.md) now consumes these sources.
+CLI VMDK support follows in a separate integration step. [Descriptor syntax](vmdk-descriptor.md) is unchanged.
 
 ## API and ownership
 
@@ -122,6 +121,7 @@ parser/RAW controls, one/32-source resolution, 1,024 references sharing one sour
 bounded loading, raw results and SVG/PNG plots. No read-mapping/reference-decoder,
 ESXi, cold-storage, race-stress or hostile-kernel qualification is claimed.
 
-R4.3 adds read-only FLAT/ZERO `VirtualDisk` mapping, cross-extent reads and byte
-comparison against a recorded reference tool. Preserve rejection of unsupported
-formats and keep native RAW acceleration separate. No ESXi trial is needed yet.
+[R4.3](vmdk-logical.md) now provides read-only FLAT/ZERO `VirtualDisk` mapping,
+cross-extent reads and scoped reference byte comparisons. R4.4 adds CLI source
+integration. Unsupported formats and native RAW acceleration remain separate.
+No ESXi trial is needed yet.

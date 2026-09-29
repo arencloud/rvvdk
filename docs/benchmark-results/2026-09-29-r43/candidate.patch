@@ -1,0 +1,966 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 424c556..55a3c15 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -482,6 +482,7 @@ dependencies = [
+  "criterion",
+  "libc",
+  "rvvdk-core",
++ "rvvdk-datamover",
+  "rvvdk-local",
+  "thiserror",
+ ]
+diff --git a/crates/rvvdk-core/src/virtual_disk.rs b/crates/rvvdk-core/src/virtual_disk.rs
+index cd8c0c5..6e98163 100644
+--- a/crates/rvvdk-core/src/virtual_disk.rs
++++ b/crates/rvvdk-core/src/virtual_disk.rs
+@@ -14,6 +14,16 @@ pub trait VirtualDisk: Send + Sync {
+         })
+     }
+ 
++    /// Additional source-specific identity checks for copy and verification, after
++    /// fresh copy_endpoint observations and ordinary access/range checks. This
++    /// hook must not require WRITE: verification has a read-only destination.
++    /// Copy calls it before any destination mutation.
++    /// Composite disks must reject aliases to any physical backing and may fail
++    /// closed when identity is unknown. Wrappers must forward this hook.
++    fn validate_destination_identity(&self, _destination: crate::CopyEndpoint) -> Result<()> {
++        Ok(())
++    }
++
+     fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize>;
+ 
+     fn read_exact_at(&self, mut offset: u64, mut buffer: &mut [u8]) -> Result<()> {
+diff --git a/crates/rvvdk-datamover/src/preflight.rs b/crates/rvvdk-datamover/src/preflight.rs
+index 5f0ee7e..d830d10 100644
+--- a/crates/rvvdk-datamover/src/preflight.rs
++++ b/crates/rvvdk-datamover/src/preflight.rs
+@@ -72,6 +72,7 @@ pub(crate) fn virtual_pair<S: VirtualDisk + ?Sized, D: VirtualDisk + ?Sized>(
+         .copy_endpoint()
+         .map_err(|e| context("destination", e))?;
+     pair(source_info, destination_info, 0, length, true)?;
++    source.validate_destination_identity(destination_info)?;
+     Ok((source_info, destination_info))
+ }
+ 
+@@ -212,6 +213,7 @@ where
+     let (destination_info, destination_fd, destination_direct) =
+         raw_endpoint(destination.device(), "destination")?;
+     pair(source_info, destination_info, 0, length, true)?;
++    source.validate_destination_identity(destination_info)?;
+     pair(source_fd, destination_fd, 0, length, false)?;
+     Ok(RawEndpoints {
+         source: source_info,
+diff --git a/crates/rvvdk-datamover/src/verify.rs b/crates/rvvdk-datamover/src/verify.rs
+index b4b9ad1..a593831 100644
+--- a/crates/rvvdk-datamover/src/verify.rs
++++ b/crates/rvvdk-datamover/src/verify.rs
+@@ -112,6 +112,7 @@ impl Verifier {
+             if s.identity.is_some() && s.identity == d.identity {
+                 return Err(Error::AliasedEndpoints);
+             }
++            source.validate_destination_identity(d)?;
+             Ok((s.identity, d.identity, d.size))
+         };
+         let before = inspect()?;
+diff --git a/crates/rvvdk-vmdk/Cargo.toml b/crates/rvvdk-vmdk/Cargo.toml
+index 0caccf5..052cc5b 100644
+--- a/crates/rvvdk-vmdk/Cargo.toml
++++ b/crates/rvvdk-vmdk/Cargo.toml
+@@ -14,6 +14,7 @@ rvvdk-local = { path = "../rvvdk-local" }
+ libc = "0.2.189"
+ 
+ [dev-dependencies]
++rvvdk-datamover = { path = "../rvvdk-datamover" }
+ criterion = "0.8.2"
+ 
+ [[bench]]
+@@ -23,3 +24,7 @@ harness = false
+ [[bench]]
+ name = "resolution"
+ harness = false
++
++[[bench]]
++name = "logical"
++harness = false
+diff --git a/crates/rvvdk-vmdk/src/lib.rs b/crates/rvvdk-vmdk/src/lib.rs
+index fd5ca66..edc864b 100644
+--- a/crates/rvvdk-vmdk/src/lib.rs
++++ b/crates/rvvdk-vmdk/src/lib.rs
+@@ -1,5 +1,5 @@
+ //! Bounded VMDK metadata and read-only backing resolution.
+-//! Parsing alone opens no files; logical disk mapping is a separate layer.
++//! Parsing alone opens no files; VmdkDisk maps retained sources into logical reads.
+ //!
+ //! The supported subset and deliberately rejected syntax are documented in
+ //! `docs/vmdk-descriptor.md`. Parsed filenames remain untrusted resolver inputs.
+@@ -23,3 +23,6 @@ pub use backing::{
+ pub use load::DescriptorText;
+ #[cfg(target_os = "linux")]
+ pub use local::LocalResolver;
++
++mod disk;
++pub use disk::VmdkDisk;
+diff --git a/crates/rvvdk-vmdk/tests/fixtures/README.md b/crates/rvvdk-vmdk/tests/fixtures/README.md
+index e15f5cb..dbe3228 100644
+--- a/crates/rvvdk-vmdk/tests/fixtures/README.md
++++ b/crates/rvvdk-vmdk/tests/fixtures/README.md
+@@ -24,3 +24,13 @@ reads exist, generate deterministic backing bytes, compare decoded RAW with a
+ recorded trusted tool/version, and retain commands and hashes. Do not label these
+ synthetic parser examples as ESXi-tested or VMware-generated images.
+ Inspected PDF SHA-256: `88ce1615a703d1d4e3df3c227846bb9ecda4d929129c191ea4ffe7df3294ad59`.
++
++R4.3 adds `scripts/vmdk/compare_reference.py`, which generates deterministic
++backing bytes and disposable descriptors in a caller-selected new directory.
++It checks hosted monolithic/split fixtures against QEMU, preserves
++QEMU-generated hosted descriptors and records any removal of trailing NUL padding
++in fixture-only text copies, and separately checks custom FLAT/ZERO against
++an independently assembled byte oracle. QEMU rejects createType custom; this is
++recorded as a reference-tool limitation, never counted as reference agreement.
++Version, commands, complete descriptor text and file hashes are saved in the
++R4.3 evidence report. Generated disk data stays outside version control.
+diff --git a/crates/rvvdk-vmdk/benches/logical.rs b/crates/rvvdk-vmdk/benches/logical.rs
+new file mode 100644
+index 0000000..77841aa
+--- /dev/null
++++ b/crates/rvvdk-vmdk/benches/logical.rs
+@@ -0,0 +1,141 @@
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use rvvdk_core::{BlockDevice, MemoryBlockDevice, VirtualDisk};
++use rvvdk_vmdk::{
++    BackingError, BackingResolver, Descriptor, ResolutionLimits, ResolvedDescriptor, VmdkDisk,
++};
++use std::{hint::black_box, sync::Arc};
++struct Source(Arc<dyn BlockDevice>);
++impl BackingResolver for Source {
++    fn resolve(&self, _: &str) -> Result<Arc<dyn BlockDevice>, BackingError> {
++        Ok(self.0.clone())
++    }
++}
++fn logical(c: &mut Criterion) {
++    let source = MemoryBlockDevice::new(8 * 1024 * 1024).unwrap();
++    source.write_all_at(0, &vec![7; 8 * 1024 * 1024]).unwrap();
++    let source = Source(Arc::new(source));
++    let header = "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\n";
++    let mut group = c.benchmark_group("logical");
++    group.sampling_mode(SamplingMode::Flat);
++    for (name, records, offset, length) in [
++        ("flat_64k", "RW 16384 FLAT \"x\" 0\n".to_string(), 0, 65536),
++        (
++            "cross_64k",
++            "RW 8 FLAT \"x\" 1\nRW 8 ZERO\n".repeat(512),
++            257,
++            65536,
++        ),
++        (
++            "last_4k_1024",
++            "RW 8 FLAT \"x\" 0\n".repeat(1024),
++            4194304 - 4096,
++            4096,
++        ),
++    ] {
++        let text = format!("{header}{records}");
++        let parsed = Descriptor::parse(text.as_bytes()).unwrap();
++        let disk = VmdkDisk::new(
++            ResolvedDescriptor::resolve(&parsed, &source, ResolutionLimits::default()).unwrap(),
++        )
++        .unwrap();
++        let mut buffer = vec![0; length];
++        disk.read_exact_at(offset, &mut buffer).unwrap();
++        for (i, byte) in buffer.iter().enumerate() {
++            assert_eq!(
++                *byte,
++                if name == "cross_64k" && (offset + i as u64) / 4096 % 2 == 1 {
++                    0
++                } else {
++                    7
++                }
++            );
++        }
++        group.bench_function(name, |b| {
++            b.iter(|| {
++                disk.read_exact_at(black_box(offset), black_box(&mut buffer))
++                    .unwrap();
++                black_box(&buffer);
++            })
++        });
++    }
++    group.finish();
++}
++
++#[cfg(target_os = "linux")]
++fn local_copy(c: &mut Criterion) {
++    use rvvdk_core::RawDisk;
++    use rvvdk_datamover::{CopyOptions, DataMover};
++    use rvvdk_local::LocalFileBlockDevice;
++    use rvvdk_vmdk::{Limits, LocalResolver};
++    use std::{
++        fs::{self, File},
++        path::PathBuf,
++        time::{Duration, Instant},
++    };
++    let root = std::env::var_os("RVVDK_BENCH_DIR")
++        .map(PathBuf::from)
++        .unwrap_or_else(std::env::temp_dir);
++    let path = root.join(format!("rvvdk-logical-copy-{}", std::process::id()));
++    fs::create_dir(&path).unwrap();
++    fs::write(path.join("data"), vec![7; 1024 * 1024]).unwrap();
++    let header = "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\n";
++    let mut group = c.benchmark_group("logical_copy");
++    group.sampling_mode(SamplingMode::Flat);
++    for (name, records) in [
++        ("flat_1m", "RW 2048 FLAT \"data\" 0\n".to_string()),
++        ("mixed_1m", "RW 8 FLAT \"data\" 0\nRW 8 ZERO\n".repeat(128)),
++    ] {
++        fs::write(path.join("disk.vmdk"), format!("{header}{records}")).unwrap();
++        let (text, resolver) =
++            LocalResolver::open_descriptor(path.join("disk.vmdk"), Limits::default()).unwrap();
++        let source = VmdkDisk::new(
++            ResolvedDescriptor::resolve(
++                &text.parse().unwrap(),
++                &resolver,
++                ResolutionLimits::default(),
++            )
++            .unwrap(),
++        )
++        .unwrap();
++        File::create(path.join("output"))
++            .unwrap()
++            .set_len(1024 * 1024)
++            .unwrap();
++        let target =
++            RawDisk::new(LocalFileBlockDevice::open_read_write(path.join("output")).unwrap());
++        let mover = DataMover::new(CopyOptions::with_concurrency(65536, 4096, 4).unwrap());
++        let dirty = vec![0xa5; 1024 * 1024];
++        let mut actual = vec![0; 1024 * 1024];
++        group.bench_function(name, |b| {
++            b.iter_custom(|iters| {
++                let mut elapsed = Duration::ZERO;
++                for _ in 0..iters {
++                    target.write_all_at(0, &dirty).unwrap();
++                    target.flush().unwrap();
++                    let start = Instant::now();
++                    black_box(mover.copy(&source, &target).unwrap());
++                    elapsed += start.elapsed();
++                    target.read_exact_at(0, &mut actual).unwrap();
++                    for (i, byte) in actual.iter().enumerate() {
++                        assert_eq!(
++                            *byte,
++                            if name == "mixed_1m" && i / 4096 % 2 == 1 {
++                                0
++                            } else {
++                                7
++                            }
++                        );
++                    }
++                }
++                elapsed
++            })
++        });
++    }
++    group.finish();
++    fs::remove_dir_all(path).unwrap();
++}
++#[cfg(not(target_os = "linux"))]
++fn local_copy(_: &mut Criterion) {}
++
++criterion_group!(benches, logical, local_copy);
++criterion_main!(benches);
+diff --git a/crates/rvvdk-vmdk/examples/dump_logical.rs b/crates/rvvdk-vmdk/examples/dump_logical.rs
+new file mode 100644
+index 0000000..b3f1560
+--- /dev/null
++++ b/crates/rvvdk-vmdk/examples/dump_logical.rs
+@@ -0,0 +1,36 @@
++//! Fixture qualification helper; not the public CLI/publication workflow.
++#[cfg(target_os = "linux")]
++fn main() -> Result<(), Box<dyn std::error::Error>> {
++    use rvvdk_core::VirtualDisk;
++    use rvvdk_vmdk::{Limits, LocalResolver, ResolutionLimits, ResolvedDescriptor, VmdkDisk};
++    use std::io::Write;
++    let args: Vec<_> = std::env::args_os().skip(1).collect();
++    if args.len() != 2 {
++        return Err("usage: dump_logical DESCRIPTOR NEW_RAW_OUTPUT".into());
++    }
++    let (text, resolver) = LocalResolver::open_descriptor(&args[0], Limits::default())?;
++    let disk = VmdkDisk::new(ResolvedDescriptor::resolve(
++        &text.parse()?,
++        &resolver,
++        ResolutionLimits::default(),
++    )?)?;
++    let mut file = std::fs::File::options()
++        .write(true)
++        .create_new(true)
++        .open(&args[1])?;
++    let mut buffer = vec![0; 65537];
++    let mut offset = 0;
++    while offset < disk.size() {
++        let n = (disk.size() - offset).min(buffer.len() as u64) as usize;
++        disk.read_exact_at(offset, &mut buffer[..n])?;
++        file.write_all(&buffer[..n])?;
++        offset += n as u64;
++    }
++    file.sync_all()?;
++    Ok(())
++}
++#[cfg(not(target_os = "linux"))]
++fn main() {
++    eprintln!("fixture qualification requires Linux");
++    std::process::exit(1);
++}
+diff --git a/crates/rvvdk-vmdk/src/disk.rs b/crates/rvvdk-vmdk/src/disk.rs
+new file mode 100644
+index 0000000..0604a8a
+--- /dev/null
++++ b/crates/rvvdk-vmdk/src/disk.rs
+@@ -0,0 +1,157 @@
++use crate::{BackingError, ResolvedDescriptor, ResolvedExtentBacking};
++use rvvdk_core::{
++    Capabilities, CopyEndpoint, DiskGeometry, DiskRange, Error, Extent, ExtentKind, Result,
++    VirtualDisk,
++};
++
++/// Read-only logical view over retained FLAT/ZERO sources. No native RAW endpoint.
++/// Call revalidate before standalone read sessions; DataMover preflight does this
++/// through copy_endpoint. Retained handles do not freeze backing contents.
++pub struct VmdkDisk {
++    resolved: ResolvedDescriptor,
++    geometry: DiskGeometry,
++}
++impl VmdkDisk {
++    pub fn new(resolved: ResolvedDescriptor) -> std::result::Result<Self, BackingError> {
++        resolved.revalidate()?;
++        // Fixed logical geometry, independent of informational CHS or host alignment.
++        let geometry = DiskGeometry::new(resolved.size_bytes(), 512, 512)
++            .expect("fixed 512-byte geometry is valid");
++        Ok(Self { resolved, geometry })
++    }
++    pub fn resolved(&self) -> &ResolvedDescriptor {
++        &self.resolved
++    }
++    pub fn revalidate(&self) -> std::result::Result<(), BackingError> {
++        self.resolved.revalidate()
++    }
++    fn validate_live(&self) -> Result<()> {
++        self.revalidate()
++            .map_err(|e| Error::EndpointChanged(e.to_string()))
++    }
++    fn range(&self, offset: u64, length: u64) -> Result<DiskRange> {
++        let range = DiskRange::new(offset, length)?;
++        if range.end() > self.size() {
++            return Err(Error::OutOfBounds {
++                offset,
++                length,
++                size: self.size(),
++            });
++        }
++        Ok(range)
++    }
++    fn first_extent(&self, offset: u64) -> usize {
++        self.resolved
++            .extents()
++            .partition_point(|e| e.logical_offset() + e.size_bytes() <= offset)
++    }
++}
++impl VirtualDisk for VmdkDisk {
++    fn geometry(&self) -> DiskGeometry {
++        self.geometry
++    }
++    fn capabilities(&self) -> Capabilities {
++        Capabilities::READ | Capabilities::EXTENTS | Capabilities::SPARSE
++    }
++    fn copy_endpoint(&self) -> Result<CopyEndpoint> {
++        self.validate_live()?;
++        // A composite logical disk has no single physical backing identity.
++        Ok(CopyEndpoint {
++            size: self.size(),
++            capabilities: self.capabilities(),
++            identity: None,
++        })
++    }
++    fn validate_destination_identity(&self, destination: CopyEndpoint) -> Result<()> {
++        // virtual_pair has just called copy_endpoint, validating known identities.
++        // A direct caller must follow the same preflight ordering.
++        if self.resolved.backings().is_empty() {
++            return Ok(());
++        }
++        let identity = destination.identity.ok_or(Error::InvalidEndpoint {
++            reason: "VMDK destination identity is unknown",
++        })?;
++        for backing in self.resolved.backings() {
++            let source = backing
++                .initial_endpoint()
++                .identity
++                .ok_or(Error::InvalidEndpoint {
++                    reason: "VMDK backing identity is unknown",
++                })?;
++            if source == identity {
++                return Err(Error::AliasedEndpoints);
++            }
++        }
++        Ok(())
++    }
++    fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
++        let length = u64::try_from(buffer.len()).map_err(|_| Error::RangeOverflow {
++            offset,
++            length: u64::MAX,
++        })?;
++        self.range(offset, length)?;
++        if buffer.is_empty() {
++            return Ok(0);
++        }
++        let mut logical = offset;
++        let mut done = 0;
++        let first = self.first_extent(offset);
++        for extent in &self.resolved.extents()[first..] {
++            let within = logical - extent.logical_offset();
++            let count = (extent.size_bytes() - within).min(length - done as u64) as usize;
++            let target = &mut buffer[done..done + count];
++            match extent.backing() {
++                ResolvedExtentBacking::Zero => target.fill(0),
++                ResolvedExtentBacking::Flat {
++                    backing_index,
++                    offset_bytes,
++                } => {
++                    self.resolved.backings()[backing_index]
++                        .read_exact_at(offset_bytes + within, target)?;
++                }
++            }
++            done += count;
++            logical += count as u64;
++            if done == buffer.len() {
++                break;
++            }
++        }
++        Ok(done)
++    }
++    fn extents(&self, offset: u64, length: u64) -> Result<Vec<Extent>> {
++        let range = self.range(offset, length)?;
++        let mut out: Vec<Extent> = Vec::new();
++        if range.is_empty() {
++            return Ok(out);
++        }
++        for e in &self.resolved.extents()[self.first_extent(offset)..] {
++            if e.logical_offset() >= range.end() {
++                break;
++            }
++            let start = e.logical_offset().max(offset);
++            let end = (e.logical_offset() + e.size_bytes()).min(range.end());
++            let kind = match e.backing() {
++                ResolvedExtentBacking::Zero => ExtentKind::Zero,
++                ResolvedExtentBacking::Flat { .. } => ExtentKind::Data,
++            };
++            if let Some(last) = out.last_mut().filter(|last| last.kind() == kind) {
++                *last = Extent::new(last.offset(), end - last.offset(), kind)?;
++            } else {
++                out.push(Extent::new(start, end - start, kind)?);
++            }
++        }
++        Ok(out)
++    }
++    fn write_at(&self, _: u64, _: &[u8]) -> Result<usize> {
++        Err(Error::Unsupported)
++    }
++    fn write_zero_at(&self, _: u64, _: u64) -> Result<()> {
++        Err(Error::Unsupported)
++    }
++    fn discard(&self, _: u64, _: u64) -> Result<()> {
++        Err(Error::Unsupported)
++    }
++    fn flush(&self) -> Result<()> {
++        Err(Error::Unsupported)
++    }
++}
+diff --git a/crates/rvvdk-vmdk/tests/local_logical.rs b/crates/rvvdk-vmdk/tests/local_logical.rs
+new file mode 100644
+index 0000000..9372706
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/local_logical.rs
+@@ -0,0 +1,61 @@
++#![cfg(target_os = "linux")]
++use rvvdk_core::{Error, RawDisk};
++use rvvdk_datamover::{CopyOptions, DataMover};
++use rvvdk_local::LocalFileBlockDevice;
++use rvvdk_vmdk::{Limits, LocalResolver, ResolutionLimits, ResolvedDescriptor, VmdkDisk};
++use std::{
++    fs::{self, File},
++    path::PathBuf,
++};
++#[test]
++fn local_second_backing_hardlink_and_late_truncation_fail_before_mutation() {
++    let root = std::env::var_os("RVVDK_TEST_DIR")
++        .map(PathBuf::from)
++        .unwrap_or_else(std::env::temp_dir);
++    let path = root.join(format!("rvvdk-logical-local-{}", std::process::id()));
++    fs::create_dir(&path).unwrap();
++    fs::write(path.join("a"), [7; 4096]).unwrap();
++    fs::write(path.join("b"), [9; 4096]).unwrap();
++    fs::hard_link(path.join("b"), path.join("alias")).unwrap();
++    fs::write(path.join("disk"),"version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"custom\"\nRW 2 FLAT \"a\" 1\nRW 1 ZERO\nRW 1 FLAT \"b\" 0\n").unwrap();
++    let (text, resolver) =
++        LocalResolver::open_descriptor(path.join("disk"), Limits::default()).unwrap();
++    let disk = VmdkDisk::new(
++        ResolvedDescriptor::resolve(
++            &text.parse().unwrap(),
++            &resolver,
++            ResolutionLimits::default(),
++        )
++        .unwrap(),
++    )
++    .unwrap();
++    let alias = RawDisk::new(LocalFileBlockDevice::open_read_write(path.join("alias")).unwrap());
++    let mover = DataMover::new(CopyOptions::with_concurrency(512, 4096, 4).unwrap());
++    assert!(matches!(
++        mover.copy(&disk, &alias),
++        Err(Error::AliasedEndpoints)
++    ));
++    assert_eq!(fs::read(path.join("b")).unwrap(), [9; 4096]);
++    fs::write(path.join("out"), [0xa5; 4096]).unwrap();
++    let out = RawDisk::new(LocalFileBlockDevice::open_read_write(path.join("out")).unwrap());
++    mover.copy(&disk, &out).unwrap();
++    let bytes = fs::read(path.join("out")).unwrap();
++    assert_eq!(&bytes[..1024], &[7; 1024]);
++    assert_eq!(&bytes[1024..1536], &[0; 512]);
++    assert_eq!(&bytes[1536..2048], &[9; 512]);
++    assert_eq!(&bytes[2048..], &[0xa5; 2048]);
++    let plan = mover.plan_with_destination(&disk, &out).unwrap();
++    File::options()
++        .write(true)
++        .open(path.join("b"))
++        .unwrap()
++        .set_len(511)
++        .unwrap();
++    assert!(mover.execute_plan(&plan, &disk, &out).is_err());
++    assert_eq!(fs::read(path.join("out")).unwrap(), bytes);
++    drop(out);
++    drop(alias);
++    drop(disk);
++    drop(resolver);
++    fs::remove_dir_all(path).unwrap();
++}
+diff --git a/crates/rvvdk-vmdk/tests/logical.rs b/crates/rvvdk-vmdk/tests/logical.rs
+new file mode 100644
+index 0000000..47e2fbb
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/logical.rs
+@@ -0,0 +1,387 @@
++mod support;
++use rvvdk_core::{
++    BlockDevice, Capabilities, CopyEndpoint, DiskGeometry, EndpointIdentity, Error, ExtentKind,
++    MemoryBlockDevice, RawDisk, VirtualDisk,
++};
++use rvvdk_datamover::{CopyOptions, DataMover};
++use rvvdk_vmdk::{Descriptor, ResolutionLimits, ResolvedDescriptor, VmdkDisk};
++use std::sync::{
++    Arc,
++    atomic::{AtomicBool, AtomicUsize, Ordering},
++};
++use support::*;
++
++#[test]
++fn all_ranges_match_flat_zero_offset_and_repeated_source_oracle() {
++    let (r, bytes) = patterned();
++    let d = disk(
++        &descriptor("RW 2 FLAT \"x\" 3\nRW 1 ZERO\nRDONLY 1 FLAT \"x\" 0\nRW 1 FLAT \"x\" 7"),
++        &r,
++    );
++    let expected = [
++        &bytes[1536..2560],
++        &[0; 512][..],
++        &bytes[..512],
++        &bytes[3584..4096],
++    ]
++    .concat();
++    assert_eq!(d.size(), expected.len() as u64);
++    for offset in 0..=expected.len() {
++        for len in [0, 1, 3, 513, expected.len() - offset] {
++            if offset + len > expected.len() {
++                continue;
++            }
++            let mut output = vec![0xcc; len];
++            assert_eq!(d.read_at(offset as u64, &mut output).unwrap(), len);
++            assert_eq!(output, expected[offset..offset + len]);
++        }
++    }
++    assert_eq!(d.geometry().logical_block_size(), 512);
++    assert!(d.is_read_only());
++    assert_eq!(d.copy_endpoint().unwrap().identity, None);
++}
++#[test]
++fn range_errors_precede_buffer_changes_and_all_mutations_are_unsupported() {
++    let (r, _) = patterned();
++    let d = disk(&descriptor("RW 1 FLAT \"x\" 0"), &r);
++    for offset in [511, 513, u64::MAX] {
++        let mut b = [17; 2];
++        assert!(d.read_at(offset, &mut b).is_err());
++        assert_eq!(b, [17; 2]);
++    }
++    assert_eq!(d.read_at(512, &mut []).unwrap(), 0);
++    assert!(matches!(
++        d.read_at(513, &mut []),
++        Err(Error::OutOfBounds { .. })
++    ));
++    assert!(matches!(
++        d.extents(u64::MAX, 1),
++        Err(Error::RangeOverflow { .. })
++    ));
++    assert!(matches!(d.extents(512, 1), Err(Error::OutOfBounds { .. })));
++    assert!(d.extents(512, 0).unwrap().is_empty());
++    assert!(matches!(d.write_at(0, &[1]), Err(Error::Unsupported)));
++    assert!(matches!(d.write_zero_at(0, 512), Err(Error::Unsupported)));
++    assert!(matches!(d.discard(0, 512), Err(Error::Unsupported)));
++    assert!(matches!(d.flush(), Err(Error::Unsupported)));
++    assert!(
++        !d.capabilities()
++            .intersects(Capabilities::WRITE | Capabilities::DIRECT_IO | Capabilities::FLUSH)
++    );
++}
++#[test]
++fn extents_are_clipped_coalesced_and_never_report_physical_holes() {
++    let (r, _) = patterned();
++    let d = disk(
++        &descriptor(
++            "RW 1 FLAT \"x\" 0\nRW 1 FLAT \"y\" 1\nRW 1 ZERO\nRW 2 ZERO\nRW 1 FLAT \"x\" 3",
++        ),
++        &r,
++    );
++    let e = d.extents(17, 3000).unwrap();
++    assert_eq!(
++        e.iter()
++            .map(|e| (e.offset(), e.length(), e.kind()))
++            .collect::<Vec<_>>(),
++        vec![
++            (17, 1007, ExtentKind::Data),
++            (1024, 1536, ExtentKind::Zero),
++            (2560, 457, ExtentKind::Data)
++        ]
++    );
++    for offset in [0, 511, 512, 1023, 1024, 2559, 2560, 3071] {
++        let single = d.extents(offset, 1).unwrap();
++        assert_eq!(single.len(), 1);
++        assert_eq!(single[0].offset(), offset);
++        assert_eq!(single[0].length(), 1);
++    }
++}
++#[test]
++fn maximum_capacity_zero_extent_and_last_byte_do_not_overflow() {
++    let (r, _) = patterned();
++    let d = disk(&descriptor("RW 36028797018963967 ZERO"), &r);
++    let mut bytes = [1; 3];
++    d.read_exact_at(d.size() - 3, &mut bytes).unwrap();
++    assert_eq!(bytes, [0; 3]);
++    let extent = d.extents(d.size() - 3, 3).unwrap();
++    assert_eq!(extent[0].end(), d.size());
++}
++struct ShortSource {
++    eof: AtomicBool,
++    denied: AtomicBool,
++    reads: AtomicUsize,
++}
++impl BlockDevice for ShortSource {
++    fn geometry(&self) -> DiskGeometry {
++        DiskGeometry::new(4096, 512, 512).unwrap()
++    }
++    fn capabilities(&self) -> Capabilities {
++        Capabilities::READ
++    }
++    fn copy_endpoint(&self) -> rvvdk_core::Result<CopyEndpoint> {
++        Ok(CopyEndpoint {
++            size: if self.eof.load(Ordering::Relaxed) {
++                0
++            } else {
++                4096
++            },
++            capabilities: self.capabilities(),
++            identity: Some(EndpointIdentity::Memory { address: 1 }),
++        })
++    }
++    fn read_at(&self, _: u64, buf: &mut [u8]) -> rvvdk_core::Result<usize> {
++        self.reads.fetch_add(1, Ordering::Relaxed);
++        if self.denied.load(Ordering::Relaxed) {
++            return Err(std::io::Error::from(std::io::ErrorKind::PermissionDenied).into());
++        }
++        if self.eof.load(Ordering::Relaxed) {
++            return Ok(0);
++        }
++        let n = buf.len().min(7);
++        buf[..n].fill(23);
++        Ok(n)
++    }
++    fn write_at(&self, _: u64, _: &[u8]) -> rvvdk_core::Result<usize> {
++        panic!("no writes")
++    }
++    fn flush(&self) -> rvvdk_core::Result<()> {
++        panic!("no flush")
++    }
++}
++#[test]
++fn partial_reads_complete_but_eof_and_io_errors_are_not_zero_filled() {
++    let source = Arc::new(ShortSource {
++        eof: AtomicBool::new(false),
++        denied: AtomicBool::new(false),
++        reads: AtomicUsize::new(0),
++    });
++    let r = Source(source.clone());
++    let d = disk(&descriptor("RW 1 ZERO\nRW 1 FLAT \"x\" 0"), &r);
++    let mut bytes = [99; 1024];
++    d.read_exact_at(0, &mut bytes).unwrap();
++    assert_eq!(&bytes[..512], &[0; 512]);
++    assert_eq!(&bytes[512..], &[23; 512]);
++    assert_eq!(source.reads.load(Ordering::Relaxed), 74);
++    source.eof.store(true, Ordering::Relaxed);
++    bytes.fill(99);
++    assert!(matches!(
++        d.read_at(0, &mut bytes),
++        Err(Error::UnexpectedEof { .. })
++    ));
++    assert_eq!(&bytes[..512], &[0; 512]);
++    assert_eq!(&bytes[512..], &[99; 512]);
++    assert!(d.copy_endpoint().is_err());
++    source.denied.store(true, Ordering::Relaxed);
++    assert!(matches!(d.read_at(512, &mut [0; 1]), Err(Error::Io(_))));
++}
++#[test]
++fn concurrent_reads_share_immutable_mapping_and_backing_handles() {
++    let (r, bytes) = patterned();
++    let d = disk(&descriptor("RW 2 FLAT \"x\" 1\nRW 1 ZERO"), &r);
++    std::thread::scope(|s| {
++        for _ in 0..4 {
++            let d = &d;
++            let expected = &bytes[512..1536];
++            s.spawn(move || {
++                for _ in 0..50 {
++                    let mut b = [0; 1536];
++                    d.read_exact_at(0, &mut b).unwrap();
++                    assert_eq!(&b[..1024], expected);
++                    assert_eq!(&b[1024..], &[0; 512]);
++                }
++            });
++        }
++    });
++}
++#[test]
++fn portable_copy_preserves_data_zero_and_destination_tail() {
++    let (r, bytes) = patterned();
++    let d = disk(
++        &descriptor("RW 2 FLAT \"x\" 1\nRW 1 ZERO\nRW 1 FLAT \"x\" 5"),
++        &r,
++    );
++    for workers in [1, 4] {
++        let target = RawDisk::new(MemoryBlockDevice::new(2560).unwrap());
++        target.write_all_at(0, &[0xa5; 2560]).unwrap();
++        let mover = DataMover::new(CopyOptions::with_concurrency(512, 4096, workers).unwrap());
++        let plan = mover.plan_with_destination(&d, &target).unwrap();
++        let report = mover.execute_plan(&plan, &d, &target).unwrap();
++        let mut actual = [0; 2560];
++        target.read_exact_at(0, &mut actual).unwrap();
++        assert_eq!(&actual[..1024], &bytes[512..1536]);
++        assert_eq!(&actual[1024..1536], &[0; 512]);
++        assert_eq!(&actual[1536..2048], &bytes[2560..3072]);
++        assert_eq!(&actual[2048..], &[0xa5; 512]);
++        let _ = report;
++        rvvdk_datamover::Verifier::new(d.size(), 257, 4096)
++            .unwrap()
++            .verify(&d, &target)
++            .unwrap();
++    }
++}
++struct AliasTarget(Arc<dyn BlockDevice>);
++impl VirtualDisk for AliasTarget {
++    fn geometry(&self) -> DiskGeometry {
++        self.0.geometry()
++    }
++    fn capabilities(&self) -> Capabilities {
++        self.0.capabilities()
++    }
++    fn copy_endpoint(&self) -> rvvdk_core::Result<CopyEndpoint> {
++        self.0.copy_endpoint()
++    }
++    fn read_at(&self, o: u64, b: &mut [u8]) -> rvvdk_core::Result<usize> {
++        self.0.read_at(o, b)
++    }
++    fn write_at(&self, _: u64, _: &[u8]) -> rvvdk_core::Result<usize> {
++        panic!("alias must reject before writes")
++    }
++    fn write_zero_at(&self, _: u64, _: u64) -> rvvdk_core::Result<()> {
++        panic!("no zero")
++    }
++    fn discard(&self, _: u64, _: u64) -> rvvdk_core::Result<()> {
++        panic!("no discard")
++    }
++    fn flush(&self) -> rvvdk_core::Result<()> {
++        panic!("no flush")
++    }
++    fn extents(&self, _: u64, _: u64) -> rvvdk_core::Result<Vec<rvvdk_core::Extent>> {
++        Err(Error::Unsupported)
++    }
++}
++#[test]
++fn composite_alias_checks_apply_to_direct_planned_and_trait_object_copies() {
++    let (r, _) = patterned();
++    let d = disk(&descriptor("RW 1 FLAT \"x\" 1\nRW 1 ZERO"), &r);
++    let target = AliasTarget(r.0.clone());
++    let mover = DataMover::new(CopyOptions::default());
++    assert!(matches!(
++        mover.copy(&d, &target),
++        Err(Error::AliasedEndpoints)
++    ));
++    assert!(matches!(
++        mover.plan_with_destination(&d, &target),
++        Err(Error::AliasedEndpoints)
++    ));
++    let plan = mover.plan(&d).unwrap();
++    let dyn_source: &dyn VirtualDisk = &d;
++    assert!(matches!(
++        mover.execute_plan(&plan, dyn_source, &target),
++        Err(Error::AliasedEndpoints)
++    ));
++    assert!(
++        d.validate_destination_identity(CopyEndpoint {
++            size: 4096,
++            capabilities: Capabilities::WRITE,
++            identity: None
++        })
++        .is_err()
++    );
++}
++#[test]
++fn constructor_and_execute_preflight_reject_late_truncation_before_writes() {
++    let s = Arc::new(ShortSource {
++        eof: AtomicBool::new(false),
++        denied: AtomicBool::new(false),
++        reads: AtomicUsize::new(0),
++    });
++    let r = Source(s.clone());
++    let t = descriptor("RW 1 FLAT \"x\" 0");
++    let resolved = ResolvedDescriptor::resolve(
++        &Descriptor::parse(t.as_bytes()).unwrap(),
++        &r,
++        ResolutionLimits::default(),
++    )
++    .unwrap();
++    s.eof.store(true, Ordering::Relaxed);
++    assert!(VmdkDisk::new(resolved).is_err());
++    s.eof.store(false, Ordering::Relaxed);
++    let d = disk(&t, &r);
++    let target = RawDisk::new(MemoryBlockDevice::new(512).unwrap());
++    target.write_all_at(0, &[41; 512]).unwrap();
++    let mover = DataMover::new(CopyOptions::default());
++    let plan = mover.plan(&d).unwrap();
++    s.eof.store(true, Ordering::Relaxed);
++    assert!(mover.execute_plan(&plan, &d, &target).is_err());
++    let mut b = [0; 512];
++    target.read_exact_at(0, &mut b).unwrap();
++    assert_eq!(b, [41; 512]);
++}
++
++#[test]
++fn binary_lookup_handles_1024_distinct_logical_positions() {
++    let (r, bytes) = patterned();
++    let records = (0..1024)
++        .map(|i| format!("RW 1 FLAT \"x\" {}\n", i % 16))
++        .collect::<String>();
++    let d = disk(&descriptor(&records), &r);
++    let expected = bytes.repeat(64);
++    for offset in (0..expected.len()).step_by(509) {
++        let len = (expected.len() - offset).min(1031);
++        let mut b = vec![0; len];
++        d.read_exact_at(offset as u64, &mut b).unwrap();
++        assert_eq!(b, expected[offset..offset + len]);
++    }
++}
++struct Unknown(Arc<dyn BlockDevice>);
++impl BlockDevice for Unknown {
++    fn geometry(&self) -> DiskGeometry {
++        self.0.geometry()
++    }
++    fn capabilities(&self) -> Capabilities {
++        self.0.capabilities()
++    }
++    fn read_at(&self, o: u64, b: &mut [u8]) -> rvvdk_core::Result<usize> {
++        self.0.read_at(o, b)
++    }
++    fn write_at(&self, _: u64, _: &[u8]) -> rvvdk_core::Result<usize> {
++        panic!("no writes")
++    }
++    fn flush(&self) -> rvvdk_core::Result<()> {
++        panic!("no flush")
++    }
++}
++#[test]
++fn every_backing_alias_is_checked_and_unknown_identity_copies_fail_closed() {
++    struct Two(Source, Source);
++    impl rvvdk_vmdk::BackingResolver for Two {
++        fn resolve(&self, name: &str) -> Result<Arc<dyn BlockDevice>, rvvdk_vmdk::BackingError> {
++            Ok(if name == "x" {
++                self.0.0.clone()
++            } else {
++                self.1.0.clone()
++            })
++        }
++    }
++    let (a, _) = patterned();
++    let (b, _) = patterned();
++    let pair = Two(a, b);
++    let d = disk(&descriptor("RW 1 FLAT \"x\" 0\nRW 1 FLAT \"y\" 1"), &pair);
++    let destination = AliasTarget(pair.1.0.clone());
++    assert!(matches!(
++        rvvdk_datamover::Verifier::new(d.size(), 512, 4096)
++            .unwrap()
++            .verify(&d, &destination),
++        Err(Error::AliasedEndpoints)
++    ));
++    let mover = DataMover::new(CopyOptions::default());
++    assert!(matches!(
++        mover.copy(&d, &destination),
++        Err(Error::AliasedEndpoints)
++    ));
++    let unknown = Source(Arc::new(Unknown(pair.0.0.clone())));
++    let d = disk(&descriptor("RW 1 FLAT \"x\" 0"), &unknown);
++    d.read_exact_at(0, &mut [0; 512]).unwrap();
++    let destination = RawDisk::new(MemoryBlockDevice::new(512).unwrap());
++    assert!(matches!(
++        mover.copy(&d, &destination),
++        Err(Error::InvalidEndpoint { .. })
++    ));
++    let zero = disk(&descriptor("RW 1 ZERO"), &unknown);
++    zero.validate_destination_identity(CopyEndpoint {
++        size: 512,
++        capabilities: Capabilities::WRITE,
++        identity: None,
++    })
++    .unwrap();
++}
+diff --git a/crates/rvvdk-vmdk/tests/support/mod.rs b/crates/rvvdk-vmdk/tests/support/mod.rs
+new file mode 100644
+index 0000000..59f97e4
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/support/mod.rs
+@@ -0,0 +1,27 @@
++use rvvdk_core::{BlockDevice, MemoryBlockDevice};
++use rvvdk_vmdk::{
++    BackingError, BackingResolver, Descriptor, ResolutionLimits, ResolvedDescriptor, VmdkDisk,
++};
++use std::sync::Arc;
++pub fn descriptor(extents: &str) -> String {
++    format!("version=1\nCID=00112233\nparentCID=ffffffff\ncreateType=\"custom\"\n{extents}\n")
++}
++pub struct Source(pub Arc<dyn BlockDevice>);
++impl BackingResolver for Source {
++    fn resolve(&self, _: &str) -> Result<Arc<dyn BlockDevice>, BackingError> {
++        Ok(self.0.clone())
++    }
++}
++pub fn patterned() -> (Source, Vec<u8>) {
++    let bytes: Vec<_> = (0..8192)
++        .map(|i| ((i * 29 + i / 251) % 256) as u8)
++        .collect();
++    let memory = MemoryBlockDevice::new(bytes.len()).unwrap();
++    memory.write_all_at(0, &bytes).unwrap();
++    (Source(Arc::new(memory)), bytes)
++}
++pub fn disk(text: &str, resolver: &dyn BackingResolver) -> VmdkDisk {
++    let d = Descriptor::parse(text.as_bytes()).unwrap();
++    VmdkDisk::new(ResolvedDescriptor::resolve(&d, resolver, ResolutionLimits::default()).unwrap())
++        .unwrap()
++}

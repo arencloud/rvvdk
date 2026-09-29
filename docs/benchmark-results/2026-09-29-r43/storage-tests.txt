@@ -1,0 +1,83 @@
+   Compiling rvvdk-vmdk v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-vmdk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.50s
+     Running unittests src/lib.rs (target/debug/deps/rvvdk_vmdk-f791a5757458656f)
+
+running 1 test
+test local::tests::replacement_between_pin_and_reopen_cannot_redirect_reads ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/backing.rs (target/debug/deps/backing-ea21c0c5d6364a95)
+
+running 7 tests
+test loading_propagates_io_and_parser_failures ... ok
+test bounded_loading_handles_short_reads_interrupts_exact_limit_and_one_probe ... ok
+test resource_limits_fail_before_any_resolver_call ... ok
+test opaque_references_deduplicate_and_outlive_input_and_resolver ... ok
+test zero_extents_resolve_without_sources ... ok
+test revalidation_uses_live_capacity_access_and_known_identity ... ok
+test truncation_and_read_permissions_are_checked_and_failures_drop_sources ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/descriptor.rs (target/debug/deps/descriptor-2b6ffeefa59a6935)
+
+running 12 tests
+test lexical_variants_preserve_filename_case_and_borrow_input ... ok
+test encoding_controls_and_error_locations_are_precise ... ok
+test duplicates_order_and_required_fields_are_validated ... ok
+test fixtures_have_checked_contiguous_byte_ranges ... ok
+test numbers_and_all_arithmetic_boundaries_are_checked ... ok
+test supported_create_types_enforce_shape_and_split_capacity ... ok
+test path_policy_is_explicitly_deferred_without_any_file_access ... ok
+test metadata_is_informational_and_unknown_features_rejected ... ok
+test syntax_and_quoting_fail_closed ... ok
+test rejects_unsupported_variants_and_parent_chains ... ok
+test each_resource_limit_accepts_boundary_and_rejects_next_byte_or_entry ... ok
+test deterministic_mutations_never_panic_or_escape_layout_invariants ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/local_logical.rs (target/debug/deps/local_logical-cdcf7a744413a555)
+
+running 1 test
+test local_second_backing_hardlink_and_late_truncation_fail_before_mutation ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/local_resolution.rs (target/debug/deps/local_resolution-a63692ecd3ae222d)
+
+running 7 tests
+test mounted_namespaces_and_magic_links_are_not_followed ... ok
+test descriptor_acquisition_ignores_untrusted_file_size_and_obeys_bound ... ok
+test descriptor_parent_and_nested_regular_files_are_used_read_only ... ok
+test dangerous_lexical_names_and_symlink_components_fail ... ok
+test pinned_anchor_and_backings_survive_path_replacement_and_hardlinks_have_identity ... ok
+test nonregular_files_reject_without_opening_a_fifo_for_io ... ok
+test live_truncation_is_detected_and_failed_resolution_leaks_no_file_handles ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/logical.rs (target/debug/deps/logical-ca266380126cefce)
+
+running 11 tests
+test constructor_and_execute_preflight_reject_late_truncation_before_writes ... ok
+test composite_alias_checks_apply_to_direct_planned_and_trait_object_copies ... ok
+test partial_reads_complete_but_eof_and_io_errors_are_not_zero_filled ... ok
+test extents_are_clipped_coalesced_and_never_report_physical_holes ... ok
+test maximum_capacity_zero_extent_and_last_byte_do_not_overflow ... ok
+test range_errors_precede_buffer_changes_and_all_mutations_are_unsupported ... ok
+test every_backing_alias_is_checked_and_unknown_identity_copies_fail_closed ... ok
+test portable_copy_preserves_data_zero_and_destination_tail ... ok
+test concurrent_reads_share_immutable_mapping_and_backing_handles ... ok
+test all_ranges_match_flat_zero_offset_and_repeated_source_oracle ... ok
+test binary_lookup_handles_1024_distinct_logical_positions ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests rvvdk_vmdk
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

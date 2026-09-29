@@ -1,0 +1,101 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R4.3 \u00b7 Read-only logical VMDK mapping",
+    "candidate": "patch 9a052941",
+    "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm memory / Btrfs \u00b7 copy includes flush",
+    "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "candidate_only": {
+      "title": "Logical reads and local copies \u00b7 first cost baseline",
+      "note": "Memory reads exclude opening/revalidation \u00b7 local copies include preflight and final flush \u00b7 independent scales.",
+      "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+    },
+    "workloads": {
+      "preflight/plan_threaded": {
+        "label": "RAW plan \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "preflight_copy/threaded": {
+        "label": "RAW copy + flush \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "native_lifetime/buffered/threaded_control": {
+        "label": "RAW 4-worker copy + flush \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "descriptor/1024_extents": {
+        "label": "Descriptor \u00b7 1,024 extents",
+        "phase": "planning"
+      },
+      "resolution/one_file": {
+        "label": "Resolve one source",
+        "phase": "planning"
+      },
+      "cli_transfer/verify_only": {
+        "label": "RAW CLI verify \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "logical/flat_64k": {
+        "label": "Memory FLAT read \u00b7 64 KiB",
+        "phase": "planning"
+      },
+      "logical/cross_64k": {
+        "label": "Memory cross-extent read \u00b7 64 KiB",
+        "phase": "planning"
+      },
+      "logical/last_4k_1024": {
+        "label": "Memory last-of-1,024 read \u00b7 4 KiB",
+        "phase": "planning"
+      },
+      "logical_copy/flat_1m": {
+        "label": "Local FLAT copy + flush \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "logical_copy/mixed_1m": {
+        "label": "Local FLAT/ZERO copy + flush \u00b7 1 MiB",
+        "phase": "copy"
+      }
+    },
+    "repeat_sampling": "3 adjacent pairs \u00b7 40 samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+  },
+  "input_sha256": {
+    "plot-config.json": "c70b79aa112387faf96b7cb5f2b01b67d1165cbf46c5a19ebc6fe957e0a1e617",
+    "environment.json": "9e3bcb1e7c07c1de397293f8110347bcbca5e676950d40bbfa4ba6a961c6f336",
+    "measurements.json": "b68ad2a887b4222139aec47af84782de708c7d010b076097fdfd23e7f85c2bac",
+    "summary.json": "4e272d082b84aed6ece93703a5793076340191cebfabaeb617bda3ea7c768738",
+    "followup-measurements.json": "d84d8a27a469201a7a2d71fd5e8114113961529d5f384e9cc0fb5c4bd9dc8420",
+    "followup-summary.json": "59c47737e54deb29c60faecda8450efb5e48f99e582b407e95662b356083d603",
+    "candidate-only-measurements.json": "b514dec196461b775503b3f153fc0907bfcd989cd51b4f74e5d3344f209902f3"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "9551c4bebf4d0f9cecebc3a807c41b618e4ad489b6adb1d1ce1374628f507e09",
+    "planning-latency.png": "7bf11942fa58c0de73e1571e999780934789c91035f5b9c8b6766fb2d5ffe40c",
+    "copy-latency.svg": "561680857260312c9c5b0c53d2bdf071ec277333c887718efeb6ec637b568922",
+    "copy-latency.png": "8487a0f07117ee5ce5d886fb44a49e326bfb7d5e3197f42cb3c26bb094d9257b",
+    "relative-change.svg": "796d28d02389e33d5e4a1ea34d2ba4e2d69be753435e562c8f28655ac40853b0",
+    "relative-change.png": "0c7da652ac3e5cee0b85126179090085d3bb99e479c9f3e1b0545c2eba51b303",
+    "sample-distributions.svg": "e6709022a9c48fa107969787d976a83fbf72723197c651c0cbabf39fded8dac7",
+    "sample-distributions.png": "485854cbc12a14952b094b087a64c4a97392b61b302edc345fd30af142dfa42b",
+    "followup-change.svg": "958c13be1f38bdaa49b71761fe872e276278dfd20bd16dfec36e888d038d8bde",
+    "followup-change.png": "fecf4f9a4a43a468ce7bdfe8871b01223b9d0049d743e4d9ac81eff5cfee9c88",
+    "candidate-only.svg": "b19c274a90b1273205c16f5d1c64739380bfcc1b23902c9d6fbff4e2f3d32ab4",
+    "candidate-only.png": "46c5f6f74910ac0e482cd90277380caf42b3b47d013f5628b1796f3970d7d934",
+    "computed.json": "cb8a781f23a3c86ec3abd73f124076d1b2f2f2adab2ad09d6a8315a978cfb075"
+  }
+}

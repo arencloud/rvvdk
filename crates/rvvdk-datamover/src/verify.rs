@@ -112,6 +112,7 @@ impl Verifier {
             if s.identity.is_some() && s.identity == d.identity {
                 return Err(Error::AliasedEndpoints);
             }
+            source.validate_destination_identity(d)?;
             Ok((s.identity, d.identity, d.size))
         };
         let before = inspect()?;

@@ -1,8 +1,8 @@
 # VMDK descriptor subset (R4.1)
 
 `rvvdk-vmdk::Descriptor::parse(&[u8])` validates text and returns borrowed metadata.
-It opens no files and implements no `VirtualDisk` yet. The CLI still accepts RAW
-only. This is the first format layer, independently implemented in Rust.
+It opens no files and implements no `VirtualDisk` yet. The [logical reader](vmdk-logical.md) consumes resolved metadata; the CLI still
+accepts RAW only. This is the first format layer, independently implemented in Rust.
 
 The format reference is VMware's [Virtual Disk Format 5.0, pages 3–5](https://github.com/vmware/open-vmdk/blob/master/vmdk_50_technote.pdf).
 The specification describes headers, ordered extents, 512-byte sector units,
@@ -87,10 +87,10 @@ R4.2 provides caller-supplied `BackingResolver` contracts and a local resolver
 that defaults to descriptor-relative confined regular files. It rejects
 absolute/traversal escapes and symlinks, bounds resource use, validates backing
 offset/end against live file length, and retains identities.
-Transport-neutral references must remain possible. R4.3 builds read-only FLAT/ZERO
-logical mapping and cross-extent reads on the resolved objects; CLI integration
-and reference byte comparisons follow. Container descriptors must not be offered
-as native RAW endpoints.
+Transport-neutral references remain supported. [R4.3](vmdk-logical.md) provides
+read-only FLAT/ZERO logical mapping, cross-extent reads and scoped reference-byte
+comparisons. CLI integration follows in R4.4. Container descriptors must not be
+offered as native RAW endpoints.
 
 ## Fixtures and qualification
 
@@ -99,5 +99,6 @@ project-authored examples. No VMware-generated guest image, third-party parser
 source or format PDF is committed. Tests exercise supported shapes, grammar,
 limits, arithmetic boundaries, unsupported features and deterministic mutations.
 These are local parser tests, not a VMware compatibility qualification or fuzzing
-campaign. Reference-tool logical-byte comparison waits for the reader. ESXi is
-not needed; the 60-day trial remains reserved for V0's live-access proof.
+campaign. [Logical-reader qualification](vmdk-logical.md#reference-qualification)
+records hosted reference comparisons and the custom/NUL-padding limitations. ESXi
+is not needed; the 60-day trial remains reserved for V0's live-access proof.

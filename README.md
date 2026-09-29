@@ -32,7 +32,8 @@ VMware disk access and migration, extensible to other platforms.
 > [!IMPORTANT]
 > **Active development.** The project exposes Rust libraries and a local RAW CLI.
 > A [bounded VMDK descriptor parser](docs/vmdk-descriptor.md) is available.
-> Logical VMDK disk reads, VMware remote access, CBT, and durable resume are planned.
+> [Read-only FLAT/ZERO VMDK disks](docs/vmdk-logical.md) are available through Rust APIs.
+> CLI VMDK integration, VMware remote access, CBT, and durable resume are planned.
 > The [roadmap](docs/roadmap.md) tracks completed fixes and remaining work;
 > the [dated review](docs/project-review-2026-09-28.md) records the starting assessment.
 
@@ -54,7 +55,7 @@ VMware disk access and migration, extensible to other platforms.
 | **Copy failures** | Operation/range/cause context and confirmed partial counters; [contract](docs/copy-errors.md) |
 | **Sparse destination output** | Linux zeroing and hole punching with safe bounded fallback; [contract and allocation evidence](docs/local-sparse-output.md) |
 | **Copy memory budget** | Configurable 256 MiB default for buffers, queue entries, and extent metadata; [scope and limits](docs/copy-memory.md) |
-| **VMDK descriptors** | [Hosted base FLAT/ZERO metadata](docs/vmdk-descriptor.md), bounded parsing, [confined backing resolution](docs/vmdk-backing.md) and checked ranges; logical reads next |
+| **VMDK descriptors** | [Hosted base FLAT/ZERO metadata](docs/vmdk-descriptor.md), bounded parsing, [confined backing resolution](docs/vmdk-backing.md) and [logical reads](docs/vmdk-logical.md) |
 | **VMware access** | Planned; no VMware VDDK dependency in the current workspace |
 
 The [endpoint contract](docs/architecture.md#copy-endpoint-preflight-r05) describes
@@ -139,13 +140,14 @@ flowchart TD
     Device --> Local["Local files"]
     Native --> FD["RAW backend access · LinuxFdBackend"]
     FD --> Local
-    Logical -. "planned" .-> VMDK["VMDK formats and parent chains"]
-    VMDK -. "planned" .-> Device
+    Logical --> VMDK["VMDK · FLAT/ZERO reads"]
+    VMDK -. "planned" .-> Parents["Sparse formats and parent chains"]
+    VMDK --> Device
 
     classDef implemented fill:#0f172a,stroke:#38bdf8,color:#f8fafc;
     classDef planned fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-dasharray:5 5;
-    class API,Mover,Portable,Native,Logical,Raw,Device,Memory,Local,FD implemented;
-    class VMDK planned;
+    class API,Mover,Portable,Native,Logical,Raw,Device,Memory,Local,FD,VMDK implemented;
+    class Parents planned;
 ```
 
 Native acceleration currently serves Linux RAW backends. Future format readers
@@ -162,7 +164,7 @@ migration and exceptional cleanup behavior.
 |:---|:---|
 | [`rvvdk-cli`](crates/rvvdk-cli) | `rvddk` RAW inspect, plan, copy and bounded verify; human/JSON reports |
 | [`rvvdk-core`](crates/rvvdk-core) | Disk contracts, ranges, extents, RAW/memory devices, and buffer ownership |
-| [`rvvdk-vmdk`](crates/rvvdk-vmdk) | Bounded descriptors, portable backing contracts and Linux confined resolution |
+| [`rvvdk-vmdk`](crates/rvvdk-vmdk) | Bounded descriptors, backing resolution and read-only FLAT/ZERO logical disks |
 | [`rvvdk-local`](crates/rvvdk-local) | Local regular-file access, sparse discovery, and direct-I/O handling |
 | [`rvvdk-platform`](crates/rvvdk-platform) | Platform-specific backend capabilities |
 | [`rvvdk-datamover`](crates/rvvdk-datamover) | Planning, execution strategies, scheduling, statistics, and progress |
@@ -217,7 +219,7 @@ workloads. Measurements depend on the filesystem, page cache, hardware, and
 flush policy. See the [benchmark notes](docs/benchmarks.md) for historical results
 and the [review](docs/project-review-2026-09-28.md) for measurement gaps.
 
-Explore the [R4.2 benchmark charts](docs/benchmark-results/2026-09-29-r42/README.md)
+Explore the [R4.3 benchmark charts](docs/benchmark-results/2026-09-29-r43/README.md)
 for latency comparisons, paired changes, and sample distributions. A
 [reusable generator](scripts/benchmarks/README.md) exports SVG and PNG figures.
 

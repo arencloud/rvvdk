@@ -1,0 +1,23 @@
+{
+  "note": "Early exploratory relabeling of the custom FLAT/ZERO layout; these mismatches are diagnostics, not qualified inputs or replacements for same-descriptor comparison.",
+  "records": [
+    {
+      "create_type": "monolithicFlat",
+      "descriptor": "# Disk DescriptorFile\nversion=1\nCID=00112233\nparentCID=ffffffff\ncreateType=\"monolithicFlat\"\nRW 2 FLAT \"flat\" 3\nRW 4 ZERO\nRW 1 FLAT \"flat\" 0\n",
+      "actual_bytes": 1536,
+      "actual_sha256": "fe7f957aec14d14f8f5e13959eaf70a8db4981e64f4828af5b05378277f6e514",
+      "expected_bytes": 3584,
+      "expected_sha256": "78118db36871691e642cc091edc048d11a5e4d942bd230ca93f903ee8bf00e2b",
+      "matches": false
+    },
+    {
+      "create_type": "twoGbMaxExtentFlat",
+      "descriptor": "# Disk DescriptorFile\nversion=1\nCID=00112233\nparentCID=ffffffff\ncreateType=\"twoGbMaxExtentFlat\"\nRW 2 FLAT \"flat\" 3\nRW 4 ZERO\nRW 1 FLAT \"flat\" 0\n",
+      "actual_bytes": 1536,
+      "actual_sha256": "fe7f957aec14d14f8f5e13959eaf70a8db4981e64f4828af5b05378277f6e514",
+      "expected_bytes": 3584,
+      "expected_sha256": "78118db36871691e642cc091edc048d11a5e4d942bd230ca93f903ee8bf00e2b",
+      "matches": false
+    }
+  ]
+}

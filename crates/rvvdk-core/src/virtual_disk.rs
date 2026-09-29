@@ -14,6 +14,16 @@ pub trait VirtualDisk: Send + Sync {
         })
     }
 
+    /// Additional source-specific identity checks for copy and verification, after
+    /// fresh copy_endpoint observations and ordinary access/range checks. This
+    /// hook must not require WRITE: verification has a read-only destination.
+    /// Copy calls it before any destination mutation.
+    /// Composite disks must reject aliases to any physical backing and may fail
+    /// closed when identity is unknown. Wrappers must forward this hook.
+    fn validate_destination_identity(&self, _destination: crate::CopyEndpoint) -> Result<()> {
+        Ok(())
+    }
+
     fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize>;
 
     fn read_exact_at(&self, mut offset: u64, mut buffer: &mut [u8]) -> Result<()> {

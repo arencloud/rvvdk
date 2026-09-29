@@ -1,5 +1,5 @@
 //! Bounded VMDK metadata and read-only backing resolution.
-//! Parsing alone opens no files; logical disk mapping is a separate layer.
+//! Parsing alone opens no files; VmdkDisk maps retained sources into logical reads.
 //!
 //! The supported subset and deliberately rejected syntax are documented in
 //! `docs/vmdk-descriptor.md`. Parsed filenames remain untrusted resolver inputs.
@@ -23,3 +23,6 @@ pub use backing::{
 pub use load::DescriptorText;
 #[cfg(target_os = "linux")]
 pub use local::LocalResolver;
+
+mod disk;
+pub use disk::VmdkDisk;

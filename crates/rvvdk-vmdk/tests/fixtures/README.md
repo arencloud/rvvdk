@@ -24,3 +24,13 @@ reads exist, generate deterministic backing bytes, compare decoded RAW with a
 recorded trusted tool/version, and retain commands and hashes. Do not label these
 synthetic parser examples as ESXi-tested or VMware-generated images.
 Inspected PDF SHA-256: `88ce1615a703d1d4e3df3c227846bb9ecda4d929129c191ea4ffe7df3294ad59`.
+
+R4.3 adds `scripts/vmdk/compare_reference.py`, which generates deterministic
+backing bytes and disposable descriptors in a caller-selected new directory.
+It checks hosted monolithic/split fixtures against QEMU, preserves
+QEMU-generated hosted descriptors and records any removal of trailing NUL padding
+in fixture-only text copies, and separately checks custom FLAT/ZERO against
+an independently assembled byte oracle. QEMU rejects createType custom; this is
+recorded as a reference-tool limitation, never counted as reference agreement.
+Version, commands, complete descriptor text and file hashes are saved in the
+R4.3 evidence report. Generated disk data stays outside version control.

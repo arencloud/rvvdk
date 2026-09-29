@@ -72,6 +72,7 @@ pub(crate) fn virtual_pair<S: VirtualDisk + ?Sized, D: VirtualDisk + ?Sized>(
         .copy_endpoint()
         .map_err(|e| context("destination", e))?;
     pair(source_info, destination_info, 0, length, true)?;
+    source.validate_destination_identity(destination_info)?;
     Ok((source_info, destination_info))
 }
 
@@ -212,6 +213,7 @@ where
     let (destination_info, destination_fd, destination_direct) =
         raw_endpoint(destination.device(), "destination")?;
     pair(source_info, destination_info, 0, length, true)?;
+    source.validate_destination_identity(destination_info)?;
     pair(source_fd, destination_fd, 0, length, false)?;
     Ok(RawEndpoints {
         source: source_info,

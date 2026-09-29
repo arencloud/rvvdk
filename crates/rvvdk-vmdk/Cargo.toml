@@ -14,6 +14,7 @@ rvvdk-local = { path = "../rvvdk-local" }
 libc = "0.2.189"
 
 [dev-dependencies]
+rvvdk-datamover = { path = "../rvvdk-datamover" }
 criterion = "0.8.2"
 
 [[bench]]
@@ -22,4 +23,8 @@ harness = false
 
 [[bench]]
 name = "resolution"
+harness = false
+
+[[bench]]
+name = "logical"
 harness = false

@@ -1,0 +1,58 @@
+{
+  "title": "R4.3 \u00b7 Read-only logical VMDK mapping",
+  "candidate": "patch 9a052941",
+  "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm memory / Btrfs \u00b7 copy includes flush",
+  "main_sampling": "3 adjacent pairs \u00b7 30 samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+  "candidate_only": {
+    "title": "Logical reads and local copies \u00b7 first cost baseline",
+    "note": "Memory reads exclude opening/revalidation \u00b7 local copies include preflight and final flush \u00b7 independent scales.",
+    "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+  },
+  "workloads": {
+    "preflight/plan_threaded": {
+      "label": "RAW plan \u00b7 1 MiB",
+      "phase": "planning"
+    },
+    "preflight_copy/threaded": {
+      "label": "RAW copy + flush \u00b7 1 MiB",
+      "phase": "copy"
+    },
+    "native_lifetime/buffered/threaded_control": {
+      "label": "RAW 4-worker copy + flush \u00b7 16 MiB",
+      "phase": "copy"
+    },
+    "descriptor/1024_extents": {
+      "label": "Descriptor \u00b7 1,024 extents",
+      "phase": "planning"
+    },
+    "resolution/one_file": {
+      "label": "Resolve one source",
+      "phase": "planning"
+    },
+    "cli_transfer/verify_only": {
+      "label": "RAW CLI verify \u00b7 16 MiB",
+      "phase": "copy"
+    },
+    "logical/flat_64k": {
+      "label": "Memory FLAT read \u00b7 64 KiB",
+      "phase": "planning"
+    },
+    "logical/cross_64k": {
+      "label": "Memory cross-extent read \u00b7 64 KiB",
+      "phase": "planning"
+    },
+    "logical/last_4k_1024": {
+      "label": "Memory last-of-1,024 read \u00b7 4 KiB",
+      "phase": "planning"
+    },
+    "logical_copy/flat_1m": {
+      "label": "Local FLAT copy + flush \u00b7 1 MiB",
+      "phase": "copy"
+    },
+    "logical_copy/mixed_1m": {
+      "label": "Local FLAT/ZERO copy + flush \u00b7 1 MiB",
+      "phase": "copy"
+    }
+  },
+  "repeat_sampling": "3 adjacent pairs \u00b7 40 samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+}

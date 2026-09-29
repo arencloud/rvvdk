@@ -1358,12 +1358,51 @@ cannot be attributed to a changed RAW implementation. Twelve new-mode runs yield
 Resolution includes open/check/close, excludes parsing; loading has a different
 boundary. No engine speedup or prior performance-qualification closure is claimed.
 
+## R4.3 — Read-only logical VMDK mapping
+
+Date: 2026-09-29. Status: **Complete within the documented local subset**.
+Baseline: `4eee003`, initially clean. [Evidence](benchmark-results/2026-09-29-r43/README.md)
+retains source/harness/binary identities, samples, validation, reference-tool
+records and reproducible SVG/PNG plots. The enclosing commit records this step.
+
+Added VmdkDisk over retained FLAT/ZERO sources: binary first-extent lookup,
+allocation-free caller-buffer reads, cross-extent offset translation, checked
+ranges, clipped/coalesced Data/Zero discovery, live preflight validation and no
+writable/native RAW interface. EOF/errors propagate without zero recovery.
+A new default VirtualDisk identity hook lets copy/verification preflight reject
+aliases to any backing and fail closed for unknown identities. Wrappers must
+forward it. [Contract](vmdk-logical.md); [ADR-0035](adr/0035-read-only-vmdk-logical-mapping.md).
+
+Validation: **432 distinct passed, one existing gated allocation test** (433 total).
+Twelve new logical/local tests cover ranges, boundaries, short/error I/O,
+concurrency, alias protection, truncation, portable copies and tail preservation.
+All 39 VMDK tests pass on Btrfs. Formatting, strict all-target Clippy and portable
+core/datamover/VMDK wasm32 checks pass (existing control::sum warning).
+
+Five generated reference cases are explicitly qualified: synthetic monolithic/split
+agree with QEMU and expected RAW; QEMU-generated hosted layouts agree after
+recorded fixture-only trailing NUL removal; custom matches the byte oracle only
+because QEMU rejects its createType. Original padded descriptors still reject.
+Initial reference/test diagnostics are retained; no unsupported reference case
+is counted as agreement. No SDK or third-party implementation source was used.
+
+Performance: 36 matched runs show -0.16%, -0.19%, +0.07%, +1.74%, -1.02%, -0.79%
+for RAW planning, one-worker copy, four-worker copy, 1,024-extent parsing,
+one-source resolution and CLI verification respectively.
+An adverse +8.71% four-worker pair triggered longer repeats, yielding -1.58%
+aggregate. Every initial and repeat pair remains in the report.
+Fifteen new-mode runs yield 1.185 µs, 1.098 µs, 0.070 µs, 7.579 ms, 15.795 ms
+for memory FLAT 64 KiB, mixed 64 KiB, final-of-1,024 4 KiB, local FLAT 1 MiB copy
+and local mixed 1 MiB copy respectively. Copy includes final flush; memory reads
+exclude construction/revalidation. No speedup or earlier qualification closure.
+
 ## Next session
 
-Start **R4.3**: read-only FLAT/ZERO `VirtualDisk`, logical range/cross-extent mapping,
-revalidation before execution and short-read/error handling. Compare deterministic
-logical bytes with a recorded trusted reference tool. Keep VMDK containers out of
-native RAW endpoints. CLI VMDK integration follows as a separate bounded package.
+Start **R4.4**: explicit CLI VMDK source selection for inspect/plan/copy/verify,
+with RAW destinations, existing publication/cancellation behavior, logical reports,
+and preflight alias/identity protection. Keep VMDK out of native RAW endpoints.
+Preserve explicit trailing-NUL input and custom reference-decoder limitations;
+extend either only with a documented bounded policy and validation.
 Each step gets tests, benchmarks, plots and a commit.
 
 ESXi remains unnecessary for local work; request the 60-day trial when V0's lab

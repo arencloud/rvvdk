@@ -13,9 +13,9 @@ the direct io_uring comparison. The harness correction is committed, but those
 historical results still need replacement measurements. Do not derive engine
 defaults or performance claims from an unmatched comparison.
 
-Latest measured step: [R4.2 bounded backing resolution](benchmark-results/2026-09-29-r42/README.md)
-includes SVG/PNG charts, matched parser/RAW controls, and initial costs for confined
-source resolution and descriptor acquisition. Every adverse aggregate or pair
+Latest measured step: [R4.3 logical VMDK mapping](benchmark-results/2026-09-29-r43/README.md)
+includes SVG/PNG charts, matched planning/copy/verification/parser/resolver controls,
+and initial logical read and local copy costs. Every adverse aggregate or pair
 above +5% triggers longer repeats; prior qualification limits remain explicit.
 
 ### PERF.0 — Establish a reproducible baseline

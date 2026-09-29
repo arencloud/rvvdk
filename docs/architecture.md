@@ -1147,3 +1147,20 @@ admission remains in use. Directory/entry rename cannot redirect a retained sour
 content stability is not promised. [Contract](vmdk-backing.md) and
 [ADR-0034](adr/0034-confined-vmdk-backing-resolution.md) define limits and trust boundaries.
 R4.3 still supplies the logical `VirtualDisk`; CLI and native RAW behavior are unchanged.
+
+## Read-only VMDK logical disks (R4.3)
+
+`VmdkDisk` consumes resolved FLAT/ZERO metadata and retained sources, revalidates
+at construction/endpoint inspection, and implements portable `VirtualDisk`.
+Binary search plus sequential traversal maps arbitrary byte reads directly into
+the caller buffer. FLAT uses the retained physical offset; ZERO performs no I/O.
+Extent discovery clips and coalesces Data/Zero without physical-hole inference.
+There is no native RAW/FD implementation or writable capability.
+
+`VirtualDisk::validate_destination_identity` extends copy/verification preflight
+for composite sources. Existing RAW identity checks remain; VMDK compares every
+backing against the fresh destination identity and fails closed for unknowns.
+Wrappers must forward this hook. Endpoint checks are observations, not snapshots.
+See the [logical contract](vmdk-logical.md), [ADR-0035](adr/0035-read-only-vmdk-logical-mapping.md),
+and [reference evidence](benchmark-results/2026-09-29-r43/reference.json) for
+interoperability limits. CLI source-format selection remains R4.4.
