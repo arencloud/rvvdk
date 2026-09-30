@@ -1,0 +1,1388 @@
+diff --git a/crates/rvvdk-vmdk/Cargo.toml b/crates/rvvdk-vmdk/Cargo.toml
+index 3a5061c..b8a35b6 100644
+--- a/crates/rvvdk-vmdk/Cargo.toml
++++ b/crates/rvvdk-vmdk/Cargo.toml
+@@ -48,3 +48,7 @@ harness = false
+ [[bench]]
+ name = "sparse_scale"
+ harness = false
++
++[[bench]]
++name = "chain"
++harness = false
+diff --git a/crates/rvvdk-vmdk/src/descriptor.rs b/crates/rvvdk-vmdk/src/descriptor.rs
+index 8e83521..cb47d83 100644
+--- a/crates/rvvdk-vmdk/src/descriptor.rs
++++ b/crates/rvvdk-vmdk/src/descriptor.rs
+@@ -248,10 +248,13 @@ impl<'a> Descriptor<'a> {
+     }
+ 
+     pub fn parse_with_limits(input: &'a [u8], limits: Limits) -> Result<Self> {
+-        Self::parse_subset::<false>(input, limits)
++        Self::parse_subset::<false, false>(input, limits).map(|(d, _)| d)
+     }
+ 
+-    fn parse_subset<const SPARSE: bool>(input: &'a [u8], limits: Limits) -> Result<Self> {
++    fn parse_subset<const SPARSE: bool, const CHAIN: bool>(
++        input: &'a [u8],
++        limits: Limits,
++    ) -> Result<(Self, Option<ParentReference<'a>>)> {
+         if input.len() > limits.descriptor_bytes {
+             return Err(error(0, ErrorKind::Limit("descriptor bytes")));
+         }
+@@ -259,6 +262,7 @@ impl<'a> Descriptor<'a> {
+         let mut version = None;
+         let mut content_id = None;
+         let mut parent = None;
++        let mut parent_hint = None;
+         let mut create_type = None;
+         let mut encoding = None;
+         let mut extents = Vec::new();
+@@ -314,10 +318,11 @@ impl<'a> Descriptor<'a> {
+                         set(&mut content_id, cid::<SPARSE>(v, line)?, line)?
+                     }
+                     (k, Token::Bare(v)) if eq(k, "parentCID") => {
+-                        if cid::<SPARSE>(v, line)? != u32::MAX {
++                        let value = cid::<SPARSE>(v, line)?;
++                        if !CHAIN && value != u32::MAX {
+                             return Err(error(line, ErrorKind::Unsupported("parent chain")));
+                         }
+-                        set(&mut parent, (), line)?;
++                        set(&mut parent, value, line)?;
+                     }
+                     (k, Token::Quoted(v)) if eq(k, "createType") => {
+                         let kind = if SPARSE && eq(v, "monolithicSparse") {
+@@ -345,6 +350,15 @@ impl<'a> Descriptor<'a> {
+                         }
+                         set(&mut encoding, (), line)?;
+                     }
++                    (k, Token::Quoted(v)) if CHAIN && eq(k, "parentFileNameHint") => {
++                        if v.is_empty() {
++                            return Err(error(line, ErrorKind::Layout("empty parent hint")));
++                        }
++                        if v.len() > limits.filename_bytes {
++                            return Err(error(line, ErrorKind::Limit("parent hint bytes")));
++                        }
++                        set(&mut parent_hint, *v, line)?;
++                    }
+                     (k, _) if eq(k, "parentFileNameHint") => {
+                         return Err(error(line, ErrorKind::Unsupported("parent chain")));
+                     }
+@@ -486,19 +500,34 @@ impl<'a> Descriptor<'a> {
+             });
+         }
+         version.ok_or(error(0, ErrorKind::Missing("version")))?;
+-        parent.ok_or(error(0, ErrorKind::Missing("parentCID")))?;
++        let parent_cid = parent.ok_or(error(0, ErrorKind::Missing("parentCID")))?;
++        let parent = if parent_cid == u32::MAX {
++            if parent_hint.is_some() {
++                return Err(error(0, ErrorKind::Layout("base has parent hint")));
++            }
++            None
++        } else {
++            Some(ParentReference {
++                cid: parent_cid,
++                file_name_hint: parent_hint
++                    .ok_or(error(0, ErrorKind::Missing("parentFileNameHint")))?,
++            })
++        };
+         let cid = content_id.ok_or(error(0, ErrorKind::Missing("CID")))?;
+         let create_type = create_type.ok_or(error(0, ErrorKind::Missing("createType")))?;
+         if extents.is_empty() {
+             return Err(error(0, ErrorKind::Missing("extents")));
+         }
+-        Ok(Self {
+-            cid,
+-            create_type,
+-            size_bytes,
+-            extents,
+-            metadata,
+-        })
++        Ok((
++            Self {
++                cid,
++                create_type,
++                size_bytes,
++                extents,
++                metadata,
++            },
++            parent,
++        ))
+     }
+ }
+ 
+@@ -516,7 +545,7 @@ impl<'a> SparseDescriptor<'a> {
+             return Err(error(0, ErrorKind::Limit("descriptor bytes")));
+         }
+         let end = input.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
+-        Descriptor::parse_subset::<true>(&input[..end], limits).map(Self)
++        Descriptor::parse_subset::<true, false>(&input[..end], limits).map(|(d, _)| Self(d))
+     }
+     pub fn cid(&self) -> u32 {
+         self.0.cid()
+@@ -539,3 +568,48 @@ impl<'a> SparseDescriptor<'a> {
+             && self.extents() == other.extents()
+     }
+ }
++
++/// A CID relationship and untrusted resolver hint; neither is authorization.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub struct ParentReference<'a> {
++    pub cid: u32,
++    pub file_name_hint: &'a str,
++}
++
++/// Explicit parent-capable metadata syntax. Cannot be passed to SparseDisk.
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub struct SparseLayerDescriptor<'a> {
++    pub(crate) sparse: SparseDescriptor<'a>,
++    parent: Option<ParentReference<'a>>,
++}
++impl<'a> SparseLayerDescriptor<'a> {
++    pub fn parse(input: &'a [u8]) -> Result<Self> {
++        Self::parse_with_limits(input, Limits::default())
++    }
++    pub fn parse_with_limits(input: &'a [u8], limits: Limits) -> Result<Self> {
++        if input.len() > limits.descriptor_bytes {
++            return Err(error(0, ErrorKind::Limit("descriptor bytes")));
++        }
++        let end = input.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
++        let (descriptor, parent) = Descriptor::parse_subset::<true, true>(&input[..end], limits)?;
++        Ok(Self {
++            sparse: SparseDescriptor(descriptor),
++            parent,
++        })
++    }
++    pub fn parent(&self) -> Option<ParentReference<'a>> {
++        self.parent
++    }
++    pub fn cid(&self) -> u32 {
++        self.sparse.cid()
++    }
++    pub fn size_bytes(&self) -> u64 {
++        self.sparse.size_bytes()
++    }
++    pub fn create_type(&self) -> CreateType {
++        self.sparse.create_type()
++    }
++    pub fn extents(&self) -> &[Extent<'a>] {
++        self.sparse.extents()
++    }
++}
+diff --git a/crates/rvvdk-vmdk/src/lib.rs b/crates/rvvdk-vmdk/src/lib.rs
+index 447821c..7ac3b75 100644
+--- a/crates/rvvdk-vmdk/src/lib.rs
++++ b/crates/rvvdk-vmdk/src/lib.rs
+@@ -8,7 +8,7 @@ mod descriptor;
+ 
+ pub use descriptor::{
+     Access, CreateType, Descriptor, DescriptorError, ErrorKind, Extent, ExtentBacking, Limits,
+-    Metadata, SECTOR_BYTES, SparseDescriptor,
++    Metadata, ParentReference, SECTOR_BYTES, SparseDescriptor, SparseLayerDescriptor,
+ };
+ 
+ mod backing;
+@@ -35,3 +35,9 @@ pub use sparse_metadata::{SparseMetadata, SparseMetadataError, SparseMetadataLim
+ 
+ mod sparse_disk;
+ pub use sparse_disk::{SparseDisk, SparseDiskLimits};
++
++mod chain;
++pub use chain::{
++    ChainEntry, ParentResolver, SparseChain, SparseChainError, SparseChainLayer, SparseChainLimits,
++    SparseChainSource,
++};
+diff --git a/crates/rvvdk-vmdk/src/sparse_metadata.rs b/crates/rvvdk-vmdk/src/sparse_metadata.rs
+index ca3fa8a..b9aa9f0 100644
+--- a/crates/rvvdk-vmdk/src/sparse_metadata.rs
++++ b/crates/rvvdk-vmdk/src/sparse_metadata.rs
+@@ -96,6 +96,29 @@ impl SparseMetadata {
+         extent_index: usize,
+         resolver: &dyn BackingResolver,
+         limits: SparseMetadataLimits,
++    ) -> Result<Self> {
++        Self::load_inner(descriptor, None, extent_index, resolver, limits)
++    }
++    pub(crate) fn load_layer(
++        descriptor: &crate::SparseLayerDescriptor<'_>,
++        extent_index: usize,
++        resolver: &dyn BackingResolver,
++        limits: SparseMetadataLimits,
++    ) -> Result<Self> {
++        Self::load_inner(
++            &descriptor.sparse,
++            Some(descriptor.parent()),
++            extent_index,
++            resolver,
++            limits,
++        )
++    }
++    fn load_inner(
++        descriptor: &SparseDescriptor<'_>,
++        parent: Option<Option<crate::ParentReference<'_>>>,
++        extent_index: usize,
++        resolver: &dyn BackingResolver,
++        limits: SparseMetadataLimits,
+     ) -> Result<Self> {
+         let extent = descriptor
+             .extents()
+@@ -151,8 +174,15 @@ impl SparseMetadata {
+                 return Err(invalid("monolithic embedded descriptor missing"));
+             }
+         } else {
+-            let embedded = SparseDescriptor::parse_with_limits(&text, limits.descriptor)?;
+-            if !descriptor.same_mapping(&embedded) {
++            let matches = if let Some(parent) = parent {
++                let embedded =
++                    crate::SparseLayerDescriptor::parse_with_limits(&text, limits.descriptor)?;
++                parent == embedded.parent() && descriptor.same_mapping(&embedded.sparse)
++            } else {
++                let embedded = SparseDescriptor::parse_with_limits(&text, limits.descriptor)?;
++                descriptor.same_mapping(&embedded)
++            };
++            if !matches {
+                 return Err(invalid("embedded/external descriptor mismatch"));
+             }
+         }
+diff --git a/crates/rvvdk-vmdk/tests/fixtures/README.md b/crates/rvvdk-vmdk/tests/fixtures/README.md
+index 5abc705..48b160f 100644
+--- a/crates/rvvdk-vmdk/tests/fixtures/README.md
++++ b/crates/rvvdk-vmdk/tests/fixtures/README.md
+@@ -76,3 +76,12 @@ Expected logical bytes come from the authored allocation rule, independently of
+ SparseDisk's map. Tests use fixed-seed mutations and bounded-read instrumentation.
+ Benchmarks disable instrumentation and include generated payload costs. No producer
+ implementation code or new disk-format acceptance is introduced.
++
++R5.6 `tests/support/chain.rs` builds authored sparse descriptor chains from the
++existing header/table fixtures. Separate retained memory devices give distinct
++object identities; wrappers count reads and inject endpoint/I/O faults. Repeated
++filenames intentionally resolve in each layer's own namespace. No fixture contains
++SDK or producer implementation code. The `chain` benchmark reuses these fixtures
++with read counters disabled; atomic fault flags and in-memory reads remain timed.
++QEMU-created chains are generated separately by `scripts/vmdk/compare_chain.py`;
++only commands, metadata reports and hashes are committed, not virtual disk files.
+diff --git a/crates/rvvdk-vmdk/benches/chain.rs b/crates/rvvdk-vmdk/benches/chain.rs
+new file mode 100644
+index 0000000..49faae9
+--- /dev/null
++++ b/crates/rvvdk-vmdk/benches/chain.rs
+@@ -0,0 +1,50 @@
++#[path = "../tests/support/chain.rs"]
++#[allow(dead_code)]
++mod f;
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use rvvdk_vmdk::{SparseChain, SparseChainLimits, SparseLayerDescriptor};
++use std::hint::black_box;
++fn chain(c: &mut Criterion) {
++    let mut group = c.benchmark_group("sparse_chain");
++    group.sampling_mode(SamplingMode::Flat);
++    let text = f::text(1, Some((2, "parent.vmdk")), false);
++    group.bench_function("parse_child", |b| {
++        b.iter(|| black_box(SparseLayerDescriptor::parse(black_box(text.as_bytes())).unwrap()))
++    });
++    for depth in [1, 4, 16] {
++        let graph = f::Graph::new(depth, true, false);
++        let admitted =
++            SparseChain::load(graph.root(), &graph, SparseChainLimits::default()).unwrap();
++        assert_eq!(admitted.layers().len(), depth);
++        group.bench_function(format!("open_embedded_{depth}"), |b| {
++            b.iter(|| {
++                black_box(
++                    SparseChain::load(
++                        graph.root(),
++                        black_box(&graph),
++                        SparseChainLimits::default(),
++                    )
++                    .unwrap(),
++                )
++            })
++        });
++        if depth == 16 {
++            group.bench_function("revalidate_16", |b| {
++                b.iter(|| black_box(&admitted).revalidate().unwrap())
++            });
++        }
++    }
++    let graph = f::Graph::new(17, false, false);
++    group.bench_function("reject_depth_17", |b| {
++        b.iter(|| {
++            black_box(
++                SparseChain::load(graph.root(), &graph, SparseChainLimits::default())
++                    .err()
++                    .unwrap(),
++            )
++        })
++    });
++    group.finish();
++}
++criterion_group!(benches, chain);
++criterion_main!(benches);
+diff --git a/crates/rvvdk-vmdk/examples/inspect_chain.rs b/crates/rvvdk-vmdk/examples/inspect_chain.rs
+new file mode 100644
+index 0000000..d21d6d4
+--- /dev/null
++++ b/crates/rvvdk-vmdk/examples/inspect_chain.rs
+@@ -0,0 +1,86 @@
++//! Local qualification helper, not public CLI parent support. All layers must
++//! live in one explicitly selected directory; parent hints must be basenames.
++#[cfg(target_os = "linux")]
++fn main() -> Result<(), Box<dyn std::error::Error>> {
++    use rvvdk_core::{BlockDevice, EndpointIdentity};
++    use rvvdk_local::LocalFileBlockDevice;
++    use rvvdk_vmdk::{
++        BackingError, ChainEntry, LocalResolver, ParentResolver, SparseChain, SparseChainLimits,
++        SparseChainSource,
++    };
++    use std::{fs::File, path::Path, sync::Arc};
++    struct Policy(Arc<LocalResolver>);
++    impl Policy {
++        fn source(&self, file: File) -> Result<SparseChainSource, BackingError> {
++            let descriptor = Arc::new(
++                LocalFileBlockDevice::from_buffered_file(file).map_err(BackingError::Adopt)?,
++            );
++            let mut magic = [0; 4];
++            descriptor
++                .read_exact_at(0, &mut magic)
++                .map_err(BackingError::Adopt)?;
++            Ok(SparseChainSource {
++                descriptor,
++                backings: self.0.clone(),
++                entry: if magic == *b"KDMV" {
++                    ChainEntry::Embedded
++                } else {
++                    ChainEntry::External
++                },
++            })
++        }
++    }
++    impl ParentResolver for Policy {
++        fn resolve_parent(
++            &self,
++            _: EndpointIdentity,
++            hint: &str,
++        ) -> Result<Option<SparseChainSource>, BackingError> {
++            if hint.contains('/') {
++                return Err(BackingError::UnsafeReference);
++            }
++            let file = match self.0.open_regular(hint) {
++                Ok(file) => file,
++                Err(BackingError::Io { source, .. })
++                    if source.kind() == std::io::ErrorKind::NotFound =>
++                {
++                    return Ok(None);
++                }
++                Err(e) => return Err(e),
++            };
++            self.source(file).map(Some)
++        }
++    }
++    let args: Vec<_> = std::env::args_os().skip(1).collect();
++    if args.len() != 1 {
++        return Err("usage: inspect_chain LEAF_DESCRIPTOR_OR_CONTAINER".into());
++    }
++    let (file, resolver) = LocalResolver::open_descriptor_file(Path::new(&args[0]))?;
++    let policy = Policy(Arc::new(resolver));
++    let chain = SparseChain::load(policy.source(file)?, &policy, SparseChainLimits::default())?;
++    println!("{{\"layers\":[");
++    for (i, l) in chain.layers().iter().enumerate() {
++        if i != 0 {
++            println!(",");
++        }
++        print!(
++            "{{\"cid\":{},\"parent_cid\":{},\"capacity_bytes\":{},\"extents\":{}}}",
++            l.cid(),
++            l.parent_cid().map_or("null".into(), |v| v.to_string()),
++            l.size_bytes(),
++            l.metadata().len()
++        );
++    }
++    println!(
++        "],\"reserved_memory_bytes\":{},\"metadata_read_bytes\":{},\"descriptor_bytes\":{}}}",
++        chain.reserved_memory_bytes(),
++        chain.metadata_read_bytes(),
++        chain.descriptor_bytes()
++    );
++    Ok(())
++}
++#[cfg(not(target_os = "linux"))]
++fn main() {
++    eprintln!("local chain qualification requires Linux");
++    std::process::exit(1);
++}
+diff --git a/crates/rvvdk-vmdk/src/chain.rs b/crates/rvvdk-vmdk/src/chain.rs
+new file mode 100644
+index 0000000..5660132
+--- /dev/null
++++ b/crates/rvvdk-vmdk/src/chain.rs
+@@ -0,0 +1,357 @@
++//! Metadata-only parent admission. No logical-zero or read semantics are exposed.
++use crate::{
++    BackingError, BackingResolver, CreateType, SparseHeader, SparseLayerDescriptor, SparseMetadata,
++    SparseMetadataError, SparseMetadataLimits,
++};
++use rvvdk_core::{BlockDevice, Capabilities, CopyEndpoint, EndpointIdentity};
++use std::sync::Arc;
++use thiserror::Error;
++
++/// Explicit entry form; the caller authorizes and opens each descriptor/container.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum ChainEntry {
++    External,
++    Embedded,
++}
++#[derive(Clone)]
++pub struct SparseChainSource {
++    pub descriptor: Arc<dyn BlockDevice>,
++    /// Namespace anchored to this layer, not to the original child.
++    pub backings: Arc<dyn BackingResolver>,
++    pub entry: ChainEntry,
++}
++/// Opt-in policy boundary. The hint is untrusted and must not authorize arbitrary
++/// paths. Return None for a missing parent; use an error for denied resolution.
++/// The child's retained object identity provides namespace context without a path.
++pub trait ParentResolver: Send + Sync {
++    fn resolve_parent(
++        &self,
++        child: EndpointIdentity,
++        hint: &str,
++    ) -> std::result::Result<Option<SparseChainSource>, BackingError>;
++}
++#[derive(Clone, Copy, Debug)]
++pub struct SparseChainLimits {
++    pub metadata: SparseMetadataLimits,
++    /// Includes the leaf and terminal base; checked before following another hint.
++    pub layers: usize,
++    /// Total extent handles, including repeated references (which are rejected).
++    pub extents: usize,
++    /// Sum of acquired descriptor payload, including terminal padding.
++    pub descriptor_bytes: u64,
++    /// Conservative reservations: layer slots, text, map structs and loader budgets.
++    pub memory_bytes: u64,
++    /// Descriptor/header acquisition plus all backing metadata read payload.
++    pub read_bytes: u64,
++}
++impl Default for SparseChainLimits {
++    fn default() -> Self {
++        Self {
++            metadata: SparseMetadataLimits::default(),
++            layers: 16,
++            extents: 128,
++            descriptor_bytes: 8 << 20,
++            memory_bytes: 128 << 20,
++            read_bytes: 256 << 20,
++        }
++    }
++}
++#[derive(Debug, Error)]
++pub enum SparseChainError {
++    #[error("{0}")]
++    Metadata(#[from] SparseMetadataError),
++    #[error("{0}")]
++    Resolve(#[from] BackingError),
++    #[error("chain descriptor I/O: {0}")]
++    Device(#[from] rvvdk_core::Error),
++    #[error("chain resource limit: {0}")]
++    Limit(&'static str),
++    #[error("chain parent missing")]
++    MissingParent,
++    #[error("chain CID mismatch")]
++    CidMismatch,
++    #[error("chain capacity mismatch")]
++    CapacityMismatch,
++    #[error("chain object cycle or shared backing")]
++    RepeatedIdentity,
++    #[error("chain source identity unknown or changed")]
++    Identity,
++    #[error("invalid chain entry: {0}")]
++    Invalid(&'static str),
++    #[error("chain allocation failed")]
++    Allocation,
++}
++type Result<T> = std::result::Result<T, SparseChainError>;
++fn charge(used: &mut u64, amount: u64, ceiling: u64, label: &'static str) -> Result<()> {
++    let total = used
++        .checked_add(amount)
++        .filter(|v| *v <= ceiling)
++        .ok_or(SparseChainError::Limit(label))?;
++    *used = total;
++    Ok(())
++}
++fn slots<T>(count: usize) -> Result<u64> {
++    (count as u64)
++        .checked_mul(std::mem::size_of::<T>() as u64)
++        .ok_or(SparseChainError::Limit("allocation arithmetic"))
++}
++fn identity(endpoint: CopyEndpoint) -> Result<EndpointIdentity> {
++    if !endpoint.capabilities.contains(Capabilities::READ) {
++        return Err(SparseChainError::Identity);
++    }
++    endpoint.identity.ok_or(SparseChainError::Identity)
++}
++fn observe(source: &dyn BlockDevice, initial: CopyEndpoint) -> Result<()> {
++    let live = source.copy_endpoint()?;
++    if identity(live)? != identity(initial)? || live.size != initial.size {
++        return Err(SparseChainError::Identity);
++    }
++    Ok(())
++}
++
++/// One retained layer. Zero grain entries remain unallocated, not logical zero.
++pub struct SparseChainLayer {
++    descriptor: Arc<dyn BlockDevice>,
++    initial: CopyEndpoint,
++    cid: u32,
++    parent_cid: Option<u32>,
++    size: u64,
++    metadata: Vec<SparseMetadata>,
++}
++impl SparseChainLayer {
++    pub fn cid(&self) -> u32 {
++        self.cid
++    }
++    pub fn parent_cid(&self) -> Option<u32> {
++        self.parent_cid
++    }
++    pub fn size_bytes(&self) -> u64 {
++        self.size
++    }
++    pub fn descriptor_endpoint(&self) -> CopyEndpoint {
++        self.initial
++    }
++    pub fn metadata(&self) -> &[SparseMetadata] {
++        &self.metadata
++    }
++    fn contains(&self, id: EndpointIdentity) -> bool {
++        self.initial.identity == Some(id)
++            || self
++                .metadata
++                .iter()
++                .any(|m| m.initial_endpoint().identity == Some(id))
++    }
++}
++/// Validated leaf-to-base metadata, intentionally not a VirtualDisk.
++/// Caller must keep all sources quiescent; CIDs/identities are not content hashes.
++pub struct SparseChain {
++    layers: Vec<SparseChainLayer>,
++    reserved_memory: u64,
++    read_bytes: u64,
++    descriptor_bytes: u64,
++}
++impl SparseChain {
++    pub fn load(
++        mut source: SparseChainSource,
++        parents: &dyn ParentResolver,
++        limits: SparseChainLimits,
++    ) -> Result<Self> {
++        if limits.layers == 0 {
++            return Err(SparseChainError::Limit("layers"));
++        }
++        let mut chain = Self {
++            layers: Vec::new(),
++            reserved_memory: 0,
++            read_bytes: 0,
++            descriptor_bytes: 0,
++        };
++        charge(
++            &mut chain.reserved_memory,
++            slots::<SparseChainLayer>(limits.layers)?,
++            limits.memory_bytes,
++            "memory bytes",
++        )?;
++        chain
++            .layers
++            .try_reserve_exact(limits.layers)
++            .map_err(|_| SparseChainError::Allocation)?;
++        let mut total_extents = 0usize;
++        loop {
++            let initial = source.descriptor.copy_endpoint()?;
++            let id = identity(initial)?;
++            if chain.layers.iter().any(|l| l.contains(id)) {
++                return Err(SparseChainError::RepeatedIdentity);
++            }
++            let (offset, length) = match source.entry {
++                ChainEntry::External => (0, initial.size),
++                ChainEntry::Embedded => {
++                    charge(&mut chain.read_bytes, 512, limits.read_bytes, "read bytes")?;
++                    let mut bytes = [0; 512];
++                    source.descriptor.read_exact_at(0, &mut bytes)?;
++                    let header = SparseHeader::parse_with_limits(
++                        &bytes,
++                        initial.size,
++                        limits.metadata.header,
++                    )
++                    .map_err(SparseMetadataError::from)?;
++                    let region = header
++                        .descriptor()
++                        .ok_or(SparseChainError::Invalid("embedded descriptor missing"))?;
++                    (region.offset(), region.length())
++                }
++            };
++            if length > limits.metadata.descriptor.descriptor_bytes as u64 {
++                return Err(SparseChainError::Limit("per-layer descriptor bytes"));
++            }
++            charge(
++                &mut chain.descriptor_bytes,
++                length,
++                limits.descriptor_bytes,
++                "descriptor bytes",
++            )?;
++            charge(
++                &mut chain.reserved_memory,
++                length,
++                limits.memory_bytes,
++                "memory bytes",
++            )?;
++            charge(
++                &mut chain.read_bytes,
++                length,
++                limits.read_bytes,
++                "read bytes",
++            )?;
++            let length =
++                usize::try_from(length).map_err(|_| SparseChainError::Limit("address space"))?;
++            let mut text = Vec::new();
++            text.try_reserve_exact(length)
++                .map_err(|_| SparseChainError::Allocation)?;
++            text.resize(length, 0);
++            source.descriptor.read_exact_at(offset, &mut text)?;
++            observe(source.descriptor.as_ref(), initial)?;
++            let descriptor =
++                SparseLayerDescriptor::parse_with_limits(&text, limits.metadata.descriptor)
++                    .map_err(SparseMetadataError::from)?;
++            if source.entry == ChainEntry::Embedded
++                && descriptor.create_type() != CreateType::MonolithicSparse
++            {
++                return Err(SparseChainError::Invalid(
++                    "embedded entry must be monolithic",
++                ));
++            }
++            if let Some(child) = chain.layers.last() {
++                if child.parent_cid != Some(descriptor.cid()) {
++                    return Err(SparseChainError::CidMismatch);
++                }
++                if child.size != descriptor.size_bytes() {
++                    return Err(SparseChainError::CapacityMismatch);
++                }
++            }
++            let count = descriptor.extents().len();
++            total_extents = total_extents
++                .checked_add(count)
++                .filter(|&n| n <= limits.extents)
++                .ok_or(SparseChainError::Limit("extents"))?;
++            charge(
++                &mut chain.reserved_memory,
++                slots::<SparseMetadata>(count)?,
++                limits.memory_bytes,
++                "memory bytes",
++            )?;
++            let mut metadata: Vec<SparseMetadata> = Vec::new();
++            metadata
++                .try_reserve_exact(count)
++                .map_err(|_| SparseChainError::Allocation)?;
++            for (index, extent) in descriptor.extents().iter().enumerate() {
++                let mut admission = limits.metadata;
++                admission.memory_bytes = admission
++                    .memory_bytes
++                    .min(limits.memory_bytes - chain.reserved_memory);
++                admission.read_bytes = admission
++                    .read_bytes
++                    .min(limits.read_bytes - chain.read_bytes);
++                if admission.read_bytes < 512 {
++                    return Err(SparseChainError::Limit("read bytes"));
++                }
++                let crate::ExtentBacking::Sparse { file_name } = extent.backing() else {
++                    unreachable!()
++                };
++                let backing = source.backings.resolve(file_name)?;
++                let endpoint = backing.copy_endpoint()?;
++                let backing_id = identity(endpoint)?;
++                if chain.layers.iter().any(|l| l.contains(backing_id))
++                    || metadata
++                        .iter()
++                        .any(|m| m.initial_endpoint().identity == Some(backing_id))
++                {
++                    return Err(SparseChainError::RepeatedIdentity);
++                }
++                if source.entry == ChainEntry::Embedded {
++                    if backing_id != id {
++                        return Err(SparseChainError::Identity);
++                    }
++                } else if backing_id == id {
++                    return Err(SparseChainError::RepeatedIdentity);
++                }
++                // Resolve once; the metadata loader receives the same retained object.
++                let pinned = Pinned(backing.clone());
++                let m = SparseMetadata::load_layer(&descriptor, index, &pinned, admission)?;
++                observe(backing.as_ref(), endpoint)?;
++                if m.initial_endpoint().identity != Some(backing_id) {
++                    return Err(SparseChainError::Identity);
++                }
++                chain.reserved_memory += m.reserved_memory_bytes();
++                chain.read_bytes += m.metadata_read_bytes();
++                metadata.push(m);
++            }
++            let parent = descriptor.parent();
++            chain.layers.push(SparseChainLayer {
++                descriptor: source.descriptor.clone(),
++                initial,
++                cid: descriptor.cid(),
++                parent_cid: parent.map(|p| p.cid),
++                size: descriptor.size_bytes(),
++                metadata,
++            });
++            let Some(parent) = parent else {
++                break;
++            };
++            if chain.layers.len() == limits.layers {
++                return Err(SparseChainError::Limit("layers"));
++            }
++            source = parents
++                .resolve_parent(id, parent.file_name_hint)?
++                .ok_or(SparseChainError::MissingParent)?;
++        }
++        chain.revalidate()?;
++        Ok(chain)
++    }
++    pub fn layers(&self) -> &[SparseChainLayer] {
++        &self.layers
++    }
++    pub fn reserved_memory_bytes(&self) -> u64 {
++        self.reserved_memory
++    }
++    pub fn metadata_read_bytes(&self) -> u64 {
++        self.read_bytes
++    }
++    pub fn descriptor_bytes(&self) -> u64 {
++        self.descriptor_bytes
++    }
++    /// Endpoint observations only; no content replay or snapshot guarantee.
++    pub fn revalidate(&self) -> Result<()> {
++        for layer in &self.layers {
++            observe(layer.descriptor.as_ref(), layer.initial)?;
++            for metadata in &layer.metadata {
++                metadata.revalidate()?;
++            }
++        }
++        Ok(())
++    }
++}
++struct Pinned(Arc<dyn BlockDevice>);
++impl BackingResolver for Pinned {
++    fn resolve(&self, _: &str) -> std::result::Result<Arc<dyn BlockDevice>, BackingError> {
++        Ok(self.0.clone())
++    }
++}
+diff --git a/crates/rvvdk-vmdk/tests/chain.rs b/crates/rvvdk-vmdk/tests/chain.rs
+new file mode 100644
+index 0000000..47b0163
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/chain.rs
+@@ -0,0 +1,439 @@
++#[path = "support/chain.rs"]
++#[allow(dead_code)]
++mod f;
++use f::{Graph, node, text};
++use rvvdk_core::{BlockDevice, EndpointIdentity};
++use rvvdk_vmdk::{
++    BackingError, Descriptor, Limits, ParentResolver, SparseChain, SparseChainError as E,
++    SparseChainLimits, SparseChainSource, SparseDescriptor, SparseLayerDescriptor,
++};
++use std::sync::{
++    Arc,
++    atomic::{AtomicU64, Ordering},
++};
++fn load(g: &Graph) -> Result<SparseChain, E> {
++    SparseChain::load(g.root(), g, SparseChainLimits::default())
++}
++#[test]
++fn parent_syntax_is_opt_in_and_bounded() {
++    let t = text(7, Some((8, "../parent.vmdk")), false);
++    let d = SparseLayerDescriptor::parse(t.as_bytes()).unwrap();
++    assert_eq!(d.cid(), 7);
++    assert_eq!(d.parent().unwrap().cid, 8);
++    assert_eq!(d.parent().unwrap().file_name_hint, "../parent.vmdk");
++    assert!(SparseDescriptor::parse(t.as_bytes()).is_err());
++    assert!(Descriptor::parse(t.as_bytes()).is_err());
++    let mut padded = t.as_bytes().to_vec();
++    padded.extend([0; 64]);
++    assert!(SparseLayerDescriptor::parse(&padded).is_ok());
++    assert!(
++        SparseLayerDescriptor::parse_with_limits(
++            &padded,
++            Limits {
++                descriptor_bytes: padded.len() - 1,
++                ..Limits::default()
++            }
++        )
++        .is_err()
++    );
++    assert!(
++        SparseLayerDescriptor::parse_with_limits(
++            t.as_bytes(),
++            Limits {
++                filename_bytes: 5,
++                ..Limits::default()
++            }
++        )
++        .is_err()
++    );
++    for bad in [
++        t.replace("parentFileNameHint=\"../parent.vmdk\"\n", ""),
++        t.replace("../parent.vmdk", ""),
++        t.replace("parentCID=00000008", "parentCID=ffffffff"),
++        t.replace("parentCID=00000008", "parentCID=xyz"),
++        t.replace(
++            "parentFileNameHint=",
++            "parentFileNameHint=\"x\"\nparentFileNameHint=",
++        ),
++        t.replace("\"../parent.vmdk\"", "parent.vmdk"),
++    ] {
++        assert!(SparseLayerDescriptor::parse(bad.as_bytes()).is_err());
++    }
++}
++#[test]
++fn retains_external_and_embedded_leaf_to_base_maps_and_exact_read_counters() {
++    for embedded in [false, true] {
++        let g = Graph::new(3, embedded, true);
++        let chain = load(&g).unwrap();
++        assert_eq!(g.calls.load(Ordering::Relaxed), 2);
++        assert_eq!(
++            chain.layers().iter().map(|l| l.cid()).collect::<Vec<_>>(),
++            [1, 2, 3]
++        );
++        assert_eq!(chain.layers()[2].parent_cid(), None);
++        for layer in chain.layers() {
++            assert_eq!(layer.size_bytes(), 1 << 20);
++            assert_eq!(layer.metadata()[0].grain_sectors()[2], 0);
++        }
++        let actual: u64 = g
++            .nodes
++            .iter()
++            .map(|n| {
++                n.backing.bytes.load(Ordering::Relaxed)
++                    + if embedded {
++                        0
++                    } else {
++                        n.descriptor.bytes.load(Ordering::Relaxed)
++                    }
++            })
++            .sum();
++        assert_eq!(actual, chain.metadata_read_bytes());
++        println!(
++            "R56_PROFILE embedded={embedded} depth=3 memory={} reads={} descriptors={}",
++            chain.reserved_memory_bytes(),
++            chain.metadata_read_bytes(),
++            chain.descriptor_bytes()
++        );
++        drop(g);
++        chain.revalidate().unwrap();
++    }
++}
++#[test]
++fn terminal_base_never_calls_parent_resolver_and_equal_cids_are_not_cycles() {
++    let mut g = Graph::new(2, false, false);
++    g.nodes[1] = node(&text(1, None, false), false, false);
++    g.nodes[0] = node(&text(1, Some((1, "parent.vmdk")), false), false, false);
++    assert_eq!(load(&g).unwrap().layers().len(), 2);
++    let g = Graph::new(1, false, false);
++    assert_eq!(load(&g).unwrap().layers().len(), 1);
++    assert_eq!(g.calls.load(Ordering::Relaxed), 0);
++}
++#[test]
++fn missing_and_denied_parents_are_distinct() {
++    let mut g = Graph::new(2, false, false);
++    g.nodes.pop();
++    assert!(matches!(load(&g), Err(E::MissingParent)));
++    g.nodes[0] = node(&text(1, Some((2, "../private.vmdk")), false), false, false);
++    assert!(matches!(
++        load(&g),
++        Err(E::Resolve(BackingError::UnsafeReference))
++    ));
++}
++#[test]
++fn cid_and_capacity_mismatch_fail_before_parent_backing_reads() {
++    for capacity in [false, true] {
++        let mut g = Graph::new(2, false, true);
++        let t = if capacity {
++            text(2, None, false).replace("RW 2048", "RW 4096")
++        } else {
++            text(3, None, false)
++        };
++        g.nodes[1] = node(&t, false, true);
++        let e = load(&g).err().unwrap();
++        assert!(if capacity {
++            matches!(e, E::CapacityMismatch)
++        } else {
++            matches!(e, E::CidMismatch)
++        });
++        assert_eq!(g.nodes[1].backing.calls.load(Ordering::Relaxed), 0);
++    }
++}
++struct Loop {
++    source: SparseChainSource,
++    calls: AtomicU64,
++}
++impl ParentResolver for Loop {
++    fn resolve_parent(
++        &self,
++        _: EndpointIdentity,
++        _: &str,
++    ) -> Result<Option<SparseChainSource>, BackingError> {
++        self.calls.fetch_add(1, Ordering::Relaxed);
++        Ok(Some(self.source.clone()))
++    }
++}
++#[test]
++fn self_and_long_cycles_reject_by_object_identity_before_rereading() {
++    let g = Graph::new(2, false, true);
++    let looping = Loop {
++        source: g.root(),
++        calls: AtomicU64::new(0),
++    };
++    assert!(matches!(
++        SparseChain::load(g.root(), &looping, SparseChainLimits::default()),
++        Err(E::RepeatedIdentity)
++    ));
++    assert_eq!(g.nodes[0].descriptor.calls.load(Ordering::Relaxed), 1);
++    struct Cycle<'a>(&'a Graph);
++    impl ParentResolver for Cycle<'_> {
++        fn resolve_parent(
++            &self,
++            c: EndpointIdentity,
++            h: &str,
++        ) -> Result<Option<SparseChainSource>, BackingError> {
++            Ok(Some(
++                self.0
++                    .resolve_parent(c, h)?
++                    .unwrap_or_else(|| self.0.root()),
++            ))
++        }
++    }
++    let mut g = Graph::new(2, false, true);
++    g.nodes[1] = node(&text(2, Some((1, "parent.vmdk")), false), false, true);
++    assert!(matches!(
++        SparseChain::load(g.root(), &Cycle(&g), SparseChainLimits::default()),
++        Err(E::RepeatedIdentity)
++    ));
++    assert_eq!(g.nodes[0].descriptor.calls.load(Ordering::Relaxed), 1);
++}
++#[test]
++fn layer_boundary_checks_before_following_next_hint() {
++    let g = Graph::new(3, false, true);
++    assert!(matches!(
++        SparseChain::load(
++            g.root(),
++            &g,
++            SparseChainLimits {
++                layers: 0,
++                ..Default::default()
++            }
++        ),
++        Err(E::Limit("layers"))
++    ));
++    assert_eq!(g.nodes[0].descriptor.calls.load(Ordering::Relaxed), 0);
++    assert!(matches!(
++        SparseChain::load(
++            g.root(),
++            &g,
++            SparseChainLimits {
++                layers: 2,
++                ..Default::default()
++            }
++        ),
++        Err(E::Limit("layers"))
++    ));
++    assert_eq!(g.calls.load(Ordering::Relaxed), 1);
++    assert_eq!(g.nodes[2].descriptor.calls.load(Ordering::Relaxed), 0);
++    let g = Graph::new(2, false, false);
++    assert!(
++        SparseChain::load(
++            g.root(),
++            &g,
++            SparseChainLimits {
++                layers: 2,
++                ..Default::default()
++            }
++        )
++        .is_ok()
++    );
++}
++#[test]
++fn aggregate_budgets_have_exact_success_and_one_byte_failure_boundaries() {
++    let g = Graph::new(3, true, true);
++    let c = load(&g).unwrap();
++    let limits = SparseChainLimits {
++        memory_bytes: c.reserved_memory_bytes(),
++        read_bytes: c.metadata_read_bytes(),
++        descriptor_bytes: c.descriptor_bytes(),
++        extents: 3,
++        ..Default::default()
++    };
++    assert!(SparseChain::load(g.root(), &g, limits).is_ok());
++    for limits in [
++        SparseChainLimits {
++            memory_bytes: limits.memory_bytes - 1,
++            ..limits
++        },
++        SparseChainLimits {
++            read_bytes: limits.read_bytes - 1,
++            ..limits
++        },
++        SparseChainLimits {
++            descriptor_bytes: limits.descriptor_bytes - 1,
++            ..limits
++        },
++        SparseChainLimits {
++            extents: 2,
++            ..limits
++        },
++    ] {
++        assert!(SparseChain::load(g.root(), &g, limits).is_err());
++    }
++    let g = Graph::new(1, false, true);
++    let len = g.nodes[0].descriptor.size();
++    assert!(
++        SparseChain::load(
++            g.root(),
++            &g,
++            SparseChainLimits {
++                descriptor_bytes: len - 1,
++                ..Default::default()
++            }
++        )
++        .is_err()
++    );
++    assert_eq!(g.nodes[0].descriptor.calls.load(Ordering::Relaxed), 0);
++    assert_eq!(g.nodes[0].backing.calls.load(Ordering::Relaxed), 0);
++    assert!(
++        SparseChain::load(
++            g.root(),
++            &g,
++            SparseChainLimits {
++                layers: usize::MAX,
++                ..Default::default()
++            }
++        )
++        .is_err()
++    );
++}
++#[test]
++fn unknown_descriptor_or_backing_identity_rejects_before_that_source_read() {
++    for backing in [false, true] {
++        let g = Graph::new(1, false, true);
++        let target = if backing {
++            &g.nodes[0].backing
++        } else {
++            &g.nodes[0].descriptor
++        };
++        target.unknown.store(true, Ordering::Relaxed);
++        assert!(matches!(load(&g), Err(E::Identity)));
++        assert_eq!(target.calls.load(Ordering::Relaxed), 0);
++    }
++}
++#[test]
++fn rejects_shared_backings_and_parent_descriptor_aliases() {
++    let mut g = Graph::new(2, false, true);
++    g.nodes[1].source.backings = g.nodes[0].source.backings.clone();
++    assert!(matches!(load(&g), Err(E::RepeatedIdentity)));
++    let g = Graph::new(2, false, true);
++    let looping = Loop {
++        source: SparseChainSource {
++            descriptor: g.nodes[0].backing.clone(),
++            ..g.nodes[1].source.clone()
++        },
++        calls: AtomicU64::new(0),
++    };
++    assert!(matches!(
++        SparseChain::load(g.root(), &looping, SparseChainLimits::default()),
++        Err(E::RepeatedIdentity)
++    ));
++}
++#[test]
++fn embedded_entry_is_bound_to_same_container_and_parent_fields() {
++    let mut g = Graph::new(1, true, true);
++    let another = node(&text(1, None, false), true, true);
++    g.nodes[0].source.backings = another.source.backings;
++    assert!(matches!(load(&g), Err(E::Identity)));
++    assert_eq!(another.backing.calls.load(Ordering::Relaxed), 0);
++    let mut g = Graph::new(2, false, true);
++    let another = node(&text(1, Some((9, "parent.vmdk")), false), false, true);
++    g.nodes[0].source.backings = another.source.backings;
++    assert!(matches!(load(&g), Err(E::Metadata(_))));
++    let mut g = Graph::new(1, true, true);
++    g.nodes[0] = node(&text(1, None, true), true, true);
++    assert!(matches!(load(&g), Err(E::Invalid(_))));
++}
++#[test]
++fn multiple_split_extents_and_different_parent_geometry_are_allowed() {
++    struct Split(Vec<Arc<f::Tracked>>);
++    impl rvvdk_vmdk::BackingResolver for Split {
++        fn resolve(&self, n: &str) -> Result<Arc<dyn BlockDevice>, BackingError> {
++            Ok(self.0[usize::from(n == "second.vmdk")].clone())
++        }
++    }
++    let mut g = Graph::new(2, false, true);
++    // Two separate 1 MiB extents in each layer; backing namespace is per layer.
++    for i in 0..2 {
++        let t = text(
++            i as u32 + 1,
++            if i == 0 {
++                Some((2, "parent.vmdk"))
++            } else {
++                None
++            },
++            true,
++        ) + "RW 2048 SPARSE \"second.vmdk\"\n";
++        let a = node(&t, false, true);
++        let b = node(&t, false, true);
++        g.nodes[i] = a;
++        g.nodes[i].source.backings = Arc::new(Split(vec![g.nodes[i].backing.clone(), b.backing]));
++    }
++    let parent_text = text(2, None, false).replace("RW 2048", "RW 4096");
++    g.nodes[1] = node(&parent_text, false, true);
++    g.nodes[1]
++        .backing
++        .device
++        .write_all_at(12, &4096u64.to_le_bytes())
++        .unwrap();
++    let c = load(&g).unwrap();
++    assert_eq!(c.layers()[0].size_bytes(), 2 << 20);
++    assert_eq!(c.layers()[0].metadata().len(), 2);
++    assert_eq!(c.layers()[1].metadata().len(), 1);
++}
++#[test]
++fn revalidation_and_final_observation_detect_prior_source_changes() {
++    let g = Graph::new(2, false, false);
++    let c = load(&g).unwrap();
++    g.nodes[0].descriptor.changed.store(true, Ordering::Relaxed);
++    assert!(c.revalidate().is_err());
++    g.nodes[0]
++        .descriptor
++        .changed
++        .store(false, Ordering::Relaxed);
++    g.nodes[1].backing.unknown.store(true, Ordering::Relaxed);
++    assert!(c.revalidate().is_err());
++    struct Changing<'a>(&'a Graph);
++    impl ParentResolver for Changing<'_> {
++        fn resolve_parent(
++            &self,
++            c: EndpointIdentity,
++            h: &str,
++        ) -> Result<Option<SparseChainSource>, BackingError> {
++            self.0.nodes[0]
++                .descriptor
++                .changed
++                .store(true, Ordering::Relaxed);
++            self.0.resolve_parent(c, h)
++        }
++    }
++    let g = Graph::new(2, false, false);
++    assert!(SparseChain::load(g.root(), &Changing(&g), SparseChainLimits::default()).is_err());
++}
++#[test]
++fn descriptor_and_metadata_io_errors_propagate_without_parent_fallback() {
++    for backing in [false, true] {
++        let g = Graph::new(2, false, true);
++        let target = if backing {
++            &g.nodes[0].backing
++        } else {
++            &g.nodes[0].descriptor
++        };
++        target.fail.store(true, Ordering::Relaxed);
++        assert!(load(&g).is_err());
++        assert_eq!(g.calls.load(Ordering::Relaxed), 0);
++    }
++}
++
++#[test]
++fn duplicate_extent_handles_and_per_layer_limits_are_rejected() {
++    let mut g = Graph::new(1, false, true);
++    let t = text(1, None, true) + "RW 2048 SPARSE \"second.vmdk\"\n";
++    g.nodes[0] = node(&t, false, true);
++    assert!(matches!(load(&g), Err(E::RepeatedIdentity)));
++    let g = Graph::new(1, true, true);
++    let mut limits = SparseChainLimits::default();
++    limits.metadata.descriptor.descriptor_bytes = 10239;
++    assert!(SparseChain::load(g.root(), &g, limits).is_err());
++    assert_eq!(g.nodes[0].descriptor.calls.load(Ordering::Relaxed), 1);
++    assert_eq!(g.nodes[0].descriptor.bytes.load(Ordering::Relaxed), 512);
++}
++
++#[test]
++fn default_depth_accepts_sixteen_and_rejects_seventeen_without_opening_last() {
++    let g = Graph::new(16, true, false);
++    assert_eq!(load(&g).unwrap().layers().len(), 16);
++    let g = Graph::new(17, false, true);
++    assert!(matches!(load(&g), Err(E::Limit("layers"))));
++    assert_eq!(g.calls.load(Ordering::Relaxed), 15);
++    assert_eq!(g.nodes[16].descriptor.calls.load(Ordering::Relaxed), 0);
++}
+diff --git a/crates/rvvdk-vmdk/tests/support/chain.rs b/crates/rvvdk-vmdk/tests/support/chain.rs
+new file mode 100644
+index 0000000..17e389a
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/support/chain.rs
+@@ -0,0 +1,163 @@
++//! Authored chain fixtures. No producer implementation or SDK code.
++#[path = "sparse_metadata.rs"]
++mod sparse;
++use rvvdk_core::{
++    BlockDevice, Capabilities, CopyEndpoint, DiskGeometry, EndpointIdentity, MemoryBlockDevice,
++    Result,
++};
++use rvvdk_vmdk::{BackingError, BackingResolver, ChainEntry, ParentResolver, SparseChainSource};
++use std::sync::{
++    Arc,
++    atomic::{AtomicBool, AtomicU64, Ordering},
++};
++pub struct Tracked {
++    pub device: Arc<MemoryBlockDevice>,
++    pub calls: AtomicU64,
++    pub bytes: AtomicU64,
++    pub unknown: AtomicBool,
++    pub changed: AtomicBool,
++    pub fail: AtomicBool,
++    pub track: bool,
++}
++impl Tracked {
++    pub fn new(bytes: &[u8], track: bool) -> Arc<Self> {
++        Arc::new(Self {
++            device: sparse::device(bytes),
++            calls: AtomicU64::new(0),
++            bytes: AtomicU64::new(0),
++            unknown: AtomicBool::new(false),
++            changed: AtomicBool::new(false),
++            fail: AtomicBool::new(false),
++            track,
++        })
++    }
++}
++impl BlockDevice for Tracked {
++    fn geometry(&self) -> DiskGeometry {
++        self.device.geometry()
++    }
++    fn capabilities(&self) -> Capabilities {
++        Capabilities::READ
++    }
++    fn copy_endpoint(&self) -> Result<CopyEndpoint> {
++        let mut e = self.device.copy_endpoint()?;
++        e.capabilities = self.capabilities();
++        if self.unknown.load(Ordering::Relaxed) {
++            e.identity = None;
++        }
++        if self.changed.load(Ordering::Relaxed) {
++            e.size += 512;
++        }
++        Ok(e)
++    }
++    fn read_at(&self, offset: u64, b: &mut [u8]) -> Result<usize> {
++        if self.track {
++            self.calls.fetch_add(1, Ordering::Relaxed);
++            self.bytes.fetch_add(b.len() as u64, Ordering::Relaxed);
++        }
++        if self.fail.load(Ordering::Relaxed) {
++            return Err(rvvdk_core::Error::Unsupported);
++        }
++        self.device.read_at(offset, b)
++    }
++    fn write_at(&self, _: u64, _: &[u8]) -> Result<usize> {
++        panic!("source write")
++    }
++    fn flush(&self) -> Result<()> {
++        panic!("source flush")
++    }
++}
++pub struct Backings(pub Arc<Tracked>);
++impl BackingResolver for Backings {
++    fn resolve(&self, name: &str) -> std::result::Result<Arc<dyn BlockDevice>, BackingError> {
++        assert!(name == "disk.vmdk" || name == "second.vmdk");
++        Ok(self.0.clone())
++    }
++}
++pub fn text(cid: u32, parent: Option<(u32, &str)>, split: bool) -> String {
++    let kind = if split {
++        "twoGbMaxExtentSparse"
++    } else {
++        "monolithicSparse"
++    };
++    let mut t = sparse::descriptor(kind, "RW 2048 SPARSE \"disk.vmdk\"")
++        .replace("CID=12345678", &format!("CID={cid:08x}"));
++    if let Some((cid, name)) = parent {
++        t = t.replace(
++            "parentCID=ffffffff",
++            &format!("parentCID={cid:08x}\nparentFileNameHint=\"{name}\""),
++        );
++    }
++    t
++}
++pub struct Node {
++    pub source: SparseChainSource,
++    pub descriptor: Arc<Tracked>,
++    pub backing: Arc<Tracked>,
++}
++pub fn node(text: &str, embedded: bool, track: bool) -> Node {
++    let backing = Tracked::new(&sparse::bytes(Some(text)), track);
++    let descriptor = if embedded {
++        backing.clone()
++    } else {
++        Tracked::new(text.as_bytes(), track)
++    };
++    Node {
++        source: SparseChainSource {
++            descriptor: descriptor.clone(),
++            backings: Arc::new(Backings(backing.clone())),
++            entry: if embedded {
++                ChainEntry::Embedded
++            } else {
++                ChainEntry::External
++            },
++        },
++        descriptor,
++        backing,
++    }
++}
++pub struct Graph {
++    pub nodes: Vec<Node>,
++    pub calls: AtomicU64,
++}
++impl Graph {
++    pub fn new(depth: usize, embedded: bool, track: bool) -> Self {
++        Self {
++            nodes: (0..depth)
++                .map(|i| {
++                    node(
++                        &text(
++                            i as u32 + 1,
++                            (i + 1 < depth).then_some((i as u32 + 2, "parent.vmdk")),
++                            false,
++                        ),
++                        embedded,
++                        track,
++                    )
++                })
++                .collect(),
++            calls: AtomicU64::new(0),
++        }
++    }
++    pub fn root(&self) -> SparseChainSource {
++        self.nodes[0].source.clone()
++    }
++}
++impl ParentResolver for Graph {
++    fn resolve_parent(
++        &self,
++        child: EndpointIdentity,
++        hint: &str,
++    ) -> std::result::Result<Option<SparseChainSource>, BackingError> {
++        self.calls.fetch_add(1, Ordering::Relaxed);
++        if hint != "parent.vmdk" {
++            return Err(BackingError::UnsafeReference);
++        }
++        let index = self
++            .nodes
++            .iter()
++            .position(|n| n.descriptor.copy_endpoint().unwrap().identity == Some(child))
++            .unwrap();
++        Ok(self.nodes.get(index + 1).map(|n| n.source.clone()))
++    }
++}

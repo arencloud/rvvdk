@@ -117,3 +117,6 @@ R5.2 adds a separate [SparseDescriptor API](vmdk-sparse-metadata.md) for hosted
 base sparse metadata work. It shares bounded syntax but accepts sparse create types
 and SPARSE references, terminal NUL padding, and one to eight CID hex digits.
 The Descriptor grammar and FLAT/ZERO CLI support documented above remain unchanged.
+
+R5.6 adds a separate [SparseLayerDescriptor and metadata-only parent chain](vmdk-parent-chain.md).
+This does not widen the base parsers or expose logical parent reads through the CLI.

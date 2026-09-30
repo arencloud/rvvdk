@@ -8,7 +8,7 @@ mod descriptor;
 
 pub use descriptor::{
     Access, CreateType, Descriptor, DescriptorError, ErrorKind, Extent, ExtentBacking, Limits,
-    Metadata, SECTOR_BYTES, SparseDescriptor,
+    Metadata, ParentReference, SECTOR_BYTES, SparseDescriptor, SparseLayerDescriptor,
 };
 
 mod backing;
@@ -35,3 +35,9 @@ pub use sparse_metadata::{SparseMetadata, SparseMetadataError, SparseMetadataLim
 
 mod sparse_disk;
 pub use sparse_disk::{SparseDisk, SparseDiskLimits};
+
+mod chain;
+pub use chain::{
+    ChainEntry, ParentResolver, SparseChain, SparseChainError, SparseChainLayer, SparseChainLimits,
+    SparseChainSource,
+};

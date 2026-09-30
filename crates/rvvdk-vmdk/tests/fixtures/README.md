@@ -76,3 +76,12 @@ Expected logical bytes come from the authored allocation rule, independently of
 SparseDisk's map. Tests use fixed-seed mutations and bounded-read instrumentation.
 Benchmarks disable instrumentation and include generated payload costs. No producer
 implementation code or new disk-format acceptance is introduced.
+
+R5.6 `tests/support/chain.rs` builds authored sparse descriptor chains from the
+existing header/table fixtures. Separate retained memory devices give distinct
+object identities; wrappers count reads and inject endpoint/I/O faults. Repeated
+filenames intentionally resolve in each layer's own namespace. No fixture contains
+SDK or producer implementation code. The `chain` benchmark reuses these fixtures
+with read counters disabled; atomic fault flags and in-memory reads remain timed.
+QEMU-created chains are generated separately by `scripts/vmdk/compare_chain.py`;
+only commands, metadata reports and hashes are committed, not virtual disk files.

@@ -1,0 +1,1015 @@
+{
+  "directory": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain",
+  "helper_sha256": "d96ac21062d9a99127f08527b27b2bfde9520cae7c99147a9f34feda29204b8a",
+  "cli_sha256": "8972e02116337b95c2a463aa6afa51ab96d480d0de35330ba2f42366c9266b54",
+  "qemu_sha256": "4362e911c13bb90e39b69479462cd4adb840749b582f4892ca114eb7e94dcf2e",
+  "generator_sha256": "c34210eaa578136fad5b0dbf9e7979c84e019610100a98b0898535c0cc30b5f0",
+  "cases": [
+    {
+      "name": "base",
+      "source_unchanged": true,
+      "admitted": {
+        "layers": [
+          {
+            "cid": 165949267,
+            "parent_cid": null,
+            "capacity_bytes": 1048576,
+            "extents": 1
+          }
+        ],
+        "reserved_memory_bytes": 23624,
+        "metadata_read_bytes": 27136,
+        "descriptor_bytes": 10240
+      },
+      "qemu_info": [
+        {
+          "children": [
+            {
+              "name": "file",
+              "info": {
+                "children": [],
+                "virtual-size": 65536,
+                "filename": "layer0.vmdk",
+                "format": "file",
+                "actual-size": 12288,
+                "format-specific": {
+                  "type": "file",
+                  "data": {}
+                },
+                "dirty-flag": false
+              }
+            }
+          ],
+          "virtual-size": 1048576,
+          "filename": "layer0.vmdk",
+          "cluster-size": 65536,
+          "format": "vmdk",
+          "actual-size": 12288,
+          "format-specific": {
+            "type": "vmdk",
+            "data": {
+              "cid": 165949267,
+              "parent-cid": 4294967295,
+              "create-type": "monolithicSparse",
+              "extents": [
+                {
+                  "virtual-size": 1048576,
+                  "filename": "layer0.vmdk",
+                  "cluster-size": 65536,
+                  "format": ""
+                }
+              ]
+            }
+          },
+          "dirty-flag": false
+        }
+      ],
+      "public_cli_rejects_parent": false
+    },
+    {
+      "name": "mono",
+      "source_unchanged": true,
+      "admitted": {
+        "layers": [
+          {
+            "cid": 3936736326,
+            "parent_cid": 1612201470,
+            "capacity_bytes": 1048576,
+            "extents": 1
+          },
+          {
+            "cid": 1612201470,
+            "parent_cid": 1927803448,
+            "capacity_bytes": 1048576,
+            "extents": 1
+          },
+          {
+            "cid": 1927803448,
+            "parent_cid": null,
+            "capacity_bytes": 1048576,
+            "extents": 1
+          }
+        ],
+        "reserved_memory_bytes": 67544,
+        "metadata_read_bytes": 81408,
+        "descriptor_bytes": 30720
+      },
+      "qemu_info": [
+        {
+          "children": [
+            {
+              "name": "file",
+              "info": {
+                "children": [],
+                "virtual-size": 65536,
+                "filename": "layer2.vmdk",
+                "format": "file",
+                "actual-size": 12288,
+                "format-specific": {
+                  "type": "file",
+                  "data": {}
+                },
+                "dirty-flag": false
+              }
+            }
+          ],
+          "backing-filename-format": "vmdk",
+          "virtual-size": 1048576,
+          "filename": "layer2.vmdk",
+          "cluster-size": 65536,
+          "format": "vmdk",
+          "actual-size": 12288,
+          "format-specific": {
+            "type": "vmdk",
+            "data": {
+              "cid": 3936736326,
+              "parent-cid": 1612201470,
+              "create-type": "monolithicSparse",
+              "extents": [
+                {
+                  "virtual-size": 1048576,
+                  "filename": "layer2.vmdk",
+                  "cluster-size": 65536,
+                  "format": ""
+                }
+              ]
+            }
+          },
+          "full-backing-filename": "layer1.vmdk",
+          "backing-filename": "layer1.vmdk",
+          "dirty-flag": false
+        },
+        {
+          "children": [
+            {
+              "name": "file",
+              "info": {
+                "children": [],
+                "virtual-size": 65536,
+                "filename": "layer1.vmdk",
+                "format": "file",
+                "actual-size": 12288,
+                "format-specific": {
+                  "type": "file",
+                  "data": {}
+                },
+                "dirty-flag": false
+              }
+            }
+          ],
+          "backing-filename-format": "vmdk",
+          "virtual-size": 1048576,
+          "filename": "layer1.vmdk",
+          "cluster-size": 65536,
+          "format": "vmdk",
+          "actual-size": 12288,
+          "format-specific": {
+            "type": "vmdk",
+            "data": {
+              "cid": 1612201470,
+              "parent-cid": 1927803448,
+              "create-type": "monolithicSparse",
+              "extents": [
+                {
+                  "virtual-size": 1048576,
+                  "filename": "layer1.vmdk",
+                  "cluster-size": 65536,
+                  "format": ""
+                }
+              ]
+            }
+          },
+          "full-backing-filename": "layer0.vmdk",
+          "backing-filename": "layer0.vmdk",
+          "dirty-flag": false
+        },
+        {
+          "children": [
+            {
+              "name": "file",
+              "info": {
+                "children": [],
+                "virtual-size": 65536,
+                "filename": "layer0.vmdk",
+                "format": "file",
+                "actual-size": 12288,
+                "format-specific": {
+                  "type": "file",
+                  "data": {}
+                },
+                "dirty-flag": false
+              }
+            }
+          ],
+          "virtual-size": 1048576,
+          "filename": "layer0.vmdk",
+          "cluster-size": 65536,
+          "format": "vmdk",
+          "actual-size": 12288,
+          "format-specific": {
+            "type": "vmdk",
+            "data": {
+              "cid": 1927803448,
+              "parent-cid": 4294967295,
+              "create-type": "monolithicSparse",
+              "extents": [
+                {
+                  "virtual-size": 1048576,
+                  "filename": "layer0.vmdk",
+                  "cluster-size": 65536,
+                  "format": ""
+                }
+              ]
+            }
+          },
+          "dirty-flag": false
+        }
+      ],
+      "public_cli_rejects_parent": true
+    },
+    {
+      "name": "split",
+      "source_unchanged": true,
+      "admitted": {
+        "layers": [
+          {
+            "cid": 1527063018,
+            "parent_cid": 2482420268,
+            "capacity_bytes": 1048576,
+            "extents": 1
+          },
+          {
+            "cid": 2482420268,
+            "parent_cid": 916388937,
+            "capacity_bytes": 1048576,
+            "extents": 1
+          },
+          {
+            "cid": 916388937,
+            "parent_cid": null,
+            "capacity_bytes": 1048576,
+            "extents": 1
+          }
+        ],
+        "reserved_memory_bytes": 37932,
+        "metadata_read_bytes": 50260,
+        "descriptor_bytes": 1108
+      },
+      "qemu_info": [
+        {
+          "children": [
+            {
+              "name": "extents.0",
+              "info": {
+                "children": [],
+                "virtual-size": 65536,
+                "filename": "layer2-s001.vmdk",
+                "format": "file",
+                "actual-size": 12288,
+                "format-specific": {
+                  "type": "file",
+                  "data": {}
+                },
+                "dirty-flag": false
+              }
+            },
+            {
+              "name": "file",
+              "info": {
+                "children": [],
+                "virtual-size": 512,
+                "filename": "layer2.vmdk",
+                "format": "file",
+                "actual-size": 4096,
+                "format-specific": {
+                  "type": "file",
+                  "data": {}
+                },
+                "dirty-flag": false
+              }
+            }
+          ],
+          "backing-filename-format": "vmdk",
+          "virtual-size": 1048576,
+          "filename": "layer2.vmdk",
+          "cluster-size": 65536,
+          "format": "vmdk",
+          "actual-size": 16384,
+          "format-specific": {
+            "type": "vmdk",
+            "data": {
+              "cid": 1527063018,
+              "parent-cid": 2482420268,
+              "create-type": "twoGbMaxExtentSparse",
+              "extents": [
+                {
+                  "virtual-size": 1048576,
+                  "filename": "layer2-s001.vmdk",
+                  "cluster-size": 65536,
+                  "format": "SPARSE"
+                }
+              ]
+            }
+          },
+          "full-backing-filename": "layer1.vmdk",
+          "backing-filename": "layer1.vmdk",
+          "dirty-flag": false
+        },
+        {
+          "children": [
+            {
+              "name": "extents.0",
+              "info": {
+                "children": [],
+                "virtual-size": 65536,
+                "filename": "layer1-s001.vmdk",
+                "format": "file",
+                "actual-size": 12288,
+                "format-specific": {
+                  "type": "file",
+                  "data": {}
+                },
+                "dirty-flag": false
+              }
+            },
+            {
+              "name": "file",
+              "info": {
+                "children": [],
+                "virtual-size": 512,
+                "filename": "layer1.vmdk",
+                "format": "file",
+                "actual-size": 4096,
+                "format-specific": {
+                  "type": "file",
+                  "data": {}
+                },
+                "dirty-flag": false
+              }
+            }
+          ],
+          "backing-filename-format": "vmdk",
+          "virtual-size": 1048576,
+          "filename": "layer1.vmdk",
+          "cluster-size": 65536,
+          "format": "vmdk",
+          "actual-size": 16384,
+          "format-specific": {
+            "type": "vmdk",
+            "data": {
+              "cid": 2482420268,
+              "parent-cid": 916388937,
+              "create-type": "twoGbMaxExtentSparse",
+              "extents": [
+                {
+                  "virtual-size": 1048576,
+                  "filename": "layer1-s001.vmdk",
+                  "cluster-size": 65536,
+                  "format": "SPARSE"
+                }
+              ]
+            }
+          },
+          "full-backing-filename": "layer0.vmdk",
+          "backing-filename": "layer0.vmdk",
+          "dirty-flag": false
+        },
+        {
+          "children": [
+            {
+              "name": "extents.0",
+              "info": {
+                "children": [],
+                "virtual-size": 65536,
+                "filename": "layer0-s001.vmdk",
+                "format": "file",
+                "actual-size": 12288,
+                "format-specific": {
+                  "type": "file",
+                  "data": {}
+                },
+                "dirty-flag": false
+              }
+            },
+            {
+              "name": "file",
+              "info": {
+                "children": [],
+                "virtual-size": 512,
+                "filename": "layer0.vmdk",
+                "format": "file",
+                "actual-size": 4096,
+                "format-specific": {
+                  "type": "file",
+                  "data": {}
+                },
+                "dirty-flag": false
+              }
+            }
+          ],
+          "virtual-size": 1048576,
+          "filename": "layer0.vmdk",
+          "cluster-size": 65536,
+          "format": "vmdk",
+          "actual-size": 16384,
+          "format-specific": {
+            "type": "vmdk",
+            "data": {
+              "cid": 916388937,
+              "parent-cid": 4294967295,
+              "create-type": "twoGbMaxExtentSparse",
+              "extents": [
+                {
+                  "virtual-size": 1048576,
+                  "filename": "layer0-s001.vmdk",
+                  "cluster-size": 65536,
+                  "format": "SPARSE"
+                }
+              ]
+            }
+          },
+          "dirty-flag": false
+        }
+      ],
+      "public_cli_rejects_parent": true
+    },
+    {
+      "name": "mixed",
+      "source_unchanged": true,
+      "admitted": {
+        "layers": [
+          {
+            "cid": 1876573148,
+            "parent_cid": 347233485,
+            "capacity_bytes": 1048576,
+            "extents": 1
+          },
+          {
+            "cid": 347233485,
+            "parent_cid": 2400098661,
+            "capacity_bytes": 1048576,
+            "extents": 1
+          },
+          {
+            "cid": 2400098661,
+            "parent_cid": null,
+            "capacity_bytes": 1048576,
+            "extents": 1
+          }
+        ],
+        "reserved_memory_bytes": 57684,
+        "metadata_read_bytes": 71036,
+        "descriptor_bytes": 20860
+      },
+      "qemu_info": [
+        {
+          "children": [
+            {
+              "name": "file",
+              "info": {
+                "children": [],
+                "virtual-size": 65536,
+                "filename": "layer2.vmdk",
+                "format": "file",
+                "actual-size": 12288,
+                "format-specific": {
+                  "type": "file",
+                  "data": {}
+                },
+                "dirty-flag": false
+              }
+            }
+          ],
+          "backing-filename-format": "vmdk",
+          "virtual-size": 1048576,
+          "filename": "layer2.vmdk",
+          "cluster-size": 65536,
+          "format": "vmdk",
+          "actual-size": 12288,
+          "format-specific": {
+            "type": "vmdk",
+            "data": {
+              "cid": 1876573148,
+              "parent-cid": 347233485,
+              "create-type": "monolithicSparse",
+              "extents": [
+                {
+                  "virtual-size": 1048576,
+                  "filename": "layer2.vmdk",
+                  "cluster-size": 65536,
+                  "format": ""
+                }
+              ]
+            }
+          },
+          "full-backing-filename": "layer1.vmdk",
+          "backing-filename": "layer1.vmdk",
+          "dirty-flag": false
+        },
+        {
+          "children": [
+            {
+              "name": "extents.0",
+              "info": {
+                "children": [],
+                "virtual-size": 65536,
+                "filename": "layer1-s001.vmdk",
+                "format": "file",
+                "actual-size": 12288,
+                "format-specific": {
+                  "type": "file",
+                  "data": {}
+                },
+                "dirty-flag": false
+              }
+            },
+            {
+              "name": "file",
+              "info": {
+                "children": [],
+                "virtual-size": 512,
+                "filename": "layer1.vmdk",
+                "format": "file",
+                "actual-size": 4096,
+                "format-specific": {
+                  "type": "file",
+                  "data": {}
+                },
+                "dirty-flag": false
+              }
+            }
+          ],
+          "backing-filename-format": "vmdk",
+          "virtual-size": 1048576,
+          "filename": "layer1.vmdk",
+          "cluster-size": 65536,
+          "format": "vmdk",
+          "actual-size": 16384,
+          "format-specific": {
+            "type": "vmdk",
+            "data": {
+              "cid": 347233485,
+              "parent-cid": 2400098661,
+              "create-type": "twoGbMaxExtentSparse",
+              "extents": [
+                {
+                  "virtual-size": 1048576,
+                  "filename": "layer1-s001.vmdk",
+                  "cluster-size": 65536,
+                  "format": "SPARSE"
+                }
+              ]
+            }
+          },
+          "full-backing-filename": "layer0.vmdk",
+          "backing-filename": "layer0.vmdk",
+          "dirty-flag": false
+        },
+        {
+          "children": [
+            {
+              "name": "file",
+              "info": {
+                "children": [],
+                "virtual-size": 65536,
+                "filename": "layer0.vmdk",
+                "format": "file",
+                "actual-size": 12288,
+                "format-specific": {
+                  "type": "file",
+                  "data": {}
+                },
+                "dirty-flag": false
+              }
+            }
+          ],
+          "virtual-size": 1048576,
+          "filename": "layer0.vmdk",
+          "cluster-size": 65536,
+          "format": "vmdk",
+          "actual-size": 12288,
+          "format-specific": {
+            "type": "vmdk",
+            "data": {
+              "cid": 2400098661,
+              "parent-cid": 4294967295,
+              "create-type": "monolithicSparse",
+              "extents": [
+                {
+                  "virtual-size": 1048576,
+                  "filename": "layer0.vmdk",
+                  "cluster-size": 65536,
+                  "format": ""
+                }
+              ]
+            }
+          },
+          "dirty-flag": false
+        }
+      ],
+      "public_cli_rejects_parent": true
+    }
+  ],
+  "files": {
+    "base/layer0.vmdk": {
+      "bytes": 65536,
+      "sha256": "161f09c67d0ba7859604fdd66e9c630b05d55922443dfbd62adfcca15768061d"
+    },
+    "mixed/layer0.vmdk": {
+      "bytes": 65536,
+      "sha256": "80f81fc7a25547555d795b4c54223bdda15a7dcd31c6164fcb08ff42506777fc"
+    },
+    "mixed/layer1-s001.vmdk": {
+      "bytes": 65536,
+      "sha256": "f4b9816360099664effb4e8ef690f093a09eca9fd58577136c8d913cb0249946"
+    },
+    "mixed/layer1.vmdk": {
+      "bytes": 380,
+      "sha256": "80307282222455383f9875456cf5f95b794dc30b61d0035f45ee9b397df062ae"
+    },
+    "mixed/layer2.vmdk": {
+      "bytes": 65536,
+      "sha256": "e16f8af7264f8f339a7c56b9e6b7b9d06e690e5912cfe4546759f57b24612e6a"
+    },
+    "mono/layer0.vmdk": {
+      "bytes": 65536,
+      "sha256": "baf0f3729032c8a01b4ea1c07d1e2b5d574cf8fd1c1755ea120bd6e1fa68180f"
+    },
+    "mono/layer1.vmdk": {
+      "bytes": 65536,
+      "sha256": "6c22f71008c0e7505ed17a633b5c4bed042f2e2ac1c9d7ac85b20ca85aa0e71d"
+    },
+    "mono/layer2.vmdk": {
+      "bytes": 65536,
+      "sha256": "100084877730546cab1d9457b7e3182db25a9959805be347c995c89100dcdebf"
+    },
+    "split/layer0-s001.vmdk": {
+      "bytes": 65536,
+      "sha256": "f4b9816360099664effb4e8ef690f093a09eca9fd58577136c8d913cb0249946"
+    },
+    "split/layer0.vmdk": {
+      "bytes": 348,
+      "sha256": "23f5082993d13143d67a6b204d490426e7fef98e90bb459eec5a129ca4a8968c"
+    },
+    "split/layer1-s001.vmdk": {
+      "bytes": 65536,
+      "sha256": "f4b9816360099664effb4e8ef690f093a09eca9fd58577136c8d913cb0249946"
+    },
+    "split/layer1.vmdk": {
+      "bytes": 380,
+      "sha256": "215681a44e23268ae7229ca9b668b30d002da1fe00ef291ecc868850f8792e8d"
+    },
+    "split/layer2-s001.vmdk": {
+      "bytes": 65536,
+      "sha256": "f4b9816360099664effb4e8ef690f093a09eca9fd58577136c8d913cb0249946"
+    },
+    "split/layer2.vmdk": {
+      "bytes": 380,
+      "sha256": "34691f257cc7f8d839e23871789c9165a22362d52b650d3480f7cc8488a555d0"
+    }
+  },
+  "commands": [
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "--version"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain",
+      "exit_code": 0,
+      "stdout": "qemu-img version 10.2.2 (qemu-10.2.2-1.fc44)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "layer0.vmdk",
+        "1M"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/base",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer0.vmdk', fmt=vmdk size=1048576 compat6=off hwversion=undefined subformat=monolithicSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "info",
+        "--backing-chain",
+        "--output=json",
+        "layer0.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/base",
+      "exit_code": 0,
+      "stdout": "[\n    {\n        \"children\": [\n            {\n                \"name\": \"file\",\n                \"info\": {\n                    \"children\": [\n                    ],\n                    \"virtual-size\": 65536,\n                    \"filename\": \"layer0.vmdk\",\n                    \"format\": \"file\",\n                    \"actual-size\": 12288,\n                    \"format-specific\": {\n                        \"type\": \"file\",\n                        \"data\": {\n                        }\n                    },\n                    \"dirty-flag\": false\n                }\n            }\n        ],\n        \"virtual-size\": 1048576,\n        \"filename\": \"layer0.vmdk\",\n        \"cluster-size\": 65536,\n        \"format\": \"vmdk\",\n        \"actual-size\": 12288,\n        \"format-specific\": {\n            \"type\": \"vmdk\",\n            \"data\": {\n                \"cid\": 165949267,\n                \"parent-cid\": 4294967295,\n                \"create-type\": \"monolithicSparse\",\n                \"extents\": [\n                    {\n                        \"virtual-size\": 1048576,\n                        \"filename\": \"layer0.vmdk\",\n                        \"cluster-size\": 65536,\n                        \"format\": \"\"\n                    }\n                ]\n            }\n        },\n        \"dirty-flag\": false\n    }\n]\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r56-e22ldasi/candidate-target/release/examples/inspect_chain",
+        "layer0.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/base",
+      "exit_code": 0,
+      "stdout": "{\"layers\":[\n{\"cid\":165949267,\"parent_cid\":null,\"capacity_bytes\":1048576,\"extents\":1}],\"reserved_memory_bytes\":23624,\"metadata_read_bytes\":27136,\"descriptor_bytes\":10240}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r56-e22ldasi/candidate-target/release/rvddk",
+        "inspect",
+        "layer0.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/base",
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"inspect\",\n  \"format\": \"vmdk\",\n  \"status\": \"inspected\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"layer0.vmdk\"\n    },\n    \"logical_bytes\": 1048576,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 1,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122352389\n        }\n      ],\n      \"cid\": \"09e42f53\",\n      \"descriptor_extent_count\": 1,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122352389\n      },\n      \"layout\": \"hosted_sparse\",\n      \"metadata_memory_reservation_bytes\": 11720,\n      \"metadata_read_bytes\": 16384\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 1048576,\n    \"data_bytes\": 0,\n    \"zero_bytes\": 1048576,\n    \"hole_bytes\": 0,\n    \"extent_count\": 1\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "layer0.vmdk",
+        "1M"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/mono",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer0.vmdk', fmt=vmdk size=1048576 compat6=off hwversion=undefined subformat=monolithicSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "-b",
+        "layer0.vmdk",
+        "-F",
+        "vmdk",
+        "layer1.vmdk",
+        "1M"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/mono",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer1.vmdk', fmt=vmdk size=1048576 backing_file=layer0.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=monolithicSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "-b",
+        "layer1.vmdk",
+        "-F",
+        "vmdk",
+        "layer2.vmdk",
+        "1M"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/mono",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer2.vmdk', fmt=vmdk size=1048576 backing_file=layer1.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=monolithicSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "info",
+        "--backing-chain",
+        "--output=json",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/mono",
+      "exit_code": 0,
+      "stdout": "[\n    {\n        \"children\": [\n            {\n                \"name\": \"file\",\n                \"info\": {\n                    \"children\": [\n                    ],\n                    \"virtual-size\": 65536,\n                    \"filename\": \"layer2.vmdk\",\n                    \"format\": \"file\",\n                    \"actual-size\": 12288,\n                    \"format-specific\": {\n                        \"type\": \"file\",\n                        \"data\": {\n                        }\n                    },\n                    \"dirty-flag\": false\n                }\n            }\n        ],\n        \"backing-filename-format\": \"vmdk\",\n        \"virtual-size\": 1048576,\n        \"filename\": \"layer2.vmdk\",\n        \"cluster-size\": 65536,\n        \"format\": \"vmdk\",\n        \"actual-size\": 12288,\n        \"format-specific\": {\n            \"type\": \"vmdk\",\n            \"data\": {\n                \"cid\": 3936736326,\n                \"parent-cid\": 1612201470,\n                \"create-type\": \"monolithicSparse\",\n                \"extents\": [\n                    {\n                        \"virtual-size\": 1048576,\n                        \"filename\": \"layer2.vmdk\",\n                        \"cluster-size\": 65536,\n                        \"format\": \"\"\n                    }\n                ]\n            }\n        },\n        \"full-backing-filename\": \"layer1.vmdk\",\n        \"backing-filename\": \"layer1.vmdk\",\n        \"dirty-flag\": false\n    },\n    {\n        \"children\": [\n            {\n                \"name\": \"file\",\n                \"info\": {\n                    \"children\": [\n                    ],\n                    \"virtual-size\": 65536,\n                    \"filename\": \"layer1.vmdk\",\n                    \"format\": \"file\",\n                    \"actual-size\": 12288,\n                    \"format-specific\": {\n                        \"type\": \"file\",\n                        \"data\": {\n                        }\n                    },\n                    \"dirty-flag\": false\n                }\n            }\n        ],\n        \"backing-filename-format\": \"vmdk\",\n        \"virtual-size\": 1048576,\n        \"filename\": \"layer1.vmdk\",\n        \"cluster-size\": 65536,\n        \"format\": \"vmdk\",\n        \"actual-size\": 12288,\n        \"format-specific\": {\n            \"type\": \"vmdk\",\n            \"data\": {\n                \"cid\": 1612201470,\n                \"parent-cid\": 1927803448,\n                \"create-type\": \"monolithicSparse\",\n                \"extents\": [\n                    {\n                        \"virtual-size\": 1048576,\n                        \"filename\": \"layer1.vmdk\",\n                        \"cluster-size\": 65536,\n                        \"format\": \"\"\n                    }\n                ]\n            }\n        },\n        \"full-backing-filename\": \"layer0.vmdk\",\n        \"backing-filename\": \"layer0.vmdk\",\n        \"dirty-flag\": false\n    },\n    {\n        \"children\": [\n            {\n                \"name\": \"file\",\n                \"info\": {\n                    \"children\": [\n                    ],\n                    \"virtual-size\": 65536,\n                    \"filename\": \"layer0.vmdk\",\n                    \"format\": \"file\",\n                    \"actual-size\": 12288,\n                    \"format-specific\": {\n                        \"type\": \"file\",\n                        \"data\": {\n                        }\n                    },\n                    \"dirty-flag\": false\n                }\n            }\n        ],\n        \"virtual-size\": 1048576,\n        \"filename\": \"layer0.vmdk\",\n        \"cluster-size\": 65536,\n        \"format\": \"vmdk\",\n        \"actual-size\": 12288,\n        \"format-specific\": {\n            \"type\": \"vmdk\",\n            \"data\": {\n                \"cid\": 1927803448,\n                \"parent-cid\": 4294967295,\n                \"create-type\": \"monolithicSparse\",\n                \"extents\": [\n                    {\n                        \"virtual-size\": 1048576,\n                        \"filename\": \"layer0.vmdk\",\n                        \"cluster-size\": 65536,\n                        \"format\": \"\"\n                    }\n                ]\n            }\n        },\n        \"dirty-flag\": false\n    }\n]\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r56-e22ldasi/candidate-target/release/examples/inspect_chain",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/mono",
+      "exit_code": 0,
+      "stdout": "{\"layers\":[\n{\"cid\":3936736326,\"parent_cid\":1612201470,\"capacity_bytes\":1048576,\"extents\":1},\n{\"cid\":1612201470,\"parent_cid\":1927803448,\"capacity_bytes\":1048576,\"extents\":1},\n{\"cid\":1927803448,\"parent_cid\":null,\"capacity_bytes\":1048576,\"extents\":1}],\"reserved_memory_bytes\":67544,\"metadata_read_bytes\":81408,\"descriptor_bytes\":30720}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r56-e22ldasi/candidate-target/release/rvddk",
+        "inspect",
+        "layer2.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/mono",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 4: unsupported feature: parent chain\"},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "layer0.vmdk",
+        "1M"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/split",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer0.vmdk', fmt=vmdk size=1048576 compat6=off hwversion=undefined subformat=twoGbMaxExtentSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "-b",
+        "layer0.vmdk",
+        "-F",
+        "vmdk",
+        "layer1.vmdk",
+        "1M"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/split",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer1.vmdk', fmt=vmdk size=1048576 backing_file=layer0.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=twoGbMaxExtentSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "-b",
+        "layer1.vmdk",
+        "-F",
+        "vmdk",
+        "layer2.vmdk",
+        "1M"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/split",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer2.vmdk', fmt=vmdk size=1048576 backing_file=layer1.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=twoGbMaxExtentSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "info",
+        "--backing-chain",
+        "--output=json",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/split",
+      "exit_code": 0,
+      "stdout": "[\n    {\n        \"children\": [\n            {\n                \"name\": \"extents.0\",\n                \"info\": {\n                    \"children\": [\n                    ],\n                    \"virtual-size\": 65536,\n                    \"filename\": \"layer2-s001.vmdk\",\n                    \"format\": \"file\",\n                    \"actual-size\": 12288,\n                    \"format-specific\": {\n                        \"type\": \"file\",\n                        \"data\": {\n                        }\n                    },\n                    \"dirty-flag\": false\n                }\n            },\n            {\n                \"name\": \"file\",\n                \"info\": {\n                    \"children\": [\n                    ],\n                    \"virtual-size\": 512,\n                    \"filename\": \"layer2.vmdk\",\n                    \"format\": \"file\",\n                    \"actual-size\": 4096,\n                    \"format-specific\": {\n                        \"type\": \"file\",\n                        \"data\": {\n                        }\n                    },\n                    \"dirty-flag\": false\n                }\n            }\n        ],\n        \"backing-filename-format\": \"vmdk\",\n        \"virtual-size\": 1048576,\n        \"filename\": \"layer2.vmdk\",\n        \"cluster-size\": 65536,\n        \"format\": \"vmdk\",\n        \"actual-size\": 16384,\n        \"format-specific\": {\n            \"type\": \"vmdk\",\n            \"data\": {\n                \"cid\": 1527063018,\n                \"parent-cid\": 2482420268,\n                \"create-type\": \"twoGbMaxExtentSparse\",\n                \"extents\": [\n                    {\n                        \"virtual-size\": 1048576,\n                        \"filename\": \"layer2-s001.vmdk\",\n                        \"cluster-size\": 65536,\n                        \"format\": \"SPARSE\"\n                    }\n                ]\n            }\n        },\n        \"full-backing-filename\": \"layer1.vmdk\",\n        \"backing-filename\": \"layer1.vmdk\",\n        \"dirty-flag\": false\n    },\n    {\n        \"children\": [\n            {\n                \"name\": \"extents.0\",\n                \"info\": {\n                    \"children\": [\n                    ],\n                    \"virtual-size\": 65536,\n                    \"filename\": \"layer1-s001.vmdk\",\n                    \"format\": \"file\",\n                    \"actual-size\": 12288,\n                    \"format-specific\": {\n                        \"type\": \"file\",\n                        \"data\": {\n                        }\n                    },\n                    \"dirty-flag\": false\n                }\n            },\n            {\n                \"name\": \"file\",\n                \"info\": {\n                    \"children\": [\n                    ],\n                    \"virtual-size\": 512,\n                    \"filename\": \"layer1.vmdk\",\n                    \"format\": \"file\",\n                    \"actual-size\": 4096,\n                    \"format-specific\": {\n                        \"type\": \"file\",\n                        \"data\": {\n                        }\n                    },\n                    \"dirty-flag\": false\n                }\n            }\n        ],\n        \"backing-filename-format\": \"vmdk\",\n        \"virtual-size\": 1048576,\n        \"filename\": \"layer1.vmdk\",\n        \"cluster-size\": 65536,\n        \"format\": \"vmdk\",\n        \"actual-size\": 16384,\n        \"format-specific\": {\n            \"type\": \"vmdk\",\n            \"data\": {\n                \"cid\": 2482420268,\n                \"parent-cid\": 916388937,\n                \"create-type\": \"twoGbMaxExtentSparse\",\n                \"extents\": [\n                    {\n                        \"virtual-size\": 1048576,\n                        \"filename\": \"layer1-s001.vmdk\",\n                        \"cluster-size\": 65536,\n                        \"format\": \"SPARSE\"\n                    }\n                ]\n            }\n        },\n        \"full-backing-filename\": \"layer0.vmdk\",\n        \"backing-filename\": \"layer0.vmdk\",\n        \"dirty-flag\": false\n    },\n    {\n        \"children\": [\n            {\n                \"name\": \"extents.0\",\n                \"info\": {\n                    \"children\": [\n                    ],\n                    \"virtual-size\": 65536,\n                    \"filename\": \"layer0-s001.vmdk\",\n                    \"format\": \"file\",\n                    \"actual-size\": 12288,\n                    \"format-specific\": {\n                        \"type\": \"file\",\n                        \"data\": {\n                        }\n                    },\n                    \"dirty-flag\": false\n                }\n            },\n            {\n                \"name\": \"file\",\n                \"info\": {\n                    \"children\": [\n                    ],\n                    \"virtual-size\": 512,\n                    \"filename\": \"layer0.vmdk\",\n                    \"format\": \"file\",\n                    \"actual-size\": 4096,\n                    \"format-specific\": {\n                        \"type\": \"file\",\n                        \"data\": {\n                        }\n                    },\n                    \"dirty-flag\": false\n                }\n            }\n        ],\n        \"virtual-size\": 1048576,\n        \"filename\": \"layer0.vmdk\",\n        \"cluster-size\": 65536,\n        \"format\": \"vmdk\",\n        \"actual-size\": 16384,\n        \"format-specific\": {\n            \"type\": \"vmdk\",\n            \"data\": {\n                \"cid\": 916388937,\n                \"parent-cid\": 4294967295,\n                \"create-type\": \"twoGbMaxExtentSparse\",\n                \"extents\": [\n                    {\n                        \"virtual-size\": 1048576,\n                        \"filename\": \"layer0-s001.vmdk\",\n                        \"cluster-size\": 65536,\n                        \"format\": \"SPARSE\"\n                    }\n                ]\n            }\n        },\n        \"dirty-flag\": false\n    }\n]\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r56-e22ldasi/candidate-target/release/examples/inspect_chain",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/split",
+      "exit_code": 0,
+      "stdout": "{\"layers\":[\n{\"cid\":1527063018,\"parent_cid\":2482420268,\"capacity_bytes\":1048576,\"extents\":1},\n{\"cid\":2482420268,\"parent_cid\":916388937,\"capacity_bytes\":1048576,\"extents\":1},\n{\"cid\":916388937,\"parent_cid\":null,\"capacity_bytes\":1048576,\"extents\":1}],\"reserved_memory_bytes\":37932,\"metadata_read_bytes\":50260,\"descriptor_bytes\":1108}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r56-e22ldasi/candidate-target/release/rvddk",
+        "inspect",
+        "layer2.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/split",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 4: unsupported feature: parent chain\"},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "layer0.vmdk",
+        "1M"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/mixed",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer0.vmdk', fmt=vmdk size=1048576 compat6=off hwversion=undefined subformat=monolithicSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "-b",
+        "layer0.vmdk",
+        "-F",
+        "vmdk",
+        "layer1.vmdk",
+        "1M"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/mixed",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer1.vmdk', fmt=vmdk size=1048576 backing_file=layer0.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=twoGbMaxExtentSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "-b",
+        "layer1.vmdk",
+        "-F",
+        "vmdk",
+        "layer2.vmdk",
+        "1M"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/mixed",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer2.vmdk', fmt=vmdk size=1048576 backing_file=layer1.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=monolithicSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "info",
+        "--backing-chain",
+        "--output=json",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/mixed",
+      "exit_code": 0,
+      "stdout": "[\n    {\n        \"children\": [\n            {\n                \"name\": \"file\",\n                \"info\": {\n                    \"children\": [\n                    ],\n                    \"virtual-size\": 65536,\n                    \"filename\": \"layer2.vmdk\",\n                    \"format\": \"file\",\n                    \"actual-size\": 12288,\n                    \"format-specific\": {\n                        \"type\": \"file\",\n                        \"data\": {\n                        }\n                    },\n                    \"dirty-flag\": false\n                }\n            }\n        ],\n        \"backing-filename-format\": \"vmdk\",\n        \"virtual-size\": 1048576,\n        \"filename\": \"layer2.vmdk\",\n        \"cluster-size\": 65536,\n        \"format\": \"vmdk\",\n        \"actual-size\": 12288,\n        \"format-specific\": {\n            \"type\": \"vmdk\",\n            \"data\": {\n                \"cid\": 1876573148,\n                \"parent-cid\": 347233485,\n                \"create-type\": \"monolithicSparse\",\n                \"extents\": [\n                    {\n                        \"virtual-size\": 1048576,\n                        \"filename\": \"layer2.vmdk\",\n                        \"cluster-size\": 65536,\n                        \"format\": \"\"\n                    }\n                ]\n            }\n        },\n        \"full-backing-filename\": \"layer1.vmdk\",\n        \"backing-filename\": \"layer1.vmdk\",\n        \"dirty-flag\": false\n    },\n    {\n        \"children\": [\n            {\n                \"name\": \"extents.0\",\n                \"info\": {\n                    \"children\": [\n                    ],\n                    \"virtual-size\": 65536,\n                    \"filename\": \"layer1-s001.vmdk\",\n                    \"format\": \"file\",\n                    \"actual-size\": 12288,\n                    \"format-specific\": {\n                        \"type\": \"file\",\n                        \"data\": {\n                        }\n                    },\n                    \"dirty-flag\": false\n                }\n            },\n            {\n                \"name\": \"file\",\n                \"info\": {\n                    \"children\": [\n                    ],\n                    \"virtual-size\": 512,\n                    \"filename\": \"layer1.vmdk\",\n                    \"format\": \"file\",\n                    \"actual-size\": 4096,\n                    \"format-specific\": {\n                        \"type\": \"file\",\n                        \"data\": {\n                        }\n                    },\n                    \"dirty-flag\": false\n                }\n            }\n        ],\n        \"backing-filename-format\": \"vmdk\",\n        \"virtual-size\": 1048576,\n        \"filename\": \"layer1.vmdk\",\n        \"cluster-size\": 65536,\n        \"format\": \"vmdk\",\n        \"actual-size\": 16384,\n        \"format-specific\": {\n            \"type\": \"vmdk\",\n            \"data\": {\n                \"cid\": 347233485,\n                \"parent-cid\": 2400098661,\n                \"create-type\": \"twoGbMaxExtentSparse\",\n                \"extents\": [\n                    {\n                        \"virtual-size\": 1048576,\n                        \"filename\": \"layer1-s001.vmdk\",\n                        \"cluster-size\": 65536,\n                        \"format\": \"SPARSE\"\n                    }\n                ]\n            }\n        },\n        \"full-backing-filename\": \"layer0.vmdk\",\n        \"backing-filename\": \"layer0.vmdk\",\n        \"dirty-flag\": false\n    },\n    {\n        \"children\": [\n            {\n                \"name\": \"file\",\n                \"info\": {\n                    \"children\": [\n                    ],\n                    \"virtual-size\": 65536,\n                    \"filename\": \"layer0.vmdk\",\n                    \"format\": \"file\",\n                    \"actual-size\": 12288,\n                    \"format-specific\": {\n                        \"type\": \"file\",\n                        \"data\": {\n                        }\n                    },\n                    \"dirty-flag\": false\n                }\n            }\n        ],\n        \"virtual-size\": 1048576,\n        \"filename\": \"layer0.vmdk\",\n        \"cluster-size\": 65536,\n        \"format\": \"vmdk\",\n        \"actual-size\": 12288,\n        \"format-specific\": {\n            \"type\": \"vmdk\",\n            \"data\": {\n                \"cid\": 2400098661,\n                \"parent-cid\": 4294967295,\n                \"create-type\": \"monolithicSparse\",\n                \"extents\": [\n                    {\n                        \"virtual-size\": 1048576,\n                        \"filename\": \"layer0.vmdk\",\n                        \"cluster-size\": 65536,\n                        \"format\": \"\"\n                    }\n                ]\n            }\n        },\n        \"dirty-flag\": false\n    }\n]\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r56-e22ldasi/candidate-target/release/examples/inspect_chain",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/mixed",
+      "exit_code": 0,
+      "stdout": "{\"layers\":[\n{\"cid\":1876573148,\"parent_cid\":347233485,\"capacity_bytes\":1048576,\"extents\":1},\n{\"cid\":347233485,\"parent_cid\":2400098661,\"capacity_bytes\":1048576,\"extents\":1},\n{\"cid\":2400098661,\"parent_cid\":null,\"capacity_bytes\":1048576,\"extents\":1}],\"reserved_memory_bytes\":57684,\"metadata_read_bytes\":71036,\"descriptor_bytes\":20860}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r56-e22ldasi/candidate-target/release/rvddk",
+        "inspect",
+        "layer2.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r56-benchmark-storage/reference-chain/mixed",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 4: unsupported feature: parent chain\"},\"schema_version\":1}\n"
+    }
+  ]
+}

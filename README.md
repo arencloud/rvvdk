@@ -59,6 +59,7 @@ VMware disk access and migration, extensible to other platforms.
 | **Copy memory budget** | Configurable 256 MiB default for buffers, queue entries, and extent metadata; [scope and limits](docs/copy-memory.md) |
 | **VMDK descriptors** | [Hosted base FLAT/ZERO metadata](docs/vmdk-descriptor.md), bounded parsing, [confined backing resolution](docs/vmdk-backing.md) and [logical reads](docs/vmdk-logical.md) |
 | **Hosted sparse reads** | [Read-only base monolithic/split sparse](docs/vmdk-sparse-disk.md), bounded metadata and [CLI inspect/plan/copy/verify](docs/cli-vmdk.md) |
+| **Parent metadata** | [Bounded sparse-chain admission](docs/vmdk-parent-chain.md), CID/capacity and identity checks; logical parent reads pending |
 | **VMware access** | Planned; no VMware VDDK dependency in the current workspace |
 
 The [endpoint contract](docs/architecture.md#copy-endpoint-preflight-r05) describes
@@ -224,8 +225,8 @@ workloads. Measurements depend on the filesystem, page cache, hardware, and
 flush policy. See the [benchmark notes](docs/benchmarks.md) for historical results
 and the [review](docs/project-review-2026-09-28.md) for measurement gaps.
 
-Explore the [R5.5 benchmark charts](docs/benchmark-results/2026-09-30-r55/README.md)
-for capacity scaling, fragmentation costs, paired changes, and sample distributions. A
+Explore the [R5.6 benchmark charts](docs/benchmark-results/2026-09-30-r56/README.md)
+for parent-chain acquisition costs, paired changes, and sample distributions. A
 [reusable generator](scripts/benchmarks/README.md) exports SVG and PNG figures.
 
 ## Inspect, copy and verify from the command line

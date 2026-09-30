@@ -1261,3 +1261,18 @@ header at the default budget; full queries scan grains even with one output, and
 mapping and two-pass output admission pending an independently measured change.
 R5.6 will admit parent-chain metadata under explicit resolver/CID/identity/cycle/
 depth/budget policy before introducing parent fallback reads.
+
+## Bounded sparse parent metadata (R5.6)
+
+`SparseLayerDescriptor` accepts parent syntax without widening base `SparseDescriptor`.
+`SparseChain` retains leaf-to-base maps under 16-layer, 128-extent, 8 MiB descriptor,
+128 MiB reservation and 256 MiB read-payload defaults. Parent resolution is an
+explicit caller policy returning each layer's owned descriptor and backing namespace.
+CID/capacity checks precede parent backing reads; identity-cycle/alias checks precede
+repeated-source reads. Embedded monolithic entry must resolve the same container.
+All sources are reobserved at completion; quiescence remains caller responsibility.
+
+No VirtualDisk interface is exposed yet. Metadata zero entries remain unallocated;
+R5.7 will add logical fallback and whole-chain alias protection. Parent CLI support
+follows separately. [Contract](vmdk-parent-chain.md);
+[ADR-0042](adr/0042-bounded-parent-chain-metadata.md).

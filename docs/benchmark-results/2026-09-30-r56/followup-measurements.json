@@ -1,0 +1,986 @@
+[
+  {
+    "tag": "followup1-0-baseline",
+    "benchmark": "sparse_disk/read_contiguous_128k",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r56-e22ldasi/baseline-target/release/deps/sparse_disk-3686d9bf7f0a1116",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "sparse_disk/read_contiguous_128k$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "sparse_disk",
+        "function_id": "read_contiguous_128k",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "sparse_disk/read_contiguous_128k",
+        "directory_name": "sparse_disk/read_contiguous_128k",
+        "title": "sparse_disk/read_contiguous_128k"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2637.970294148376,
+            "upper_bound": 2859.650505554357
+          },
+          "point_estimate": 2740.8133439387393,
+          "standard_error": 56.82382712846151
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2563.8522567946507,
+            "upper_bound": 2598.5649940681624
+          },
+          "point_estimate": 2575.551917062123,
+          "standard_error": 8.458545626822662
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 28.426959671119068,
+            "upper_bound": 90.55388685222647
+          },
+          "point_estimate": 42.479159588812074,
+          "standard_error": 16.949746863676136
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 235.07194270648853,
+            "upper_bound": 442.8311698881341
+          },
+          "point_estimate": 362.02905902667896,
+          "standard_error": 52.62938313102451
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0,
+          37088.0
+        ],
+        "times": [
+          96488192.0,
+          94527176.0,
+          96148616.0,
+          94989723.0,
+          95049944.0,
+          95350221.0,
+          95596938.0,
+          97128431.0,
+          95399298.0,
+          95447201.0,
+          95262004.0,
+          93778003.0,
+          94701634.0,
+          93732919.0,
+          93593695.0,
+          94437532.0,
+          98124199.0,
+          96562808.0,
+          94508196.0,
+          95434520.0,
+          96736680.0,
+          96262965.0,
+          95982580.0,
+          93702231.0,
+          92483606.0,
+          91895900.0,
+          93200301.0,
+          94718945.0,
+          95699471.0,
+          95126361.0,
+          95685535.0,
+          102218240.0,
+          109672877.0,
+          124060909.0,
+          125808394.0,
+          127992100.0,
+          128123926.0,
+          127230308.0,
+          136489614.0,
+          136699219.0
+        ]
+      },
+      "tukey.json": [
+        2332.289662424504,
+        2442.2721432808457,
+        2735.558758897757,
+        2845.5412397540986
+      ]
+    },
+    "variant": "baseline",
+    "pair": 1
+  },
+  {
+    "tag": "followup1-0-candidate",
+    "benchmark": "sparse_disk/read_contiguous_128k",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r56-e22ldasi/candidate-target/release/deps/sparse_disk-3686d9bf7f0a1116",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "sparse_disk/read_contiguous_128k$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "sparse_disk",
+        "function_id": "read_contiguous_128k",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "sparse_disk/read_contiguous_128k",
+        "directory_name": "sparse_disk/read_contiguous_128k",
+        "title": "sparse_disk/read_contiguous_128k"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2540.214780020704,
+            "upper_bound": 2579.5055072463765
+          },
+          "point_estimate": 2558.421885783299,
+          "standard_error": 9.98310153467178
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2526.888492063492,
+            "upper_bound": 2562.7691511387166
+          },
+          "point_estimate": 2547.1099551414773,
+          "standard_error": 9.778419594359612
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 27.78135530388354,
+            "upper_bound": 57.04234333512213
+          },
+          "point_estimate": 40.68099826327526,
+          "standard_error": 7.5330636090934835
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 37.57709275758436,
+            "upper_bound": 84.57120029772359
+          },
+          "point_estimate": 64.25435148793042,
+          "standard_error": 11.912346166323234
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0,
+          28980.0
+        ],
+        "times": [
+          80387581.0,
+          79664278.0,
+          78115750.0,
+          76371077.0,
+          76400953.0,
+          74152173.0,
+          74620787.0,
+          74287149.0,
+          75267165.0,
+          74250951.0,
+          73985830.0,
+          73088308.0,
+          73098235.0,
+          72498409.0,
+          72973205.0,
+          72680783.0,
+          73439291.0,
+          71230801.0,
+          72148259.0,
+          72447711.0,
+          73245964.0,
+          72512924.0,
+          73030425.0,
+          72945549.0,
+          74114346.0,
+          73826222.0,
+          74739916.0,
+          74736242.0,
+          74936609.0,
+          74332825.0,
+          73521741.0,
+          72600827.0,
+          73212493.0,
+          73804271.0,
+          74405689.0,
+          74149205.0,
+          73525459.0,
+          73553348.0,
+          72820289.0,
+          74599610.0
+        ]
+      },
+      "tukey.json": [
+        2355.0644323671495,
+        2437.299641994479,
+        2656.593534334024,
+        2738.828743961353
+      ]
+    },
+    "variant": "candidate",
+    "pair": 1
+  },
+  {
+    "tag": "followup2-0-candidate",
+    "benchmark": "sparse_disk/read_contiguous_128k",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r56-e22ldasi/candidate-target/release/deps/sparse_disk-3686d9bf7f0a1116",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "sparse_disk/read_contiguous_128k$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "sparse_disk",
+        "function_id": "read_contiguous_128k",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "sparse_disk/read_contiguous_128k",
+        "directory_name": "sparse_disk/read_contiguous_128k",
+        "title": "sparse_disk/read_contiguous_128k"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2562.231332135457,
+            "upper_bound": 2587.164267945205
+          },
+          "point_estimate": 2573.949972457572,
+          "standard_error": 6.376573286099726
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2555.5316737927233,
+            "upper_bound": 2566.4790415234897
+          },
+          "point_estimate": 2561.800409201794,
+          "standard_error": 2.698175795008562
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 9.469692668224997,
+            "upper_bound": 29.178087051169562
+          },
+          "point_estimate": 16.99889558258348,
+          "standard_error": 5.22196075245553
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 25.88692907566352,
+            "upper_bound": 51.95079263467756
+          },
+          "point_estimate": 40.9414394189008,
+          "standard_error": 6.644491425602366
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0,
+          38123.0
+        ],
+        "times": [
+          97339607.0,
+          96340641.0,
+          95962476.0,
+          96181459.0,
+          97338714.0,
+          97707683.0,
+          98639252.0,
+          98393040.0,
+          97768357.0,
+          96716644.0,
+          97211020.0,
+          98322727.0,
+          97569063.0,
+          97627664.0,
+          97241808.0,
+          97143718.0,
+          98078091.0,
+          97886589.0,
+          99645989.0,
+          97747061.0,
+          97790294.0,
+          97614135.0,
+          97970791.0,
+          97125925.0,
+          97649995.0,
+          97797172.0,
+          97406495.0,
+          97185481.0,
+          97410313.0,
+          96910241.0,
+          97677039.0,
+          97438755.0,
+          97497034.0,
+          101541962.0,
+          102916987.0,
+          102435237.0,
+          100449401.0,
+          100243865.0,
+          99988870.0,
+          99156197.0
+        ]
+      },
+      "tukey.json": [
+        2471.9207368255393,
+        2512.282896807702,
+        2619.9153234268024,
+        2660.277483408965
+      ]
+    },
+    "variant": "candidate",
+    "pair": 2
+  },
+  {
+    "tag": "followup2-0-baseline",
+    "benchmark": "sparse_disk/read_contiguous_128k",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r56-e22ldasi/baseline-target/release/deps/sparse_disk-3686d9bf7f0a1116",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "sparse_disk/read_contiguous_128k$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "sparse_disk",
+        "function_id": "read_contiguous_128k",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "sparse_disk/read_contiguous_128k",
+        "directory_name": "sparse_disk/read_contiguous_128k",
+        "title": "sparse_disk/read_contiguous_128k"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2569.6279373193443,
+            "upper_bound": 2590.5307714477835
+          },
+          "point_estimate": 2580.1829280858574,
+          "standard_error": 5.322903111755567
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2557.9363023230917,
+            "upper_bound": 2597.1628974413875
+          },
+          "point_estimate": 2573.4535247832137,
+          "standard_error": 9.632537723628323
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 19.440832218286182,
+            "upper_bound": 51.066986329757086
+          },
+          "point_estimate": 38.75335946347285,
+          "standard_error": 9.033923959021902
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 28.354004851116628,
+            "upper_bound": 39.66086309052743
+          },
+          "point_estimate": 34.26992688683328,
+          "standard_error": 2.8846398017586874
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0,
+          37364.0
+        ],
+        "times": [
+          97883719.0,
+          97840625.0,
+          97770604.0,
+          95956015.0,
+          97315871.0,
+          97951980.0,
+          98383574.0,
+          97645034.0,
+          98389677.0,
+          96591472.0,
+          96107172.0,
+          98392606.0,
+          97663788.0,
+          98182704.0,
+          97593833.0,
+          95187904.0,
+          95197276.0,
+          95711897.0,
+          95500235.0,
+          96312755.0,
+          95378033.0,
+          95649229.0,
+          97714544.0,
+          96669989.0,
+          95494169.0,
+          98057968.0,
+          96764918.0,
+          95167832.0,
+          96135397.0,
+          94703486.0,
+          95695967.0,
+          96512299.0,
+          96173638.0,
+          95424053.0,
+          95132861.0,
+          95103894.0,
+          95266751.0,
+          95127289.0,
+          95198041.0,
+          93289098.0
+        ]
+      },
+      "tukey.json": [
+        2365.148779573921,
+        2458.5380513328337,
+        2707.5761093566007,
+        2800.965381115513
+      ]
+    },
+    "variant": "baseline",
+    "pair": 2
+  },
+  {
+    "tag": "followup3-0-baseline",
+    "benchmark": "sparse_disk/read_contiguous_128k",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r56-e22ldasi/baseline-target/release/deps/sparse_disk-3686d9bf7f0a1116",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "sparse_disk/read_contiguous_128k$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "sparse_disk",
+        "function_id": "read_contiguous_128k",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "sparse_disk/read_contiguous_128k",
+        "directory_name": "sparse_disk/read_contiguous_128k",
+        "title": "sparse_disk/read_contiguous_128k"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2667.0425119788165,
+            "upper_bound": 2743.6684372898444
+          },
+          "point_estimate": 2703.9198101495003,
+          "standard_error": 19.494574276239618
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2631.7924965081993,
+            "upper_bound": 2718.164334488645
+          },
+          "point_estimate": 2688.050566447675,
+          "standard_error": 22.231331482369065
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 65.60840330304187,
+            "upper_bound": 164.0294088074139
+          },
+          "point_estimate": 98.22307273242177,
+          "standard_error": 23.32183423545586
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 89.72285053194551,
+            "upper_bound": 157.0409268679452
+          },
+          "point_estimate": 125.11125939084104,
+          "standard_error": 17.411867712737614
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0,
+          38662.0
+        ],
+        "times": [
+          98442665.0,
+          99179691.0,
+          98302699.0,
+          98242137.0,
+          98740970.0,
+          99282643.0,
+          98772352.0,
+          102651263.0,
+          104515586.0,
+          104661684.0,
+          109907500.0,
+          107036331.0,
+          107679120.0,
+          109634352.0,
+          111306540.0,
+          113040685.0,
+          120073590.0,
+          113948369.0,
+          110796464.0,
+          108726565.0,
+          106492896.0,
+          106467637.0,
+          105517655.0,
+          105920324.0,
+          103832334.0,
+          104484017.0,
+          101422427.0,
+          101725401.0,
+          101576844.0,
+          101335255.0,
+          101775322.0,
+          104542183.0,
+          104018488.0,
+          104416496.0,
+          103650227.0,
+          103366950.0,
+          101370138.0,
+          101288632.0,
+          101985733.0,
+          101427743.0
+        ]
+      },
+      "tukey.json": [
+        2217.969964047385,
+        2420.4711279809635,
+        2960.474231803839,
+        3162.975395737417
+      ]
+    },
+    "variant": "baseline",
+    "pair": 3
+  },
+  {
+    "tag": "followup3-0-candidate",
+    "benchmark": "sparse_disk/read_contiguous_128k",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r56-e22ldasi/candidate-target/release/deps/sparse_disk-3686d9bf7f0a1116",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "sparse_disk/read_contiguous_128k$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "sparse_disk",
+        "function_id": "read_contiguous_128k",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "sparse_disk/read_contiguous_128k",
+        "directory_name": "sparse_disk/read_contiguous_128k",
+        "title": "sparse_disk/read_contiguous_128k"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2561.292570812808,
+            "upper_bound": 2596.3198384128186
+          },
+          "point_estimate": 2578.971103773074,
+          "standard_error": 8.949711059682894
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2553.258728955773,
+            "upper_bound": 2618.113598224436
+          },
+          "point_estimate": 2579.61852433281,
+          "standard_error": 18.607517791343835
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 37.49375588986618,
+            "upper_bound": 91.60636758548402
+          },
+          "point_estimate": 61.160539478791264,
+          "standard_error": 14.56614485813743
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 47.093818030503485,
+            "upper_bound": 65.66856628180331
+          },
+          "point_estimate": 57.3941020157887,
+          "standard_error": 4.749452570227015
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0,
+          36946.0
+        ],
+        "times": [
+          97452408.0,
+          96885124.0,
+          96939278.0,
+          97917331.0,
+          97849603.0,
+          99713715.0,
+          98990481.0,
+          96846737.0,
+          96797000.0,
+          97332577.0,
+          96730645.0,
+          97239744.0,
+          97454476.0,
+          95301368.0,
+          94700502.0,
+          94557350.0,
+          94681247.0,
+          96727005.0,
+          96493962.0,
+          96811627.0,
+          95585807.0,
+          94249243.0,
+          93902899.0,
+          94352073.0,
+          92153929.0,
+          92157056.0,
+          92321283.0,
+          91979828.0,
+          92214178.0,
+          92125169.0,
+          95979286.0,
+          96568612.0,
+          95311804.0,
+          93798528.0,
+          94780361.0,
+          94313321.0,
+          92631963.0,
+          91788213.0,
+          93509336.0,
+          94161587.0
+        ]
+      },
+      "tukey.json": [
+        2298.9829413197626,
+        2419.9511449141983,
+        2742.5330211660266,
+        2863.5012247604623
+      ]
+    },
+    "variant": "candidate",
+    "pair": 3
+  }
+]

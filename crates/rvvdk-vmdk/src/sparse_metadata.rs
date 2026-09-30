@@ -97,6 +97,29 @@ impl SparseMetadata {
         resolver: &dyn BackingResolver,
         limits: SparseMetadataLimits,
     ) -> Result<Self> {
+        Self::load_inner(descriptor, None, extent_index, resolver, limits)
+    }
+    pub(crate) fn load_layer(
+        descriptor: &crate::SparseLayerDescriptor<'_>,
+        extent_index: usize,
+        resolver: &dyn BackingResolver,
+        limits: SparseMetadataLimits,
+    ) -> Result<Self> {
+        Self::load_inner(
+            &descriptor.sparse,
+            Some(descriptor.parent()),
+            extent_index,
+            resolver,
+            limits,
+        )
+    }
+    fn load_inner(
+        descriptor: &SparseDescriptor<'_>,
+        parent: Option<Option<crate::ParentReference<'_>>>,
+        extent_index: usize,
+        resolver: &dyn BackingResolver,
+        limits: SparseMetadataLimits,
+    ) -> Result<Self> {
         let extent = descriptor
             .extents()
             .get(extent_index)
@@ -151,8 +174,15 @@ impl SparseMetadata {
                 return Err(invalid("monolithic embedded descriptor missing"));
             }
         } else {
-            let embedded = SparseDescriptor::parse_with_limits(&text, limits.descriptor)?;
-            if !descriptor.same_mapping(&embedded) {
+            let matches = if let Some(parent) = parent {
+                let embedded =
+                    crate::SparseLayerDescriptor::parse_with_limits(&text, limits.descriptor)?;
+                parent == embedded.parent() && descriptor.same_mapping(&embedded.sparse)
+            } else {
+                let embedded = SparseDescriptor::parse_with_limits(&text, limits.descriptor)?;
+                descriptor.same_mapping(&embedded)
+            };
+            if !matches {
                 return Err(invalid("embedded/external descriptor mismatch"));
             }
         }

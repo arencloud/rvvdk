@@ -1,14 +1,14 @@
 # rvvdk Benchmarks
 
-Latest step: [R5.5 sparse bounds and scaling plots](benchmark-results/2026-09-30-r55/README.md).
-Twenty-four paired controls, six triggered longer repeats and 39 new scaling runs
-retain source/binary/harness identities. Runtime code is unchanged. A RAW verify
-pair is +10.85%; longer repeats still include +27.90%, leaving investigation open.
-Synthetic 64 GiB zero maps open in 4.738 ms and full queries take 1.303 ms; capacity
-is virtual and these are not storage-throughput results. SVG/PNG panels show
-capacity, resource counters, query output limits and each run's variation. Prior
+Latest step: [R5.6 parent metadata benchmarks and plots](benchmark-results/2026-09-30-r56/README.md).
+Twenty-four paired controls, six triggered longer repeats and 18 new chain runs
+retain source/binary/harness identities. The +5.0069% contiguous-read pair triggers
+longer repeats (-0.53% aggregate; all pairs nonadverse); the original remains visible.
+Synthetic embedded metadata opens at 1/4/16 layers take 10.110/41.523/178.604 µs.
+These are memory-fixture acquisition costs, not logical parent reads or storage
+throughput. Prior [R5.5 capacity/fragmentation charts](benchmark-results/2026-09-30-r55/README.md),
 [R4.4 preview overhead](benchmark-results/2026-09-29-r44/README.md), PERF.0 and earlier
-adverse timing investigations remain open.
+adverse timing investigations remain recorded and open where applicable.
 
 ## Performance policy — adopted 2026-09-28
 

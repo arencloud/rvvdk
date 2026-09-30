@@ -63,10 +63,10 @@ chunked extent consumption only as separate measured changes with an explicit
 memory and consistency contract. Do not raise budgets to hide scaling costs.
 PERF.0 and earlier shared-host performance investigations remain open.
 
-Next **R5.6** defines and implements bounded parent-chain metadata admission:
+**R5.6** now provides [bounded parent-chain metadata admission](vmdk-parent-chain.md):
 explicit resolver policy, CID/identity validation, missing-parent errors, cycle
 and depth limits, and aggregate resource accounting. Keep it separate from base
 loading and from logical fallback reads; zero child entries cannot mean logical
-zero once a parent is involved. Parent reads and CLI exposure follow as separately
+zero once a parent is involved. R5.7 parent reads and subsequent CLI exposure follow as separately
 qualified steps. Coverage-guided fuzzing remains planned. No ESXi is needed until
 the V0 live-access proof is ready for the user's 60-day trial.

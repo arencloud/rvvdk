@@ -1,0 +1,26 @@
+   Compiling rvvdk-vmdk v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-vmdk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.47s
+     Running tests/chain.rs (target/r56-validation/debug/deps/chain-4d388d630fc14063)
+
+running 16 tests
+test parent_syntax_is_opt_in_and_bounded ... ok
+test descriptor_and_metadata_io_errors_propagate_without_parent_fallback ... ok
+test duplicate_extent_handles_and_per_layer_limits_are_rejected ... ok
+test missing_and_denied_parents_are_distinct ... ok
+test cid_and_capacity_mismatch_fail_before_parent_backing_reads ... ok
+test unknown_descriptor_or_backing_identity_rejects_before_that_source_read ... ok
+R56_PROFILE embedded=false depth=3 memory=37187 reads=49515 descriptors=363
+test rejects_shared_backings_and_parent_descriptor_aliases ... ok
+test embedded_entry_is_bound_to_same_container_and_parent_fields ... ok
+test multiple_split_extents_and_different_parent_geometry_are_allowed ... ok
+test self_and_long_cycles_reject_by_object_identity_before_rereading ... ok
+test terminal_base_never_calls_parent_resolver_and_equal_cids_are_not_cycles ... ok
+R56_PROFILE embedded=true depth=3 memory=67544 reads=81408 descriptors=30720
+test retains_external_and_embedded_leaf_to_base_maps_and_exact_read_counters ... ok
+test layer_boundary_checks_before_following_next_hint ... ok
+test revalidation_and_final_observation_detect_prior_source_changes ... ok
+test aggregate_budgets_have_exact_success_and_one_byte_failure_boundaries ... ok
+test default_depth_accepts_sixteen_and_rejects_seventeen_without_opening_last ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

@@ -1,0 +1,54 @@
+{
+  "title": "R5.6 \u00b7 Bounded parent metadata",
+  "candidate": "patch 54018ee6",
+  "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 memory fixtures / warm Btrfs CLI",
+  "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+  "candidate_only": {
+    "title": "Parent-chain metadata \u00b7 first cost baselines",
+    "note": "Synthetic memory fixtures \u00b7 metadata only \u00b7 logical parent reads pending",
+    "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+  },
+  "workloads": {
+    "sparse_metadata/monolithic": {
+      "label": "Base metadata load \u00b7 1 MiB",
+      "phase": "planning"
+    },
+    "sparse_disk/read_contiguous_128k": {
+      "label": "Contiguous read \u00b7 128 KiB",
+      "phase": "planning"
+    },
+    "cli_vmdk/copy_mixed_verify": {
+      "label": "FLAT/ZERO copy + verify \u00b7 1 MiB",
+      "phase": "copy"
+    },
+    "cli_transfer/verify_only": {
+      "label": "RAW verify \u00b7 16 MiB",
+      "phase": "copy"
+    },
+    "sparse_chain/parse_child": {
+      "label": "Parse child descriptor",
+      "phase": "planning"
+    },
+    "sparse_chain/open_embedded_1": {
+      "label": "Embedded open \u00b7 1 layer",
+      "phase": "planning"
+    },
+    "sparse_chain/open_embedded_4": {
+      "label": "Embedded open \u00b7 4 layers",
+      "phase": "planning"
+    },
+    "sparse_chain/open_embedded_16": {
+      "label": "Embedded open \u00b7 16 layers",
+      "phase": "planning"
+    },
+    "sparse_chain/revalidate_16": {
+      "label": "Revalidate \u00b7 16 layers",
+      "phase": "planning"
+    },
+    "sparse_chain/reject_depth_17": {
+      "label": "Reject depth 17 \u00b7 external entry",
+      "phase": "planning"
+    }
+  },
+  "repeat_sampling": "3 adjacent pairs \u00b7 40 flat samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+}

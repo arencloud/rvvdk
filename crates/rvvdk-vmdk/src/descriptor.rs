@@ -248,10 +248,13 @@ impl<'a> Descriptor<'a> {
     }
 
     pub fn parse_with_limits(input: &'a [u8], limits: Limits) -> Result<Self> {
-        Self::parse_subset::<false>(input, limits)
+        Self::parse_subset::<false, false>(input, limits).map(|(d, _)| d)
     }
 
-    fn parse_subset<const SPARSE: bool>(input: &'a [u8], limits: Limits) -> Result<Self> {
+    fn parse_subset<const SPARSE: bool, const CHAIN: bool>(
+        input: &'a [u8],
+        limits: Limits,
+    ) -> Result<(Self, Option<ParentReference<'a>>)> {
         if input.len() > limits.descriptor_bytes {
             return Err(error(0, ErrorKind::Limit("descriptor bytes")));
         }
@@ -259,6 +262,7 @@ impl<'a> Descriptor<'a> {
         let mut version = None;
         let mut content_id = None;
         let mut parent = None;
+        let mut parent_hint = None;
         let mut create_type = None;
         let mut encoding = None;
         let mut extents = Vec::new();
@@ -314,10 +318,11 @@ impl<'a> Descriptor<'a> {
                         set(&mut content_id, cid::<SPARSE>(v, line)?, line)?
                     }
                     (k, Token::Bare(v)) if eq(k, "parentCID") => {
-                        if cid::<SPARSE>(v, line)? != u32::MAX {
+                        let value = cid::<SPARSE>(v, line)?;
+                        if !CHAIN && value != u32::MAX {
                             return Err(error(line, ErrorKind::Unsupported("parent chain")));
                         }
-                        set(&mut parent, (), line)?;
+                        set(&mut parent, value, line)?;
                     }
                     (k, Token::Quoted(v)) if eq(k, "createType") => {
                         let kind = if SPARSE && eq(v, "monolithicSparse") {
@@ -344,6 +349,15 @@ impl<'a> Descriptor<'a> {
                             return Err(error(line, ErrorKind::Unsupported("encoding")));
                         }
                         set(&mut encoding, (), line)?;
+                    }
+                    (k, Token::Quoted(v)) if CHAIN && eq(k, "parentFileNameHint") => {
+                        if v.is_empty() {
+                            return Err(error(line, ErrorKind::Layout("empty parent hint")));
+                        }
+                        if v.len() > limits.filename_bytes {
+                            return Err(error(line, ErrorKind::Limit("parent hint bytes")));
+                        }
+                        set(&mut parent_hint, *v, line)?;
                     }
                     (k, _) if eq(k, "parentFileNameHint") => {
                         return Err(error(line, ErrorKind::Unsupported("parent chain")));
@@ -486,19 +500,34 @@ impl<'a> Descriptor<'a> {
             });
         }
         version.ok_or(error(0, ErrorKind::Missing("version")))?;
-        parent.ok_or(error(0, ErrorKind::Missing("parentCID")))?;
+        let parent_cid = parent.ok_or(error(0, ErrorKind::Missing("parentCID")))?;
+        let parent = if parent_cid == u32::MAX {
+            if parent_hint.is_some() {
+                return Err(error(0, ErrorKind::Layout("base has parent hint")));
+            }
+            None
+        } else {
+            Some(ParentReference {
+                cid: parent_cid,
+                file_name_hint: parent_hint
+                    .ok_or(error(0, ErrorKind::Missing("parentFileNameHint")))?,
+            })
+        };
         let cid = content_id.ok_or(error(0, ErrorKind::Missing("CID")))?;
         let create_type = create_type.ok_or(error(0, ErrorKind::Missing("createType")))?;
         if extents.is_empty() {
             return Err(error(0, ErrorKind::Missing("extents")));
         }
-        Ok(Self {
-            cid,
-            create_type,
-            size_bytes,
-            extents,
-            metadata,
-        })
+        Ok((
+            Self {
+                cid,
+                create_type,
+                size_bytes,
+                extents,
+                metadata,
+            },
+            parent,
+        ))
     }
 }
 
@@ -516,7 +545,7 @@ impl<'a> SparseDescriptor<'a> {
             return Err(error(0, ErrorKind::Limit("descriptor bytes")));
         }
         let end = input.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
-        Descriptor::parse_subset::<true>(&input[..end], limits).map(Self)
+        Descriptor::parse_subset::<true, false>(&input[..end], limits).map(|(d, _)| Self(d))
     }
     pub fn cid(&self) -> u32 {
         self.0.cid()
@@ -537,5 +566,50 @@ impl<'a> SparseDescriptor<'a> {
         self.cid() == other.cid()
             && self.create_type() == other.create_type()
             && self.extents() == other.extents()
+    }
+}
+
+/// A CID relationship and untrusted resolver hint; neither is authorization.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ParentReference<'a> {
+    pub cid: u32,
+    pub file_name_hint: &'a str,
+}
+
+/// Explicit parent-capable metadata syntax. Cannot be passed to SparseDisk.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SparseLayerDescriptor<'a> {
+    pub(crate) sparse: SparseDescriptor<'a>,
+    parent: Option<ParentReference<'a>>,
+}
+impl<'a> SparseLayerDescriptor<'a> {
+    pub fn parse(input: &'a [u8]) -> Result<Self> {
+        Self::parse_with_limits(input, Limits::default())
+    }
+    pub fn parse_with_limits(input: &'a [u8], limits: Limits) -> Result<Self> {
+        if input.len() > limits.descriptor_bytes {
+            return Err(error(0, ErrorKind::Limit("descriptor bytes")));
+        }
+        let end = input.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
+        let (descriptor, parent) = Descriptor::parse_subset::<true, true>(&input[..end], limits)?;
+        Ok(Self {
+            sparse: SparseDescriptor(descriptor),
+            parent,
+        })
+    }
+    pub fn parent(&self) -> Option<ParentReference<'a>> {
+        self.parent
+    }
+    pub fn cid(&self) -> u32 {
+        self.sparse.cid()
+    }
+    pub fn size_bytes(&self) -> u64 {
+        self.sparse.size_bytes()
+    }
+    pub fn create_type(&self) -> CreateType {
+        self.sparse.create_type()
+    }
+    pub fn extents(&self) -> &[Extent<'a>] {
+        self.sparse.extents()
     }
 }

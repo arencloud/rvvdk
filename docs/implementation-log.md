@@ -1726,13 +1726,73 @@ address query scanning or sorted pointer validation; do not raise limits or infe
 an optimization from these first costs. PERF.0/R4.4 and earlier adverse results
 remain open. Historical evidence remains unchanged.
 
+## R5.6 — Bounded sparse parent metadata admission
+
+Date: 2026-09-30. Status: **Complete within metadata-only sparse-chain scope**.
+Baseline: `e3ce2e9`, initially clean. The enclosing commit records this step.
+[Contract](vmdk-parent-chain.md), [ADR-0042](adr/0042-bounded-parent-chain-metadata.md)
+and [evidence](benchmark-results/2026-09-30-r56/README.md) retain implementation
+policy, all 48 timing runs, source/harness/binary identities, tests and SVG/PNG.
+
+`SparseLayerDescriptor` parses explicit parent syntax without widening base APIs.
+`SparseChain` retains leaf-to-base descriptors and grain maps through an explicit
+caller-provided parent resolver and per-layer backing namespace. Adjacent CIDs and
+capacities must agree; known readable identities drive cycle/shared-backing checks.
+Embedded monolithic entry must resolve the same container. Defaults admit 16 layers
+including base, 128 extents, 8 MiB outer descriptor bytes, 128 MiB conservative
+reservation and 256 MiB acquisition payload, in addition to per-layer limits.
+Final endpoint observations cover every retained source. Source quiescence remains
+a caller obligation; CIDs/identity checks are neither snapshots nor content hashes.
+
+The chain is intentionally not a VirtualDisk. Unallocated child grains remain
+unresolved metadata; the public CLI and base disk APIs still reject parents.
+Logical fallback and CLI lifecycle integration remain separate increments.
+The shared metadata loader now binds embedded parentCID/hint as well as CID/layout.
+No dependencies or copy execution defaults change. Specification guidance, not
+SDK or third-party parser source, defines the format relationships.
+
+Validation: **512 distinct passed, one existing gated allocation test** (513 total),
+plus 148-test CLI/VMDK run with integration fixtures on Btrfs; five existing CLI
+unit fault tests retain system temporary files. Formatting, strict all-target
+Clippy and portable core/datamover/VMDK wasm32 checks pass (existing control::sum
+warning). Sixteen new tests cover syntax/bounds, both entry forms, retained handles,
+missing/denied parents, mismatches before backing reads, cycles, equal-CID distinct
+objects, aliases, unknown/changed identities, embedded binding, differing extent
+geometry, I/O failures, exact budgets and depth 16/17. Actual read counters match
+reported totals. Three external layers reserve/read 37,187/49,515 bytes; embedded
+layers reserve/read 67,544/81,408 bytes. Conservative counters exclude parser,
+resolver, allocator, source storage and stack overhead; they are not RSS.
+
+QEMU-created base/monolithic/split/mixed chains pass helper metadata checks against
+descriptor CIDs and QEMU backing-chain capacities. Public CLI accepts the base and
+rejects the three parent chains. The confined helper uses one selected directory
+and basename hints. Existing all-command base CLI reference checks also pass,
+including the two-file 2 GiB + 64 KiB split case, full RAW hashes, QEMU compare and
+unchanged source hashes. Chain reference work checks metadata, not parent bytes.
+No ESXi is needed or used.
+
+Performance: 24 matched controls show **+0.99%, -1.08%, +3.85%, -3.34%** for base
+metadata, contiguous 128 KiB reads, FLAT/ZERO copy+verify and RAW verify. The sparse
+read pair **+5.0069%** triggers six longer runs: **-0.53%** aggregate, with
+**-1.10%, -0.45%, -4.03%** pairs. The original remains visible. No repeat pair is
+adverse above 5%; this does not close earlier shared-host investigations.
+Eighteen first chain runs establish **0.607 µs child parse**, **10.110 / 41.523 /
+178.604 µs embedded open** for 1/4/16 layers, **0.154 µs 16-layer endpoint recheck**
+and **109.494 µs depth rejection** using external entries. All run medians remain
+visible, including the 253.378 µs third 16-layer-open run. These memory-backed costs
+include validation/allocation/drop, not fixture generation or logical parent reads.
+No storage throughput or causal speedup is claimed. All plots reproduce identically;
+prior evidence remains unchanged. PERF.0/R4.4 and previous adverse follow-ups stay open.
+
 ## Next session
 
-Start **R5.6**: bounded parent-chain metadata admission and explicit resolver policy,
-CID/identity checks, missing-parent errors, cycle/depth limits and aggregate budgets.
-Keep base admission distinct; parent fallback reads and CLI exposure follow in
-separate qualified steps. Each completed step gets tests, benchmarks, plots and a
-commit. Coverage-guided fuzzing remains pending.
+Start **R5.7**: read-only logical sparse parent fallback. Resolve unallocated child
+grains through ancestors; handle differing grain sizes and extent boundaries,
+produce Data/Zero only after complete resolution, and reject destinations aliased
+to any retained descriptor/backing. Use independent byte oracles and QEMU decoding,
+with bounded extent output and chain-depth/fragmentation benchmarks. Keep CLI parent
+exposure for a following step with acquisition/publication/cancellation qualification.
+Each completed step gets validation, evidence/plots, progress updates and a commit.
 
 ESXi remains unnecessary for local work; request the 60-day trial when V0's lab
 proof is ready. Keep PERF.0, R4.4 preview overhead/tuning and earlier adverse timing

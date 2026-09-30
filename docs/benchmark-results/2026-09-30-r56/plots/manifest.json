@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R5.6 \u00b7 Bounded parent metadata",
+    "candidate": "patch 54018ee6",
+    "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 memory fixtures / warm Btrfs CLI",
+    "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "candidate_only": {
+      "title": "Parent-chain metadata \u00b7 first cost baselines",
+      "note": "Synthetic memory fixtures \u00b7 metadata only \u00b7 logical parent reads pending",
+      "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+    },
+    "workloads": {
+      "sparse_metadata/monolithic": {
+        "label": "Base metadata load \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "sparse_disk/read_contiguous_128k": {
+        "label": "Contiguous read \u00b7 128 KiB",
+        "phase": "planning"
+      },
+      "cli_vmdk/copy_mixed_verify": {
+        "label": "FLAT/ZERO copy + verify \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/verify_only": {
+        "label": "RAW verify \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "sparse_chain/parse_child": {
+        "label": "Parse child descriptor",
+        "phase": "planning"
+      },
+      "sparse_chain/open_embedded_1": {
+        "label": "Embedded open \u00b7 1 layer",
+        "phase": "planning"
+      },
+      "sparse_chain/open_embedded_4": {
+        "label": "Embedded open \u00b7 4 layers",
+        "phase": "planning"
+      },
+      "sparse_chain/open_embedded_16": {
+        "label": "Embedded open \u00b7 16 layers",
+        "phase": "planning"
+      },
+      "sparse_chain/revalidate_16": {
+        "label": "Revalidate \u00b7 16 layers",
+        "phase": "planning"
+      },
+      "sparse_chain/reject_depth_17": {
+        "label": "Reject depth 17 \u00b7 external entry",
+        "phase": "planning"
+      }
+    },
+    "repeat_sampling": "3 adjacent pairs \u00b7 40 flat samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+  },
+  "input_sha256": {
+    "plot-config.json": "762a6f61360c785b9dcd23b5d1d9fae6bc523e6dba1de79ba3c8ad11a0cfd445",
+    "environment.json": "bc69ee39b05c6fa4484bfa37a02dc77c16f7de5a7d2eb205eaec4618f1ccae7a",
+    "measurements.json": "5232e1430e7851504a8fd37fc35c240f21acaec56a28f790dcfb73e53175cb0b",
+    "summary.json": "0a2ae78eda2a626800cac01059e302efcedce8b1212024e1b46f68c22631e894",
+    "followup-measurements.json": "0890985da8691ecf14630685adef24def5a35364f7bf8afc894104d13b102dec",
+    "followup-summary.json": "c1861a73554860d299e33d839a8c8a97c9a832e5edddd955cc09f56cef6c756b",
+    "candidate-only-measurements.json": "72bd0a73d1a5bc223d0cd9bc11567cfd4d3d30771cb6bae7060f711409279dda"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "abf522a429330f5ed9daee1cef4741c6c710b2c33e552e6b1d556e190f3f6423",
+    "planning-latency.png": "e200658409373c937c3b8bbf2ed3ae1730e1d73616d9167af8b36571f9384932",
+    "copy-latency.svg": "7afea015b908e64efba07a71e59afa425274fa61530d00e3b30dae34eefa196c",
+    "copy-latency.png": "40e5790abcd6a3c3fb9cc8abfdb3eab714196b1bdd2976cda50cf8517092c0aa",
+    "relative-change.svg": "202e5bcf418cff9c39e065540450a7bb3cfe5fba4703baf1e38b4d7a75eda4ef",
+    "relative-change.png": "48c0ba0d63c6d12e4a3c7ca4c3222db09477f5729f84afa1dd050567a1e80829",
+    "sample-distributions.svg": "380bb4770ac4f053dbc34f11345ad660388bc32b8e3ea1c31388b8cb79ec59ff",
+    "sample-distributions.png": "1ac9d3900f6f9b58ca64377d6b860b8d7f404fac10237b0cf0668144593f7f07",
+    "followup-change.svg": "d37484870d66387b85ee13a41a6f9e7e591d07309df58777f5303f93f9b69a6e",
+    "followup-change.png": "d5ea27a70fe142c27e9fc12eda586b7f0ba1a9b62ba1e0b6356f80935be60c5d",
+    "candidate-only.svg": "3415a7217df290fa9a4284814a9aca611932bd804dd1775c56828b250ed7b6ca",
+    "candidate-only.png": "c0930e885d8f3ad9e274eccd6ff22a5f66414b05da2ef4bbcff008103162a7ac",
+    "computed.json": "d61ace6aa86aa813d66cb692fecafcf82ab59e3e1db2fc5f5e03d9e000ab3236"
+  }
+}
