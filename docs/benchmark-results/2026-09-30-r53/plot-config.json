@@ -1,0 +1,57 @@
+{
+  "title": "R5.3 \u00b7 Read-only base sparse mapping",
+  "candidate": "patch 95801514",
+  "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm memory / Btrfs",
+  "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+  "candidate_only": {
+    "title": "Sparse logical operations \u00b7 first cost baselines",
+    "note": "Memory-backed fixtures \u00b7 opening separate from reads \u00b7 copy includes planning, engine flush and verification",
+    "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+  },
+  "workloads": {
+    "sparse_metadata/monolithic": {
+      "label": "Existing monolithic metadata load",
+      "phase": "planning"
+    },
+    "logical/cross_64k": {
+      "label": "Existing FLAT/ZERO read \u00b7 64 KiB",
+      "phase": "planning"
+    },
+    "cli_vmdk/copy_mixed_verify": {
+      "label": "FLAT/ZERO copy + verify \u00b7 1 MiB",
+      "phase": "copy"
+    },
+    "cli_transfer/verify_only": {
+      "label": "RAW verify \u00b7 16 MiB",
+      "phase": "copy"
+    },
+    "sparse_disk/read_contiguous_128k": {
+      "label": "Contiguous grain read \u00b7 128 KiB",
+      "phase": "planning"
+    },
+    "sparse_disk/read_fragmented_128k": {
+      "label": "Fragmented grain read \u00b7 128 KiB",
+      "phase": "planning"
+    },
+    "sparse_disk/read_cross_zero_64k": {
+      "label": "Data/Zero read \u00b7 64 KiB",
+      "phase": "planning"
+    },
+    "sparse_disk/read_split_64k": {
+      "label": "Split-boundary read \u00b7 64 KiB",
+      "phase": "planning"
+    },
+    "sparse_disk/extents_1m": {
+      "label": "Logical extent query \u00b7 1 MiB",
+      "phase": "planning"
+    },
+    "sparse_disk/load_split_2m": {
+      "label": "Load split metadata \u00b7 2 MiB",
+      "phase": "planning"
+    },
+    "sparse_disk/copy_verify_2m": {
+      "label": "Memory copy + verify \u00b7 2 MiB",
+      "phase": "copy"
+    }
+  }
+}

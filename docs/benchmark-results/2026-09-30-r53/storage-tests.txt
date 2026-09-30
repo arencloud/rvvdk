@@ -1,0 +1,217 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/rvvdk_cli-dd7594df275febe0)
+
+running 5 tests
+test transfer::tests::corruption_fails_before_publication_and_reports_offset ... ok
+test transfer::tests::observed_source_mutation_rejects_publication ... ok
+test transfer::tests::racing_name_is_never_replaced_even_when_overwrite_was_requested ... ok
+test transfer::tests::failed_overwrite_keeps_partial_output_and_tail ... ok
+test transfer::tests::file_sync_and_directory_sync_failures_have_distinct_output_states ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/rvddk-b0d11d7502ae493a)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/commands.rs (target/debug/deps/commands-fa94fe3944506b2d)
+
+running 12 tests
+test output_write_and_flush_failures_return_failure ... ok
+test non_utf8_paths_round_trip_and_control_characters_are_escaped ... ok
+test metadata_budget_failure_and_unadmitted_execution_estimate_are_distinct ... ok
+test new_destination_preview_never_creates_output_and_native_is_deferred ... ok
+test missing_parent_and_non_file_paths_fail_before_output ... ok
+test overwrite_is_explicit_preserves_bytes_and_reports_untouched_tail ... ok
+test aliases_symlinks_and_small_destinations_reject_without_changes ... ok
+test usage_errors_are_json_and_tunables_are_checked ... ok
+test inspect_dense_empty_and_odd_images_with_explicit_extent_output ... ok
+test sparse_map_matches_library_topology_without_reading_payload ... ok
+test actual_binary_handles_help_errors_and_special_files_without_blocking ... ok
+test commands_succeed_when_writable_opens_and_ring_setup_are_denied ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/transfers.rs (target/debug/deps/transfers-0f9b4962b2959f1b)
+
+running 12 tests
+test progress_output_failure_stops_before_publication ... ok
+test verification_checks_holes_and_first_mismatch_without_mutation ... ok
+test verification_buffers_and_copy_budget_are_jointly_admitted ... ok
+test no_clobber_alias_symlink_and_capacity_rejections_preserve_contents ... ok
+test cancelled_overwrite_keeps_inode_tail_and_reports_partial_effects ... ok
+test sparse_copy_cancellation_after_full_logical_processing_is_not_completion ... ok
+test report_failure_retains_completed_operation_and_published_bytes ... ok
+test sigint_and_sigterm_cancel_binary_copy_and_verify_with_bounded_shutdown ... ok
+test runtime_ring_denial_auto_falls_back_but_explicit_native_does_not_publish ... ok
+test lifecycle_json_is_separate_from_success_and_actual_backend_is_reported ... ok
+test progress_cancellation_preserves_private_and_published_destination_states ... ok
+test new_and_overwrite_copies_verify_empty_odd_and_sparse_images_across_backends ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.44s
+
+     Running tests/vmdk.rs (target/debug/deps/vmdk-a0d2bcd738101b5d)
+
+running 9 tests
+test logical_inspection_and_preview_use_capacity_and_portable_selection ... ok
+test native_rejection_precedes_destination_open_and_budget_failure_does_not_publish ... ok
+test malformed_unsupported_and_unconfined_sources_fail_without_output ... ok
+test descriptor_and_every_backing_hardlink_are_rejected_without_mutation ... ok
+test zero_only_source_and_explicit_raw_selection ... ok
+test same_size_backing_or_descriptor_mutation_prevents_publication ... ok
+test cancellation_and_publication_collision_preserve_output_policy ... ok
+test padded_sources_work_in_all_commands_without_rewriting_the_descriptor ... ok
+test copies_verify_logical_bytes_and_preserve_overwrite_tail ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+     Running unittests src/lib.rs (target/debug/deps/rvvdk_vmdk-9ef03e684d11fd24)
+
+running 1 test
+test local::tests::replacement_between_pin_and_reopen_cannot_redirect_reads ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/backing.rs (target/debug/deps/backing-36bf79bd5b33ebfc)
+
+running 7 tests
+test loading_propagates_io_and_parser_failures ... ok
+test bounded_loading_handles_short_reads_interrupts_exact_limit_and_one_probe ... ok
+test opaque_references_deduplicate_and_outlive_input_and_resolver ... ok
+test resource_limits_fail_before_any_resolver_call ... ok
+test zero_extents_resolve_without_sources ... ok
+test revalidation_uses_live_capacity_access_and_known_identity ... ok
+test truncation_and_read_permissions_are_checked_and_failures_drop_sources ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/descriptor.rs (target/debug/deps/descriptor-bd61329e7909ca0b)
+
+running 12 tests
+test lexical_variants_preserve_filename_case_and_borrow_input ... ok
+test encoding_controls_and_error_locations_are_precise ... ok
+test fixtures_have_checked_contiguous_byte_ranges ... ok
+test duplicates_order_and_required_fields_are_validated ... ok
+test metadata_is_informational_and_unknown_features_rejected ... ok
+test path_policy_is_explicitly_deferred_without_any_file_access ... ok
+test supported_create_types_enforce_shape_and_split_capacity ... ok
+test numbers_and_all_arithmetic_boundaries_are_checked ... ok
+test syntax_and_quoting_fail_closed ... ok
+test rejects_unsupported_variants_and_parent_chains ... ok
+test each_resource_limit_accepts_boundary_and_rejects_next_byte_or_entry ... ok
+test deterministic_mutations_never_panic_or_escape_layout_invariants ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/local_logical.rs (target/debug/deps/local_logical-ab1db0032f6c33df)
+
+running 1 test
+test local_second_backing_hardlink_and_late_truncation_fail_before_mutation ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/local_resolution.rs (target/debug/deps/local_resolution-af80f3ae324ffa66)
+
+running 7 tests
+test mounted_namespaces_and_magic_links_are_not_followed ... ok
+test descriptor_acquisition_ignores_untrusted_file_size_and_obeys_bound ... ok
+test descriptor_parent_and_nested_regular_files_are_used_read_only ... ok
+test dangerous_lexical_names_and_symlink_components_fail ... ok
+test nonregular_files_reject_without_opening_a_fifo_for_io ... ok
+test pinned_anchor_and_backings_survive_path_replacement_and_hardlinks_have_identity ... ok
+test live_truncation_is_detected_and_failed_resolution_leaks_no_file_handles ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/logical.rs (target/debug/deps/logical-29c51cf90ca56ef1)
+
+running 11 tests
+test composite_alias_checks_apply_to_direct_planned_and_trait_object_copies ... ok
+test constructor_and_execute_preflight_reject_late_truncation_before_writes ... ok
+test partial_reads_complete_but_eof_and_io_errors_are_not_zero_filled ... ok
+test maximum_capacity_zero_extent_and_last_byte_do_not_overflow ... ok
+test extents_are_clipped_coalesced_and_never_report_physical_holes ... ok
+test range_errors_precede_buffer_changes_and_all_mutations_are_unsupported ... ok
+test concurrent_reads_share_immutable_mapping_and_backing_handles ... ok
+test every_backing_alias_is_checked_and_unknown_identity_copies_fail_closed ... ok
+test portable_copy_preserves_data_zero_and_destination_tail ... ok
+test all_ranges_match_flat_zero_offset_and_repeated_source_oracle ... ok
+test binary_lookup_handles_1024_distinct_logical_positions ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/padding.rs (target/debug/deps/padding-9923b16130c28aeb)
+
+running 6 tests
+test empty_all_nul_and_invalid_prefixes_still_fail_validation ... ok
+test suffix_policy_does_not_require_a_final_newline_or_sector_alignment ... ok
+test embedded_nuls_and_nonzero_suffixes_cannot_hide_text ... ok
+test original_bytes_and_strict_text_view_are_distinct ... ok
+test chunk_boundaries_and_interruptions_preserve_padding_and_require_eof ... ok
+test limit_includes_padding_and_oversize_consumes_only_one_probe ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/sparse_disk.rs (target/debug/deps/sparse_disk-d39e166e850d8a1d)
+
+running 13 tests
+test final_acquisition_rechecks_earlier_sources ... ok
+test invalid_ranges_do_not_touch_buffers_and_all_mutations_reject ... ok
+test contiguous_grains_merge_reads_and_zeros_never_read_payload ... ok
+test every_backing_alias_and_unknown_identity_fail_copy_and_verify_preflight ... ok
+test extent_queries_clip_coalesce_across_sources_and_enforce_output_limit ... ok
+test short_reads_complete_and_payload_eof_or_errors_are_never_zero_filled ... ok
+test retained_sources_support_concurrent_reads_after_input_and_resolver_drop ... ok
+test aggregate_budgets_reject_before_later_offset_reads_and_release_handles ... ok
+test local_hardlink_alias_and_path_replacement_use_retained_inode ... ok
+test split_reads_and_extents_cross_backings_with_different_grain_sizes ... ok
+test endpoint_changes_after_planning_reject_before_destination_writes ... ok
+test portable_copy_and_verify_preserve_zeros_and_destination_tail ... ok
+test reads_match_oracle_at_grain_boundaries_and_unaligned_ranges ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/sparse_header.rs (target/debug/deps/sparse_header-5ab4ffacdea50c9e)
+
+running 9 tests
+test checked_arithmetic_and_independent_limits ... ok
+test exact_little_endian_geometry_and_regions ... ok
+test external_descriptor_nonredundant_and_optional_newline_flag ... ok
+test rejects_versions_flags_compression_dirty_and_reserved_bytes ... ok
+test acquisition_reads_only_one_sector_and_propagates_short_io ... ok
+test grain_capacity_and_directory_rounding ... ok
+test metadata_ranges_pairs_overlap_and_file_bounds ... ok
+test truncation_excess_and_magic_fail_without_casts ... ok
+test deterministic_mutations_never_panic_or_escape_admitted_bounds ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sparse_metadata.rs (target/debug/deps/sparse_metadata-2766069de77ed473)
+
+running 9 tests
+test budget_failures_precede_offset_reads_and_large_allocations ... ok
+test explicit_sparse_subset_preserves_default_parser_rejection ... ok
+test absent_redundancy_is_supported_without_recovery_fallback ... ok
+test external_split_binding_empty_region_and_extent_index ... ok
+test retained_map_and_exact_budget_accounting ... ok
+test descriptor_binding_rejects_missing_conflicting_and_capacity_mismatch ... ok
+test live_endpoint_header_changes_and_io_failures_propagate ... ok
+test metadata_placement_rejects_before_any_grain_table_read ... ok
+test redundant_disagreement_unused_slots_and_data_ranges_reject ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests rvvdk_cli
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests rvvdk_vmdk
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -1,0 +1,363 @@
+{
+  "qemu_version": "qemu-img version 10.2.2 (qemu-10.2.2-1.fc44)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+  "qemu_sha256": "4362e911c13bb90e39b69479462cd4adb840749b582f4892ca114eb7e94dcf2e",
+  "dump_sha256": "7663915b1dec8e4a8378aaa4a86110e2784023a8b992f9d2933eb21503cd6eba",
+  "cli_sha256": "028adf9607a99ee8bb1500a767320eb890477e0094c2f8a5b94352a6834c7055",
+  "generator_sha256": "e0f14c295dee5b2aabd064954784738573e3f1331ca3071b4f9b3c5a711f67d0",
+  "directory": "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse",
+  "cases": [
+    {
+      "name": "mono",
+      "subformat": "monolithicSparse",
+      "decoded": {
+        "size_bytes": 1048576,
+        "backings": 1,
+        "logical_extents": 3,
+        "reserved_memory_bytes": 11720,
+        "metadata_read_bytes": 16384
+      },
+      "output_sha256": "947283b81440a8ab6eafc9c567b362c35c3c1af67554eaed796a9bca9f05a8ff",
+      "source_unchanged": true,
+      "public_cli_rejects": true
+    },
+    {
+      "name": "two-tables",
+      "subformat": "monolithicSparse",
+      "decoded": {
+        "size_bytes": 67108864,
+        "backings": 1,
+        "logical_extents": 3,
+        "reserved_memory_bytes": 19816,
+        "metadata_read_bytes": 20480
+      },
+      "output_sha256": "2adc4e73229c00d99419442d1eafacde9a35c6981ba3517dc200a3cc7b09b1ad",
+      "source_unchanged": true,
+      "public_cli_rejects": true
+    },
+    {
+      "name": "split",
+      "subformat": "twoGbMaxExtentSparse",
+      "decoded": {
+        "size_bytes": 1048576,
+        "backings": 1,
+        "logical_extents": 3,
+        "reserved_memory_bytes": 11720,
+        "metadata_read_bytes": 16384
+      },
+      "output_sha256": "947283b81440a8ab6eafc9c567b362c35c3c1af67554eaed796a9bca9f05a8ff",
+      "source_unchanged": true,
+      "public_cli_rejects": true
+    },
+    {
+      "name": "multi-split",
+      "subformat": "twoGbMaxExtentSparse",
+      "decoded": {
+        "size_bytes": 2147549184,
+        "backings": 2,
+        "logical_extents": 3,
+        "reserved_memory_bytes": 287352,
+        "metadata_read_bytes": 290816
+      },
+      "output_sha256": "e042e91ce6e5ddbe7a4b6d8113f9641f6e490de8031a2cf423a04df15bca7f6b",
+      "source_unchanged": true,
+      "public_cli_rejects": true
+    }
+  ],
+  "commands": [
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "qemu-img version 10.2.2 (qemu-10.2.2-1.fc44)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/mono.raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/mono.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r53-jckir29s/candidate-target/release/examples/dump_sparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/mono.vmdk",
+        "--embedded",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/mono.decoded.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"size_bytes\":1048576,\"backings\":1,\"logical_extents\":3,\"reserved_memory_bytes\":11720,\"metadata_read_bytes\":16384}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/mono.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/mono.decoded.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r53-jckir29s/candidate-target/release/rvddk",
+        "inspect",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/mono.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 0: invalid UTF-8 or unsupported control character\"},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/two-tables.raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/two-tables.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r53-jckir29s/candidate-target/release/examples/dump_sparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/two-tables.vmdk",
+        "--embedded",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/two-tables.decoded.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"size_bytes\":67108864,\"backings\":1,\"logical_extents\":3,\"reserved_memory_bytes\":19816,\"metadata_read_bytes\":20480}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/two-tables.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/two-tables.decoded.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r53-jckir29s/candidate-target/release/rvddk",
+        "inspect",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/two-tables.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 0: invalid UTF-8 or unsupported control character\"},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/split.raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/split.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r53-jckir29s/candidate-target/release/examples/dump_sparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/split.vmdk",
+        "--external",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/split.decoded.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"size_bytes\":1048576,\"backings\":1,\"logical_extents\":3,\"reserved_memory_bytes\":11720,\"metadata_read_bytes\":16384}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/split.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/split.decoded.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r53-jckir29s/candidate-target/release/rvddk",
+        "inspect",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/split.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 5: unsupported feature: create type\"},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/multi-split.raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/multi-split.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r53-jckir29s/candidate-target/release/examples/dump_sparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/multi-split.vmdk",
+        "--external",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/multi-split.decoded.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"size_bytes\":2147549184,\"backings\":2,\"logical_extents\":3,\"reserved_memory_bytes\":287352,\"metadata_read_bytes\":290816}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/multi-split.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/multi-split.decoded.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r53-jckir29s/candidate-target/release/rvddk",
+        "inspect",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r53-benchmark-storage/reference-sparse/multi-split.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 5: unsupported feature: create type\"},\"schema_version\":1}\n"
+    }
+  ],
+  "files": {
+    "mono.decoded.raw": {
+      "bytes": 1048576,
+      "sha256": "947283b81440a8ab6eafc9c567b362c35c3c1af67554eaed796a9bca9f05a8ff"
+    },
+    "mono.raw": {
+      "bytes": 1048576,
+      "sha256": "947283b81440a8ab6eafc9c567b362c35c3c1af67554eaed796a9bca9f05a8ff"
+    },
+    "mono.vmdk": {
+      "bytes": 262144,
+      "sha256": "a074b2a1fd58d61bbfb4ff33bbdbb637961ddbd10856161782f9715b9d243041"
+    },
+    "multi-split-s001.vmdk": {
+      "bytes": 458752,
+      "sha256": "b91693f7e1998d31727c093e0c27a78d113366015138df8599e165c088b38172"
+    },
+    "multi-split-s002.vmdk": {
+      "bytes": 131072,
+      "sha256": "21e505539afff5ff0a1fdaaabfe67bf5ce935acf67685db5f75188ad9f736d83"
+    },
+    "multi-split.decoded.raw": {
+      "bytes": 2147549184,
+      "sha256": "e042e91ce6e5ddbe7a4b6d8113f9641f6e490de8031a2cf423a04df15bca7f6b"
+    },
+    "multi-split.raw": {
+      "bytes": 2147549184,
+      "sha256": "e042e91ce6e5ddbe7a4b6d8113f9641f6e490de8031a2cf423a04df15bca7f6b"
+    },
+    "multi-split.vmdk": {
+      "bytes": 512,
+      "sha256": "0a95f0358b349d5a3632c3904ccc4096a525f01c315fa5bc493b9d901570020e"
+    },
+    "split-s001.vmdk": {
+      "bytes": 262144,
+      "sha256": "d875bf5d760b8a39cfbde761736d2c0cf1b869323ba9ed3442c39e1a47a786ad"
+    },
+    "split.decoded.raw": {
+      "bytes": 1048576,
+      "sha256": "947283b81440a8ab6eafc9c567b362c35c3c1af67554eaed796a9bca9f05a8ff"
+    },
+    "split.raw": {
+      "bytes": 1048576,
+      "sha256": "947283b81440a8ab6eafc9c567b362c35c3c1af67554eaed796a9bca9f05a8ff"
+    },
+    "split.vmdk": {
+      "bytes": 512,
+      "sha256": "820e2e70b255a7d346965497d5b1f4ce4c3fd49fc83337a77516d95d7b6b8990"
+    },
+    "two-tables.decoded.raw": {
+      "bytes": 67108864,
+      "sha256": "2adc4e73229c00d99419442d1eafacde9a35c6981ba3517dc200a3cc7b09b1ad"
+    },
+    "two-tables.raw": {
+      "bytes": 67108864,
+      "sha256": "2adc4e73229c00d99419442d1eafacde9a35c6981ba3517dc200a3cc7b09b1ad"
+    },
+    "two-tables.vmdk": {
+      "bytes": 262144,
+      "sha256": "796545a43138e418cf6248e17cd9d39df64f303ae4fff3a455ac88cf89de44ae"
+    }
+  }
+}

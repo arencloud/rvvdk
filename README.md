@@ -58,7 +58,7 @@ VMware disk access and migration, extensible to other platforms.
 | **Sparse destination output** | Linux zeroing and hole punching with safe bounded fallback; [contract and allocation evidence](docs/local-sparse-output.md) |
 | **Copy memory budget** | Configurable 256 MiB default for buffers, queue entries, and extent metadata; [scope and limits](docs/copy-memory.md) |
 | **VMDK descriptors** | [Hosted base FLAT/ZERO metadata](docs/vmdk-descriptor.md), bounded parsing, [confined backing resolution](docs/vmdk-backing.md) and [logical reads](docs/vmdk-logical.md) |
-| **Hosted sparse metadata** | [Bounded version-1 header, descriptor and grain-map validation](docs/vmdk-sparse-metadata.md); logical sparse reads remain planned |
+| **Hosted sparse reads** | [Read-only base monolithic/split sparse library API](docs/vmdk-sparse-disk.md), bounded metadata and alias protection; CLI integration pending |
 | **VMware access** | Planned; no VMware VDDK dependency in the current workspace |
 
 The [endpoint contract](docs/architecture.md#copy-endpoint-preflight-r05) describes
@@ -144,12 +144,14 @@ flowchart TD
     Native --> FD["RAW backend access · LinuxFdBackend"]
     FD --> Local
     Logical --> VMDK["VMDK · FLAT/ZERO reads"]
-    VMDK -. "planned" .-> Parents["Sparse formats and parent chains"]
+    Logical --> Sparse["Base hosted sparse · library reads"]
+    Sparse -. "planned" .-> Parents["Parent chains and other sparse formats"]
     VMDK --> Device
+    Sparse --> Device
 
     classDef implemented fill:#0f172a,stroke:#38bdf8,color:#f8fafc;
     classDef planned fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-dasharray:5 5;
-    class API,Mover,Portable,Native,Logical,Raw,Device,Memory,Local,FD,VMDK implemented;
+    class API,Mover,Portable,Native,Logical,Raw,Device,Memory,Local,FD,VMDK,Sparse implemented;
     class Parents planned;
 ```
 
@@ -222,7 +224,7 @@ workloads. Measurements depend on the filesystem, page cache, hardware, and
 flush policy. See the [benchmark notes](docs/benchmarks.md) for historical results
 and the [review](docs/project-review-2026-09-28.md) for measurement gaps.
 
-Explore the [R5.2 benchmark charts](docs/benchmark-results/2026-09-30-r52/README.md)
+Explore the [R5.3 benchmark charts](docs/benchmark-results/2026-09-30-r53/README.md)
 for latency comparisons, paired changes, and sample distributions. A
 [reusable generator](scripts/benchmarks/README.md) exports SVG and PNG figures.
 

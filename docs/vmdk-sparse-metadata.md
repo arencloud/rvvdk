@@ -74,7 +74,7 @@ scratch, and 16 bytes per table-range slot plus four fixed region slots. Fixed
 stack buffers add 5 KiB. Parser-owned collections, supplied descriptor storage,
 resolver resources and allocator overhead are separately bounded by their APIs,
 not included in this payload budget. It is not an RSS limit. Multiple loaded
-extents need caller/job-level aggregate admission, which belongs in R5.3.
+extents need caller/job-level aggregate admission, provided separately by [SparseDisk in R5.3](vmdk-sparse-disk.md).
 
 Complete-read payload counts the initial and final header, descriptor region,
 active directories and full tables including redundancy. Short/error reads can
@@ -97,6 +97,8 @@ allocated and unallocated grains; a test utility reconstructs their bytes from t
 validated map and compares with the original RAW oracle and QEMU. This qualifies
 those maps, not a production sparse reader or arbitrary VMware images.
 
-Next: R5.3 read-only sparse logical mapping with aggregate admission, composite
-alias protection and retained-source consistency. Parent chains, version 2,
-streamOptimized, managed variants, writes and public CLI integration remain separate.
+The separate [R5.3 SparseDisk layer](vmdk-sparse-disk.md) now provides read-only base
+logical mapping, aggregate admission, composite alias protection and retained-source
+consistency. SparseMetadata itself still exposes no logical reads. Next is R5.4 CLI
+integration; parent chains, version 2, streamOptimized, managed variants and writes
+remain separate.

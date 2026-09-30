@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R5.3 \u00b7 Read-only base sparse mapping",
+    "candidate": "patch 95801514",
+    "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm memory / Btrfs",
+    "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "candidate_only": {
+      "title": "Sparse logical operations \u00b7 first cost baselines",
+      "note": "Memory-backed fixtures \u00b7 opening separate from reads \u00b7 copy includes planning, engine flush and verification",
+      "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+    },
+    "workloads": {
+      "sparse_metadata/monolithic": {
+        "label": "Existing monolithic metadata load",
+        "phase": "planning"
+      },
+      "logical/cross_64k": {
+        "label": "Existing FLAT/ZERO read \u00b7 64 KiB",
+        "phase": "planning"
+      },
+      "cli_vmdk/copy_mixed_verify": {
+        "label": "FLAT/ZERO copy + verify \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/verify_only": {
+        "label": "RAW verify \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "sparse_disk/read_contiguous_128k": {
+        "label": "Contiguous grain read \u00b7 128 KiB",
+        "phase": "planning"
+      },
+      "sparse_disk/read_fragmented_128k": {
+        "label": "Fragmented grain read \u00b7 128 KiB",
+        "phase": "planning"
+      },
+      "sparse_disk/read_cross_zero_64k": {
+        "label": "Data/Zero read \u00b7 64 KiB",
+        "phase": "planning"
+      },
+      "sparse_disk/read_split_64k": {
+        "label": "Split-boundary read \u00b7 64 KiB",
+        "phase": "planning"
+      },
+      "sparse_disk/extents_1m": {
+        "label": "Logical extent query \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "sparse_disk/load_split_2m": {
+        "label": "Load split metadata \u00b7 2 MiB",
+        "phase": "planning"
+      },
+      "sparse_disk/copy_verify_2m": {
+        "label": "Memory copy + verify \u00b7 2 MiB",
+        "phase": "copy"
+      }
+    }
+  },
+  "input_sha256": {
+    "plot-config.json": "771e1c559a4f7d257ebeb76def3815703fa4a8d22d2844b5e1e81ccb2eda122d",
+    "environment.json": "40b3ef03d10bfa40fd18cc653542520046015ef0cd53b9dd0bcf9211f836eb4d",
+    "measurements.json": "41047db73a19ededfc01bbf97f707b0f0a065d2aa7d838495f8c5dfabc91b632",
+    "summary.json": "15f8ec70e94ef67457d5644e9c01b1637a78b928c0627f664b1d982863f68e53",
+    "candidate-only-measurements.json": "39f221c40095bf4a4fcd9653c7914e62bf6e6f84dcb07399621883bbf0b320a8"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "c5e62566b755688cd8a314f1abb8b42f3c26455563d675a990ca3b96136b9076",
+    "planning-latency.png": "3201e5df6439e96954726db392127d17abd3492d79e67f350fa5192b10b84068",
+    "copy-latency.svg": "66b5e510d6269ee1bd6d2db215c754ab70d135c9fd57350fa50942ba96cdfc5a",
+    "copy-latency.png": "ccf61ddab88ba04f799ad32822d82068fe34d79fbd13d9560bd7a743d4c70e1b",
+    "relative-change.svg": "5807a2b22fca74b22b3b1357b827c11f98a30691efde24bf398d9681b106bffb",
+    "relative-change.png": "4116e4a3d672cd15940ba3cf427276b29db8ef7442cd6642f84d3bb69eb8b616",
+    "sample-distributions.svg": "9cc53ffeb7d96c9240c637e6132aa81bc3940514a878cb5552fd9414b4ae6ce6",
+    "sample-distributions.png": "7353dfcf4599f89a9de8004f9eff3517da9d24501f440a75bf915f312ed1370f",
+    "candidate-only.svg": "9851a0f549a2e02e81e1341799f3fff121a7ec3298de381e967a4ffcbfa42df6",
+    "candidate-only.png": "18d6da9e459d65022ead4e1153a5beec3cd8993e0b4966f06848935e641d553a",
+    "computed.json": "7f7d2ddc6b78ebcee2b8a14cf8afaaef69295aa64ab723b6a6edc156b9056cd5"
+  }
+}

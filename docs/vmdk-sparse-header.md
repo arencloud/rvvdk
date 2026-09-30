@@ -86,5 +86,6 @@ advertised descriptor region containing only zeros. The separate
 validates directory/table contents and placement, and requires redundancy agreement.
 These guarantees belong to that loader; header admission alone remains unchanged.
 
-Next is R5.3: read-only base sparse mapping with aggregate admission and alias
-protection, followed by separate CLI and parent-chain work.
+[R5.3 SparseDisk](vmdk-sparse-disk.md) now adds read-only base sparse mapping with
+aggregate admission and alias protection. Next is R5.4 CLI integration; parent-chain
+work remains separate.

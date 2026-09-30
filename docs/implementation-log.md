@@ -1570,13 +1570,63 @@ and requests 16,384 metadata bytes. Larger-capacity tuning and earlier performan
 follow-ups remain open. These are shared-host cost baselines, not storage throughput
 or a causal speedup claim.
 
+## R5.3 — Read-only base sparse logical mapping
+
+Date: 2026-09-30. Status: **Complete within the base hosted sparse library subset**.
+Baseline: `c7a8a0f`, initially clean. The enclosing commit records this step.
+[Evidence](benchmark-results/2026-09-30-r53/README.md) retains source/harness/binary
+identities, all samples, reference hashes, validation and SVG/PNG plots.
+
+Added SparseDisk/SparseDiskLimits over the R5.2 metadata loader. Acquire every extent
+under per-extent and aggregate memory/read budgets plus a handle limit; charge
+repeated references separately and revalidate all sources after loading. Reads map
+across grains and split extents with different supported grain sizes, combine
+physical adjacency, propagate short/error I/O and zero-fill unallocated base grains.
+Logical Data/Zero queries clip/coalesce, count before allocation and enforce an
+output limit. Retained immutable maps support concurrent reads without reopening.
+
+Portable DataMover/Verifier use the new read-only VirtualDisk with all-backing alias
+checks; unknown identities fail copy/verify preflight. Retained inode identity catches
+hard links and survives pathname replacement. Standalone callers must revalidate
+before sessions and keep sources quiescent; there is no content snapshot or replay.
+No native RAW endpoint, writes, parent resolution or public CLI sparse support.
+[Contract](vmdk-sparse-disk.md); [ADR-0040](adr/0040-read-only-base-sparse-mapping.md).
+
+Validation: **478 distinct passed, one existing gated allocation test** (479 total).
+Thirteen new tests cover ranges, physical coalescing/fragmentation, zero I/O avoidance,
+split/mixed-grain-size mapping, exact aggregate and output limits, release on failure,
+short/error reads, concurrent ownership/copy/verify, aliases/unknown/changed identities,
+final acquisition observations and real-file hard links/path replacement. Separate
+114-test CLI/VMDK validation passes with integration fixtures on Btrfs; five existing
+CLI unit fault tests retain system-temporary fixtures. Formatting, strict all-target
+Clippy and portable core/datamover/VMDK wasm32 checks pass (existing control::sum warning).
+
+Full production reads match patterned RAW oracles and QEMU compare for four generated
+fixtures: 1 MiB and 64 MiB monolithic, 1 MiB split and a two-file 2 GiB + 64 KiB split
+disk with data across the split boundary. Every logical byte is read in 65,537-byte
+chunks; source VMDK hashes stay unchanged. No fixture rewriting or alternate mapping
+implementation supplies the reader. Public CLI rejects all four pending R5.4.
+The largest case reserves 287,352 loader/struct payload bytes and reads 290,816
+metadata bytes; this is larger-geometry correctness, not performance qualification.
+
+Performance: 24 matched runs show **-0.51%, -0.09%, +0.15%, +0.21%** for existing
+metadata load, FLAT/ZERO 64 KiB logical reads, CLI mixed copy+verify and RAW verify.
+No adverse aggregate or pair exceeds +5%; no longer repeats trigger. The favorable
+-10.96% RAW-verify pair remains visible as host variability, not a speedup claim.
+Twenty-one new memory-backed runs establish **2.594 µs contiguous / 2.391 µs fragmented
+128 KiB reads**, **1.053 µs Data/Zero / 1.117 µs split-boundary 64 KiB reads**,
+**0.068 µs extent queries**, **10.909 µs split opening** and **0.410 ms 2 MiB portable
+copy+verify**. Contiguous-read medians vary from 2.302 to 2.981 µs: fewer backend
+requests are proven by tests, not a timing advantage on this shared memory workload.
+Opening, reading, queries and copying have different boundaries; no storage throughput
+claim follows. Larger-capacity performance and prior tuning follow-ups remain open.
+
 ## Next session
 
-Start **R5.3**: read-only base sparse logical mapping across grain/split boundaries,
-aggregate metadata admission, composite source alias protection and retained-source
-quiescence. Establish logical zero reads for unallocated base grains with no parent;
-keep parent chains and public CLI integration separate. Add cross-boundary/short-read
-checks, reference byte comparisons, benchmarks, plots and a commit.
+Start **R5.4**: explicit sparse CLI source acquisition and inspect/plan/copy/verify
+integration. Preserve descriptor provenance, destination identity/alias checks,
+publication and cancellation. Keep parent chains and broader variants separate.
+Each step gets tests, reference checks, benchmarks, plots and a commit.
 
 ESXi remains unnecessary for local work; request the 60-day trial when V0's lab
 proof is ready. Keep PERF.0, R4.4 preview overhead/tuning and earlier adverse timing

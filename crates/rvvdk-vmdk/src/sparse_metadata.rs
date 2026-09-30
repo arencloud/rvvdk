@@ -255,6 +255,9 @@ impl SparseMetadata {
             read_bytes,
         })
     }
+    pub(crate) fn read_physical(&self, offset: u64, buffer: &mut [u8]) -> rvvdk_core::Result<()> {
+        self.source.read_exact_at(offset, buffer)
+    }
     pub fn header(&self) -> &SparseHeader {
         &self.header
     }

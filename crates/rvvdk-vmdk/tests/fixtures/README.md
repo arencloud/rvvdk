@@ -60,3 +60,10 @@ field semantics; no producer implementation source was read. The separate
 `compare_sparse_metadata.py` runner creates monolithic/split sparse images with
 QEMU, reconstructs bytes from the validated map only in a test utility, and compares
 with the original RAW oracle and QEMU. Production sparse reads remain disabled.
+
+R5.3 reuses these authored maps for production SparseDisk boundary, alias and
+budget tests and benchmarks. `compare_sparse.py` generates known patterned RAW
+oracles and QEMU monolithic/split sources, then compares production logical reads
+against both. The multi-file case crosses the 2 GiB split boundary. The dump helper
+reads every logical byte in 65,537-byte chunks and leaves zero-only output chunks
+unallocated; it is a qualification utility, not the public CLI publication path.

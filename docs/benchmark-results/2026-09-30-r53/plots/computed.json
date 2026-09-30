@@ -1,0 +1,182 @@
+{
+  "main": [
+    {
+      "benchmark": "sparse_metadata/monolithic",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          5066.442833090992,
+          5222.033540774266,
+          5232.167923046722
+        ],
+        "candidate": [
+          5078.532558491709,
+          5220.9113759735665,
+          5195.206247093474
+        ]
+      },
+      "baseline_ns": 5222.033540774266,
+      "candidate_ns": 5195.206247093474,
+      "change_percent": -0.513732695727076,
+      "paired_changes_percent": [
+        0.2386235431643291,
+        -0.0214890385505484,
+        -0.7064313779081566
+      ]
+    },
+    {
+      "benchmark": "logical/cross_64k",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          1082.0875993204168,
+          1067.0204982809469,
+          1094.753988134476
+        ],
+        "candidate": [
+          1064.684933772227,
+          1113.3255852156058,
+          1081.1533268166604
+        ]
+      },
+      "baseline_ns": 1082.0875993204168,
+      "candidate_ns": 1081.1533268166604,
+      "change_percent": -0.08633982168755328,
+      "paired_changes_percent": [
+        -1.6082492359324019,
+        4.339662359744723,
+        -1.2423486431862085
+      ]
+    },
+    {
+      "benchmark": "cli_vmdk/copy_mixed_verify",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          20037409.125,
+          20022006.25,
+          20844366.25
+        ],
+        "candidate": [
+          20068331.5,
+          20099415.25,
+          20002611.5
+        ]
+      },
+      "baseline_ns": 20037409.125,
+      "candidate_ns": 20068331.5,
+      "change_percent": 0.15432322016830646,
+      "paired_changes_percent": [
+        0.15432322016830646,
+        0.3866195976239828,
+        -4.038284205450482
+      ]
+    },
+    {
+      "benchmark": "cli_transfer/verify_only",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          3157522.590909091,
+          3565598.15,
+          3167860.1
+        ],
+        "candidate": [
+          3105269.2,
+          3174665.545454546,
+          3205040.7
+        ]
+      },
+      "baseline_ns": 3167860.1,
+      "candidate_ns": 3174665.545454546,
+      "change_percent": 0.21482784086790385,
+      "paired_changes_percent": [
+        -1.6548857341364687,
+        -10.96401187400925,
+        1.173681880711852
+      ]
+    }
+  ],
+  "followup": null,
+  "candidate_only": [
+    {
+      "benchmark": "sparse_disk/read_contiguous_128k",
+      "candidate_ns": 2594.0641235059757,
+      "run_medians_ns": [
+        2301.604612310978,
+        2594.0641235059757,
+        2981.135519634066
+      ]
+    },
+    {
+      "benchmark": "sparse_disk/read_fragmented_128k",
+      "candidate_ns": 2390.733442013876,
+      "run_medians_ns": [
+        2335.3342402678945,
+        2555.7609385890187,
+        2390.733442013876
+      ]
+    },
+    {
+      "benchmark": "sparse_disk/read_cross_zero_64k",
+      "candidate_ns": 1052.6616388652528,
+      "run_medians_ns": [
+        1052.6616388652528,
+        1105.0602533883323,
+        1049.9751264278675
+      ]
+    },
+    {
+      "benchmark": "sparse_disk/read_split_64k",
+      "candidate_ns": 1117.035749182924,
+      "run_medians_ns": [
+        1123.8719436070764,
+        1117.035749182924,
+        1052.1426453764723
+      ]
+    },
+    {
+      "benchmark": "sparse_disk/extents_1m",
+      "candidate_ns": 67.7945926748769,
+      "run_medians_ns": [
+        67.7945926748769,
+        63.339132577171924,
+        68.98085472473002
+      ]
+    },
+    {
+      "benchmark": "sparse_disk/load_split_2m",
+      "candidate_ns": 10909.007829418624,
+      "run_medians_ns": [
+        11303.164903156385,
+        10581.14293971924,
+        10909.007829418624
+      ]
+    },
+    {
+      "benchmark": "sparse_disk/copy_verify_2m",
+      "candidate_ns": 410128.203125,
+      "run_medians_ns": [
+        410128.203125,
+        416115.4558823529,
+        391762.2941176471
+      ]
+    }
+  ]
+}

@@ -32,3 +32,6 @@ pub use sparse::{SPARSE_HEADER_BYTES, SparseError, SparseHeader, SparseLimits, S
 
 mod sparse_metadata;
 pub use sparse_metadata::{SparseMetadata, SparseMetadataError, SparseMetadataLimits};
+
+mod sparse_disk;
+pub use sparse_disk::{SparseDisk, SparseDiskLimits};

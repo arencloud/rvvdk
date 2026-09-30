@@ -1216,3 +1216,20 @@ Unknown identity and same-size concurrent content changes are not qualified;
 callers must keep sources quiescent. R5.3 owns aggregate admission, alias protection
 and logical reads. See [contract](vmdk-sparse-metadata.md) and
 [ADR-0039](adr/0039-bounded-sparse-metadata.md).
+
+
+## Base sparse logical mapping (R5.3)
+
+SparseDisk loads an explicit base sparse descriptor through SparseMetadata, charging
+all extents against aggregate payload/read limits and a handle count before exposing
+VirtualDisk. It owns validated maps and sources independently of input text/resolver
+lifetimes. Final acquisition revalidates earlier sources as well as the last one.
+
+A shared allocation-free run traversal maps reads through physically adjacent grain
+runs and fills unallocated base ranges with zeros. Logical extent queries merge
+Data/Zero kinds across backing boundaries, count before allocation and obey an output
+limit. Portable DataMover/Verifier consume the read-only composite through normal
+preflight; all backing identities participate in destination alias checks. No native
+RAW endpoint, writes, parent inference or automatic snapshot is exposed. Sources
+must stay quiescent. Public CLI integration is R5.4. See the
+[contract](vmdk-sparse-disk.md) and [ADR-0040](adr/0040-read-only-base-sparse-mapping.md).

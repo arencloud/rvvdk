@@ -1,0 +1,1105 @@
+diff --git a/crates/rvvdk-vmdk/Cargo.toml b/crates/rvvdk-vmdk/Cargo.toml
+index 8305070..19bd6ee 100644
+--- a/crates/rvvdk-vmdk/Cargo.toml
++++ b/crates/rvvdk-vmdk/Cargo.toml
+@@ -40,3 +40,7 @@ harness = false
+ [[bench]]
+ name = "sparse_metadata"
+ harness = false
++
++[[bench]]
++name = "sparse_disk"
++harness = false
+diff --git a/crates/rvvdk-vmdk/src/lib.rs b/crates/rvvdk-vmdk/src/lib.rs
+index 32b9929..447821c 100644
+--- a/crates/rvvdk-vmdk/src/lib.rs
++++ b/crates/rvvdk-vmdk/src/lib.rs
+@@ -32,3 +32,6 @@ pub use sparse::{SPARSE_HEADER_BYTES, SparseError, SparseHeader, SparseLimits, S
+ 
+ mod sparse_metadata;
+ pub use sparse_metadata::{SparseMetadata, SparseMetadataError, SparseMetadataLimits};
++
++mod sparse_disk;
++pub use sparse_disk::{SparseDisk, SparseDiskLimits};
+diff --git a/crates/rvvdk-vmdk/src/sparse_metadata.rs b/crates/rvvdk-vmdk/src/sparse_metadata.rs
+index 2661195..ca3fa8a 100644
+--- a/crates/rvvdk-vmdk/src/sparse_metadata.rs
++++ b/crates/rvvdk-vmdk/src/sparse_metadata.rs
+@@ -255,6 +255,9 @@ impl SparseMetadata {
+             read_bytes,
+         })
+     }
++    pub(crate) fn read_physical(&self, offset: u64, buffer: &mut [u8]) -> rvvdk_core::Result<()> {
++        self.source.read_exact_at(offset, buffer)
++    }
+     pub fn header(&self) -> &SparseHeader {
+         &self.header
+     }
+diff --git a/crates/rvvdk-vmdk/tests/fixtures/README.md b/crates/rvvdk-vmdk/tests/fixtures/README.md
+index 1570c01..ce1cd66 100644
+--- a/crates/rvvdk-vmdk/tests/fixtures/README.md
++++ b/crates/rvvdk-vmdk/tests/fixtures/README.md
+@@ -60,3 +60,10 @@ field semantics; no producer implementation source was read. The separate
+ `compare_sparse_metadata.py` runner creates monolithic/split sparse images with
+ QEMU, reconstructs bytes from the validated map only in a test utility, and compares
+ with the original RAW oracle and QEMU. Production sparse reads remain disabled.
++
++R5.3 reuses these authored maps for production SparseDisk boundary, alias and
++budget tests and benchmarks. `compare_sparse.py` generates known patterned RAW
++oracles and QEMU monolithic/split sources, then compares production logical reads
++against both. The multi-file case crosses the 2 GiB split boundary. The dump helper
++reads every logical byte in 65,537-byte chunks and leaves zero-only output chunks
++unallocated; it is a qualification utility, not the public CLI publication path.
+diff --git a/crates/rvvdk-vmdk/benches/sparse_disk.rs b/crates/rvvdk-vmdk/benches/sparse_disk.rs
+new file mode 100644
+index 0000000..ae734cd
+--- /dev/null
++++ b/crates/rvvdk-vmdk/benches/sparse_disk.rs
+@@ -0,0 +1,111 @@
++#[path = "../tests/support/sparse_metadata.rs"]
++mod f;
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use rvvdk_core::{MemoryBlockDevice, RawDisk, VirtualDisk};
++use rvvdk_datamover::{CopyOptions, DataMover, Verifier};
++use rvvdk_vmdk::{SparseDescriptor, SparseDisk, SparseDiskLimits};
++use std::{
++    hint::black_box,
++    time::{Duration, Instant},
++};
++fn logical(c: &mut Criterion) {
++    let text = f::descriptor("monolithicSparse", "RW 2048 SPARSE \"disk.vmdk\"");
++    let parsed = SparseDescriptor::parse(text.as_bytes()).unwrap();
++    let bytes = f::bytes(Some(&text));
++    let r = f::Resolver(f::device(&bytes));
++    let disk = SparseDisk::load(&parsed, &r, SparseDiskLimits::default()).unwrap();
++    let mut fragment = bytes.clone();
++    for t in [22, 27] {
++        f::put32(&mut fragment, t * 512, 256);
++        f::put32(&mut fragment, t * 512 + 4, 128);
++    }
++    let fragmented = SparseDisk::load(
++        &parsed,
++        &f::Resolver(f::device(&fragment)),
++        SparseDiskLimits::default(),
++    )
++    .unwrap();
++    let split = f::descriptor(
++        "twoGbMaxExtentSparse",
++        "RW 2048 SPARSE \"disk.vmdk\"\nRW 2048 SPARSE \"disk.vmdk\"",
++    );
++    let sd = SparseDescriptor::parse(split.as_bytes()).unwrap();
++    let sr = f::Resolver(f::device(&f::bytes(None)));
++    let split = SparseDisk::load(&sd, &sr, SparseDiskLimits::default()).unwrap();
++    let mut group = c.benchmark_group("sparse_disk");
++    group.sampling_mode(SamplingMode::Flat);
++    for (name, source, offset, length) in [
++        ("read_contiguous_128k", &disk, 0, 131072),
++        ("read_fragmented_128k", &fragmented, 0, 131072),
++        ("read_cross_zero_64k", &disk, 98304, 65536),
++        ("read_split_64k", &split, 1048576 - 32768, 65536),
++    ] {
++        let mut buffer = vec![0; length];
++        source.read_exact_at(offset, &mut buffer).unwrap();
++        for (i, byte) in buffer.iter().enumerate() {
++            let local = (offset + i as u64) % 1048576;
++            let expected = if local >= 131072 {
++                0
++            } else if (local < 65536) != (name == "read_fragmented_128k") {
++                0x5a
++            } else {
++                0xa5
++            };
++            assert_eq!(*byte, expected);
++        }
++        group.bench_function(name, |b| {
++            b.iter(|| {
++                source
++                    .read_exact_at(black_box(offset), black_box(&mut buffer))
++                    .unwrap();
++                black_box(&buffer);
++            })
++        });
++    }
++    assert_eq!(disk.extents(0, disk.size()).unwrap().len(), 2);
++    group.bench_function("extents_1m", |b| {
++        b.iter(|| black_box(disk.extents(black_box(0), black_box(disk.size())).unwrap()))
++    });
++    group.bench_function("load_split_2m", |b| {
++        b.iter(|| {
++            black_box(
++                SparseDisk::load(black_box(&sd), black_box(&sr), SparseDiskLimits::default())
++                    .unwrap(),
++            )
++        })
++    });
++    let target = RawDisk::new(MemoryBlockDevice::new(2 * 1048576).unwrap());
++    let mover = DataMover::new(CopyOptions::with_concurrency(65536, 4096, 4).unwrap());
++    let mut verifier = Verifier::new(split.size(), 65536, 131072).unwrap();
++    let dirty = vec![0xcc; 2 * 1048576];
++    let mut actual = vec![0; dirty.len()];
++    group.bench_function("copy_verify_2m", |b| {
++        b.iter_custom(|iters| {
++            let mut elapsed = Duration::ZERO;
++            for _ in 0..iters {
++                target.write_all_at(0, &dirty).unwrap();
++                let start = Instant::now();
++                black_box(mover.copy(&split, &target).unwrap());
++                black_box(verifier.verify(&split, &target).unwrap());
++                elapsed += start.elapsed();
++                target.read_exact_at(0, &mut actual).unwrap();
++                for (i, byte) in actual.iter().enumerate() {
++                    assert_eq!(
++                        *byte,
++                        if i % 1048576 < 65536 {
++                            0x5a
++                        } else if i % 1048576 < 131072 {
++                            0xa5
++                        } else {
++                            0
++                        }
++                    );
++                }
++            }
++            elapsed
++        })
++    });
++    group.finish();
++}
++criterion_group!(benches, logical);
++criterion_main!(benches);
+diff --git a/crates/rvvdk-vmdk/examples/dump_sparse.rs b/crates/rvvdk-vmdk/examples/dump_sparse.rs
+new file mode 100644
+index 0000000..80df285
+--- /dev/null
++++ b/crates/rvvdk-vmdk/examples/dump_sparse.rs
+@@ -0,0 +1,94 @@
++//! Local fixture qualification through SparseDisk; not public CLI publication.
++#[cfg(target_os = "linux")]
++fn main() -> Result<(), Box<dyn std::error::Error>> {
++    use rvvdk_core::{EndpointIdentity, VirtualDisk};
++    use rvvdk_vmdk::{
++        Limits, LocalResolver, SparseDescriptor, SparseDisk, SparseDiskLimits, SparseHeader,
++        SparseLimits,
++    };
++    use std::{
++        fs::File,
++        io::{Read, Seek, SeekFrom, Write},
++        os::unix::fs::MetadataExt,
++        path::Path,
++    };
++    let args: Vec<_> = std::env::args_os().skip(1).collect();
++    if args.len() != 3 {
++        return Err("usage: dump_sparse DESCRIPTOR --embedded|--external NEW_RAW_OUTPUT".into());
++    }
++    let path = Path::new(&args[0]);
++    let mut source = File::open(path)?;
++    let initial = source.metadata()?;
++    if !initial.is_file() {
++        return Err("expected regular source".into());
++    }
++    let embedded = match args[1].to_str() {
++        Some("--embedded") => true,
++        Some("--external") => false,
++        _ => return Err("invalid descriptor mode".into()),
++    };
++    let mut text = Vec::new();
++    if embedded {
++        let h = SparseHeader::read_from(&mut source, initial.len(), SparseLimits::default())?;
++        let r = h.descriptor().ok_or("missing embedded descriptor")?;
++        source.seek(SeekFrom::Start(r.offset()))?;
++        Read::by_ref(&mut source)
++            .take(r.length())
++            .read_to_end(&mut text)?;
++    } else {
++        Read::by_ref(&mut source)
++            .take(Limits::default().descriptor_bytes as u64 + 1)
++            .read_to_end(&mut text)?;
++    }
++    let descriptor = SparseDescriptor::parse(&text)?;
++    let parent = path
++        .parent()
++        .filter(|p| !p.as_os_str().is_empty())
++        .unwrap_or(Path::new("."));
++    let resolver = LocalResolver::from_directory(File::open(parent)?)?;
++    let disk = SparseDisk::load(&descriptor, &resolver, SparseDiskLimits::default())?;
++    if embedded
++        && disk.metadata()[0].initial_endpoint().identity
++            != Some(EndpointIdentity::LocalFile {
++                device: initial.dev(),
++                inode: initial.ino(),
++            })
++    {
++        return Err("embedded descriptor resolved another file".into());
++    }
++    disk.revalidate()?;
++    let mut output = File::options()
++        .write(true)
++        .create_new(true)
++        .open(&args[2])?;
++    output.set_len(disk.size())?;
++    let mut buffer = vec![0; 65537];
++    let mut offset = 0;
++    while offset < disk.size() {
++        let n = (disk.size() - offset).min(buffer.len() as u64) as usize;
++        disk.read_exact_at(offset, &mut buffer[..n])?;
++        // Every logical byte is read. Keep known-zero output chunks sparse.
++        if buffer[..n].iter().any(|&b| b != 0) {
++            output.seek(SeekFrom::Start(offset))?;
++            output.write_all(&buffer[..n])?;
++        }
++        offset += n as u64;
++    }
++    disk.revalidate()?;
++    output.sync_all()?;
++    let extents = disk.extents(0, disk.size())?;
++    println!(
++        "{{\"size_bytes\":{},\"backings\":{},\"logical_extents\":{},\"reserved_memory_bytes\":{},\"metadata_read_bytes\":{}}}",
++        disk.size(),
++        disk.metadata().len(),
++        extents.len(),
++        disk.reserved_memory_bytes(),
++        disk.metadata_read_bytes()
++    );
++    Ok(())
++}
++#[cfg(not(target_os = "linux"))]
++fn main() {
++    eprintln!("local fixture qualification requires Linux");
++    std::process::exit(1);
++}
+diff --git a/crates/rvvdk-vmdk/src/sparse_disk.rs b/crates/rvvdk-vmdk/src/sparse_disk.rs
+new file mode 100644
+index 0000000..a3b96da
+--- /dev/null
++++ b/crates/rvvdk-vmdk/src/sparse_disk.rs
+@@ -0,0 +1,277 @@
++//! Read-only logical access to validated, quiescent base sparse sources.
++use crate::{
++    BackingResolver, SparseDescriptor, SparseMetadata, SparseMetadataError, SparseMetadataLimits,
++};
++use rvvdk_core::{
++    Capabilities, CopyEndpoint, DiskGeometry, DiskRange, Error, Extent, ExtentKind, Result,
++    VirtualDisk,
++};
++
++#[derive(Clone, Copy, Debug)]
++pub struct SparseDiskLimits {
++    pub metadata: SparseMetadataLimits,
++    /// Maximum resolved extents/handles, including repeated references.
++    pub extents: usize,
++    /// Conservative sum of per-extent loader reservations plus metadata structs.
++    pub memory_bytes: u64,
++    /// Sum of complete metadata reads across all extents.
++    pub read_bytes: u64,
++    /// Maximum coalesced entries returned by one extents() query.
++    pub output_extents: usize,
++}
++impl Default for SparseDiskLimits {
++    fn default() -> Self {
++        Self {
++            metadata: SparseMetadataLimits::default(),
++            extents: 128,
++            memory_bytes: 128 << 20,
++            read_bytes: 256 << 20,
++            output_extents: 65536,
++        }
++    }
++}
++
++/// Owned base sparse disk. No parent resolution, writes, or native RAW endpoint.
++/// Standalone callers must revalidate before read sessions and keep all sources
++/// quiescent throughout use. Endpoint observations do not freeze file contents.
++pub struct SparseDisk {
++    metadata: Vec<SparseMetadata>,
++    geometry: DiskGeometry,
++    cid: u32,
++    reserved_memory: u64,
++    read_bytes: u64,
++    output_extents: usize,
++}
++impl SparseDisk {
++    pub fn load(
++        descriptor: &SparseDescriptor<'_>,
++        resolver: &dyn BackingResolver,
++        limits: SparseDiskLimits,
++    ) -> std::result::Result<Self, SparseMetadataError> {
++        let count = descriptor.extents().len();
++        if count > limits.extents {
++            return Err(SparseMetadataError::Limit("disk extents"));
++        }
++        let mut reserved_memory = (count as u64)
++            .checked_mul(std::mem::size_of::<SparseMetadata>() as u64)
++            .ok_or(SparseMetadataError::Limit("disk memory arithmetic"))?;
++        if reserved_memory > limits.memory_bytes {
++            return Err(SparseMetadataError::Limit("disk memory bytes"));
++        }
++        let mut metadata = Vec::new();
++        metadata
++            .try_reserve_exact(count)
++            .map_err(|_| SparseMetadataError::Allocation)?;
++        let mut read_bytes = 0;
++        for index in 0..count {
++            let mut admission = limits.metadata;
++            admission.memory_bytes = admission
++                .memory_bytes
++                .min(limits.memory_bytes - reserved_memory);
++            admission.read_bytes = admission.read_bytes.min(limits.read_bytes - read_bytes);
++            let m = SparseMetadata::load(descriptor, index, resolver, admission)?;
++            // The loader admitted both amounts against the remaining aggregate.
++            reserved_memory += m.reserved_memory_bytes();
++            read_bytes += m.metadata_read_bytes();
++            metadata.push(m);
++        }
++        let disk = Self {
++            metadata,
++            geometry: DiskGeometry::new(descriptor.size_bytes(), 512, 512)
++                .expect("fixed sector geometry"),
++            cid: descriptor.cid(),
++            reserved_memory,
++            read_bytes,
++            output_extents: limits.output_extents,
++        };
++        // Loading later extents may have changed an earlier source observation.
++        disk.revalidate()?;
++        Ok(disk)
++    }
++    pub fn metadata(&self) -> &[SparseMetadata] {
++        &self.metadata
++    }
++    pub fn cid(&self) -> u32 {
++        self.cid
++    }
++    pub fn reserved_memory_bytes(&self) -> u64 {
++        self.reserved_memory
++    }
++    pub fn metadata_read_bytes(&self) -> u64 {
++        self.read_bytes
++    }
++    pub fn revalidate(&self) -> std::result::Result<(), SparseMetadataError> {
++        for m in &self.metadata {
++            m.revalidate()?;
++        }
++        Ok(())
++    }
++    fn range(&self, offset: u64, length: u64) -> Result<DiskRange> {
++        let range = DiskRange::new(offset, length)?;
++        if range.end() > self.size() {
++            return Err(Error::OutOfBounds {
++                offset,
++                length,
++                size: self.size(),
++            });
++        }
++        Ok(range)
++    }
++    /// Walk clipped runs without allocating. Data runs require physical adjacency;
++    /// zero runs require only unallocated base grains. Never cross a backing here.
++    fn runs(
++        &self,
++        range: DiskRange,
++        mut visit: impl FnMut(u64, u64, Option<u64>, &SparseMetadata) -> Result<()>,
++    ) -> Result<()> {
++        if range.is_empty() {
++            return Ok(());
++        }
++        let first = self.metadata.partition_point(|m| {
++            m.logical_offset() + m.header().capacity_bytes() <= range.offset()
++        });
++        for m in &self.metadata[first..] {
++            if m.logical_offset() >= range.end() {
++                break;
++            }
++            let grain = m.header().grain_bytes();
++            let sectors = grain / 512;
++            let end = range
++                .end()
++                .min(m.logical_offset() + m.header().capacity_bytes())
++                - m.logical_offset();
++            let mut pos = range.offset().saturating_sub(m.logical_offset());
++            while pos < end {
++                let index = (pos / grain) as usize;
++                let entry = m.grain_sectors()[index];
++                let physical = (entry != 0).then(|| u64::from(entry) * 512 + pos % grain);
++                let mut next = index + 1;
++                let mut stop = ((next as u64) * grain).min(end);
++                while stop < end {
++                    let value = m.grain_sectors()[next];
++                    let adjacent = if entry == 0 {
++                        value == 0
++                    } else {
++                        value != 0
++                            && u64::from(value) == u64::from(m.grain_sectors()[next - 1]) + sectors
++                    };
++                    if !adjacent {
++                        break;
++                    }
++                    next += 1;
++                    stop = ((next as u64) * grain).min(end);
++                }
++                visit(m.logical_offset() + pos, stop - pos, physical, m)?;
++                pos = stop;
++            }
++        }
++        Ok(())
++    }
++}
++impl VirtualDisk for SparseDisk {
++    fn geometry(&self) -> DiskGeometry {
++        self.geometry
++    }
++    fn capabilities(&self) -> Capabilities {
++        Capabilities::READ | Capabilities::EXTENTS | Capabilities::SPARSE
++    }
++    fn copy_endpoint(&self) -> Result<CopyEndpoint> {
++        self.revalidate()
++            .map_err(|e| Error::EndpointChanged(e.to_string()))?;
++        Ok(CopyEndpoint {
++            size: self.size(),
++            capabilities: self.capabilities(),
++            identity: None,
++        })
++    }
++    fn validate_destination_identity(&self, destination: CopyEndpoint) -> Result<()> {
++        let identity = destination.identity.ok_or(Error::InvalidEndpoint {
++            reason: "sparse destination identity is unknown",
++        })?;
++        for m in &self.metadata {
++            let source = m
++                .initial_endpoint()
++                .identity
++                .ok_or(Error::InvalidEndpoint {
++                    reason: "sparse backing identity is unknown",
++                })?;
++            if source == identity {
++                return Err(Error::AliasedEndpoints);
++            }
++        }
++        Ok(())
++    }
++    fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
++        let length = u64::try_from(buffer.len()).map_err(|_| Error::RangeOverflow {
++            offset,
++            length: u64::MAX,
++        })?;
++        let range = self.range(offset, length)?;
++        self.runs(range, |logical, size, physical, m| {
++            let start = (logical - offset) as usize;
++            let target = &mut buffer[start..start + size as usize];
++            if let Some(physical) = physical {
++                m.read_physical(physical, target)?;
++            } else {
++                target.fill(0);
++            }
++            Ok(())
++        })?;
++        Ok(buffer.len())
++    }
++    fn extents(&self, offset: u64, length: u64) -> Result<Vec<Extent>> {
++        let range = self.range(offset, length)?;
++        // Count coalesced logical kinds first, then allocate exactly that payload.
++        // Both passes use immutable metadata and perform no backing I/O.
++        let mut count = 0usize;
++        let mut previous = None;
++        self.runs(range, |_, _, physical, _| {
++            let data = physical.is_some();
++            if previous != Some(data) {
++                if count == self.output_extents {
++                    return Err(Error::InvalidEndpoint {
++                        reason: "sparse output extent limit",
++                    });
++                }
++                count += 1;
++                previous = Some(data);
++            }
++            Ok(())
++        })?;
++        let bytes = count
++            .checked_mul(std::mem::size_of::<Extent>())
++            .ok_or(Error::MemoryAccountingOverflow)?;
++        let mut out: Vec<Extent> = Vec::new();
++        out.try_reserve_exact(count)
++            .map_err(|_| Error::BufferAllocation {
++                size: bytes,
++                alignment: std::mem::align_of::<Extent>(),
++            })?;
++        self.runs(range, |start, length, physical, _| {
++            let kind = if physical.is_some() {
++                ExtentKind::Data
++            } else {
++                ExtentKind::Zero
++            };
++            if let Some(last) = out.last_mut().filter(|last| last.kind() == kind) {
++                *last = Extent::new(last.offset(), start + length - last.offset(), kind)?;
++            } else {
++                out.push(Extent::new(start, length, kind)?);
++            }
++            Ok(())
++        })?;
++        Ok(out)
++    }
++    fn write_at(&self, _: u64, _: &[u8]) -> Result<usize> {
++        Err(Error::Unsupported)
++    }
++    fn write_zero_at(&self, _: u64, _: u64) -> Result<()> {
++        Err(Error::Unsupported)
++    }
++    fn discard(&self, _: u64, _: u64) -> Result<()> {
++        Err(Error::Unsupported)
++    }
++    fn flush(&self) -> Result<()> {
++        Err(Error::Unsupported)
++    }
++}
+diff --git a/crates/rvvdk-vmdk/tests/sparse_disk.rs b/crates/rvvdk-vmdk/tests/sparse_disk.rs
+new file mode 100644
+index 0000000..bae0415
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/sparse_disk.rs
+@@ -0,0 +1,547 @@
++#[path = "support/sparse_metadata.rs"]
++mod f;
++use rvvdk_core::{
++    BlockDevice, Capabilities, CopyEndpoint, DiskGeometry, EndpointIdentity, Error, ExtentKind,
++    MemoryBlockDevice, RawDisk, VirtualDisk,
++};
++use rvvdk_datamover::{CopyOptions, DataMover, Verifier};
++use rvvdk_vmdk::{
++    BackingError, BackingResolver, SparseDescriptor, SparseDisk, SparseDiskLimits, SparseMetadata,
++    SparseMetadataError,
++};
++use std::sync::{
++    Arc,
++    atomic::{AtomicUsize, Ordering},
++};
++const M: usize = 1048576;
++const G: usize = 65536;
++fn text() -> String {
++    f::descriptor("monolithicSparse", "RW 2048 SPARSE \"disk.vmdk\"")
++}
++fn disk(t: &str, r: &dyn BackingResolver) -> SparseDisk {
++    SparseDisk::load(
++        &SparseDescriptor::parse(t.as_bytes()).unwrap(),
++        r,
++        SparseDiskLimits::default(),
++    )
++    .unwrap()
++}
++fn oracle() -> Vec<u8> {
++    let mut b = vec![0; M];
++    b[..G].fill(0x5a);
++    b[G..2 * G].fill(0xa5);
++    b
++}
++struct Source {
++    device: Arc<MemoryBlockDevice>,
++    mode: AtomicUsize,
++    reads: AtomicUsize,
++}
++impl Source {
++    fn new(b: &[u8]) -> Arc<Self> {
++        Arc::new(Self {
++            device: f::device(b),
++            mode: AtomicUsize::new(0),
++            reads: AtomicUsize::new(0),
++        })
++    }
++}
++impl BlockDevice for Source {
++    fn geometry(&self) -> DiskGeometry {
++        self.device.geometry()
++    }
++    fn capabilities(&self) -> Capabilities {
++        if self.mode.load(Ordering::Relaxed) & 16 != 0 {
++            Capabilities::empty()
++        } else {
++            Capabilities::READ
++        }
++    }
++    fn copy_endpoint(&self) -> rvvdk_core::Result<CopyEndpoint> {
++        let mode = self.mode.load(Ordering::Relaxed);
++        Ok(CopyEndpoint {
++            size: if mode & 4 != 0 { 0 } else { self.device.size() },
++            capabilities: self.capabilities(),
++            identity: if mode & 32 != 0 {
++                None
++            } else if mode & 8 != 0 {
++                Some(EndpointIdentity::Memory {
++                    address: usize::MAX,
++                })
++            } else {
++                self.device.copy_endpoint()?.identity
++            },
++        })
++    }
++    fn read_at(&self, o: u64, b: &mut [u8]) -> rvvdk_core::Result<usize> {
++        self.reads.fetch_add(1, Ordering::Relaxed);
++        let mode = self.mode.load(Ordering::Relaxed);
++        if o >= G as u64 {
++            if mode & 1 != 0 {
++                return Ok(0);
++            }
++            if mode & 2 != 0 {
++                return Err(std::io::Error::from(std::io::ErrorKind::PermissionDenied).into());
++            }
++            if mode & 64 != 0 {
++                let n = b.len().min(7);
++                return self.device.read_at(o, &mut b[..n]);
++            }
++        }
++        self.device.read_at(o, b)
++    }
++    fn write_at(&self, _: u64, _: &[u8]) -> rvvdk_core::Result<usize> {
++        panic!("source write")
++    }
++    fn flush(&self) -> rvvdk_core::Result<()> {
++        panic!("source flush")
++    }
++}
++struct Pair {
++    a: Arc<Source>,
++    b: Arc<Source>,
++    opens: AtomicUsize,
++}
++impl BackingResolver for Pair {
++    fn resolve(&self, name: &str) -> Result<Arc<dyn BlockDevice>, BackingError> {
++        self.opens.fetch_add(1, Ordering::Relaxed);
++        Ok(if name == "a" {
++            self.a.clone()
++        } else {
++            self.b.clone()
++        })
++    }
++}
++fn pair() -> (String, Pair) {
++    (
++        f::descriptor(
++            "twoGbMaxExtentSparse",
++            "RW 2048 SPARSE \"a\"\nRDONLY 2048 SPARSE \"b\"",
++        ),
++        Pair {
++            a: Source::new(&f::bytes(None)),
++            b: Source::new(&f::bytes(None)),
++            opens: AtomicUsize::new(0),
++        },
++    )
++}
++#[test]
++fn reads_match_oracle_at_grain_boundaries_and_unaligned_ranges() {
++    let t = text();
++    let d = disk(&t, &f::Resolver(f::device(&f::bytes(Some(&t)))));
++    let expected = oracle();
++    for offset in (0..=M)
++        .step_by(509)
++        .chain([G - 1, G, G + 1, 2 * G - 1, 2 * G, M])
++    {
++        for len in [0, 1, 3, 4097, 65537, M - offset] {
++            if offset + len > M {
++                continue;
++            }
++            let mut b = vec![0xcc; len];
++            assert_eq!(d.read_at(offset as u64, &mut b).unwrap(), len);
++            assert_eq!(b, expected[offset..offset + len]);
++        }
++    }
++    assert_eq!(d.cid(), 0x12345678);
++    assert_eq!(d.geometry().logical_block_size(), 512);
++    assert_eq!(d.copy_endpoint().unwrap().identity, None);
++    assert!(d.is_read_only());
++}
++#[test]
++fn contiguous_grains_merge_reads_and_zeros_never_read_payload() {
++    let t = text();
++    let s = Source::new(&f::bytes(Some(&t)));
++    let d = disk(&t, &f::Resolver(s.clone()));
++    s.reads.store(0, Ordering::Relaxed);
++    let mut b = vec![0; 2 * G];
++    d.read_exact_at(0, &mut b).unwrap();
++    assert_eq!(s.reads.load(Ordering::Relaxed), 1);
++    assert_eq!(b, oracle()[..2 * G]);
++    d.read_exact_at((2 * G) as u64, &mut b).unwrap();
++    assert_eq!(b, vec![0; 2 * G]);
++    assert_eq!(s.reads.load(Ordering::Relaxed), 1);
++    let mut raw = f::bytes(Some(&t));
++    for table in [22, 27] {
++        f::put32(&mut raw, table * 512, 256);
++        f::put32(&mut raw, table * 512 + 4, 128);
++    }
++    let s = Source::new(&raw);
++    let d = disk(&t, &f::Resolver(s.clone()));
++    s.reads.store(0, Ordering::Relaxed);
++    d.read_exact_at(0, &mut b).unwrap();
++    assert_eq!(s.reads.load(Ordering::Relaxed), 2);
++    assert_eq!(&b[..G], vec![0xa5; G]);
++    assert_eq!(&b[G..], vec![0x5a; G]);
++    assert_eq!(d.extents(0, (2 * G) as u64).unwrap().len(), 1);
++}
++#[test]
++fn split_reads_and_extents_cross_backings_with_different_grain_sizes() {
++    let (t, p) = pair();
++    let mut second = f::bytes(None);
++    second[20..28].copy_from_slice(&64u64.to_le_bytes()); // 32 KiB grains
++    p.b.device.write_all_at(0, &second).unwrap();
++    let d = disk(&t, &p);
++    let mut expected = oracle();
++    let mut tail = vec![0; M];
++    tail[..G / 2].fill(0x5a);
++    tail[G / 2..G].fill(0xa5);
++    expected.extend(tail);
++    for offset in [M - G, M - 3, M, M + G / 2 - 1, 2 * M - 1] {
++        let length = (2 * M - offset).min(G + 31);
++        let mut b = vec![9; length];
++        d.read_exact_at(offset as u64, &mut b).unwrap();
++        assert_eq!(b, expected[offset..offset + length]);
++    }
++    let e = d.extents((M - 17) as u64, (G + 35) as u64).unwrap();
++    assert_eq!(
++        e.iter()
++            .map(|e| (e.offset(), e.length(), e.kind()))
++            .collect::<Vec<_>>(),
++        vec![
++            ((M - 17) as u64, 17, ExtentKind::Zero),
++            (M as u64, G as u64, ExtentKind::Data),
++            ((M + G) as u64, 18, ExtentKind::Zero)
++        ]
++    );
++    assert_eq!(p.opens.load(Ordering::Relaxed), 2);
++}
++#[test]
++fn extent_queries_clip_coalesce_across_sources_and_enforce_output_limit() {
++    let (t, p) = pair();
++    for table in [22, 27] {
++        p.b.device
++            .write_all_at((table * 512) as u64, &0u32.to_le_bytes())
++            .unwrap();
++    }
++    let d = disk(&t, &p);
++    let e = d
++        .extents((2 * G - 7) as u64, (M + G + 10 - 2 * G + 7) as u64)
++        .unwrap();
++    assert_eq!(
++        e.iter()
++            .map(|e| (e.offset(), e.length(), e.kind()))
++            .collect::<Vec<_>>(),
++        vec![
++            ((2 * G - 7) as u64, 7, ExtentKind::Data),
++            ((2 * G) as u64, (M - G) as u64, ExtentKind::Zero),
++            ((M + G) as u64, 10, ExtentKind::Data)
++        ]
++    );
++    let d = SparseDisk::load(
++        &SparseDescriptor::parse(t.as_bytes()).unwrap(),
++        &p,
++        SparseDiskLimits {
++            output_extents: 1,
++            ..SparseDiskLimits::default()
++        },
++    )
++    .unwrap();
++    assert_eq!(d.extents(17, 33).unwrap().len(), 1);
++    assert!(matches!(
++        d.extents(0, 2 * M as u64),
++        Err(Error::InvalidEndpoint { .. })
++    ));
++    assert!(d.extents(2 * M as u64, 0).unwrap().is_empty());
++}
++#[test]
++fn aggregate_budgets_reject_before_later_offset_reads_and_release_handles() {
++    let (t, p) = pair();
++    let parsed = SparseDescriptor::parse(t.as_bytes()).unwrap();
++    let d = disk(&t, &p);
++    let memory = d.reserved_memory_bytes();
++    let reads = d.metadata_read_bytes();
++    assert_eq!(
++        memory,
++        2 * 11488 + 2 * std::mem::size_of::<SparseMetadata>() as u64
++    );
++    assert_eq!(reads, 32768);
++    drop(d);
++    let exact = SparseDiskLimits {
++        memory_bytes: memory,
++        read_bytes: reads,
++        ..SparseDiskLimits::default()
++    };
++    assert!(SparseDisk::load(&parsed, &p, exact).is_ok());
++    for limits in [
++        SparseDiskLimits {
++            memory_bytes: memory - 1,
++            ..exact
++        },
++        SparseDiskLimits {
++            read_bytes: reads - 1,
++            ..exact
++        },
++    ] {
++        p.b.reads.store(0, Ordering::Relaxed);
++        assert!(matches!(
++            SparseDisk::load(&parsed, &p, limits),
++            Err(SparseMetadataError::Limit(_))
++        ));
++        assert_eq!(p.b.reads.load(Ordering::Relaxed), 1);
++        assert_eq!(Arc::strong_count(&p.a), 1);
++        assert_eq!(Arc::strong_count(&p.b), 1);
++    }
++    p.opens.store(0, Ordering::Relaxed);
++    for limits in [
++        SparseDiskLimits {
++            extents: 1,
++            ..exact
++        },
++        SparseDiskLimits {
++            memory_bytes: 0,
++            ..exact
++        },
++        SparseDiskLimits {
++            read_bytes: 511,
++            ..exact
++        },
++    ] {
++        assert!(SparseDisk::load(&parsed, &p, limits).is_err());
++        assert_eq!(p.opens.load(Ordering::Relaxed), 0);
++    }
++}
++#[test]
++fn invalid_ranges_do_not_touch_buffers_and_all_mutations_reject() {
++    let t = text();
++    let d = disk(&t, &f::Resolver(f::device(&f::bytes(Some(&t)))));
++    for o in [M as u64 - 1, M as u64 + 1, u64::MAX] {
++        let mut b = [19; 2];
++        assert!(d.read_at(o, &mut b).is_err());
++        assert_eq!(b, [19; 2]);
++    }
++    assert_eq!(d.read_at(M as u64, &mut []).unwrap(), 0);
++    assert!(d.read_at(M as u64 + 1, &mut []).is_err());
++    assert!(matches!(
++        d.extents(u64::MAX, 1),
++        Err(Error::RangeOverflow { .. })
++    ));
++    assert!(matches!(d.write_at(0, &[0]), Err(Error::Unsupported)));
++    assert!(matches!(d.write_zero_at(0, 1), Err(Error::Unsupported)));
++    assert!(matches!(d.discard(0, 1), Err(Error::Unsupported)));
++    assert!(matches!(d.flush(), Err(Error::Unsupported)));
++    assert!(
++        !d.capabilities()
++            .intersects(Capabilities::WRITE | Capabilities::DIRECT_IO | Capabilities::FLUSH)
++    );
++}
++#[test]
++fn short_reads_complete_and_payload_eof_or_errors_are_never_zero_filled() {
++    let t = text();
++    let s = Source::new(&f::bytes(Some(&t)));
++    let d = disk(&t, &f::Resolver(s.clone()));
++    s.mode.store(64, Ordering::Relaxed);
++    let mut b = [9; 33];
++    d.read_exact_at(G as u64 - 17, &mut b).unwrap();
++    assert_eq!(&b[..17], &[0x5a; 17]);
++    assert_eq!(&b[17..], &[0xa5; 16]);
++    for mode in [1, 2] {
++        s.mode.store(mode, Ordering::Relaxed);
++        b.fill(9);
++        let e = d.read_at(0, &mut b).unwrap_err();
++        assert!(matches!(
++            (mode, e),
++            (1, Error::UnexpectedEof { .. }) | (2, Error::Io(_))
++        ));
++        assert_eq!(b, [9; 33]);
++    }
++}
++#[test]
++fn retained_sources_support_concurrent_reads_after_input_and_resolver_drop() {
++    let d = {
++        let t = text();
++        let r = f::Resolver(f::device(&f::bytes(Some(&t))));
++        disk(&t, &r)
++    };
++    std::thread::scope(|scope| {
++        for _ in 0..4 {
++            let d = &d;
++            scope.spawn(move || {
++                for _ in 0..25 {
++                    let mut b = [0; 513];
++                    d.read_exact_at(2 * G as u64 - 257, &mut b).unwrap();
++                    assert_eq!(&b[..257], &[0xa5; 257]);
++                    assert_eq!(&b[257..], &[0; 256]);
++                }
++            });
++        }
++    });
++}
++#[test]
++fn portable_copy_and_verify_preserve_zeros_and_destination_tail() {
++    let (t, p) = pair();
++    let d = disk(&t, &p);
++    let expected = oracle().repeat(2);
++    for workers in [1, 4] {
++        let target = RawDisk::new(MemoryBlockDevice::new(2 * M + 512).unwrap());
++        target.write_all_at(0, &vec![0xcc; 2 * M + 512]).unwrap();
++        let mover = DataMover::new(CopyOptions::with_concurrency(65536, 4096, workers).unwrap());
++        let plan = mover.plan_with_destination(&d, &target).unwrap();
++        mover.execute_plan(&plan, &d, &target).unwrap();
++        let mut actual = vec![0; 2 * M + 512];
++        target.read_exact_at(0, &mut actual).unwrap();
++        assert_eq!(&actual[..2 * M], expected);
++        assert_eq!(&actual[2 * M..], &[0xcc; 512]);
++        Verifier::new(d.size(), 65537, 131074)
++            .unwrap()
++            .verify(&d, &target)
++            .unwrap();
++    }
++}
++struct Alias(CopyEndpoint);
++impl VirtualDisk for Alias {
++    fn geometry(&self) -> DiskGeometry {
++        DiskGeometry::new(2 * M as u64, 512, 512).unwrap()
++    }
++    fn capabilities(&self) -> Capabilities {
++        Capabilities::READ | Capabilities::WRITE | Capabilities::FLUSH
++    }
++    fn copy_endpoint(&self) -> rvvdk_core::Result<CopyEndpoint> {
++        Ok(CopyEndpoint {
++            size: self.size(),
++            capabilities: self.capabilities(),
++            identity: self.0.identity,
++        })
++    }
++    fn read_at(&self, _: u64, _: &mut [u8]) -> rvvdk_core::Result<usize> {
++        panic!("alias read")
++    }
++    fn write_at(&self, _: u64, _: &[u8]) -> rvvdk_core::Result<usize> {
++        panic!("alias write")
++    }
++    fn flush(&self) -> rvvdk_core::Result<()> {
++        panic!("alias flush")
++    }
++    fn write_zero_at(&self, _: u64, _: u64) -> rvvdk_core::Result<()> {
++        panic!("alias zero")
++    }
++    fn discard(&self, _: u64, _: u64) -> rvvdk_core::Result<()> {
++        panic!("alias discard")
++    }
++    fn extents(&self, _: u64, _: u64) -> rvvdk_core::Result<Vec<rvvdk_core::Extent>> {
++        Err(Error::Unsupported)
++    }
++}
++#[test]
++fn every_backing_alias_and_unknown_identity_fail_copy_and_verify_preflight() {
++    let (t, p) = pair();
++    let d = disk(&t, &p);
++    let mover = DataMover::new(CopyOptions::default());
++    let plan = mover.plan(&d).unwrap();
++    for s in [&p.a, &p.b] {
++        let target = Alias(s.copy_endpoint().unwrap());
++        assert!(matches!(
++            mover.copy(&d, &target),
++            Err(Error::AliasedEndpoints)
++        ));
++        assert!(matches!(
++            mover.plan_with_destination(&d, &target),
++            Err(Error::AliasedEndpoints)
++        ));
++        let v: &dyn VirtualDisk = &d;
++        assert!(matches!(
++            mover.execute_plan(&plan, v, &target),
++            Err(Error::AliasedEndpoints)
++        ));
++        assert!(matches!(
++            Verifier::new(d.size(), 512, 4096)
++                .unwrap()
++                .verify(&d, &target),
++            Err(Error::AliasedEndpoints)
++        ));
++    }
++    let unknown = Alias(CopyEndpoint {
++        size: 0,
++        capabilities: Capabilities::empty(),
++        identity: None,
++    });
++    assert!(matches!(
++        d.validate_destination_identity(unknown.copy_endpoint().unwrap()),
++        Err(Error::InvalidEndpoint { .. })
++    ));
++    p.b.mode.store(32, Ordering::Relaxed);
++    let d = disk(&t, &p);
++    d.read_exact_at(M as u64, &mut [0; 1]).unwrap();
++    let target = RawDisk::new(MemoryBlockDevice::new(2 * M).unwrap());
++    assert!(matches!(
++        mover.copy(&d, &target),
++        Err(Error::InvalidEndpoint { .. })
++    ));
++}
++#[test]
++fn endpoint_changes_after_planning_reject_before_destination_writes() {
++    let (t, p) = pair();
++    let d = disk(&t, &p);
++    let mover = DataMover::new(CopyOptions::default());
++    let plan = mover.plan(&d).unwrap();
++    let target = RawDisk::new(MemoryBlockDevice::new(2 * M).unwrap());
++    target.write_all_at(0, &vec![41; 2 * M]).unwrap();
++    for mode in [4, 8, 16, 32] {
++        p.a.mode.store(mode, Ordering::Relaxed);
++        assert!(d.revalidate().is_err());
++        assert!(mover.execute_plan(&plan, &d, &target).is_err());
++        let mut b = [0; 1];
++        target.read_exact_at(0, &mut b).unwrap();
++        assert_eq!(b, [41]);
++    }
++}
++#[test]
++fn final_acquisition_rechecks_earlier_sources() {
++    struct Changing(Pair);
++    impl BackingResolver for Changing {
++        fn resolve(&self, name: &str) -> Result<Arc<dyn BlockDevice>, BackingError> {
++            if name == "b" {
++                self.0.a.mode.store(8, Ordering::Relaxed);
++            }
++            self.0.resolve(name)
++        }
++    }
++    let (t, p) = pair();
++    assert!(
++        SparseDisk::load(
++            &SparseDescriptor::parse(t.as_bytes()).unwrap(),
++            &Changing(p),
++            SparseDiskLimits::default()
++        )
++        .is_err()
++    );
++}
++
++#[cfg(target_os = "linux")]
++#[test]
++fn local_hardlink_alias_and_path_replacement_use_retained_inode() {
++    use rvvdk_vmdk::LocalResolver;
++    use std::{
++        fs::{self, File},
++        path::PathBuf,
++    };
++    struct Cleanup(PathBuf);
++    impl Drop for Cleanup {
++        fn drop(&mut self) {
++            fs::remove_dir_all(&self.0).unwrap();
++        }
++    }
++    let root = std::env::var_os("RVVDK_TEST_DIR")
++        .map(PathBuf::from)
++        .unwrap_or_else(std::env::temp_dir);
++    let directory = Cleanup(root.join(format!("rvvdk-r53-{}", std::process::id())));
++    fs::create_dir(&directory.0).unwrap();
++    let t = text();
++    let raw = f::bytes(Some(&t));
++    fs::write(directory.0.join("disk.vmdk"), &raw).unwrap();
++    fs::hard_link(directory.0.join("disk.vmdk"), directory.0.join("alias")).unwrap();
++    let resolver = LocalResolver::from_directory(File::open(&directory.0).unwrap()).unwrap();
++    let d = disk(&t, &resolver);
++    let alias = resolver.resolve("alias").unwrap();
++    assert!(matches!(
++        d.validate_destination_identity(alias.copy_endpoint().unwrap()),
++        Err(Error::AliasedEndpoints)
++    ));
++    fs::rename(directory.0.join("disk.vmdk"), directory.0.join("retained")).unwrap();
++    fs::write(directory.0.join("disk.vmdk"), b"replacement").unwrap();
++    d.revalidate().unwrap();
++    let mut b = vec![0; M];
++    d.read_exact_at(0, &mut b).unwrap();
++    assert_eq!(b, oracle());
++    assert_eq!(fs::read(directory.0.join("retained")).unwrap(), raw);
++}
