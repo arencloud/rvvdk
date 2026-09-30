@@ -26,3 +26,6 @@ pub use local::LocalResolver;
 
 mod disk;
 pub use disk::VmdkDisk;
+
+mod sparse;
+pub use sparse::{SPARSE_HEADER_BYTES, SparseError, SparseHeader, SparseLimits, SparseRegion};

@@ -1,0 +1,46 @@
+{
+  "title": "R5.1 \u00b7 Hosted sparse header admission",
+  "candidate": "patch 8900467e",
+  "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm memory / Btrfs",
+  "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+  "candidate_only": {
+    "title": "Sparse header admission \u00b7 first cost baseline",
+    "note": "Fixed 512-byte inputs \u00b7 no directory/table reads \u00b7 memory acquisition excludes filesystem I/O",
+    "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+  },
+  "workloads": {
+    "descriptor/small": {
+      "label": "Strict descriptor parsing",
+      "phase": "planning"
+    },
+    "resolution/load_descriptor": {
+      "label": "Unpadded local descriptor load",
+      "phase": "planning"
+    },
+    "cli_vmdk/copy_mixed_verify": {
+      "label": "FLAT/ZERO copy + verify \u00b7 1 MiB",
+      "phase": "copy"
+    },
+    "cli_transfer/verify_only": {
+      "label": "RAW verify \u00b7 16 MiB",
+      "phase": "copy"
+    },
+    "sparse_header/valid": {
+      "label": "Admit header \u00b7 1 MiB capacity",
+      "phase": "planning"
+    },
+    "sparse_header/large_capacity": {
+      "label": "Admit header \u00b7 1 TiB capacity",
+      "phase": "planning"
+    },
+    "sparse_header/reserved_rejection": {
+      "label": "Reject nonzero reserved byte",
+      "phase": "planning"
+    },
+    "sparse_header/read_sector": {
+      "label": "Read memory sector + admit",
+      "phase": "planning"
+    }
+  },
+  "repeat_sampling": "3 adjacent pairs \u00b7 40 flat samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+}

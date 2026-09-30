@@ -44,7 +44,7 @@ Started: 2026-09-28. This is the persistent index of work performed against the
 
 R1.1–R1.6 and R2.1–R2.6 are complete within their documented scopes; their detailed
 records appear below. R3 local CLI and R4.1–R4.5 local FLAT/ZERO VMDK workflows are complete within their
-documented contracts; R5 onward and V0 remain planned. Performance qualification
+documented contracts. R5.1 header admission is complete; R5.2 onward and V0 remain planned. Performance qualification
 remains provisional as recorded for each step.
 
 ## Per-step record template
@@ -1480,13 +1480,57 @@ padded inputs, 47.373 µs for oversize rejection and 0.372 µs for reparsing a c
 prefix. The one-time bounded scan is accepted; repeated parsing avoids that work.
 Different boundaries are not speedups, and prior performance follow-ups stay open.
 
+## R5.1 — Bounded hosted sparse header admission
+
+Date: 2026-09-30. Status: **Complete within the header-only subset**.
+Baseline: `8de73fd`, initially clean. The enclosing commit records this step.
+[Evidence](benchmark-results/2026-09-30-r51/README.md) retains source/harness/binary
+identities, all samples, specification/reference hashes, validation and SVG/PNG plots.
+
+Added portable SparseHeader/SparseLimits/SparseRegion/SparseError APIs. Decode an
+exact 512-byte sector without allocation, packed casts or unsafe code. Admit clean,
+uncompressed version 1 with supported flags, checked grain/capacity geometry,
+directory/table counts, independent resource limits, metadata range/overlap checks
+and observed file bounds. A stack Read helper consumes exactly one sector and
+propagates interrupted/short/error I/O correctly. Header admission does not validate
+region contents or make a disk readable. Existing FLAT/ZERO APIs and CLI sparse
+rejection remain unchanged. [Contract](vmdk-sparse-header.md);
+[ADR-0038](adr/0038-bounded-hosted-sparse-header.md).
+
+Validation: **456 distinct passed, one existing gated allocation test** (457 total).
+Nine new tests cover geometry/regions, feature rejection, all truncated lengths,
+endian/alignment handling, arithmetic/limits, overlaps and file bounds, short I/O
+and 2,048 deterministic mutations. The separate 92-test CLI/VMDK run passes with
+integration fixtures on Btrfs; five existing CLI unit fault tests retain temporary
+fixtures. Formatting, strict all-target Clippy and portable core/datamover/VMDK
+wasm32 checks pass (existing control::sum warning).
+
+Three QEMU-generated headers are admitted (1 MiB/64 MiB monolithic and 1 MiB split),
+with capacity agreement against QEMU info and unchanged file hashes. Unaligned
+capacity and streamOptimized are deliberately rejected; all five fixtures remain
+unsupported by the public CLI. The initial runner assumed split headers advertise
+no descriptor, but QEMU reserves an empty region there. The failed assertion,
+header probe and initial runner are retained; the corrected runner records the
+region without claiming valid text. No parser relaxation was needed. R5.2 must
+bind external descriptors explicitly. No logical sparse byte agreement, VMware
+SDK source or ESXi qualification is claimed.
+
+Performance: 24 matched runs show -1.17%, -0.65%, -0.15%, +0.25% for existing strict
+text parsing, local descriptor load, FLAT/ZERO copy+verify and RAW verify. An adverse
++5.32% mixed-copy pair triggered six longer runs: -1.86% aggregate, with all pairs
+between -1.86% and -0.65%. Original/adverse samples remain recorded. Twelve new
+runs give 133.898 ns / 135.957 ns for valid 1 MiB/1 TiB capacity headers,
+125.158 ns for reserved-byte rejection and 140.715 ns for memory-sector acquisition
+plus parsing. These fixed-input costs are not sparse data throughput; no allocation
+or metadata I/O scales with capacity. Prior performance follow-ups remain open.
+
 ## Next session
 
-Start **R5.1**: bounded hosted sparse header parsing, checked resource/arithmetic
-validation and synthetic fixture provenance. Establish an explicit header subset
-before grain mapping or logical sparse reads; parent chains follow separately.
-Keep custom independent-decoder qualification open. Each step gets tests,
-benchmarks, plots and a commit.
+Start **R5.2**: bounded grain-directory/table acquisition and validation, descriptor
+binding, table placement and redundancy policy before logical sparse reads.
+Explicitly handle the observed split-file descriptor-region ambiguity; do not infer
+valid text from header offsets. Keep parent chains and custom independent-decoder
+qualification separate. Each step gets tests, benchmarks, plots and a commit.
 
 ESXi remains unnecessary for local work; request the 60-day trial when V0's lab
 proof is ready. Keep PERF.0, R4.4 preview overhead/tuning and earlier adverse timing

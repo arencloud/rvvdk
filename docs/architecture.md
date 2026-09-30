@@ -1186,3 +1186,14 @@ boundary once. Parsing borrows this prefix; original bytes remain available for
 provenance. Direct Descriptor parsers retain strict NUL rejection. LocalResolver
 and the CLI inherit the acquisition policy without format mapping or execution
 changes. See [ADR-0037](adr/0037-bounded-vmdk-padding.md).
+
+
+## Hosted sparse header admission (R5.1)
+
+SparseHeader provides allocation-free first-sector validation, separate from
+Descriptor and VmdkDisk. It bounds declared geometry and metadata work, validates
+advertised metadata regions against overhead and observed extent length, and
+rejects unsupported version/flags/state. A 512-byte stack acquisition helper reads
+no referenced regions. Private checked regions do not prove directory/table or
+descriptor contents: R5.2 owns that validation. Existing FLAT/ZERO mapping and CLI
+support remain unchanged. See [ADR-0038](adr/0038-bounded-hosted-sparse-header.md).

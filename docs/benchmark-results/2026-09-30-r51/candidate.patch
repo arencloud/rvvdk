@@ -1,0 +1,762 @@
+diff --git a/crates/rvvdk-vmdk/Cargo.toml b/crates/rvvdk-vmdk/Cargo.toml
+index 32006e3..b077ca9 100644
+--- a/crates/rvvdk-vmdk/Cargo.toml
++++ b/crates/rvvdk-vmdk/Cargo.toml
+@@ -32,3 +32,7 @@ harness = false
+ [[bench]]
+ name = "padding"
+ harness = false
++
++[[bench]]
++name = "sparse_header"
++harness = false
+diff --git a/crates/rvvdk-vmdk/src/lib.rs b/crates/rvvdk-vmdk/src/lib.rs
+index edc864b..5f6fa40 100644
+--- a/crates/rvvdk-vmdk/src/lib.rs
++++ b/crates/rvvdk-vmdk/src/lib.rs
+@@ -26,3 +26,6 @@ pub use local::LocalResolver;
+ 
+ mod disk;
+ pub use disk::VmdkDisk;
++
++mod sparse;
++pub use sparse::{SPARSE_HEADER_BYTES, SparseError, SparseHeader, SparseLimits, SparseRegion};
+diff --git a/crates/rvvdk-vmdk/tests/fixtures/README.md b/crates/rvvdk-vmdk/tests/fixtures/README.md
+index d2a770f..67fa3f5 100644
+--- a/crates/rvvdk-vmdk/tests/fixtures/README.md
++++ b/crates/rvvdk-vmdk/tests/fixtures/README.md
+@@ -42,3 +42,13 @@ lengths and verifies descriptor bytes remain unchanged. Optional `--cli` also ru
+ inspect/plan/copy/verify on these originals. The R4.5 report records tool/executable
+ hashes and bytes; R4.3's earlier normalization evidence remains immutable. Unit
+ padding fixtures are synthesized in memory, including hostile suffixes and limits.
++
++R5.1 adds an authored 512-byte hosted sparse header factory in
++`tests/support/sparse.rs`, shared by parser tests and benchmarks. Field offsets and
++units were checked against the same VMware Virtual Disk Format 5.0 PDF, pp. 6–9,
++on 2026-09-30; the SHA-256 above is unchanged. No implementation code was read or
++copied. `scripts/vmdk/compare_sparse_header.py` separately generates disposable
++QEMU monolithic/split sparse files, records full header hex and tool/file hashes,
++and compares admitted capacity with QEMU info. It also records deliberate subset
++rejections and continued public CLI rejection. These are header-only checks, not
++logical sparse byte comparisons or VMware-produced/ESXi-tested images.
+diff --git a/crates/rvvdk-vmdk/benches/sparse_header.rs b/crates/rvvdk-vmdk/benches/sparse_header.rs
+new file mode 100644
+index 0000000..032f15e
+--- /dev/null
++++ b/crates/rvvdk-vmdk/benches/sparse_header.rs
+@@ -0,0 +1,41 @@
++#[path = "../tests/support/sparse.rs"]
++mod fixture;
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use rvvdk_vmdk::{SparseHeader, SparseLimits};
++use std::hint::black_box;
++fn sparse(c: &mut Criterion) {
++    let valid = fixture::header();
++    let mut rejected = valid;
++    rejected[511] = 1;
++    let mut large = valid;
++    fixture::put64(&mut large, 12, (1_u64 << 40) / 512);
++    fixture::put64(&mut large, 64, 262784);
++    // Separate directory regions for the 32,768 entries required by a 1 TiB disk.
++    fixture::put64(&mut large, 48, 21);
++    fixture::put64(&mut large, 56, 277);
++    assert!(SparseHeader::parse(&large, 262784 * 512).is_ok());
++    assert!(SparseHeader::parse(&rejected, 65536).is_err());
++    let mut group = c.benchmark_group("sparse_header");
++    group.sampling_mode(SamplingMode::Flat);
++    for (name, bytes, size) in [
++        ("valid", &valid, 65536),
++        ("large_capacity", &large, 262784 * 512),
++        ("reserved_rejection", &rejected, 65536),
++    ] {
++        group.bench_function(name, |b| {
++            b.iter(|| black_box(SparseHeader::parse(black_box(bytes), black_box(size))))
++        });
++    }
++    group.bench_function("read_sector", |b| {
++        b.iter(|| {
++            black_box(SparseHeader::read_from(
++                black_box(valid.as_slice()),
++                65536,
++                SparseLimits::default(),
++            ))
++        })
++    });
++    group.finish();
++}
++criterion_group!(benches, sparse);
++criterion_main!(benches);
+diff --git a/crates/rvvdk-vmdk/examples/inspect_sparse_header.rs b/crates/rvvdk-vmdk/examples/inspect_sparse_header.rs
+new file mode 100644
+index 0000000..8ff18a5
+--- /dev/null
++++ b/crates/rvvdk-vmdk/examples/inspect_sparse_header.rs
+@@ -0,0 +1,34 @@
++//! Header qualification helper, not sparse disk reads or the public CLI.
++use rvvdk_vmdk::{SparseHeader, SparseLimits, SparseRegion};
++fn region(value: Option<SparseRegion>) -> String {
++    value.map_or_else(
++        || "null".to_owned(),
++        |r| format!("{{\"offset\":{},\"length\":{}}}", r.offset(), r.length()),
++    )
++}
++fn main() -> Result<(), Box<dyn std::error::Error>> {
++    let args: Vec<_> = std::env::args_os().skip(1).collect();
++    if args.len() != 1 {
++        return Err("usage: inspect_sparse_header EXTENT".into());
++    }
++    let mut file = std::fs::File::open(&args[0])?;
++    let metadata = file.metadata()?;
++    if !metadata.is_file() {
++        return Err("expected a regular extent file".into());
++    }
++    let h = SparseHeader::read_from(&mut file, metadata.len(), SparseLimits::default())?;
++    println!(
++        "{{\"flags\":{},\"capacity_bytes\":{},\"grain_bytes\":{},\"directory_entries\":{},\"grain_table_bytes\":{},\"overhead_bytes\":{},\"minimum_metadata_bytes\":{},\"descriptor\":{},\"primary_directory\":{},\"redundant_directory\":{}}}",
++        h.flags(),
++        h.capacity_bytes(),
++        h.grain_bytes(),
++        h.directory_entries(),
++        h.grain_table_bytes(),
++        h.overhead_bytes(),
++        h.minimum_metadata_bytes(),
++        region(h.descriptor()),
++        region(Some(h.primary_directory())),
++        region(h.redundant_directory())
++    );
++    Ok(())
++}
+diff --git a/crates/rvvdk-vmdk/src/sparse.rs b/crates/rvvdk-vmdk/src/sparse.rs
+new file mode 100644
+index 0000000..9396f12
+--- /dev/null
++++ b/crates/rvvdk-vmdk/src/sparse.rs
+@@ -0,0 +1,302 @@
++//! Allocation-free validation of the first sector of a hosted sparse extent.
++//! Header admission does not validate directory/table contents or logical data.
++use crate::SECTOR_BYTES;
++use std::io::Read;
++use thiserror::Error;
++
++pub const SPARSE_HEADER_BYTES: usize = 512;
++const MAGIC: u32 = 0x564d444b;
++const NEWLINE: u32 = 1;
++const REDUNDANT: u32 = 2;
++const GT_ENTRIES: u64 = 512;
++const GT_BYTES: u64 = GT_ENTRIES * 4;
++
++/// Independent admission limits, not an allocation or process-memory promise.
++#[derive(Clone, Copy, Debug)]
++pub struct SparseLimits {
++    pub capacity_bytes: u64,
++    pub grain_bytes: u64,
++    pub descriptor_bytes: u64,
++    pub directory_entries: u64,
++    /// Bounds both advertised overhead and computed full metadata storage.
++    pub metadata_bytes: u64,
++}
++impl Default for SparseLimits {
++    fn default() -> Self {
++        Self {
++            capacity_bytes: 1 << 40,
++            grain_bytes: 16 << 20,
++            descriptor_bytes: 1 << 20,
++            directory_entries: 1 << 20,
++            metadata_bytes: 256 << 20,
++        }
++    }
++}
++#[derive(Debug, Error)]
++pub enum SparseError {
++    #[error("sparse header must contain exactly 512 bytes")]
++    HeaderLength,
++    #[error("invalid hosted sparse magic")]
++    Magic,
++    #[error("unsupported sparse feature: {0}")]
++    Unsupported(&'static str),
++    #[error("invalid sparse header: {0}")]
++    Invalid(&'static str),
++    #[error("sparse arithmetic overflow: {0}")]
++    Overflow(&'static str),
++    #[error("sparse resource limit exceeded: {0}")]
++    Limit(&'static str),
++    #[error("sparse metadata outside extent or advertised overhead: {0}")]
++    Bounds(&'static str),
++    #[error("reading sparse header: {0}")]
++    Io(#[from] std::io::Error),
++}
++type Result<T> = std::result::Result<T, SparseError>;
++
++/// Checked, nonempty, sector-aligned metadata storage range.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub struct SparseRegion {
++    offset: u64,
++    length: u64,
++}
++impl SparseRegion {
++    pub fn offset(&self) -> u64 {
++        self.offset
++    }
++    pub fn length(&self) -> u64 {
++        self.length
++    }
++    pub fn end(&self) -> u64 {
++        self.offset + self.length
++    }
++}
++/// Admitted version-1 metadata geometry; not a validated grain map or VirtualDisk.
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub struct SparseHeader {
++    flags: u32,
++    capacity_bytes: u64,
++    grain_bytes: u64,
++    directory_entries: u64,
++    descriptor: Option<SparseRegion>,
++    primary_directory: SparseRegion,
++    redundant_directory: Option<SparseRegion>,
++    overhead_bytes: u64,
++    minimum_metadata_bytes: u64,
++}
++fn mul(a: u64, b: u64, field: &'static str) -> Result<u64> {
++    a.checked_mul(b).ok_or(SparseError::Overflow(field))
++}
++fn add(a: u64, b: u64, field: &'static str) -> Result<u64> {
++    a.checked_add(b).ok_or(SparseError::Overflow(field))
++}
++fn bound(value: u64, limit: u64, field: &'static str) -> Result<()> {
++    if value > limit {
++        Err(SparseError::Limit(field))
++    } else {
++        Ok(())
++    }
++}
++fn region(sector: u64, length: u64, overhead: u64, field: &'static str) -> Result<SparseRegion> {
++    let offset = mul(sector, SECTOR_BYTES, field)?;
++    let end = add(offset, length, field)?;
++    if offset < SECTOR_BYTES || length == 0 || end > overhead {
++        return Err(SparseError::Bounds(field));
++    }
++    Ok(SparseRegion { offset, length })
++}
++fn overlaps(a: SparseRegion, b: SparseRegion) -> bool {
++    a.offset < b.end() && b.offset < a.end()
++}
++impl SparseHeader {
++    /// Exactly one 512-byte sector. extent_bytes is an observed container length,
++    /// not virtual capacity; the caller must keep/revalidate the owned source.
++    pub fn parse(bytes: &[u8], extent_bytes: u64) -> Result<Self> {
++        Self::parse_with_limits(bytes, extent_bytes, SparseLimits::default())
++    }
++    pub fn parse_with_limits(
++        bytes: &[u8],
++        extent_bytes: u64,
++        limits: SparseLimits,
++    ) -> Result<Self> {
++        if bytes.len() != SPARSE_HEADER_BYTES {
++            return Err(SparseError::HeaderLength);
++        }
++        // Fixed offsets after the exact-size check; no packed casts or alignment assumptions.
++        let u32_at = |offset| u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
++        let u64_at = |offset| u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap());
++        if u32_at(0) != MAGIC {
++            return Err(SparseError::Magic);
++        }
++        if u32_at(4) != 1 {
++            return Err(SparseError::Unsupported("version (only 1)"));
++        }
++        let flags = u32_at(8);
++        if flags & !(NEWLINE | REDUNDANT) != 0 {
++            return Err(SparseError::Unsupported("flags"));
++        }
++        if bytes[77..79] != [0, 0] {
++            return Err(SparseError::Unsupported("compression"));
++        }
++        if bytes[72] != 0 {
++            return Err(SparseError::Unsupported("unclean shutdown"));
++        }
++        if flags & NEWLINE != 0 && bytes[73..77] != *b"\n \r\n" {
++            return Err(SparseError::Invalid("newline check"));
++        }
++        if bytes[79..].iter().any(|&b| b != 0) {
++            return Err(SparseError::Unsupported("reserved header bytes"));
++        }
++        let capacity = u64_at(12);
++        let grain = u64_at(20);
++        if grain <= 8 || !grain.is_power_of_two() {
++            return Err(SparseError::Invalid("grain size"));
++        }
++        if capacity == 0 || !capacity.is_multiple_of(grain) {
++            return Err(SparseError::Invalid(
++                "capacity must be nonzero and grain-aligned",
++            ));
++        }
++        if u32_at(44) != GT_ENTRIES as u32 {
++            return Err(SparseError::Unsupported("grain table entry count"));
++        }
++        let capacity_bytes = mul(capacity, SECTOR_BYTES, "capacity")?;
++        let grain_bytes = mul(grain, SECTOR_BYTES, "grain size")?;
++        bound(capacity_bytes, limits.capacity_bytes, "capacity bytes")?;
++        bound(grain_bytes, limits.grain_bytes, "grain bytes")?;
++        let directory_entries = (capacity / grain).div_ceil(GT_ENTRIES);
++        bound(
++            directory_entries,
++            limits.directory_entries,
++            "directory entries",
++        )?;
++        let directory_bytes = mul(
++            mul(directory_entries, 4, "directory")?.div_ceil(SECTOR_BYTES),
++            SECTOR_BYTES,
++            "directory",
++        )?;
++        let overhead = u64_at(64);
++        if overhead == 0 || !overhead.is_multiple_of(grain) {
++            return Err(SparseError::Invalid(
++                "overhead must be nonzero and grain-aligned",
++            ));
++        }
++        let overhead_bytes = mul(overhead, SECTOR_BYTES, "overhead")?;
++        bound(overhead_bytes, limits.metadata_bytes, "metadata bytes")?;
++        if overhead_bytes > extent_bytes {
++            return Err(SparseError::Bounds("overhead"));
++        }
++        let descriptor_offset = u64_at(28);
++        let descriptor_sectors = u64_at(36);
++        let descriptor = match (descriptor_offset, descriptor_sectors) {
++            (0, 0) => None,
++            (0, _) | (_, 0) => return Err(SparseError::Invalid("descriptor offset/size pair")),
++            (offset, sectors) => {
++                let length = mul(sectors, SECTOR_BYTES, "descriptor")?;
++                bound(length, limits.descriptor_bytes, "descriptor bytes")?;
++                Some(region(offset, length, overhead_bytes, "descriptor")?)
++            }
++        };
++        let gd = u64_at(56);
++        if gd == u64::MAX {
++            return Err(SparseError::Unsupported("footer directory"));
++        }
++        let primary_directory = region(gd, directory_bytes, overhead_bytes, "primary directory")?;
++        let rgd = u64_at(48);
++        let redundant_directory = if flags & REDUNDANT != 0 {
++            Some(region(
++                rgd,
++                directory_bytes,
++                overhead_bytes,
++                "redundant directory",
++            )?)
++        } else {
++            if rgd != 0 {
++                return Err(SparseError::Invalid("redundant offset without flag"));
++            }
++            None
++        };
++        if descriptor.is_some_and(|d| {
++            overlaps(d, primary_directory) || redundant_directory.is_some_and(|r| overlaps(d, r))
++        }) || redundant_directory.is_some_and(|r| overlaps(r, primary_directory))
++        {
++            return Err(SparseError::Invalid("overlapping header metadata regions"));
++        }
++        let one_copy = add(
++            directory_bytes,
++            mul(directory_entries, GT_BYTES, "grain tables")?,
++            "directory and tables",
++        )?;
++        let minimum_metadata_bytes = add(
++            add(SECTOR_BYTES, descriptor.map_or(0, |d| d.length), "metadata")?,
++            mul(
++                one_copy,
++                if redundant_directory.is_some() { 2 } else { 1 },
++                "metadata copies",
++            )?,
++            "metadata",
++        )?;
++        bound(
++            minimum_metadata_bytes,
++            limits.metadata_bytes,
++            "metadata bytes",
++        )?;
++        if minimum_metadata_bytes > overhead_bytes {
++            return Err(SparseError::Bounds("minimum metadata storage"));
++        }
++        Ok(Self {
++            flags,
++            capacity_bytes,
++            grain_bytes,
++            directory_entries,
++            descriptor,
++            primary_directory,
++            redundant_directory,
++            overhead_bytes,
++            minimum_metadata_bytes,
++        })
++    }
++    /// Read exactly one sector from the reader's current position. No seek,
++    /// following offsets, allocation, size-hint trust, or extra probe. Interrupts retry.
++    pub fn read_from(
++        mut reader: impl Read,
++        extent_bytes: u64,
++        limits: SparseLimits,
++    ) -> Result<Self> {
++        let mut bytes = [0; SPARSE_HEADER_BYTES];
++        reader.read_exact(&mut bytes)?;
++        Self::parse_with_limits(&bytes, extent_bytes, limits)
++    }
++    pub fn flags(&self) -> u32 {
++        self.flags
++    }
++    pub fn capacity_bytes(&self) -> u64 {
++        self.capacity_bytes
++    }
++    pub fn grain_bytes(&self) -> u64 {
++        self.grain_bytes
++    }
++    pub fn grain_count(&self) -> u64 {
++        self.capacity_bytes / self.grain_bytes
++    }
++    pub fn directory_entries(&self) -> u64 {
++        self.directory_entries
++    }
++    pub fn grain_table_bytes(&self) -> u64 {
++        GT_BYTES
++    }
++    pub fn descriptor(&self) -> Option<SparseRegion> {
++        self.descriptor
++    }
++    pub fn primary_directory(&self) -> SparseRegion {
++        self.primary_directory
++    }
++    pub fn redundant_directory(&self) -> Option<SparseRegion> {
++        self.redundant_directory
++    }
++    pub fn overhead_bytes(&self) -> u64 {
++        self.overhead_bytes
++    }
++    pub fn minimum_metadata_bytes(&self) -> u64 {
++        self.minimum_metadata_bytes
++    }
++}
+diff --git a/crates/rvvdk-vmdk/tests/sparse_header.rs b/crates/rvvdk-vmdk/tests/sparse_header.rs
+new file mode 100644
+index 0000000..6e207ca
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/sparse_header.rs
+@@ -0,0 +1,291 @@
++#[path = "support/sparse.rs"]
++mod fixture;
++use fixture::{header, put32, put64};
++use rvvdk_vmdk::{SparseError, SparseHeader, SparseLimits};
++use std::io::{self, Cursor, Read};
++const FILE: u64 = 65536;
++#[test]
++fn exact_little_endian_geometry_and_regions() {
++    let h = SparseHeader::parse(&header(), FILE).unwrap();
++    assert_eq!(h.flags(), 3);
++    assert_eq!(h.capacity_bytes(), 1048576);
++    assert_eq!(h.grain_bytes(), 65536);
++    assert_eq!(h.grain_count(), 16);
++    assert_eq!(h.directory_entries(), 1);
++    assert_eq!(h.grain_table_bytes(), 2048);
++    assert_eq!(h.descriptor().unwrap().offset(), 512);
++    assert_eq!(h.descriptor().unwrap().length(), 10240);
++    assert_eq!(h.redundant_directory().unwrap().offset(), 10752);
++    assert_eq!(h.primary_directory().offset(), 13312);
++    assert_eq!(h.primary_directory().end(), 13824);
++    assert_eq!(h.overhead_bytes(), FILE);
++    assert_eq!(h.minimum_metadata_bytes(), 15872);
++}
++#[test]
++fn external_descriptor_nonredundant_and_optional_newline_flag() {
++    let mut b = header();
++    put32(&mut b, 8, 0);
++    put64(&mut b, 28, 0);
++    put64(&mut b, 36, 0);
++    put64(&mut b, 48, 0);
++    b[73..77].fill(0);
++    let h = SparseHeader::parse(&b, FILE).unwrap();
++    assert_eq!(h.descriptor(), None);
++    assert_eq!(h.redundant_directory(), None);
++    assert_eq!(h.minimum_metadata_bytes(), 3072);
++}
++#[test]
++fn truncation_excess_and_magic_fail_without_casts() {
++    for n in 0..512 {
++        assert!(matches!(
++            SparseHeader::parse(&header()[..n], FILE),
++            Err(SparseError::HeaderLength)
++        ));
++    }
++    let mut b = header().to_vec();
++    b.push(0);
++    assert!(matches!(
++        SparseHeader::parse(&b, FILE),
++        Err(SparseError::HeaderLength)
++    ));
++    let mut b = header();
++    b[..4].reverse();
++    assert!(matches!(
++        SparseHeader::parse(&b, FILE),
++        Err(SparseError::Magic)
++    ));
++    let mut unaligned = vec![0];
++    unaligned.extend(header());
++    assert!(SparseHeader::parse(&unaligned[1..], FILE).is_ok());
++}
++#[test]
++fn rejects_versions_flags_compression_dirty_and_reserved_bytes() {
++    for (offset, value) in [
++        (4, 0),
++        (4, 2),
++        (4, 3),
++        (8, 4),
++        (8, 1 << 16),
++        (8, 1 << 17),
++        (8, 1 << 31),
++        (44, 0),
++        (44, 1024),
++    ] {
++        let mut b = header();
++        put32(&mut b, offset, value);
++        assert!(matches!(
++            SparseHeader::parse(&b, FILE),
++            Err(SparseError::Unsupported(_))
++        ));
++    }
++    for offset in [72, 77, 78, 79, 511] {
++        let mut b = header();
++        b[offset] = 1;
++        assert!(matches!(
++            SparseHeader::parse(&b, FILE),
++            Err(SparseError::Unsupported(_))
++        ));
++    }
++    for offset in 73..77 {
++        let mut b = header();
++        b[offset] = 0;
++        assert!(matches!(
++            SparseHeader::parse(&b, FILE),
++            Err(SparseError::Invalid("newline check"))
++        ));
++    }
++}
++#[test]
++fn grain_capacity_and_directory_rounding() {
++    for grain in [0, 1, 8, 9, 127, 129] {
++        let mut b = header();
++        put64(&mut b, 20, grain);
++        assert!(SparseHeader::parse(&b, FILE).is_err());
++    }
++    for capacity in [0, 1, 127, 2049] {
++        let mut b = header();
++        put64(&mut b, 12, capacity);
++        assert!(SparseHeader::parse(&b, FILE).is_err());
++    }
++    for (grains, entries, bytes) in [
++        (512, 1, 512),
++        (513, 2, 512),
++        (65536, 128, 512),
++        (65537, 129, 1024),
++    ] {
++        let mut b = header();
++        put64(&mut b, 12, grains * 128);
++        put64(&mut b, 64, 2048);
++        let h = SparseHeader::parse(&b, 1048576).unwrap();
++        assert_eq!(h.directory_entries(), entries);
++        assert_eq!(h.primary_directory().length(), bytes);
++    }
++}
++#[test]
++fn metadata_ranges_pairs_overlap_and_file_bounds() {
++    for (offset, value) in [
++        (28, 0),
++        (36, 0),
++        (48, 0),
++        (56, 0),
++        (56, u64::MAX),
++        (64, 0),
++        (64, 127),
++        (28, 128),
++        (48, 128),
++        (56, 128),
++        (56, 21),
++        (56, 1),
++        (48, 1),
++    ] {
++        let mut b = header();
++        put64(&mut b, offset, value);
++        assert!(SparseHeader::parse(&b, FILE).is_err(), "{offset}/{value}");
++    }
++    assert!(matches!(
++        SparseHeader::parse(&header(), FILE - 1),
++        Err(SparseError::Bounds("overhead"))
++    ));
++    let mut b = header();
++    put32(&mut b, 8, 1);
++    assert!(matches!(
++        SparseHeader::parse(&b, FILE),
++        Err(SparseError::Invalid(_))
++    ));
++    let mut b = header();
++    put64(&mut b, 12, 32768 * 128);
++    assert!(matches!(
++        SparseHeader::parse(&b, FILE),
++        Err(SparseError::Bounds("minimum metadata storage"))
++    ));
++}
++#[test]
++fn checked_arithmetic_and_independent_limits() {
++    let unlimited = SparseLimits {
++        capacity_bytes: u64::MAX,
++        grain_bytes: u64::MAX,
++        descriptor_bytes: u64::MAX,
++        directory_entries: u64::MAX,
++        metadata_bytes: u64::MAX,
++    };
++    for (offset, value) in [
++        (12, u64::MAX - 127),
++        (20, 1 << 63),
++        (28, u64::MAX),
++        (36, u64::MAX),
++        (48, u64::MAX),
++        (56, u64::MAX - 1),
++        (64, u64::MAX - 127),
++    ] {
++        let mut b = header();
++        put64(&mut b, offset, value);
++        if offset == 20 {
++            put64(&mut b, 12, 1 << 63);
++        }
++        assert!(
++            matches!(
++                SparseHeader::parse_with_limits(&b, u64::MAX, unlimited),
++                Err(SparseError::Overflow(_))
++            ),
++            "{offset}"
++        );
++    }
++    let exact = SparseLimits {
++        capacity_bytes: 1048576,
++        grain_bytes: 65536,
++        descriptor_bytes: 10240,
++        directory_entries: 1,
++        metadata_bytes: 65536,
++    };
++    assert!(SparseHeader::parse_with_limits(&header(), FILE, exact).is_ok());
++    for l in [
++        SparseLimits {
++            capacity_bytes: 1048575,
++            ..exact
++        },
++        SparseLimits {
++            grain_bytes: 65535,
++            ..exact
++        },
++        SparseLimits {
++            descriptor_bytes: 10239,
++            ..exact
++        },
++        SparseLimits {
++            directory_entries: 0,
++            ..exact
++        },
++        SparseLimits {
++            metadata_bytes: 65535,
++            ..exact
++        },
++    ] {
++        assert!(matches!(
++            SparseHeader::parse_with_limits(&header(), FILE, l),
++            Err(SparseError::Limit(_))
++        ));
++    }
++}
++struct Short {
++    bytes: Cursor<Vec<u8>>,
++    interrupt: bool,
++    fail: bool,
++}
++impl Read for Short {
++    fn read(&mut self, out: &mut [u8]) -> io::Result<usize> {
++        if self.interrupt {
++            self.interrupt = false;
++            return Err(io::ErrorKind::Interrupted.into());
++        }
++        if self.fail {
++            return Err(io::ErrorKind::PermissionDenied.into());
++        }
++        let n = out.len().min(3);
++        self.bytes.read(&mut out[..n])
++    }
++}
++#[test]
++fn acquisition_reads_only_one_sector_and_propagates_short_io() {
++    let mut bytes = header().to_vec();
++    bytes.extend([0xa5; 100]);
++    let mut reader = Short {
++        bytes: Cursor::new(bytes),
++        interrupt: true,
++        fail: false,
++    };
++    SparseHeader::read_from(&mut reader, FILE, SparseLimits::default()).unwrap();
++    assert_eq!(reader.bytes.position(), 512);
++    reader.bytes = Cursor::new(header()[..511].to_vec());
++    assert!(
++        matches!(SparseHeader::read_from(&mut reader,FILE,SparseLimits::default()),Err(SparseError::Io(e)) if e.kind()==io::ErrorKind::UnexpectedEof)
++    );
++    reader.fail = true;
++    assert!(
++        matches!(SparseHeader::read_from(reader,FILE,SparseLimits::default()),Err(SparseError::Io(e)) if e.kind()==io::ErrorKind::PermissionDenied)
++    );
++}
++#[test]
++fn deterministic_mutations_never_panic_or_escape_admitted_bounds() {
++    for index in 0..512 {
++        for value in [0, 1, 0x7f, 0xff] {
++            let mut b = header();
++            b[index] = value;
++            if let Ok(h) = SparseHeader::parse(&b, FILE) {
++                assert!(
++                    h.capacity_bytes() > 0 && h.capacity_bytes().is_multiple_of(h.grain_bytes())
++                );
++                assert!(h.minimum_metadata_bytes() <= h.overhead_bytes());
++                for r in [
++                    Some(h.primary_directory()),
++                    h.redundant_directory(),
++                    h.descriptor(),
++                ]
++                .into_iter()
++                .flatten()
++                {
++                    assert!(r.offset() >= 512 && r.length() > 0 && r.end() <= FILE);
++                }
++            }
++        }
++    }
++}
+diff --git a/crates/rvvdk-vmdk/tests/support/sparse.rs b/crates/rvvdk-vmdk/tests/support/sparse.rs
+new file mode 100644
+index 0000000..13e0023
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/support/sparse.rs
+@@ -0,0 +1,23 @@
++// Authored from the published field layout; no producer implementation copied.
++pub fn put32(b: &mut [u8], offset: usize, value: u32) {
++    b[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
++}
++pub fn put64(b: &mut [u8], offset: usize, value: u64) {
++    b[offset..offset + 8].copy_from_slice(&value.to_le_bytes());
++}
++pub fn header() -> [u8; 512] {
++    let mut b = [0; 512];
++    put32(&mut b, 0, 0x564d444b);
++    put32(&mut b, 4, 1);
++    put32(&mut b, 8, 3);
++    put64(&mut b, 12, 2048);
++    put64(&mut b, 20, 128);
++    put64(&mut b, 28, 1);
++    put64(&mut b, 36, 20);
++    put32(&mut b, 44, 512);
++    put64(&mut b, 48, 21);
++    put64(&mut b, 56, 26);
++    put64(&mut b, 64, 128);
++    b[73..77].copy_from_slice(b"\n \r\n");
++    b
++}

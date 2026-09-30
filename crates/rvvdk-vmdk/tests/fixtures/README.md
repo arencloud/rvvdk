@@ -42,3 +42,13 @@ lengths and verifies descriptor bytes remain unchanged. Optional `--cli` also ru
 inspect/plan/copy/verify on these originals. The R4.5 report records tool/executable
 hashes and bytes; R4.3's earlier normalization evidence remains immutable. Unit
 padding fixtures are synthesized in memory, including hostile suffixes and limits.
+
+R5.1 adds an authored 512-byte hosted sparse header factory in
+`tests/support/sparse.rs`, shared by parser tests and benchmarks. Field offsets and
+units were checked against the same VMware Virtual Disk Format 5.0 PDF, pp. 6–9,
+on 2026-09-30; the SHA-256 above is unchanged. No implementation code was read or
+copied. `scripts/vmdk/compare_sparse_header.py` separately generates disposable
+QEMU monolithic/split sparse files, records full header hex and tool/file hashes,
+and compares admitted capacity with QEMU info. It also records deliberate subset
+rejections and continued public CLI rejection. These are header-only checks, not
+logical sparse byte comparisons or VMware-produced/ESXi-tested images.

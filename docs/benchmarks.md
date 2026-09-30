@@ -1,11 +1,12 @@
 # rvvdk Benchmarks
 
-Latest step: [R4.5 bounded descriptor padding benchmarks and plots](benchmark-results/2026-09-29-r45/README.md).
-Thirty matched controls, six triggered longer repeats and twelve padded-input cost
-runs retain source/binary/harness identities. The adverse +7.80% inspection pair
-remains recorded; longer repeats show -0.61% aggregate. Acquiring a worst-case
-1 MiB padded descriptor costs 365.609 µs; reparsing its cached prefix costs 0.372 µs.
-Prior [R4.4 preview overhead](benchmark-results/2026-09-29-r44/README.md) and broader
+Latest step: [R5.1 hosted sparse header benchmarks and plots](benchmark-results/2026-09-30-r51/README.md).
+Twenty-four matched controls, six triggered longer repeats and twelve new header
+runs retain source/binary/harness identities. The adverse +5.32% mixed-copy pair
+remains recorded; longer repeats show -1.86% aggregate. Valid header admission
+costs 133.898 ns and performs no allocation or metadata I/O. This is header work,
+not logical sparse reads or data throughput. Prior
+[R4.4 preview overhead](benchmark-results/2026-09-29-r44/README.md) and broader
 qualification/tuning remain open.
 
 

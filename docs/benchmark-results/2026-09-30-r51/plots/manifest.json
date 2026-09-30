@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R5.1 \u00b7 Hosted sparse header admission",
+    "candidate": "patch 8900467e",
+    "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm memory / Btrfs",
+    "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "candidate_only": {
+      "title": "Sparse header admission \u00b7 first cost baseline",
+      "note": "Fixed 512-byte inputs \u00b7 no directory/table reads \u00b7 memory acquisition excludes filesystem I/O",
+      "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+    },
+    "workloads": {
+      "descriptor/small": {
+        "label": "Strict descriptor parsing",
+        "phase": "planning"
+      },
+      "resolution/load_descriptor": {
+        "label": "Unpadded local descriptor load",
+        "phase": "planning"
+      },
+      "cli_vmdk/copy_mixed_verify": {
+        "label": "FLAT/ZERO copy + verify \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/verify_only": {
+        "label": "RAW verify \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "sparse_header/valid": {
+        "label": "Admit header \u00b7 1 MiB capacity",
+        "phase": "planning"
+      },
+      "sparse_header/large_capacity": {
+        "label": "Admit header \u00b7 1 TiB capacity",
+        "phase": "planning"
+      },
+      "sparse_header/reserved_rejection": {
+        "label": "Reject nonzero reserved byte",
+        "phase": "planning"
+      },
+      "sparse_header/read_sector": {
+        "label": "Read memory sector + admit",
+        "phase": "planning"
+      }
+    },
+    "repeat_sampling": "3 adjacent pairs \u00b7 40 flat samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+  },
+  "input_sha256": {
+    "plot-config.json": "422229b8e0555dd8edf003c6ddd157e1591041d32f185e39ddd5fcfec1ab52bf",
+    "environment.json": "7cc49ade7892382ca09a16da1aba5ce05c843fc85068da32f22a9cb4fd6f71e5",
+    "measurements.json": "e839a7b9552a321ed9f04dad445c150589b0f218f2fa034413ba2242ed7104ab",
+    "summary.json": "1f0968d6fd6eb602781a72042db7d4afce28c40fa42a82aa6472d4a34bae7451",
+    "followup-measurements.json": "459b79c9058ad4d58b40a0f57d285b8624063c1f05c6de152ef43a63a8f8e2e0",
+    "followup-summary.json": "8e83a781992971f58e4b2037e9b9ad6ed34c5cff8817c5dd4e4d9307b06a6f5a",
+    "candidate-only-measurements.json": "45117b879ffb96f7bc2a39dc169be5844b875616bfd59360ad3a08c38708bd9e"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "b8ed6e737c4e719ead8ab42d0796c264b69772c2b63c74b2620e600c792ad081",
+    "planning-latency.png": "98a2d64d974a1b63003d1b9d67c99b495c889c025aeaf6ac436a2f2538dd3667",
+    "copy-latency.svg": "33a182f4c6f59fe70c6ede7076f84c29fe68172bda2c39f85612bcb2705b1a83",
+    "copy-latency.png": "49c20e3973bebec562fb4bddb50b037c512b5109518e54ff9cd76a58bc025808",
+    "relative-change.svg": "9ae9ea17d49c5726bf6d8e2195c90cb81f55093e0a283531d3bc96906e63305d",
+    "relative-change.png": "6930c7ebcdaa96f5a24e5604016294de695f425daa708f8151cc11df5af59f28",
+    "sample-distributions.svg": "2e6dd77c856cd596e928061eed2a8ed792d641c520774176f0fd5811988cacc3",
+    "sample-distributions.png": "86d550984fb26eec95ee1051a8f083a682776a55c54eb3cfccd80e9e289c71a5",
+    "followup-change.svg": "a04433c13a1ab5122ad28cf53c717216005d298eef7d50c2342563069a7a8e67",
+    "followup-change.png": "058c51baa645990759e8719c3c7b106a62fae36d881f043fd5e9ef195ea00d93",
+    "candidate-only.svg": "206d3db01ca7c63a811ca3ae79af32d7815451ac89307bcd27a307b0c2ffff22",
+    "candidate-only.png": "6172fbe2c72ca0fe848874a0f024354e63f342d58b0ea59b61dcb744dc57ead4",
+    "computed.json": "b9917a1d7f50145750ca15537e9364b75da6fd9e302b2a5c7bb77bce1732569b"
+  }
+}

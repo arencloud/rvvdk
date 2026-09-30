@@ -1,0 +1,986 @@
+[
+  {
+    "tag": "followup1-0-baseline",
+    "benchmark": "cli_vmdk/copy_mixed_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r51-4hmnr0ns/baseline-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_vmdk/copy_mixed_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "copy_mixed_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/copy_mixed_verify",
+        "directory_name": "cli_vmdk/copy_mixed_verify",
+        "title": "cli_vmdk/copy_mixed_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 21090148.113874994,
+            "upper_bound": 22581404.12
+          },
+          "point_estimate": 21801624.535,
+          "standard_error": 380522.2910438993
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20082708.5,
+            "upper_bound": 22213563.0
+          },
+          "point_estimate": 20244403.1,
+          "standard_error": 606327.2032164548
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 237440.90620458015,
+            "upper_bound": 3200916.293272376
+          },
+          "point_estimate": 652528.5721153049,
+          "standard_error": 819963.0040443407
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1774819.3517356275,
+            "upper_bound": 2892735.2687268383
+          },
+          "point_estimate": 2434139.6094479356,
+          "standard_error": 284586.6143691284
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0
+        ],
+        "times": [
+          100027604.0,
+          100431062.0,
+          99668589.0,
+          99754443.0,
+          122024733.0,
+          103941968.0,
+          99394692.0,
+          100396023.0,
+          100476820.0,
+          100461875.0,
+          99307266.0,
+          99781059.0,
+          98963139.0,
+          110631643.0,
+          109879491.0,
+          101276562.0,
+          126729527.0,
+          138220162.0,
+          130050424.0,
+          111522418.0,
+          111503987.0,
+          137323358.0,
+          112013393.0,
+          106626941.0,
+          126430443.0,
+          136853148.0,
+          119149823.0,
+          101084368.0,
+          113662792.0,
+          122447396.0,
+          99740498.0,
+          115714410.0,
+          100700379.0,
+          104113949.0,
+          101167469.0,
+          99079647.0,
+          100362256.0,
+          99708721.0,
+          100183489.0,
+          99518940.0
+        ]
+      },
+      "tukey.json": [
+        11467356.300000012,
+        15730274.925000006,
+        27098057.92499999,
+        31360976.549999986
+      ]
+    },
+    "variant": "baseline",
+    "pair": 1
+  },
+  {
+    "tag": "followup1-0-candidate",
+    "benchmark": "cli_vmdk/copy_mixed_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r51-4hmnr0ns/candidate-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_vmdk/copy_mixed_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "copy_mixed_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/copy_mixed_verify",
+        "directory_name": "cli_vmdk/copy_mixed_verify",
+        "title": "cli_vmdk/copy_mixed_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 19998391.074125007,
+            "upper_bound": 20124776.559499998
+          },
+          "point_estimate": 20058065.419999998,
+          "standard_error": 32336.990306420623
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 19966608.6,
+            "upper_bound": 20096540.1
+          },
+          "point_estimate": 20043215.700000003,
+          "standard_error": 34045.55840956157
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 105945.11151910381,
+            "upper_bound": 241710.34934878128
+          },
+          "point_estimate": 173781.76983476127,
+          "standard_error": 33817.17100342072
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 135764.65561345496,
+            "upper_bound": 279055.58298851486
+          },
+          "point_estimate": 206937.51823061873,
+          "standard_error": 38713.18947785913
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0
+        ],
+        "times": [
+          100464026.0,
+          99807803.0,
+          100912454.0,
+          100138013.0,
+          100540186.0,
+          100070985.0,
+          100501375.0,
+          100298421.0,
+          100458929.0,
+          101455491.0,
+          101395353.0,
+          101671821.0,
+          100908727.0,
+          100294144.0,
+          100295545.0,
+          102126379.0,
+          101050290.0,
+          100907821.0,
+          99860736.0,
+          100660514.0,
+          99183653.0,
+          104293096.0,
+          99858283.0,
+          98800497.0,
+          99470498.0,
+          99228993.0,
+          99267459.0,
+          100400742.0,
+          99598755.0,
+          99242628.0,
+          100095726.0,
+          99777543.0,
+          99031214.0,
+          98543783.0,
+          99661260.0,
+          101216590.0,
+          100724650.0,
+          99496030.0,
+          99795129.0,
+          100107542.0
+        ]
+      },
+      "tukey.json": [
+        19254241.349999998,
+        19591684.049999997,
+        20491531.25,
+        20828973.950000003
+      ]
+    },
+    "variant": "candidate",
+    "pair": 1
+  },
+  {
+    "tag": "followup2-0-candidate",
+    "benchmark": "cli_vmdk/copy_mixed_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r51-4hmnr0ns/candidate-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_vmdk/copy_mixed_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "copy_mixed_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/copy_mixed_verify",
+        "directory_name": "cli_vmdk/copy_mixed_verify",
+        "title": "cli_vmdk/copy_mixed_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20615603.500000004,
+            "upper_bound": 22385094.337750003
+          },
+          "point_estimate": 21418306.810000002,
+          "standard_error": 453118.1993715467
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20072242.200000003,
+            "upper_bound": 20433278.3
+          },
+          "point_estimate": 20217496.3,
+          "standard_error": 93398.1699181952
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 212435.07852852345,
+            "upper_bound": 672224.3197256349
+          },
+          "point_estimate": 416911.5603983402,
+          "standard_error": 122637.89095209216
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1533307.3433905663,
+            "upper_bound": 3840543.40402351
+          },
+          "point_estimate": 2919499.1641797423,
+          "standard_error": 589767.197343959
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0
+        ],
+        "times": [
+          100562188.0,
+          99459387.0,
+          99939565.0,
+          100158475.0,
+          100195603.0,
+          100235939.0,
+          99564642.0,
+          99637435.0,
+          99998365.0,
+          103158499.0,
+          99553581.0,
+          98955945.0,
+          100045245.0,
+          100496500.0,
+          99368966.0,
+          100033750.0,
+          99454563.0,
+          154269656.0,
+          131663739.0,
+          101883318.0,
+          102449465.0,
+          102806556.0,
+          100916098.0,
+          101150963.0,
+          101709820.0,
+          103170975.0,
+          131270886.0,
+          149426342.0,
+          148709417.0,
+          101024000.0,
+          101569547.0,
+          100542404.0,
+          101274363.0,
+          100486483.0,
+          109246693.0,
+          109809583.0,
+          104172096.0,
+          116590442.0,
+          107268648.0,
+          101431220.0
+        ]
+      },
+      "tukey.json": [
+        17981143.849999998,
+        18994809.049999997,
+        21697916.25,
+        22711581.450000003
+      ]
+    },
+    "variant": "candidate",
+    "pair": 2
+  },
+  {
+    "tag": "followup2-0-baseline",
+    "benchmark": "cli_vmdk/copy_mixed_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r51-4hmnr0ns/baseline-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_vmdk/copy_mixed_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "copy_mixed_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/copy_mixed_verify",
+        "directory_name": "cli_vmdk/copy_mixed_verify",
+        "title": "cli_vmdk/copy_mixed_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20470650.349999998,
+            "upper_bound": 20919651.103875007
+          },
+          "point_estimate": 20683333.719999995,
+          "standard_error": 114674.78626829728
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20263984.9,
+            "upper_bound": 20764058.0
+          },
+          "point_estimate": 20600946.700000003,
+          "standard_error": 150202.81219074663
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 372001.6798156516,
+            "upper_bound": 842144.3614089511
+          },
+          "point_estimate": 664437.4081438786,
+          "standard_error": 124516.75835528542
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 456056.32920099085,
+            "upper_bound": 932889.7875460829
+          },
+          "point_estimate": 732891.1796917246,
+          "standard_error": 119346.92212232837
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0
+        ],
+        "times": [
+          103946737.0,
+          114456585.0,
+          103968342.0,
+          101352290.0,
+          101287559.0,
+          103006828.0,
+          99254721.0,
+          100794050.0,
+          106093902.0,
+          113026453.0,
+          103693843.0,
+          100387952.0,
+          99789291.0,
+          103584821.0,
+          100281958.0,
+          107624448.0,
+          113231980.0,
+          103002639.0,
+          106349714.0,
+          103292817.0,
+          103560830.0,
+          102196438.0,
+          102946973.0,
+          101444878.0,
+          100608109.0,
+          100098681.0,
+          101382042.0,
+          100315960.0,
+          100505968.0,
+          104733125.0,
+          99363103.0,
+          100341999.0,
+          100824199.0,
+          99993589.0,
+          103458412.0,
+          106600111.0,
+          104815854.0,
+          104258809.0,
+          105515115.0,
+          105275619.0
+        ]
+      },
+      "tukey.json": [
+        17613774.650000002,
+        18865144.700000003,
+        22202131.5,
+        23453501.549999997
+      ]
+    },
+    "variant": "baseline",
+    "pair": 2
+  },
+  {
+    "tag": "followup3-0-baseline",
+    "benchmark": "cli_vmdk/copy_mixed_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r51-4hmnr0ns/baseline-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_vmdk/copy_mixed_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "copy_mixed_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/copy_mixed_verify",
+        "directory_name": "cli_vmdk/copy_mixed_verify",
+        "title": "cli_vmdk/copy_mixed_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 21447034.215,
+            "upper_bound": 22635337.449999996
+          },
+          "point_estimate": 21973432.479999997,
+          "standard_error": 305171.5733236572
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 21125403.700000003,
+            "upper_bound": 21487056.7
+          },
+          "point_estimate": 21272007.6,
+          "standard_error": 95059.92157446657
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 236640.74699878693,
+            "upper_bound": 640038.7051570405
+          },
+          "point_estimate": 400870.1252031315,
+          "standard_error": 102452.77413878797
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 862968.0945669811,
+            "upper_bound": 2828530.8368784986
+          },
+          "point_estimate": 1950346.1990569741,
+          "standard_error": 526655.2671789376
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0
+        ],
+        "times": [
+          104816062.0,
+          105874391.0,
+          105631063.0,
+          106248775.0,
+          118487238.0,
+          114737486.0,
+          105499992.0,
+          105976389.0,
+          107060908.0,
+          105562177.0,
+          106782853.0,
+          106471301.0,
+          105032548.0,
+          131028044.0,
+          107082806.0,
+          109284842.0,
+          125901201.0,
+          105962944.0,
+          104026256.0,
+          105425352.0,
+          103362396.0,
+          153686113.0,
+          115466053.0,
+          105622974.0,
+          104699782.0,
+          130783287.0,
+          108322026.0,
+          107736380.0,
+          107134187.0,
+          110056207.0,
+          105958664.0,
+          104472136.0,
+          105227362.0,
+          104652655.0,
+          105062858.0,
+          105085498.0,
+          108184862.0,
+          106612900.0,
+          107744239.0,
+          107923289.0
+        ]
+      },
+      "tukey.json": [
+        19369191.8,
+        20222181.35,
+        22496820.15,
+        23349809.699999996
+      ]
+    },
+    "variant": "baseline",
+    "pair": 3
+  },
+  {
+    "tag": "followup3-0-candidate",
+    "benchmark": "cli_vmdk/copy_mixed_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r51-4hmnr0ns/candidate-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_vmdk/copy_mixed_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "copy_mixed_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/copy_mixed_verify",
+        "directory_name": "cli_vmdk/copy_mixed_verify",
+        "title": "cli_vmdk/copy_mixed_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 21081252.215,
+            "upper_bound": 21256727.970000006
+          },
+          "point_estimate": 21164028.290000003,
+          "standard_error": 44811.35239708002
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 21016799.8,
+            "upper_bound": 21214654.4
+          },
+          "point_estimate": 21134754.5,
+          "standard_error": 47800.832288369405
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 153039.30664300863,
+            "upper_bound": 312443.2667130254
+          },
+          "point_estimate": 226902.73385167232,
+          "standard_error": 41142.09461029205
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 192889.4481178781,
+            "upper_bound": 374109.5719990189
+          },
+          "point_estimate": 286662.3967690857,
+          "standard_error": 47181.13613757254
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0,
+          5.0
+        ],
+        "times": [
+          105489021.0,
+          106460330.0,
+          105199783.0,
+          108533860.0,
+          104948152.0,
+          103743050.0,
+          104435618.0,
+          106748063.0,
+          106139378.0,
+          104480518.0,
+          104564574.0,
+          104956420.0,
+          103516690.0,
+          104998228.0,
+          103827295.0,
+          106316707.0,
+          104682184.0,
+          108331514.0,
+          105715413.0,
+          104602555.0,
+          105825679.0,
+          105920132.0,
+          105137045.0,
+          108301018.0,
+          106854551.0,
+          105617818.0,
+          105030953.0,
+          105216974.0,
+          104929892.0,
+          105773893.0,
+          105632132.0,
+          106007166.0,
+          105723221.0,
+          106144713.0,
+          107210115.0,
+          106909036.0,
+          106539489.0,
+          110851922.0,
+          104793443.0,
+          106697113.0
+        ]
+      },
+      "tukey.json": [
+        20066797.749999996,
+        20527757.574999996,
+        21756983.775,
+        22217943.6
+      ]
+    },
+    "variant": "candidate",
+    "pair": 3
+  }
+]

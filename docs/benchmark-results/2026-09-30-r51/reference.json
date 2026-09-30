@@ -1,0 +1,634 @@
+{
+  "qemu_version": "qemu-img version 10.2.2 (qemu-10.2.2-1.fc44)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+  "qemu_sha256": "4362e911c13bb90e39b69479462cd4adb840749b582f4892ca114eb7e94dcf2e",
+  "inspect_sha256": "b6e7814a8de5f91b2dbb6320afa342c2d01d7f45b78faaaba16d562acc86c0bc",
+  "cli_sha256": "883fc2f233aaac62fa3aef140a227adc05591782b1a97352b85a6947eb46048f",
+  "generator_sha256": "6093fc83e8242f94ee6830fb91a45869b99d67b960ebe7caa576504ec8cf35c4",
+  "directory": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified",
+  "cases": [
+    {
+      "name": "monolithic-1m",
+      "subformat": "monolithicSparse",
+      "extent": "monolithic-1m.vmdk",
+      "file_bytes": 65536,
+      "header_hex": "4b444d56010000000300000000080000000000008000000000000000010000000000000014000000000000000002000015000000000000001a000000000000008000000000000000000a200d0a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "qemu_info": {
+        "children": [
+          {
+            "name": "file",
+            "info": {
+              "children": [],
+              "virtual-size": 65536,
+              "filename": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-1m.vmdk",
+              "format": "file",
+              "actual-size": 12288,
+              "format-specific": {
+                "type": "file",
+                "data": {}
+              },
+              "dirty-flag": false
+            }
+          }
+        ],
+        "virtual-size": 1048576,
+        "filename": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-1m.vmdk",
+        "cluster-size": 65536,
+        "format": "vmdk",
+        "actual-size": 12288,
+        "format-specific": {
+          "type": "vmdk",
+          "data": {
+            "cid": 2478646509,
+            "parent-cid": 4294967295,
+            "create-type": "monolithicSparse",
+            "extents": [
+              {
+                "virtual-size": 1048576,
+                "filename": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-1m.vmdk",
+                "cluster-size": 65536,
+                "format": ""
+              }
+            ]
+          }
+        },
+        "dirty-flag": false
+      },
+      "expected_admission": true,
+      "descriptor_region_nonzero_bytes": 346,
+      "header": {
+        "flags": 3,
+        "capacity_bytes": 1048576,
+        "grain_bytes": 65536,
+        "directory_entries": 1,
+        "grain_table_bytes": 2048,
+        "overhead_bytes": 65536,
+        "minimum_metadata_bytes": 15872,
+        "descriptor": {
+          "offset": 512,
+          "length": 10240
+        },
+        "primary_directory": {
+          "offset": 13312,
+          "length": 512
+        },
+        "redundant_directory": {
+          "offset": 10752,
+          "length": 512
+        }
+      },
+      "qualification": "header admission and capacity agree; directories, grains and logical bytes unqualified",
+      "public_cli_rejects": true
+    },
+    {
+      "name": "monolithic-64m",
+      "subformat": "monolithicSparse",
+      "extent": "monolithic-64m.vmdk",
+      "file_bytes": 65536,
+      "header_hex": "4b444d56010000000300000000000200000000008000000000000000010000000000000014000000000000000002000015000000000000001e000000000000008000000000000000000a200d0a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "qemu_info": {
+        "children": [
+          {
+            "name": "file",
+            "info": {
+              "children": [],
+              "virtual-size": 65536,
+              "filename": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-64m.vmdk",
+              "format": "file",
+              "actual-size": 12288,
+              "format-specific": {
+                "type": "file",
+                "data": {}
+              },
+              "dirty-flag": false
+            }
+          }
+        ],
+        "virtual-size": 67108864,
+        "filename": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-64m.vmdk",
+        "cluster-size": 65536,
+        "format": "vmdk",
+        "actual-size": 12288,
+        "format-specific": {
+          "type": "vmdk",
+          "data": {
+            "cid": 976683420,
+            "parent-cid": 4294967295,
+            "create-type": "monolithicSparse",
+            "extents": [
+              {
+                "virtual-size": 67108864,
+                "filename": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-64m.vmdk",
+                "cluster-size": 65536,
+                "format": ""
+              }
+            ]
+          }
+        },
+        "dirty-flag": false
+      },
+      "expected_admission": true,
+      "descriptor_region_nonzero_bytes": 351,
+      "header": {
+        "flags": 3,
+        "capacity_bytes": 67108864,
+        "grain_bytes": 65536,
+        "directory_entries": 2,
+        "grain_table_bytes": 2048,
+        "overhead_bytes": 65536,
+        "minimum_metadata_bytes": 19968,
+        "descriptor": {
+          "offset": 512,
+          "length": 10240
+        },
+        "primary_directory": {
+          "offset": 15360,
+          "length": 512
+        },
+        "redundant_directory": {
+          "offset": 10752,
+          "length": 512
+        }
+      },
+      "qualification": "header admission and capacity agree; directories, grains and logical bytes unqualified",
+      "public_cli_rejects": true
+    },
+    {
+      "name": "split-1m",
+      "subformat": "twoGbMaxExtentSparse",
+      "extent": "split-1m-s001.vmdk",
+      "file_bytes": 65536,
+      "header_hex": "4b444d56010000000300000000080000000000008000000000000000010000000000000014000000000000000002000015000000000000001a000000000000008000000000000000000a200d0a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "qemu_info": {
+        "children": [
+          {
+            "name": "extents.0",
+            "info": {
+              "children": [],
+              "virtual-size": 65536,
+              "filename": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/split-1m-s001.vmdk",
+              "format": "file",
+              "actual-size": 12288,
+              "format-specific": {
+                "type": "file",
+                "data": {}
+              },
+              "dirty-flag": false
+            }
+          },
+          {
+            "name": "file",
+            "info": {
+              "children": [],
+              "virtual-size": 512,
+              "filename": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/split-1m.vmdk",
+              "format": "file",
+              "actual-size": 4096,
+              "format-specific": {
+                "type": "file",
+                "data": {}
+              },
+              "dirty-flag": false
+            }
+          }
+        ],
+        "virtual-size": 1048576,
+        "filename": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/split-1m.vmdk",
+        "cluster-size": 65536,
+        "format": "vmdk",
+        "actual-size": 16384,
+        "format-specific": {
+          "type": "vmdk",
+          "data": {
+            "cid": 3535274994,
+            "parent-cid": 4294967295,
+            "create-type": "twoGbMaxExtentSparse",
+            "extents": [
+              {
+                "virtual-size": 1048576,
+                "filename": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/split-1m-s001.vmdk",
+                "cluster-size": 65536,
+                "format": "SPARSE"
+              }
+            ]
+          }
+        },
+        "dirty-flag": false
+      },
+      "expected_admission": true,
+      "descriptor_region_nonzero_bytes": 0,
+      "header": {
+        "flags": 3,
+        "capacity_bytes": 1048576,
+        "grain_bytes": 65536,
+        "directory_entries": 1,
+        "grain_table_bytes": 2048,
+        "overhead_bytes": 65536,
+        "minimum_metadata_bytes": 15872,
+        "descriptor": {
+          "offset": 512,
+          "length": 10240
+        },
+        "primary_directory": {
+          "offset": 13312,
+          "length": 512
+        },
+        "redundant_directory": {
+          "offset": 10752,
+          "length": 512
+        }
+      },
+      "qualification": "header admission and capacity agree; directories, grains and logical bytes unqualified",
+      "public_cli_rejects": true
+    },
+    {
+      "name": "unaligned",
+      "subformat": "monolithicSparse",
+      "extent": "unaligned.vmdk",
+      "file_bytes": 65536,
+      "header_hex": "4b444d56010000000300000001080000000000008000000000000000010000000000000014000000000000000002000015000000000000001a000000000000008000000000000000000a200d0a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "qemu_info": {
+        "children": [
+          {
+            "name": "file",
+            "info": {
+              "children": [],
+              "virtual-size": 65536,
+              "filename": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/unaligned.vmdk",
+              "format": "file",
+              "actual-size": 12288,
+              "format-specific": {
+                "type": "file",
+                "data": {}
+              },
+              "dirty-flag": false
+            }
+          }
+        ],
+        "virtual-size": 1049088,
+        "filename": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/unaligned.vmdk",
+        "cluster-size": 65536,
+        "format": "vmdk",
+        "actual-size": 12288,
+        "format-specific": {
+          "type": "vmdk",
+          "data": {
+            "cid": 3940587778,
+            "parent-cid": 4294967295,
+            "create-type": "monolithicSparse",
+            "extents": [
+              {
+                "virtual-size": 1049088,
+                "filename": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/unaligned.vmdk",
+                "cluster-size": 65536,
+                "format": ""
+              }
+            ]
+          }
+        },
+        "dirty-flag": false
+      },
+      "expected_admission": false,
+      "rejection": "Error: Invalid(\"capacity must be nonzero and grain-aligned\")\n",
+      "public_cli_rejects": true
+    },
+    {
+      "name": "stream",
+      "subformat": "streamOptimized",
+      "extent": "stream.vmdk",
+      "file_bytes": 65536,
+      "header_hex": "4b444d56030000000300030000080000000000008000000000000000010000000000000014000000000000000002000015000000000000001a000000000000008000000000000000000a200d0a010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "qemu_info": {
+        "children": [
+          {
+            "name": "file",
+            "info": {
+              "children": [],
+              "virtual-size": 65536,
+              "filename": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/stream.vmdk",
+              "format": "file",
+              "actual-size": 12288,
+              "format-specific": {
+                "type": "file",
+                "data": {}
+              },
+              "dirty-flag": false
+            }
+          }
+        ],
+        "virtual-size": 1048576,
+        "filename": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/stream.vmdk",
+        "cluster-size": 65536,
+        "format": "vmdk",
+        "actual-size": 12288,
+        "format-specific": {
+          "type": "vmdk",
+          "data": {
+            "cid": 822755093,
+            "parent-cid": 4294967295,
+            "create-type": "streamOptimized",
+            "extents": [
+              {
+                "compressed": true,
+                "virtual-size": 1048576,
+                "filename": "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/stream.vmdk",
+                "cluster-size": 65536,
+                "format": ""
+              }
+            ]
+          }
+        },
+        "dirty-flag": false
+      },
+      "expected_admission": false,
+      "rejection": "Error: Unsupported(\"version (only 1)\")\n",
+      "public_cli_rejects": true
+    }
+  ],
+  "commands": [
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "qemu-img version 10.2.2 (qemu-10.2.2-1.fc44)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-1m.vmdk",
+        "1048576"
+      ],
+      "exit_code": 0,
+      "stdout": "Formatting '/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-1m.vmdk', fmt=vmdk size=1048576 compat6=off hwversion=undefined subformat=monolithicSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "info",
+        "-f",
+        "vmdk",
+        "--output=json",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-1m.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n    \"children\": [\n        {\n            \"name\": \"file\",\n            \"info\": {\n                \"children\": [\n                ],\n                \"virtual-size\": 65536,\n                \"filename\": \"/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-1m.vmdk\",\n                \"format\": \"file\",\n                \"actual-size\": 12288,\n                \"format-specific\": {\n                    \"type\": \"file\",\n                    \"data\": {\n                    }\n                },\n                \"dirty-flag\": false\n            }\n        }\n    ],\n    \"virtual-size\": 1048576,\n    \"filename\": \"/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-1m.vmdk\",\n    \"cluster-size\": 65536,\n    \"format\": \"vmdk\",\n    \"actual-size\": 12288,\n    \"format-specific\": {\n        \"type\": \"vmdk\",\n        \"data\": {\n            \"cid\": 2478646509,\n            \"parent-cid\": 4294967295,\n            \"create-type\": \"monolithicSparse\",\n            \"extents\": [\n                {\n                    \"virtual-size\": 1048576,\n                    \"filename\": \"/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-1m.vmdk\",\n                    \"cluster-size\": 65536,\n                    \"format\": \"\"\n                }\n            ]\n        }\n    },\n    \"dirty-flag\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r51-4hmnr0ns/candidate-target/release/examples/inspect_sparse_header",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-1m.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"flags\":3,\"capacity_bytes\":1048576,\"grain_bytes\":65536,\"directory_entries\":1,\"grain_table_bytes\":2048,\"overhead_bytes\":65536,\"minimum_metadata_bytes\":15872,\"descriptor\":{\"offset\":512,\"length\":10240},\"primary_directory\":{\"offset\":13312,\"length\":512},\"redundant_directory\":{\"offset\":10752,\"length\":512}}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r51-4hmnr0ns/candidate-target/release/rvddk",
+        "inspect",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-1m.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 0: invalid UTF-8 or unsupported control character\"},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-64m.vmdk",
+        "67108864"
+      ],
+      "exit_code": 0,
+      "stdout": "Formatting '/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-64m.vmdk', fmt=vmdk size=67108864 compat6=off hwversion=undefined subformat=monolithicSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "info",
+        "-f",
+        "vmdk",
+        "--output=json",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-64m.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n    \"children\": [\n        {\n            \"name\": \"file\",\n            \"info\": {\n                \"children\": [\n                ],\n                \"virtual-size\": 65536,\n                \"filename\": \"/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-64m.vmdk\",\n                \"format\": \"file\",\n                \"actual-size\": 12288,\n                \"format-specific\": {\n                    \"type\": \"file\",\n                    \"data\": {\n                    }\n                },\n                \"dirty-flag\": false\n            }\n        }\n    ],\n    \"virtual-size\": 67108864,\n    \"filename\": \"/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-64m.vmdk\",\n    \"cluster-size\": 65536,\n    \"format\": \"vmdk\",\n    \"actual-size\": 12288,\n    \"format-specific\": {\n        \"type\": \"vmdk\",\n        \"data\": {\n            \"cid\": 976683420,\n            \"parent-cid\": 4294967295,\n            \"create-type\": \"monolithicSparse\",\n            \"extents\": [\n                {\n                    \"virtual-size\": 67108864,\n                    \"filename\": \"/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-64m.vmdk\",\n                    \"cluster-size\": 65536,\n                    \"format\": \"\"\n                }\n            ]\n        }\n    },\n    \"dirty-flag\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r51-4hmnr0ns/candidate-target/release/examples/inspect_sparse_header",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-64m.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"flags\":3,\"capacity_bytes\":67108864,\"grain_bytes\":65536,\"directory_entries\":2,\"grain_table_bytes\":2048,\"overhead_bytes\":65536,\"minimum_metadata_bytes\":19968,\"descriptor\":{\"offset\":512,\"length\":10240},\"primary_directory\":{\"offset\":15360,\"length\":512},\"redundant_directory\":{\"offset\":10752,\"length\":512}}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r51-4hmnr0ns/candidate-target/release/rvddk",
+        "inspect",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/monolithic-64m.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 0: invalid UTF-8 or unsupported control character\"},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/split-1m.vmdk",
+        "1048576"
+      ],
+      "exit_code": 0,
+      "stdout": "Formatting '/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/split-1m.vmdk', fmt=vmdk size=1048576 compat6=off hwversion=undefined subformat=twoGbMaxExtentSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "info",
+        "-f",
+        "vmdk",
+        "--output=json",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/split-1m.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n    \"children\": [\n        {\n            \"name\": \"extents.0\",\n            \"info\": {\n                \"children\": [\n                ],\n                \"virtual-size\": 65536,\n                \"filename\": \"/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/split-1m-s001.vmdk\",\n                \"format\": \"file\",\n                \"actual-size\": 12288,\n                \"format-specific\": {\n                    \"type\": \"file\",\n                    \"data\": {\n                    }\n                },\n                \"dirty-flag\": false\n            }\n        },\n        {\n            \"name\": \"file\",\n            \"info\": {\n                \"children\": [\n                ],\n                \"virtual-size\": 512,\n                \"filename\": \"/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/split-1m.vmdk\",\n                \"format\": \"file\",\n                \"actual-size\": 4096,\n                \"format-specific\": {\n                    \"type\": \"file\",\n                    \"data\": {\n                    }\n                },\n                \"dirty-flag\": false\n            }\n        }\n    ],\n    \"virtual-size\": 1048576,\n    \"filename\": \"/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/split-1m.vmdk\",\n    \"cluster-size\": 65536,\n    \"format\": \"vmdk\",\n    \"actual-size\": 16384,\n    \"format-specific\": {\n        \"type\": \"vmdk\",\n        \"data\": {\n            \"cid\": 3535274994,\n            \"parent-cid\": 4294967295,\n            \"create-type\": \"twoGbMaxExtentSparse\",\n            \"extents\": [\n                {\n                    \"virtual-size\": 1048576,\n                    \"filename\": \"/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/split-1m-s001.vmdk\",\n                    \"cluster-size\": 65536,\n                    \"format\": \"SPARSE\"\n                }\n            ]\n        }\n    },\n    \"dirty-flag\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r51-4hmnr0ns/candidate-target/release/examples/inspect_sparse_header",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/split-1m-s001.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"flags\":3,\"capacity_bytes\":1048576,\"grain_bytes\":65536,\"directory_entries\":1,\"grain_table_bytes\":2048,\"overhead_bytes\":65536,\"minimum_metadata_bytes\":15872,\"descriptor\":{\"offset\":512,\"length\":10240},\"primary_directory\":{\"offset\":13312,\"length\":512},\"redundant_directory\":{\"offset\":10752,\"length\":512}}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r51-4hmnr0ns/candidate-target/release/rvddk",
+        "inspect",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/split-1m.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 5: unsupported feature: create type\"},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/unaligned.vmdk",
+        "1049088"
+      ],
+      "exit_code": 0,
+      "stdout": "Formatting '/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/unaligned.vmdk', fmt=vmdk size=1049088 compat6=off hwversion=undefined subformat=monolithicSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "info",
+        "-f",
+        "vmdk",
+        "--output=json",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/unaligned.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n    \"children\": [\n        {\n            \"name\": \"file\",\n            \"info\": {\n                \"children\": [\n                ],\n                \"virtual-size\": 65536,\n                \"filename\": \"/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/unaligned.vmdk\",\n                \"format\": \"file\",\n                \"actual-size\": 12288,\n                \"format-specific\": {\n                    \"type\": \"file\",\n                    \"data\": {\n                    }\n                },\n                \"dirty-flag\": false\n            }\n        }\n    ],\n    \"virtual-size\": 1049088,\n    \"filename\": \"/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/unaligned.vmdk\",\n    \"cluster-size\": 65536,\n    \"format\": \"vmdk\",\n    \"actual-size\": 12288,\n    \"format-specific\": {\n        \"type\": \"vmdk\",\n        \"data\": {\n            \"cid\": 3940587778,\n            \"parent-cid\": 4294967295,\n            \"create-type\": \"monolithicSparse\",\n            \"extents\": [\n                {\n                    \"virtual-size\": 1049088,\n                    \"filename\": \"/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/unaligned.vmdk\",\n                    \"cluster-size\": 65536,\n                    \"format\": \"\"\n                }\n            ]\n        }\n    },\n    \"dirty-flag\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r51-4hmnr0ns/candidate-target/release/examples/inspect_sparse_header",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/unaligned.vmdk"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "Error: Invalid(\"capacity must be nonzero and grain-aligned\")\n"
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r51-4hmnr0ns/candidate-target/release/rvddk",
+        "inspect",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/unaligned.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 0: invalid UTF-8 or unsupported control character\"},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=streamOptimized",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/stream.vmdk",
+        "1048576"
+      ],
+      "exit_code": 0,
+      "stdout": "Formatting '/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/stream.vmdk', fmt=vmdk size=1048576 compat6=off hwversion=undefined subformat=streamOptimized\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "info",
+        "-f",
+        "vmdk",
+        "--output=json",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/stream.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n    \"children\": [\n        {\n            \"name\": \"file\",\n            \"info\": {\n                \"children\": [\n                ],\n                \"virtual-size\": 65536,\n                \"filename\": \"/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/stream.vmdk\",\n                \"format\": \"file\",\n                \"actual-size\": 12288,\n                \"format-specific\": {\n                    \"type\": \"file\",\n                    \"data\": {\n                    }\n                },\n                \"dirty-flag\": false\n            }\n        }\n    ],\n    \"virtual-size\": 1048576,\n    \"filename\": \"/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/stream.vmdk\",\n    \"cluster-size\": 65536,\n    \"format\": \"vmdk\",\n    \"actual-size\": 12288,\n    \"format-specific\": {\n        \"type\": \"vmdk\",\n        \"data\": {\n            \"cid\": 822755093,\n            \"parent-cid\": 4294967295,\n            \"create-type\": \"streamOptimized\",\n            \"extents\": [\n                {\n                    \"compressed\": true,\n                    \"virtual-size\": 1048576,\n                    \"filename\": \"/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/stream.vmdk\",\n                    \"cluster-size\": 65536,\n                    \"format\": \"\"\n                }\n            ]\n        }\n    },\n    \"dirty-flag\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r51-4hmnr0ns/candidate-target/release/examples/inspect_sparse_header",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/stream.vmdk"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "Error: Unsupported(\"version (only 1)\")\n"
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r51-4hmnr0ns/candidate-target/release/rvddk",
+        "inspect",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r51-benchmark-storage/reference-qualified/stream.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 0: invalid UTF-8 or unsupported control character\"},\"schema_version\":1}\n"
+    }
+  ],
+  "files": {
+    "monolithic-1m.vmdk": {
+      "bytes": 65536,
+      "sha256": "4e87599d7e735c7c77d1f9d0865382b8c101167e2d5403dc1db8fb2c5e30c775"
+    },
+    "monolithic-64m.vmdk": {
+      "bytes": 65536,
+      "sha256": "bdf46ddaf13bfb51cb7cbbeec07f9b9b0b66efbfca64ad505dbe16c755b3d106"
+    },
+    "split-1m-s001.vmdk": {
+      "bytes": 65536,
+      "sha256": "f4b9816360099664effb4e8ef690f093a09eca9fd58577136c8d913cb0249946"
+    },
+    "split-1m.vmdk": {
+      "bytes": 350,
+      "sha256": "3924c1055891d627da1e7ca4ecdc2bd93971ed2cd83b3afe54c3883b4d837084"
+    },
+    "stream.vmdk": {
+      "bytes": 65536,
+      "sha256": "91b060ec6234bb31afcd9b30f426d8926f566e4f18c53779fc9f1d506e4462f9"
+    },
+    "unaligned.vmdk": {
+      "bytes": 65536,
+      "sha256": "419e624d02019b3d35574504050330baefacbfb22deb54565f4fa9e37e984d8b"
+    }
+  }
+}
