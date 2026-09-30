@@ -91,6 +91,7 @@ three-layer monolithic, split, mixed and multi-file split chains. The prior
 remains unqualified; the large reference case fully overwrites the affected grain.
 Local format support makes no live VMware compatibility claim. ESXi is unnecessary.
 
-Next: R5.9 bounded coverage-guided fuzzing of descriptor/header/metadata/chain
-admission, with retained seeds, resource limits and reproducible failure evidence.
+R5.9 now adds [bounded coverage-guided admission fuzzing](../fuzz/README.md),
+with retained seeds, resource limits and reproducible evidence. Next V0.1 prepares
+the independent-access workflow and lab acceptance plan.
 Broader parent path policies and formats require separate qualification.

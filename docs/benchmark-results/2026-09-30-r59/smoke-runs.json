@@ -1,0 +1,62 @@
+[
+  {
+    "target": "descriptor",
+    "command": [
+      "target/r59-fuzz-build/x86_64-unknown-linux-gnu/release/descriptor",
+      "target/r59-smoke/descriptor/corpus",
+      "-max_total_time=5",
+      "-timeout=5",
+      "-rss_limit_mb=1024",
+      "-max_len=65536",
+      "-seed=5901",
+      "-artifact_prefix=target/r59-smoke/descriptor/artifacts/",
+      "-print_final_stats=1"
+    ],
+    "exit_code": 0
+  },
+  {
+    "target": "header",
+    "command": [
+      "target/r59-fuzz-build/x86_64-unknown-linux-gnu/release/header",
+      "target/r59-smoke/header/corpus",
+      "-max_total_time=5",
+      "-timeout=5",
+      "-rss_limit_mb=1024",
+      "-max_len=520",
+      "-seed=5901",
+      "-artifact_prefix=target/r59-smoke/header/artifacts/",
+      "-print_final_stats=1"
+    ],
+    "exit_code": 0
+  },
+  {
+    "target": "metadata",
+    "command": [
+      "target/r59-fuzz-build/x86_64-unknown-linux-gnu/release/metadata",
+      "target/r59-smoke/metadata/corpus",
+      "-max_total_time=5",
+      "-timeout=5",
+      "-rss_limit_mb=1024",
+      "-max_len=65536",
+      "-seed=5901",
+      "-artifact_prefix=target/r59-smoke/metadata/artifacts/",
+      "-print_final_stats=1"
+    ],
+    "exit_code": 0
+  },
+  {
+    "target": "chain",
+    "command": [
+      "target/r59-fuzz-build/x86_64-unknown-linux-gnu/release/chain",
+      "target/r59-smoke/chain/corpus",
+      "-max_total_time=5",
+      "-timeout=5",
+      "-rss_limit_mb=1024",
+      "-max_len=520",
+      "-seed=5901",
+      "-artifact_prefix=target/r59-smoke/chain/artifacts/",
+      "-print_final_stats=1"
+    ],
+    "exit_code": 0
+  }
+]

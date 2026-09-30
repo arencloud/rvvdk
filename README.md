@@ -61,6 +61,7 @@ VMware disk access and migration, extensible to other platforms.
 | **VMDK descriptors** | [Hosted base FLAT/ZERO metadata](docs/vmdk-descriptor.md), bounded parsing, [confined backing resolution](docs/vmdk-backing.md) and [logical reads](docs/vmdk-logical.md) |
 | **Hosted sparse reads** | [Read-only base monolithic/split sparse](docs/vmdk-sparse-disk.md), bounded metadata and [CLI inspect/plan/copy/verify](docs/cli-vmdk.md) |
 | **Parent chains** | [Read-only sparse parent fallback](docs/vmdk-chain-disk.md) with bounded metadata, whole-chain alias checks and [opt-in CLI support](docs/cli-vmdk-parents.md) |
+| **Admission fuzzing** | [Four bounded libFuzzer targets](fuzz/README.md), authored seeds, sanitizer campaigns and retained corpora |
 | **VMware access** | Planned; no VMware VDDK dependency in the current workspace |
 
 The [endpoint contract](docs/architecture.md#copy-endpoint-preflight-r05) describes
@@ -227,8 +228,10 @@ workloads. Measurements depend on the filesystem, page cache, hardware, and
 flush policy. See the [benchmark notes](docs/benchmarks.md) for historical results
 and the [review](docs/project-review-2026-09-28.md) for measurement gaps.
 
-Explore the [R5.8 benchmark charts](docs/benchmark-results/2026-09-30-r58/README.md)
-for CLI parent-chain costs, paired changes, and sample distributions. A
+Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
+for sanitizer execution rates, memory and feedback across repeated campaigns.
+The [R5.8 CLI parent-chain timings](docs/benchmark-results/2026-09-30-r58/README.md)
+retain paired changes and sample distributions. A
 [reusable generator](scripts/benchmarks/README.md) exports SVG and PNG figures.
 
 ## Inspect, copy and verify from the command line

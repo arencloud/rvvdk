@@ -1,17 +1,15 @@
 # rvvdk Benchmarks
 
-Latest step: [R5.8 confined CLI parent-chain benchmarks and plots](benchmark-results/2026-09-30-r58/README.md).
-Thirty matched controls, 6 longer repeat runs and fifteen initial parent CLI
-runs retain source/binary/harness identities. Main control changes are
-+6.10%, -1.02%, +1.24%, +2.34%, -0.50%; all adverse pairs and repeats remain visible.
-New timings include acquisition, path confinement, observations and command work
-on 1 MiB three-layer chains. Warm local costs are not physical storage throughput.
-All four CLI commands pass independent QEMU/RAW reference qualification; the prior
-producer partial-write discrepancy remains unqualified and preserved.
-Prior [R5.5 scaling](benchmark-results/2026-09-30-r55/README.md),
-[R5.6 acquisition](benchmark-results/2026-09-30-r56/README.md),
-[R5.7 parent reads](benchmark-results/2026-09-30-r57/README.md), PERF.0 and R4.4
-qualification and earlier adverse timing investigations remain recorded.
+Latest step: [R5.9 bounded admission fuzz qualification](benchmark-results/2026-09-30-r59/README.md).
+Twelve independent sanitizer campaigns execute 62,446,303 inputs with peak RSS
+186 MiB and no reported failures. All runs, learned corpora, execution rates,
+resource logs and feedback are retained with reproducible SVG/PNG plots.
+Shipping code/dependencies are unchanged; these harness-capacity measurements
+are not a matched disk-runtime comparison or storage throughput claim.
+[R5.8 CLI parent-chain benchmarks](benchmark-results/2026-09-30-r58/README.md)
+retain thirty matched controls, six longer repeats and fifteen initial chain runs.
+Earlier PERF.0/R4.4 investigations, adverse results and the QEMU producer partial-
+write discrepancy remain open and preserved.
 
 ## Performance policy — adopted 2026-09-28
 

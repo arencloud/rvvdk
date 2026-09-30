@@ -1301,3 +1301,20 @@ leaf-to-base identities/CIDs, aggregate loader counts and separate entry probes.
 See [ADR-0044](adr/0044-confined-cli-parent-chains.md), [contract](cli-vmdk-parents.md)
 and [qualification](benchmark-results/2026-09-30-r58/README.md). R5.9 will add
 coverage-guided fuzzing; live VMware access remains gated by V0 lab qualification.
+
+## Bounded admission fuzz qualification (R5.9)
+
+A standalone fuzz workspace exercises unchanged descriptor, sparse-header, metadata
+and parent-chain admission through four memory-only targets. Raw parser/prefix
+inputs and structured graph mutations use authored fixtures. Independent read and
+resolver counters check aggregate limits on both success and rejection. Accepted
+results also check extent arithmetic, metadata bounds, chain linkage and endpoint
+revalidation. Smaller per-target limits complement deterministic production-default
+boundary tests. No fuzz-only branches or dependencies enter shipping crates.
+
+Sanitizer execution rates, peak RSS and whole-target feedback are recorded with
+separate corpus archives for every campaign; no source coverage percentage or
+runtime disk speedup is inferred. See [ADR-0045](adr/0045-bounded-admission-fuzzing.md),
+[harness contract](../fuzz/README.md) and [R5.9 evidence](benchmark-results/2026-09-30-r59/README.md).
+Next V0.1 defines the independently implemented remote workflow and lab proof;
+local hosted-sparse support does not establish VMware transport compatibility.

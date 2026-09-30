@@ -1,0 +1,37 @@
+{
+  "commands": [
+    [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "fuzz/Cargo.toml",
+      "--lib"
+    ],
+    [
+      "cargo",
+      "clippy",
+      "--manifest-path",
+      "fuzz/Cargo.toml",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    [
+      "cargo",
+      "fmt",
+      "--manifest-path",
+      "fuzz/Cargo.toml",
+      "--",
+      "--check"
+    ]
+  ],
+  "environment": {
+    "CARGO_TARGET_DIR": "target/r59-fuzz-test"
+  },
+  "exit_codes": [
+    0,
+    0,
+    0
+  ]
+}

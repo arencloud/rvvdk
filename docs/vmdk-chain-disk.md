@@ -96,4 +96,4 @@ Fixture creation, admission, buffers and byte assertions are outside timing.
 These are memory-device mapping/copy costs, not physical storage throughput.
 
 R5.8 now provides [explicit confined CLI parent acquisition](cli-vmdk-parents.md)
-with full lifecycle integration. Next R5.9 adds bounded coverage-guided fuzzing.
+with full lifecycle integration. R5.9 adds [bounded admission fuzz qualification](../fuzz/README.md).

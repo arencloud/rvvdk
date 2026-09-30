@@ -237,7 +237,7 @@ inspect/plan/copy/verify; RAW destinations and existing publication contracts.
 **R4.5 complete**: [bounded terminal NUL acquisition](vmdk-padding.md), original
 byte preservation and unmodified generated hosted descriptor reference tests.
 Custom independent-decoder qualification remains separate and open.
-Next bounded package is **R5.9**, below.
+Next bounded package is **V0.1**, the pre-lab access feasibility plan below.
 Each package gets tests, benchmarks and a commit. No ESXi needed yet.
 
 - [x] R4.1 parser crate, explicit subset, input limits, checked arithmetic, fixture provenance.
@@ -259,7 +259,7 @@ Acceptance: single/multi-extent supported flat VMDK images copy to byte-equivale
 
 ### R5 — Hosted sparse VMDK and parent-chain reads
 
-**R5.1–R5.8 complete**: [header admission](vmdk-sparse-header.md),
+**R5.1–R5.9 complete within the documented hosted-sparse subset**: [header admission](vmdk-sparse-header.md),
 [metadata validation](vmdk-sparse-metadata.md) and
 [read-only base sparse logical mapping](vmdk-sparse-disk.md), with descriptor binding,
 aggregate admission, Data/Zero reads and composite alias protection. Full production
@@ -276,9 +276,11 @@ R5.7 adds resolved Data/Zero reads across different grain/extent boundaries,
 whole-chain destination alias checks and independent byte qualification.
 R5.8 adds explicit confined CLI parent acquisition, source observations and
 inspect/plan/copy/verify lifecycle qualification.
-Next bounded package **R5.9**: coverage-guided fuzz harnesses for bounded descriptor,
-header, metadata and chain admission; retain seeds, resource bounds and failure
-evidence. Preserve the existing QEMU producer discrepancy. No ESXi is required.
+R5.9 adds [bounded admission fuzz qualification](../fuzz/README.md), authored seeds,
+resource assertions, sanitizer campaigns and retained evidence. The existing QEMU
+producer discrepancy remains unqualified. Broader formats and continuous/longer
+fuzzing remain open. Next **V0.1** prepares the independent-access workflow and lab
+acceptance plan before activating a time-limited ESXi evaluation.
 
 - [x] R5.1 hosted sparse header parsing and bounded admission.
 - [x] R5.2 metadata acquisition and validation before sparse logical mapping.
@@ -288,7 +290,7 @@ evidence. Preserve the existing QEMU producer discrepancy. No ESXi is required.
 - [x] R5.6 bounded parent-chain metadata admission and resolution policy.
 - [x] R5.7 read-only logical parent fallback and resolved extent mapping.
 - [x] R5.8 confined CLI parent acquisition and lifecycle integration.
-- [ ] R5.9 bounded coverage-guided parser/metadata/chain fuzz qualification.
+- [x] R5.9 bounded coverage-guided parser/metadata/chain fuzz qualification.
 
 - [x] Add supported base sparse headers, grain directories/tables, cross-grain reads and bounded eager metadata maps; lazy caching remains optional future tuning.
 - [x] Validate metadata offsets/counts before offset-following I/O/allocation in the supported sparse subset; bound aggregate metadata work and chain depth.
@@ -296,7 +298,8 @@ evidence. Preserve the existing QEMU producer discrepancy. No ESXi is required.
 - [x] Add parent identity/CID checks, missing-parent errors, cycle detection, and explicit parent resolution policy for sparse-only metadata chains.
 - [x] Resolve unallocated child grains through sparse parents; emit logical Zero only after the base confirms no allocation.
 - [ ] Add `streamOptimized` decompression as a separate increment if required by the selected import/export workflow. Keep VMFS sparse and seSparse as separately qualified formats.
-- [ ] Fuzz descriptor/header/grain parsing and compare fixture outputs against reference decoding.
+- [x] Add bounded descriptor/header/grain/chain admission fuzz campaigns; reference byte qualification remains separately recorded in R5.3–R5.8.
+- [ ] Extend to sustained fuzz campaigns, larger resource profiles and logical-read differential fuzzing.
 
 Acceptance: reads across grain and parent boundaries match known logical contents; truncated/cyclic/inconsistent chains fail deterministically; fuzzing stays within resource limits. Publish a support table for each VMDK variant and operation.
 
@@ -305,6 +308,17 @@ Broadcom distinguishes disk variants in its [disk-type documentation](https://de
 ### V0 — Prove independent VMware access early
 
 This research gate should begin early enough that local implementation is not mistaken for proof of live VMware access.
+
+**Next bounded package — V0.1 (pre-lab):** review current primary API documentation,
+choose the first independently implemented read-only workflow, separate export
+streams from random logical-block access, and save the capability/privilege/TLS/
+cleanup matrix with a disposable-lab acceptance checklist. Record unresolved
+protocol and licensing questions. Prepare the minimal Rust proof design before
+requesting activation of the user’s 60-day ESXi trial. Actual remote access remains
+unproven until the subsequent lab run; do not mark V0 complete from documentation.
+
+- [ ] V0.1 pre-lab workflow feasibility, capability matrix and acceptance plan.
+- [ ] V0.2 disposable-lab independent Rust access proof and failure/cleanup evidence.
 
 **Lab timing:** no ESXi host is required for R0–R5 local development. Prepare a
 host for V0 after initial R0 stabilization, rather than waiting until every local
@@ -412,13 +426,14 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 | [0040](adr/0040-read-only-base-sparse-mapping.md) | Accepted: read-only base sparse mapping, aggregate budgets and composite alias protection |
 | [0041](adr/0041-sparse-cli-source-acquisition.md) | Accepted: bounded sparse CLI acquisition, container identity binding and portable lifecycle integration |
 | [0042](adr/0042-bounded-parent-chain-metadata.md), [0043](adr/0043-read-only-sparse-parent-fallback.md), [0044](adr/0044-confined-cli-parent-chains.md) | Accepted: bounded chain admission, inherited reads and explicit confined CLI parent access |
+| [0045](adr/0045-bounded-admission-fuzzing.md) | Accepted: isolated bounded admission fuzz harnesses, process guards and retained qualification evidence |
 | TBD | Independent VMware transport feasibility and first workflow |
 | TBD | Changed-range selection and CBT baseline identity |
 | TBD | Durable journals, checkpoint ordering and resume |
 
 ## First implementation session — R0.1 completed
 
-The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete; R3.1 adds inspect/plan and R3.2 adds copy/verify; R3.3 adds lifecycle progress and cancellation; R4.1–R4.4 implement bounded local FLAT/ZERO VMDK sources; R4.5 qualifies bounded padded descriptor acquisition; R5.1 admits hosted sparse headers; R5.2 validates metadata and descriptor binding; R5.3 adds base sparse logical mapping; R5.4 integrates sparse CLI sources; R5.5 qualifies sparse bounds and scaling; R5.6 admits bounded sparse parent metadata; R5.7 resolves logical parent bytes; R5.8 integrates CLI parent commands; continue with R5.9 bounded fuzz qualification.
+The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete; R3.1 adds inspect/plan and R3.2 adds copy/verify; R3.3 adds lifecycle progress and cancellation; R4.1–R4.4 implement bounded local FLAT/ZERO VMDK sources; R4.5 qualifies bounded padded descriptor acquisition; R5.1 admits hosted sparse headers; R5.2 validates metadata and descriptor binding; R5.3 adds base sparse logical mapping; R5.4 integrates sparse CLI sources; R5.5 qualifies sparse bounds and scaling; R5.6 admits bounded sparse parent metadata; R5.7 resolves logical parent bytes; R5.8 integrates CLI parent commands; R5.9 qualifies bounded admission fuzzing; continue with V0.1 pre-lab access planning.
 
 R0.1 was the bounded change directly related to the observer work:
 
@@ -433,7 +448,7 @@ R0.1 was the bounded change directly related to the observer work:
    tradeoff in the implementation log. Update this checklist and ADR-0025 with
    the implemented behavior and remaining limitations.
 
-R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete. R3.1 inspect/plan and R3.2 copy/verify are complete. R3.3 progress and cancellation are complete. R4.1–R4.4 are complete within their documented subset. R4.5 bounded hosted descriptor acquisition compatibility is complete. R5.1 header admission, R5.2 metadata validation and R5.3 base sparse logical mapping are complete. R5.4 sparse CLI integration is complete. R5.5 deterministic adversarial validation and scaling benchmarks are complete. R5.6 bounded sparse parent metadata admission is complete. R5.7 read-only logical parent fallback is complete. R5.8 CLI parent integration is complete. Start **R5.9** with bounded coverage-guided fuzz qualification. Keep PERF.0 and the prior performance follow-ups open.
+R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete. R3.1 inspect/plan and R3.2 copy/verify are complete. R3.3 progress and cancellation are complete. R4.1–R4.4 are complete within their documented subset. R4.5 bounded hosted descriptor acquisition compatibility is complete. R5.1 header admission, R5.2 metadata validation and R5.3 base sparse logical mapping are complete. R5.4 sparse CLI integration is complete. R5.5 deterministic adversarial validation and scaling benchmarks are complete. R5.6 bounded sparse parent metadata admission is complete. R5.7 read-only logical parent fallback is complete. R5.8 CLI parent integration is complete. R5.9 bounded admission fuzz qualification is complete. Start **V0.1** with pre-lab access feasibility and acceptance planning. Keep PERF.0 and the prior performance follow-ups open.
 
 ## Decisions to record before their milestone
 

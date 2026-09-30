@@ -1900,16 +1900,51 @@ harness identities, sample medians, repeat triggers, reference hashes and local
 links pass audit. PERF.0, R4.4 and earlier adverse investigations remain open for
 a controlled runner; warm local timings are not physical storage throughput.
 
+## R5.9 — Bounded admission fuzz qualification (2026-09-30)
+
+Completed in this step's commit; baseline `aa09755`.
+[Harness](../fuzz/README.md), [ADR-0045](adr/0045-bounded-admission-fuzzing.md),
+[evidence and plots](benchmark-results/2026-09-30-r59/README.md).
+
+Four isolated libFuzzer targets exercise descriptors, sparse headers, metadata
+prefixes and structured parent admission. Authored seeds and memory-only sources
+bound fixture/input growth; independent read/resolver counters check failure paths
+as well as success. Small fuzz budgets complement deterministic production-limit,
+split-layout and logical-read/reference tests. Shipping source, dependencies and
+features are unchanged. No producer source, SDK or ESXi is used.
+
+Validation: **537 workspace tests pass, one existing gated test**, plus **two
+standalone harness tests**. Workspace and harness formatting/Clippy pass; portable
+core/datamover/VMDK passes with its existing control::sum warning. Pinned fuzz
+compiler/tool identities, lockfile, source and seed hashes are retained separately
+from the unchanged stable production workspace.
+
+Four five-second smoke runs and twelve independent 30-second ASan campaigns pass.
+Formal campaigns execute **62,446,303 inputs**, with maximum reported RSS **186 MiB**,
+under fixed input/read/reservation/depth and process guards. No crash, timeout,
+OOM, sanitizer or invariant failure was reported. Every run, learned input and
+feedback/resource log is retained; no run was discarded. Clean finite campaigns
+are not proof of exhaustive safety or source coverage percentages.
+
+Performance disposition: no production runtime changes, so no matched disk-runtime
+comparison is attributed to this step. Three runs per target establish sanitized
+harness execution/RSS/feedback baselines, with all values in reproducible SVG/PNG
+plots. These rates include scaffolding and input-dependent rejection, and are not
+storage throughput or comparable-workload speedups. Source/archive/sample audits
+and byte-identical seed/plot regeneration pass. Prior adverse timing evidence,
+PERF.0 and R4.4 controlled-runner work remain open.
+
 ## Next session
 
-Start **R5.9**: bounded coverage-guided fuzz harnesses for descriptor/header,
-sparse metadata and parent-chain admission. Retain authored seeds, explicit
-input/resource limits, smoke-run commands and any failure/minimization evidence.
-Keep the initial QEMU partial second-extent write discrepancy visible. Each
-completed step gets validation, benchmark evidence/plots, log updates and an
-automatic local commit. Broader path policies and formats remain separate work.
+Start **V0.1**: prepare the independently implemented VMware access workflow before
+activating the lab. Review current primary documentation, separate export-stream
+semantics from random logical-block access, record version/capability/privilege/
+TLS/cleanup requirements and unresolved protocol questions, and save a disposable
+lab acceptance checklist with a minimal Rust proof design. Actual V0 completion
+requires a subsequent lab proof and failure/resource-cleanup evidence.
 
-ESXi remains unnecessary for local work; request the 60-day trial when V0's lab
-proof is ready. Keep PERF.0, R4.4 preview overhead/tuning and earlier adverse timing
-pairs open for a controlled runner. Do not infer VMware live-access compatibility
-from local format support.
+Do not activate the user's 60-day ESXi trial yet; request it when the concrete
+lab proof is ready. Local support and bounded fuzzing do not establish VMware
+transport compatibility. Preserve the original QEMU partial second-extent producer
+discrepancy and all prior benchmark evidence. Sustained/larger-budget fuzzing and
+logical-read differential fuzzing remain follow-ups. Commit each completed step.
