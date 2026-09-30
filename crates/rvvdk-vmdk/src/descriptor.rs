@@ -30,6 +30,8 @@ pub enum CreateType {
     MonolithicFlat,
     TwoGbMaxExtentFlat,
     Custom,
+    MonolithicSparse,
+    TwoGbMaxExtentSparse,
 }
 
 /// Descriptor permissions; even RW does not authorize writes through this crate.
@@ -47,6 +49,9 @@ pub enum ExtentBacking<'a> {
         offset_bytes: u64,
     },
     Zero,
+    Sparse {
+        file_name: &'a str,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -184,8 +189,12 @@ fn number(value: &str, line: usize) -> Result<u64> {
     }
     value.parse().map_err(|_| error(line, ErrorKind::Number))
 }
-fn cid(value: &str, line: usize) -> Result<u32> {
-    if value.len() != 8 || !value.bytes().all(|c| c.is_ascii_hexdigit()) {
+fn cid<const SPARSE: bool>(value: &str, line: usize) -> Result<u32> {
+    if value.is_empty()
+        || value.len() > 8
+        || (!SPARSE && value.len() != 8)
+        || !value.bytes().all(|c| c.is_ascii_hexdigit())
+    {
         return Err(error(line, ErrorKind::Number));
     }
     u32::from_str_radix(value, 16).map_err(|_| error(line, ErrorKind::Number))
@@ -239,6 +248,10 @@ impl<'a> Descriptor<'a> {
     }
 
     pub fn parse_with_limits(input: &'a [u8], limits: Limits) -> Result<Self> {
+        Self::parse_subset::<false>(input, limits)
+    }
+
+    fn parse_subset<const SPARSE: bool>(input: &'a [u8], limits: Limits) -> Result<Self> {
         if input.len() > limits.descriptor_bytes {
             return Err(error(0, ErrorKind::Limit("descriptor bytes")));
         }
@@ -298,20 +311,28 @@ impl<'a> Descriptor<'a> {
                         set(&mut version, (), line)?;
                     }
                     (k, Token::Bare(v)) if eq(k, "CID") => {
-                        set(&mut content_id, cid(v, line)?, line)?
+                        set(&mut content_id, cid::<SPARSE>(v, line)?, line)?
                     }
                     (k, Token::Bare(v)) if eq(k, "parentCID") => {
-                        if cid(v, line)? != u32::MAX {
+                        if cid::<SPARSE>(v, line)? != u32::MAX {
                             return Err(error(line, ErrorKind::Unsupported("parent chain")));
                         }
                         set(&mut parent, (), line)?;
                     }
                     (k, Token::Quoted(v)) if eq(k, "createType") => {
-                        let kind = if eq(v, "monolithicFlat") {
+                        let kind = if SPARSE && eq(v, "monolithicSparse") {
+                            CreateType::MonolithicSparse
+                        } else if SPARSE
+                            && (eq(v, "twoGbMaxExtentSparse") || eq(v, "2GbMaxExtentSparse"))
+                        {
+                            CreateType::TwoGbMaxExtentSparse
+                        } else if !SPARSE && eq(v, "monolithicFlat") {
                             CreateType::MonolithicFlat
-                        } else if eq(v, "twoGbMaxExtentFlat") || eq(v, "2GbMaxExtentFlat") {
+                        } else if !SPARSE
+                            && (eq(v, "twoGbMaxExtentFlat") || eq(v, "2GbMaxExtentFlat"))
+                        {
                             CreateType::TwoGbMaxExtentFlat
-                        } else if eq(v, "custom") {
+                        } else if !SPARSE && eq(v, "custom") {
                             CreateType::Custom
                         } else {
                             return Err(error(line, ErrorKind::Unsupported("create type")));
@@ -365,7 +386,18 @@ impl<'a> Descriptor<'a> {
             if length == 0 {
                 return Err(error(line, ErrorKind::Layout("empty extent")));
             }
-            let backing = if eq(kind, "FLAT") {
+            let backing = if SPARSE && eq(kind, "SPARSE") {
+                let [Token::Quoted(name)] = tail else {
+                    return Err(error(line, ErrorKind::Syntax("SPARSE filename required")));
+                };
+                if name.is_empty() {
+                    return Err(error(line, ErrorKind::Layout("empty filename")));
+                }
+                if name.len() > limits.filename_bytes {
+                    return Err(error(line, ErrorKind::Limit("filename bytes")));
+                }
+                ExtentBacking::Sparse { file_name: name }
+            } else if !SPARSE && eq(kind, "FLAT") {
                 let [Token::Quoted(name), Token::Bare(offset)] = tail else {
                     return Err(error(
                         line,
@@ -386,7 +418,7 @@ impl<'a> Descriptor<'a> {
                     file_name: name,
                     offset_bytes,
                 }
-            } else if eq(kind, "ZERO") {
+            } else if !SPARSE && eq(kind, "ZERO") {
                 if !tail.is_empty() {
                     return Err(error(line, ErrorKind::Syntax("ZERO has no backing fields")));
                 }
@@ -420,6 +452,25 @@ impl<'a> Descriptor<'a> {
                         return Err(error(line, ErrorKind::Layout("split extent exceeds 2 GiB")));
                     }
                 }
+                Some(CreateType::MonolithicSparse | CreateType::TwoGbMaxExtentSparse) => {
+                    if !matches!(backing, ExtentBacking::Sparse { .. }) {
+                        return Err(error(
+                            line,
+                            ErrorKind::Layout("sparse disk requires SPARSE extents"),
+                        ));
+                    }
+                    if create_type == Some(CreateType::MonolithicSparse) && !extents.is_empty() {
+                        return Err(error(
+                            line,
+                            ErrorKind::Layout("monolithic disk requires one extent"),
+                        ));
+                    }
+                    if create_type == Some(CreateType::TwoGbMaxExtentSparse)
+                        && length > 2 * 1024 * 1024 * 1024
+                    {
+                        return Err(error(line, ErrorKind::Layout("split extent exceeds 2 GiB")));
+                    }
+                }
                 Some(CreateType::Custom) => (),
                 None => return Err(error(line, ErrorKind::Missing("createType before extents"))),
             }
@@ -448,5 +499,43 @@ impl<'a> Descriptor<'a> {
             extents,
             metadata,
         })
+    }
+}
+
+/// Explicit metadata-only sparse subset. The default Descriptor parser stays FLAT/ZERO-only.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SparseDescriptor<'a>(Descriptor<'a>);
+impl<'a> SparseDescriptor<'a> {
+    pub fn parse(input: &'a [u8]) -> Result<Self> {
+        Self::parse_with_limits(input, Limits::default())
+    }
+    /// Accept bounded terminal NUL padding, retaining borrowed input provenance.
+    /// All original bytes count toward descriptor_bytes; embedded NULs still reject.
+    pub fn parse_with_limits(input: &'a [u8], limits: Limits) -> Result<Self> {
+        if input.len() > limits.descriptor_bytes {
+            return Err(error(0, ErrorKind::Limit("descriptor bytes")));
+        }
+        let end = input.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
+        Descriptor::parse_subset::<true>(&input[..end], limits).map(Self)
+    }
+    pub fn cid(&self) -> u32 {
+        self.0.cid()
+    }
+    pub fn create_type(&self) -> CreateType {
+        self.0.create_type()
+    }
+    pub fn size_bytes(&self) -> u64 {
+        self.0.size_bytes()
+    }
+    pub fn extents(&self) -> &[Extent<'a>] {
+        self.0.extents()
+    }
+    pub fn metadata(&self) -> &[Metadata<'a>] {
+        self.0.metadata()
+    }
+    pub(crate) fn same_mapping(&self, other: &Self) -> bool {
+        self.cid() == other.cid()
+            && self.create_type() == other.create_type()
+            && self.extents() == other.extents()
     }
 }

@@ -8,7 +8,7 @@ mod descriptor;
 
 pub use descriptor::{
     Access, CreateType, Descriptor, DescriptorError, ErrorKind, Extent, ExtentBacking, Limits,
-    Metadata, SECTOR_BYTES,
+    Metadata, SECTOR_BYTES, SparseDescriptor,
 };
 
 mod backing;
@@ -29,3 +29,6 @@ pub use disk::VmdkDisk;
 
 mod sparse;
 pub use sparse::{SPARSE_HEADER_BYTES, SparseError, SparseHeader, SparseLimits, SparseRegion};
+
+mod sparse_metadata;
+pub use sparse_metadata::{SparseMetadata, SparseMetadataError, SparseMetadataLimits};

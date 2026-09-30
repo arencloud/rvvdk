@@ -1524,13 +1524,59 @@ runs give 133.898 ns / 135.957 ns for valid 1 MiB/1 TiB capacity headers,
 plus parsing. These fixed-input costs are not sparse data throughput; no allocation
 or metadata I/O scales with capacity. Prior performance follow-ups remain open.
 
+## R5.2 — Bounded sparse metadata validation and descriptor binding
+
+Date: 2026-09-30. Status: **Complete within the metadata-only subset**.
+Baseline: `cbe2081`, initially clean. The enclosing commit records this step.
+[Evidence](benchmark-results/2026-09-30-r52/README.md) retains source/harness/binary
+identities, all samples, specification/reference hashes, validation and SVG/PNG plots.
+
+Added explicit SparseDescriptor parsing without widening default Descriptor or CLI
+acceptance. SparseMetadata resolves one selected extent, binds header capacity and
+embedded text, admits memory/read budgets, validates all table placements before
+table I/O, requires exact redundant-table agreement and checks complete grain ranges
+and duplicate physical pointers. It retains the source and logical-order map,
+rechecks header/endpoint observations and exposes no logical reads, native FD or writes.
+Split reserved descriptor space may be empty, with external binding required.
+Source quiescence remains necessary; revalidation is not a content snapshot.
+[Contract](vmdk-sparse-metadata.md); [ADR-0039](adr/0039-bounded-sparse-metadata.md).
+
+Validation: **465 distinct passed, one existing gated allocation test** (466 total).
+Nine new tests cover grammar/CID widths, binding, exact budgets, placement before
+reads, redundancy, invalid/duplicate grain pointers, endpoint/header changes and
+short/error I/O. The separate 101-test CLI/VMDK run passes with integration fixtures
+on Btrfs; five existing CLI unit fault tests retain system-temporary fixtures.
+Formatting, strict all-target Clippy and portable core/datamover/VMDK wasm32 checks
+pass (existing control::sum warning).
+
+QEMU-generated 1 MiB/64 MiB monolithic and 1 MiB split metadata maps reconstruct
+exact RAW oracle bytes and agree with QEMU compare. Source hashes stay unchanged;
+all three remain rejected by the public CLI. The 64 MiB case spans two grain tables.
+The initial attempt exposed an unpadded seven-digit CID. Its failed invocation,
+probe and runner are retained; only the explicit sparse parser now accepts one to
+eight hex digits as a 32-bit value. Existing eight-digit FLAT/ZERO behavior remains
+covered. Final generated images need no fixture rewriting. This qualifies maps,
+not a production sparse reader, multi-file producer split disks or ESXi behavior.
+No producer implementation source or VMware SDK was used.
+
+Performance: 24 matched runs show **-3.68%, +0.68%, -3.04%, +0.97%** for strict
+text parsing, local descriptor load, FLAT/ZERO copy+verify and RAW verify. No adverse
+aggregate or individual pair exceeds +5%, so no longer repeats trigger. Twelve new
+memory-backed runs establish **5.437 µs monolithic**, **5.236 µs split**,
+**4.842 µs redundant disagreement rejection** and **0.470 µs sparse text parsing**.
+Load timings include resolve/metadata reads, validation, allocation, sort and drop;
+no grain payload I/O occurs. The small fixture reserves 11,488 loader payload bytes
+and requests 16,384 metadata bytes. Larger-capacity tuning and earlier performance
+follow-ups remain open. These are shared-host cost baselines, not storage throughput
+or a causal speedup claim.
+
 ## Next session
 
-Start **R5.2**: bounded grain-directory/table acquisition and validation, descriptor
-binding, table placement and redundancy policy before logical sparse reads.
-Explicitly handle the observed split-file descriptor-region ambiguity; do not infer
-valid text from header offsets. Keep parent chains and custom independent-decoder
-qualification separate. Each step gets tests, benchmarks, plots and a commit.
+Start **R5.3**: read-only base sparse logical mapping across grain/split boundaries,
+aggregate metadata admission, composite source alias protection and retained-source
+quiescence. Establish logical zero reads for unallocated base grains with no parent;
+keep parent chains and public CLI integration separate. Add cross-boundary/short-read
+checks, reference byte comparisons, benchmarks, plots and a commit.
 
 ESXi remains unnecessary for local work; request the 60-day trial when V0's lab
 proof is ready. Keep PERF.0, R4.4 preview overhead/tuning and earlier adverse timing

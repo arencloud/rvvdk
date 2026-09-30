@@ -81,8 +81,10 @@ The [reference evidence](benchmark-results/2026-09-30-r51/README.md) admits thre
 QEMU-generated headers and deliberately rejects unaligned capacity and stream
 variants. It verifies capacity against QEMU info and records original header bytes
 and hashes; it does not compare decoded sparse bytes. QEMU's split fixture has an
-advertised descriptor region containing only zeros. R5.2 must bind the external
-descriptor explicitly instead of assuming that an advertised region holds text.
+advertised descriptor region containing only zeros. The separate
+[R5.2 metadata loader](vmdk-sparse-metadata.md) now binds external descriptors,
+validates directory/table contents and placement, and requires redundancy agreement.
+These guarantees belong to that loader; header admission alone remains unchanged.
 
-Next is R5.2: bounded grain-directory/table acquisition and validation, including
-metadata placement and redundancy policy, before logical sparse reads.
+Next is R5.3: read-only base sparse mapping with aggregate admission and alias
+protection, followed by separate CLI and parent-chain work.

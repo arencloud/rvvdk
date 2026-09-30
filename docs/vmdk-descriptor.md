@@ -109,3 +109,11 @@ R4.5 keeps these text parser rules unchanged. The separate
 padding, preserves original bytes and passes only the text prefix to this parser.
 LocalResolver and the CLI can therefore open supported padded descriptors without
 file normalization; direct Descriptor::parse calls still reject any NUL.
+
+
+## Explicit sparse metadata parsing
+
+R5.2 adds a separate [SparseDescriptor API](vmdk-sparse-metadata.md) for hosted
+base sparse metadata work. It shares bounded syntax but accepts sparse create types
+and SPARSE references, terminal NUL padding, and one to eight CID hex digits.
+The Descriptor grammar and FLAT/ZERO CLI support documented above remain unchanged.

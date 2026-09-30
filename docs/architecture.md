@@ -1197,3 +1197,22 @@ rejects unsupported version/flags/state. A 512-byte stack acquisition helper rea
 no referenced regions. Private checked regions do not prove directory/table or
 descriptor contents: R5.2 owns that validation. Existing FLAT/ZERO mapping and CLI
 support remain unchanged. See [ADR-0038](adr/0038-bounded-hosted-sparse-header.md).
+
+
+## Hosted sparse metadata validation (R5.2)
+
+An explicit SparseDescriptor parser shares bounded syntax with Descriptor while
+keeping existing FLAT/ZERO acceptance unchanged. Sparse text admits one to eight
+hexadecimal CID digits as a 32-bit value, including QEMU's unpadded output.
+SparseMetadata resolves and retains one selected backing, binds its header capacity
+and embedded text to the external descriptor, then eagerly validates directories,
+table placement, redundant copies and complete data-grain ranges. Split empty
+reserved descriptor regions require the supplied external descriptor.
+
+Independent per-extent memory/read budgets precede variable allocation and metadata
+offset reads. The loader retains an immutable logical-order grain map and endpoint,
+rechecks the header and endpoint, and exposes no VirtualDisk or raw native handle.
+Unknown identity and same-size concurrent content changes are not qualified;
+callers must keep sources quiescent. R5.3 owns aggregate admission, alias protection
+and logical reads. See [contract](vmdk-sparse-metadata.md) and
+[ADR-0039](adr/0039-bounded-sparse-metadata.md).

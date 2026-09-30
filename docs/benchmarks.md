@@ -1,6 +1,6 @@
 # rvvdk Benchmarks
 
-Latest step: [R5.1 hosted sparse header benchmarks and plots](benchmark-results/2026-09-30-r51/README.md).
+Latest step: [R5.2 sparse metadata benchmarks and plots](benchmark-results/2026-09-30-r52/README.md).
 Twenty-four matched controls, six triggered longer repeats and twelve new header
 runs retain source/binary/harness identities. The adverse +5.32% mixed-copy pair
 remains recorded; longer repeats show -1.86% aggregate. Valid header admission

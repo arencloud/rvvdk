@@ -1,0 +1,1061 @@
+diff --git a/crates/rvvdk-vmdk/Cargo.toml b/crates/rvvdk-vmdk/Cargo.toml
+index b077ca9..8305070 100644
+--- a/crates/rvvdk-vmdk/Cargo.toml
++++ b/crates/rvvdk-vmdk/Cargo.toml
+@@ -36,3 +36,7 @@ harness = false
+ [[bench]]
+ name = "sparse_header"
+ harness = false
++
++[[bench]]
++name = "sparse_metadata"
++harness = false
+diff --git a/crates/rvvdk-vmdk/src/backing.rs b/crates/rvvdk-vmdk/src/backing.rs
+index 1313582..b332d00 100644
+--- a/crates/rvvdk-vmdk/src/backing.rs
++++ b/crates/rvvdk-vmdk/src/backing.rs
+@@ -5,6 +5,8 @@ use thiserror::Error;
+ 
+ #[derive(Debug, Error)]
+ pub enum BackingError {
++    #[error("sparse extents require the sparse metadata loader")]
++    SparseUnsupported,
+     #[error("{0}")]
+     Descriptor(#[from] DescriptorError),
+     #[error("backing resource limit exceeded: {0}")]
+@@ -168,6 +170,7 @@ impl ResolvedDescriptor {
+         // Count and compute every physical requirement before invoking a resolver.
+         for extent in descriptor.extents() {
+             let backing = match extent.backing() {
++                ExtentBacking::Sparse { .. } => return Err(BackingError::SparseUnsupported),
+                 ExtentBacking::Zero => ResolvedExtentBacking::Zero,
+                 ExtentBacking::Flat {
+                     file_name,
+diff --git a/crates/rvvdk-vmdk/src/descriptor.rs b/crates/rvvdk-vmdk/src/descriptor.rs
+index 968a770..8e83521 100644
+--- a/crates/rvvdk-vmdk/src/descriptor.rs
++++ b/crates/rvvdk-vmdk/src/descriptor.rs
+@@ -30,6 +30,8 @@ pub enum CreateType {
+     MonolithicFlat,
+     TwoGbMaxExtentFlat,
+     Custom,
++    MonolithicSparse,
++    TwoGbMaxExtentSparse,
+ }
+ 
+ /// Descriptor permissions; even RW does not authorize writes through this crate.
+@@ -47,6 +49,9 @@ pub enum ExtentBacking<'a> {
+         offset_bytes: u64,
+     },
+     Zero,
++    Sparse {
++        file_name: &'a str,
++    },
+ }
+ 
+ #[derive(Clone, Debug, PartialEq, Eq)]
+@@ -184,8 +189,12 @@ fn number(value: &str, line: usize) -> Result<u64> {
+     }
+     value.parse().map_err(|_| error(line, ErrorKind::Number))
+ }
+-fn cid(value: &str, line: usize) -> Result<u32> {
+-    if value.len() != 8 || !value.bytes().all(|c| c.is_ascii_hexdigit()) {
++fn cid<const SPARSE: bool>(value: &str, line: usize) -> Result<u32> {
++    if value.is_empty()
++        || value.len() > 8
++        || (!SPARSE && value.len() != 8)
++        || !value.bytes().all(|c| c.is_ascii_hexdigit())
++    {
+         return Err(error(line, ErrorKind::Number));
+     }
+     u32::from_str_radix(value, 16).map_err(|_| error(line, ErrorKind::Number))
+@@ -239,6 +248,10 @@ impl<'a> Descriptor<'a> {
+     }
+ 
+     pub fn parse_with_limits(input: &'a [u8], limits: Limits) -> Result<Self> {
++        Self::parse_subset::<false>(input, limits)
++    }
++
++    fn parse_subset<const SPARSE: bool>(input: &'a [u8], limits: Limits) -> Result<Self> {
+         if input.len() > limits.descriptor_bytes {
+             return Err(error(0, ErrorKind::Limit("descriptor bytes")));
+         }
+@@ -298,20 +311,28 @@ impl<'a> Descriptor<'a> {
+                         set(&mut version, (), line)?;
+                     }
+                     (k, Token::Bare(v)) if eq(k, "CID") => {
+-                        set(&mut content_id, cid(v, line)?, line)?
++                        set(&mut content_id, cid::<SPARSE>(v, line)?, line)?
+                     }
+                     (k, Token::Bare(v)) if eq(k, "parentCID") => {
+-                        if cid(v, line)? != u32::MAX {
++                        if cid::<SPARSE>(v, line)? != u32::MAX {
+                             return Err(error(line, ErrorKind::Unsupported("parent chain")));
+                         }
+                         set(&mut parent, (), line)?;
+                     }
+                     (k, Token::Quoted(v)) if eq(k, "createType") => {
+-                        let kind = if eq(v, "monolithicFlat") {
++                        let kind = if SPARSE && eq(v, "monolithicSparse") {
++                            CreateType::MonolithicSparse
++                        } else if SPARSE
++                            && (eq(v, "twoGbMaxExtentSparse") || eq(v, "2GbMaxExtentSparse"))
++                        {
++                            CreateType::TwoGbMaxExtentSparse
++                        } else if !SPARSE && eq(v, "monolithicFlat") {
+                             CreateType::MonolithicFlat
+-                        } else if eq(v, "twoGbMaxExtentFlat") || eq(v, "2GbMaxExtentFlat") {
++                        } else if !SPARSE
++                            && (eq(v, "twoGbMaxExtentFlat") || eq(v, "2GbMaxExtentFlat"))
++                        {
+                             CreateType::TwoGbMaxExtentFlat
+-                        } else if eq(v, "custom") {
++                        } else if !SPARSE && eq(v, "custom") {
+                             CreateType::Custom
+                         } else {
+                             return Err(error(line, ErrorKind::Unsupported("create type")));
+@@ -365,7 +386,18 @@ impl<'a> Descriptor<'a> {
+             if length == 0 {
+                 return Err(error(line, ErrorKind::Layout("empty extent")));
+             }
+-            let backing = if eq(kind, "FLAT") {
++            let backing = if SPARSE && eq(kind, "SPARSE") {
++                let [Token::Quoted(name)] = tail else {
++                    return Err(error(line, ErrorKind::Syntax("SPARSE filename required")));
++                };
++                if name.is_empty() {
++                    return Err(error(line, ErrorKind::Layout("empty filename")));
++                }
++                if name.len() > limits.filename_bytes {
++                    return Err(error(line, ErrorKind::Limit("filename bytes")));
++                }
++                ExtentBacking::Sparse { file_name: name }
++            } else if !SPARSE && eq(kind, "FLAT") {
+                 let [Token::Quoted(name), Token::Bare(offset)] = tail else {
+                     return Err(error(
+                         line,
+@@ -386,7 +418,7 @@ impl<'a> Descriptor<'a> {
+                     file_name: name,
+                     offset_bytes,
+                 }
+-            } else if eq(kind, "ZERO") {
++            } else if !SPARSE && eq(kind, "ZERO") {
+                 if !tail.is_empty() {
+                     return Err(error(line, ErrorKind::Syntax("ZERO has no backing fields")));
+                 }
+@@ -420,6 +452,25 @@ impl<'a> Descriptor<'a> {
+                         return Err(error(line, ErrorKind::Layout("split extent exceeds 2 GiB")));
+                     }
+                 }
++                Some(CreateType::MonolithicSparse | CreateType::TwoGbMaxExtentSparse) => {
++                    if !matches!(backing, ExtentBacking::Sparse { .. }) {
++                        return Err(error(
++                            line,
++                            ErrorKind::Layout("sparse disk requires SPARSE extents"),
++                        ));
++                    }
++                    if create_type == Some(CreateType::MonolithicSparse) && !extents.is_empty() {
++                        return Err(error(
++                            line,
++                            ErrorKind::Layout("monolithic disk requires one extent"),
++                        ));
++                    }
++                    if create_type == Some(CreateType::TwoGbMaxExtentSparse)
++                        && length > 2 * 1024 * 1024 * 1024
++                    {
++                        return Err(error(line, ErrorKind::Layout("split extent exceeds 2 GiB")));
++                    }
++                }
+                 Some(CreateType::Custom) => (),
+                 None => return Err(error(line, ErrorKind::Missing("createType before extents"))),
+             }
+@@ -450,3 +501,41 @@ impl<'a> Descriptor<'a> {
+         })
+     }
+ }
++
++/// Explicit metadata-only sparse subset. The default Descriptor parser stays FLAT/ZERO-only.
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub struct SparseDescriptor<'a>(Descriptor<'a>);
++impl<'a> SparseDescriptor<'a> {
++    pub fn parse(input: &'a [u8]) -> Result<Self> {
++        Self::parse_with_limits(input, Limits::default())
++    }
++    /// Accept bounded terminal NUL padding, retaining borrowed input provenance.
++    /// All original bytes count toward descriptor_bytes; embedded NULs still reject.
++    pub fn parse_with_limits(input: &'a [u8], limits: Limits) -> Result<Self> {
++        if input.len() > limits.descriptor_bytes {
++            return Err(error(0, ErrorKind::Limit("descriptor bytes")));
++        }
++        let end = input.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
++        Descriptor::parse_subset::<true>(&input[..end], limits).map(Self)
++    }
++    pub fn cid(&self) -> u32 {
++        self.0.cid()
++    }
++    pub fn create_type(&self) -> CreateType {
++        self.0.create_type()
++    }
++    pub fn size_bytes(&self) -> u64 {
++        self.0.size_bytes()
++    }
++    pub fn extents(&self) -> &[Extent<'a>] {
++        self.0.extents()
++    }
++    pub fn metadata(&self) -> &[Metadata<'a>] {
++        self.0.metadata()
++    }
++    pub(crate) fn same_mapping(&self, other: &Self) -> bool {
++        self.cid() == other.cid()
++            && self.create_type() == other.create_type()
++            && self.extents() == other.extents()
++    }
++}
+diff --git a/crates/rvvdk-vmdk/src/lib.rs b/crates/rvvdk-vmdk/src/lib.rs
+index 5f6fa40..32b9929 100644
+--- a/crates/rvvdk-vmdk/src/lib.rs
++++ b/crates/rvvdk-vmdk/src/lib.rs
+@@ -8,7 +8,7 @@ mod descriptor;
+ 
+ pub use descriptor::{
+     Access, CreateType, Descriptor, DescriptorError, ErrorKind, Extent, ExtentBacking, Limits,
+-    Metadata, SECTOR_BYTES,
++    Metadata, SECTOR_BYTES, SparseDescriptor,
+ };
+ 
+ mod backing;
+@@ -29,3 +29,6 @@ pub use disk::VmdkDisk;
+ 
+ mod sparse;
+ pub use sparse::{SPARSE_HEADER_BYTES, SparseError, SparseHeader, SparseLimits, SparseRegion};
++
++mod sparse_metadata;
++pub use sparse_metadata::{SparseMetadata, SparseMetadataError, SparseMetadataLimits};
+diff --git a/crates/rvvdk-vmdk/tests/fixtures/README.md b/crates/rvvdk-vmdk/tests/fixtures/README.md
+index 67fa3f5..1570c01 100644
+--- a/crates/rvvdk-vmdk/tests/fixtures/README.md
++++ b/crates/rvvdk-vmdk/tests/fixtures/README.md
+@@ -52,3 +52,11 @@ QEMU monolithic/split sparse files, records full header hex and tool/file hashes
+ and compares admitted capacity with QEMU info. It also records deliberate subset
+ rejections and continued public CLI rejection. These are header-only checks, not
+ logical sparse byte comparisons or VMware-produced/ESXi-tested images.
++
++R5.2 adds authored sparse descriptor/table fixtures in `tests/support/sparse_metadata.rs`.
++They exercise a version-1 base map with two allocated grains, unallocated entries,
++redundancy and embedded/external binding. The same VMware PDF pp. 3–9 supplies
++field semantics; no producer implementation source was read. The separate
++`compare_sparse_metadata.py` runner creates monolithic/split sparse images with
++QEMU, reconstructs bytes from the validated map only in a test utility, and compares
++with the original RAW oracle and QEMU. Production sparse reads remain disabled.
+diff --git a/crates/rvvdk-vmdk/benches/sparse_metadata.rs b/crates/rvvdk-vmdk/benches/sparse_metadata.rs
+new file mode 100644
+index 0000000..197bbd6
+--- /dev/null
++++ b/crates/rvvdk-vmdk/benches/sparse_metadata.rs
+@@ -0,0 +1,43 @@
++#[path = "../tests/support/sparse_metadata.rs"]
++mod fixture;
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use rvvdk_vmdk::{SparseDescriptor, SparseMetadata, SparseMetadataLimits};
++use std::hint::black_box;
++fn metadata(c: &mut Criterion) {
++    let text = fixture::descriptor("monolithicSparse", "RW 2048 SPARSE \"disk.vmdk\"");
++    let d = SparseDescriptor::parse(text.as_bytes()).unwrap();
++    let bytes = fixture::bytes(Some(&text));
++    let r = fixture::Resolver(fixture::device(&bytes));
++    let mut bad = bytes.clone();
++    fixture::put32(&mut bad, 22 * 512, 256);
++    let bad = fixture::Resolver(fixture::device(&bad));
++    let split = fixture::descriptor("twoGbMaxExtentSparse", "RW 2048 SPARSE \"disk.vmdk\"");
++    let sd = SparseDescriptor::parse(split.as_bytes()).unwrap();
++    let empty = fixture::Resolver(fixture::device(&fixture::bytes(None)));
++    assert!(SparseMetadata::load(&d, 0, &r, SparseMetadataLimits::default()).is_ok());
++    assert!(SparseMetadata::load(&d, 0, &bad, SparseMetadataLimits::default()).is_err());
++    let mut group = c.benchmark_group("sparse_metadata");
++    group.sampling_mode(SamplingMode::Flat);
++    for (name, desc, resolver) in [
++        ("monolithic", &d, &r),
++        ("split_empty_region", &sd, &empty),
++        ("redundant_rejection", &d, &bad),
++    ] {
++        group.bench_function(name, |b| {
++            b.iter(|| {
++                black_box(SparseMetadata::load(
++                    black_box(desc),
++                    0,
++                    black_box(resolver),
++                    SparseMetadataLimits::default(),
++                ))
++            })
++        });
++    }
++    group.bench_function("descriptor", |b| {
++        b.iter(|| black_box(SparseDescriptor::parse(black_box(text.as_bytes()))))
++    });
++    group.finish();
++}
++criterion_group!(benches, metadata);
++criterion_main!(benches);
+diff --git a/crates/rvvdk-vmdk/examples/inspect_sparse_metadata.rs b/crates/rvvdk-vmdk/examples/inspect_sparse_metadata.rs
+new file mode 100644
+index 0000000..e2891fc
+--- /dev/null
++++ b/crates/rvvdk-vmdk/examples/inspect_sparse_metadata.rs
+@@ -0,0 +1,76 @@
++//! Fixture helper; not a production sparse disk reader.
++#[cfg(target_os = "linux")]
++fn main() -> Result<(), Box<dyn std::error::Error>> {
++    use rvvdk_core::EndpointIdentity;
++    use rvvdk_vmdk::{
++        Limits, LocalResolver, SparseDescriptor, SparseHeader, SparseLimits, SparseMetadata,
++        SparseMetadataLimits,
++    };
++    use std::{
++        fs::File,
++        io::{Read, Seek, SeekFrom},
++        os::unix::fs::MetadataExt,
++        path::Path,
++    };
++    let args: Vec<_> = std::env::args_os().skip(1).collect();
++    if args.len() != 2 {
++        return Err("usage: inspect_sparse_metadata DESCRIPTOR INDEX|--embedded".into());
++    }
++    let path = Path::new(&args[0]);
++    let mut file = File::open(path)?;
++    let initial = file.metadata()?;
++    if !initial.is_file() {
++        return Err("expected regular source".into());
++    }
++    let embedded = args[1] == "--embedded";
++    let mut text = Vec::new();
++    let index = if embedded {
++        let header = SparseHeader::read_from(&mut file, initial.len(), SparseLimits::default())?;
++        let region = header.descriptor().ok_or("missing embedded descriptor")?;
++        file.seek(SeekFrom::Start(region.offset()))?;
++        file.by_ref().take(region.length()).read_to_end(&mut text)?;
++        0
++    } else {
++        file.by_ref()
++            .take(Limits::default().descriptor_bytes as u64 + 1)
++            .read_to_end(&mut text)?;
++        args[1].to_str().ok_or("invalid index")?.parse::<usize>()?
++    };
++    let descriptor = SparseDescriptor::parse(&text)?;
++    let parent = path
++        .parent()
++        .filter(|p| !p.as_os_str().is_empty())
++        .unwrap_or(Path::new("."));
++    let resolver = LocalResolver::from_directory(File::open(parent)?)?;
++    let m = SparseMetadata::load(
++        &descriptor,
++        index,
++        &resolver,
++        SparseMetadataLimits::default(),
++    )?;
++    if embedded
++        && m.initial_endpoint().identity
++            != Some(EndpointIdentity::LocalFile {
++                device: initial.dev(),
++                inode: initial.ino(),
++            })
++    {
++        return Err("embedded descriptor resolved a different file".into());
++    }
++    println!(
++        "{{\"capacity_bytes\":{},\"grain_bytes\":{},\"extent_index\":{},\"logical_offset\":{},\"reserved_memory_bytes\":{},\"metadata_read_bytes\":{},\"grain_sectors\":{:?}}}",
++        m.header().capacity_bytes(),
++        m.header().grain_bytes(),
++        m.extent_index(),
++        m.logical_offset(),
++        m.reserved_memory_bytes(),
++        m.metadata_read_bytes(),
++        m.grain_sectors()
++    );
++    Ok(())
++}
++#[cfg(not(target_os = "linux"))]
++fn main() {
++    eprintln!("local fixture qualification requires Linux");
++    std::process::exit(1);
++}
+diff --git a/crates/rvvdk-vmdk/src/sparse_metadata.rs b/crates/rvvdk-vmdk/src/sparse_metadata.rs
+new file mode 100644
+index 0000000..2661195
+--- /dev/null
++++ b/crates/rvvdk-vmdk/src/sparse_metadata.rs
+@@ -0,0 +1,286 @@
++//! Eager, bounded metadata validation. No logical disk reads or writes.
++use crate::{
++    BackingError, BackingResolver, CreateType, DescriptorError, ExtentBacking, Limits,
++    SECTOR_BYTES, SparseDescriptor, SparseError, SparseHeader, SparseLimits,
++};
++use rvvdk_core::{BlockDevice, Capabilities, CopyEndpoint};
++use std::sync::Arc;
++use thiserror::Error;
++
++#[derive(Clone, Copy, Debug)]
++pub struct SparseMetadataLimits {
++    pub header: SparseLimits,
++    pub descriptor: Limits,
++    /// Loader-owned buffers/map/sort scratch; parser/resolver/allocator overhead excluded.
++    pub memory_bytes: u64,
++    /// Total physical metadata bytes requested, including the final header recheck.
++    pub read_bytes: u64,
++}
++impl Default for SparseMetadataLimits {
++    fn default() -> Self {
++        Self {
++            header: SparseLimits::default(),
++            descriptor: Limits::default(),
++            memory_bytes: 128 << 20,
++            read_bytes: 256 << 20,
++        }
++    }
++}
++#[derive(Debug, Error)]
++pub enum SparseMetadataError {
++    #[error("{0}")]
++    Header(#[from] SparseError),
++    #[error("{0}")]
++    Descriptor(#[from] DescriptorError),
++    #[error("{0}")]
++    Resolve(#[from] BackingError),
++    #[error("sparse metadata I/O: {0}")]
++    Device(#[from] rvvdk_core::Error),
++    #[error("invalid sparse metadata: {0}")]
++    Invalid(&'static str),
++    #[error("sparse metadata resource limit: {0}")]
++    Limit(&'static str),
++    #[error("sparse metadata allocation failed")]
++    Allocation,
++}
++type Result<T> = std::result::Result<T, SparseMetadataError>;
++fn invalid(reason: &'static str) -> SparseMetadataError {
++    SparseMetadataError::Invalid(reason)
++}
++fn add(a: u64, b: u64) -> Result<u64> {
++    a.checked_add(b)
++        .ok_or(SparseMetadataError::Limit("arithmetic"))
++}
++fn mul(a: u64, b: u64) -> Result<u64> {
++    a.checked_mul(b)
++        .ok_or(SparseMetadataError::Limit("arithmetic"))
++}
++fn allocated<T: Default + Clone>(n: u64) -> Result<Vec<T>> {
++    let n = usize::try_from(n).map_err(|_| SparseMetadataError::Limit("address space"))?;
++    let mut v = Vec::new();
++    v.try_reserve_exact(n)
++        .map_err(|_| SparseMetadataError::Allocation)?;
++    v.resize(n, T::default());
++    Ok(v)
++}
++fn check_endpoint(initial: CopyEndpoint, live: CopyEndpoint) -> Result<()> {
++    if !live.capabilities.contains(Capabilities::READ)
++        || live.size != initial.size
++        || initial.identity.is_some() && live.identity != initial.identity
++    {
++        return Err(invalid("source endpoint changed or unreadable"));
++    }
++    Ok(())
++}
++fn word(bytes: &[u8], index: usize) -> u32 {
++    u32::from_le_bytes(bytes[index * 4..index * 4 + 4].try_into().unwrap())
++}
++/// Retained immutable version-1 map. Zero entries mean unallocated, not a public
++/// logical-zero guarantee. Source quiescence remains a caller requirement.
++pub struct SparseMetadata {
++    source: Arc<dyn BlockDevice>,
++    initial: CopyEndpoint,
++    header: SparseHeader,
++    grains: Vec<u32>,
++    cid: u32,
++    extent_index: usize,
++    logical_offset: u64,
++    reserved_memory: u64,
++    read_bytes: u64,
++}
++impl SparseMetadata {
++    /// Resolve exactly the selected descriptor reference. No embedded reference
++    /// is followed; embedded text must agree with the supplied base descriptor.
++    pub fn load(
++        descriptor: &SparseDescriptor<'_>,
++        extent_index: usize,
++        resolver: &dyn BackingResolver,
++        limits: SparseMetadataLimits,
++    ) -> Result<Self> {
++        let extent = descriptor
++            .extents()
++            .get(extent_index)
++            .ok_or(invalid("extent index"))?;
++        let ExtentBacking::Sparse { file_name } = extent.backing() else {
++            return Err(invalid("extent type"));
++        };
++        if limits.read_bytes < 512 {
++            return Err(SparseMetadataError::Limit("read bytes"));
++        }
++        let source = resolver.resolve(file_name)?;
++        let initial = source.copy_endpoint()?;
++        check_endpoint(initial, initial)?;
++        let mut raw = [0; 512];
++        source.read_exact_at(0, &mut raw)?;
++        let header = SparseHeader::parse_with_limits(&raw, initial.size, limits.header)?;
++        if header.capacity_bytes() != extent.size_bytes() {
++            return Err(invalid("descriptor/header capacity mismatch"));
++        }
++        let copies = if header.redundant_directory().is_some() {
++            2
++        } else {
++            1
++        };
++        let tables = mul(header.directory_entries(), copies)?;
++        let dirs = mul(header.primary_directory().length(), copies)?;
++        let desc = header.descriptor().map_or(0, |r| r.length());
++        if desc > limits.descriptor.descriptor_bytes as u64 {
++            return Err(SparseMetadataError::Limit("descriptor bytes"));
++        }
++        // Simultaneous buffers: descriptor, both GDs, map + sort scratch, regions.
++        // Fixed stack storage: header/recheck (1 KiB) + two GTs (4 KiB).
++        let ranges = add(tables, 4)?;
++        let reserved_memory = add(
++            add(add(desc, dirs)?, mul(header.grain_count(), 8)?)?,
++            mul(ranges, 16)?,
++        )?;
++        let read_bytes = add(add(add(1024, desc)?, dirs)?, mul(tables, 2048)?)?;
++        if reserved_memory > limits.memory_bytes {
++            return Err(SparseMetadataError::Limit("memory bytes"));
++        }
++        if read_bytes > limits.read_bytes {
++            return Err(SparseMetadataError::Limit("read bytes"));
++        }
++        // Admission precedes every metadata-sized allocation and every offset-following read.
++        let mut text = allocated::<u8>(desc)?;
++        if let Some(r) = header.descriptor() {
++            source.read_exact_at(r.offset(), &mut text)?;
++        }
++        if text.iter().all(|&b| b == 0) {
++            if descriptor.create_type() == CreateType::MonolithicSparse {
++                return Err(invalid("monolithic embedded descriptor missing"));
++            }
++        } else {
++            let embedded = SparseDescriptor::parse_with_limits(&text, limits.descriptor)?;
++            if !descriptor.same_mapping(&embedded) {
++                return Err(invalid("embedded/external descriptor mismatch"));
++            }
++        }
++        let mut primary = allocated::<u8>(header.primary_directory().length())?;
++        source.read_exact_at(header.primary_directory().offset(), &mut primary)?;
++        let mut redundant =
++            allocated::<u8>(header.redundant_directory().map_or(0, |r| r.length()))?;
++        if let Some(r) = header.redundant_directory() {
++            source.read_exact_at(r.offset(), &mut redundant)?;
++        }
++        let count = usize::try_from(header.directory_entries())
++            .map_err(|_| SparseMetadataError::Limit("address space"))?;
++        let mut regions = allocated::<(u64, u64)>(ranges)?;
++        regions.clear();
++        regions.push((0, 512));
++        for r in [
++            header.descriptor(),
++            Some(header.primary_directory()),
++            header.redundant_directory(),
++        ]
++        .into_iter()
++        .flatten()
++        {
++            regions.push((r.offset(), r.end()));
++        }
++        for directory in [&primary, &redundant] {
++            if directory.is_empty() {
++                continue;
++            }
++            if directory[count * 4..].iter().any(|&b| b != 0) {
++                return Err(invalid("nonzero directory padding"));
++            }
++            for i in 0..count {
++                let offset = u64::from(word(directory, i)) * SECTOR_BYTES;
++                let end = offset + 2048; // u32 sector pointer cannot overflow u64.
++                if offset < 512 || end > header.overhead_bytes() {
++                    return Err(invalid("grain table outside metadata"));
++                }
++                regions.push((offset, end));
++            }
++        }
++        regions.sort_unstable();
++        if regions.windows(2).any(|w| w[0].1 > w[1].0) {
++            return Err(invalid("overlapping metadata regions"));
++        }
++        let mut grains = allocated::<u32>(header.grain_count())?;
++        let mut a = [0; 2048];
++        let mut b = [0; 2048];
++        for i in 0..count {
++            source.read_exact_at(u64::from(word(&primary, i)) * SECTOR_BYTES, &mut a)?;
++            if !redundant.is_empty() {
++                source.read_exact_at(u64::from(word(&redundant, i)) * SECTOR_BYTES, &mut b)?;
++                if a != b {
++                    return Err(invalid("redundant grain tables disagree"));
++                }
++            }
++            for j in 0..512 {
++                let value = word(&a, j);
++                let index = i * 512 + j;
++                if index >= grains.len() {
++                    if value != 0 {
++                        return Err(invalid("nonzero unused grain entry"));
++                    }
++                    continue;
++                }
++                if value != 0 {
++                    let offset = u64::from(value) * SECTOR_BYTES;
++                    let end = add(offset, header.grain_bytes())?;
++                    if offset < header.overhead_bytes()
++                        || !offset.is_multiple_of(header.grain_bytes())
++                        || end > initial.size
++                    {
++                        return Err(invalid("invalid data grain range"));
++                    }
++                }
++                grains[index] = value;
++            }
++        }
++        let mut physical = allocated::<u32>(header.grain_count())?;
++        physical.copy_from_slice(&grains);
++        physical.sort_unstable();
++        if physical.windows(2).any(|w| w[0] != 0 && w[0] == w[1]) {
++            return Err(invalid("duplicate physical grain"));
++        }
++        let mut live_header = [0; 512];
++        source.read_exact_at(0, &mut live_header)?;
++        if raw != live_header {
++            return Err(invalid("header changed during acquisition"));
++        }
++        check_endpoint(initial, source.copy_endpoint()?)?;
++        Ok(Self {
++            source,
++            initial,
++            header,
++            grains,
++            cid: descriptor.cid(),
++            extent_index,
++            logical_offset: extent.logical_offset(),
++            reserved_memory,
++            read_bytes,
++        })
++    }
++    pub fn header(&self) -> &SparseHeader {
++        &self.header
++    }
++    pub fn grain_sectors(&self) -> &[u32] {
++        &self.grains
++    }
++    pub fn cid(&self) -> u32 {
++        self.cid
++    }
++    pub fn extent_index(&self) -> usize {
++        self.extent_index
++    }
++    pub fn logical_offset(&self) -> u64 {
++        self.logical_offset
++    }
++    pub fn reserved_memory_bytes(&self) -> u64 {
++        self.reserved_memory
++    }
++    pub fn metadata_read_bytes(&self) -> u64 {
++        self.read_bytes
++    }
++    pub fn initial_endpoint(&self) -> CopyEndpoint {
++        self.initial
++    }
++    /// Endpoint observations only, not metadata replay or a content snapshot.
++    pub fn revalidate(&self) -> Result<()> {
++        check_endpoint(self.initial, self.source.copy_endpoint()?)
++    }
++}
+diff --git a/crates/rvvdk-vmdk/tests/sparse_metadata.rs b/crates/rvvdk-vmdk/tests/sparse_metadata.rs
+new file mode 100644
+index 0000000..faa68fb
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/sparse_metadata.rs
+@@ -0,0 +1,338 @@
++#[path = "support/sparse_metadata.rs"]
++mod f;
++use rvvdk_core::{BlockDevice, Capabilities, CopyEndpoint, DiskGeometry, EndpointIdentity};
++use rvvdk_vmdk::{
++    Descriptor, Limits, SparseDescriptor, SparseMetadata, SparseMetadataError as E,
++    SparseMetadataLimits,
++};
++use std::sync::{
++    Arc,
++    atomic::{AtomicUsize, Ordering},
++};
++fn text() -> String {
++    f::descriptor("monolithicSparse", "RW 2048 SPARSE \"disk.vmdk\"")
++}
++fn load(bytes: &[u8], text: &str) -> Result<SparseMetadata, E> {
++    SparseMetadata::load(
++        &SparseDescriptor::parse(text.as_bytes()).unwrap(),
++        0,
++        &f::Resolver(f::device(bytes)),
++        SparseMetadataLimits::default(),
++    )
++}
++#[test]
++fn explicit_sparse_subset_preserves_default_parser_rejection() {
++    let t = text();
++    let d = SparseDescriptor::parse(t.as_bytes()).unwrap();
++    assert_eq!(d.size_bytes(), 1048576);
++    assert_eq!(d.cid(), 0x12345678);
++    assert_eq!(d.metadata().len(), 0);
++    for value in ["0", "1", "35cf2bd", "00000001", "ABCDEF01", "ffffffff"] {
++        let short = t.replace("12345678", value);
++        assert_eq!(
++            SparseDescriptor::parse(short.as_bytes()).unwrap().cid(),
++            u32::from_str_radix(value, 16).unwrap()
++        );
++    }
++    for value in ["", "123456789", "-1234567", "zzzzzzzz"] {
++        assert!(SparseDescriptor::parse(t.replace("12345678", value).as_bytes()).is_err());
++    }
++    assert!(Descriptor::parse(t.as_bytes()).is_err());
++    let mut padded = t.as_bytes().to_vec();
++    padded.extend([0; 77]);
++    assert!(SparseDescriptor::parse(&padded).is_ok());
++    assert!(
++        SparseDescriptor::parse_with_limits(
++            &padded,
++            Limits {
++                descriptor_bytes: padded.len() - 1,
++                ..Limits::default()
++            }
++        )
++        .is_err()
++    );
++    for t in [
++        t.replace("SPARSE", "FLAT"),
++        t.replace("ffffffff", "12345678"),
++        t.replace("disk.vmdk\"", "disk.vmdk\" 0"),
++        t.replace("2048", "0"),
++        t.replace("monolithicSparse", "streamOptimized"),
++        format!("{t}RW 2048 SPARSE \"disk.vmdk\"\n"),
++        format!("{t}\0hidden"),
++    ] {
++        assert!(SparseDescriptor::parse(t.as_bytes()).is_err(), "{t}");
++    }
++    assert!(
++        SparseDescriptor::parse(
++            f::descriptor("twoGbMaxExtentSparse", "RW 4194305 SPARSE \"disk.vmdk\"").as_bytes()
++        )
++        .is_err()
++    );
++}
++#[test]
++fn retained_map_and_exact_budget_accounting() {
++    let t = text();
++    let b = f::bytes(Some(&t));
++    let m = load(&b, &t).unwrap();
++    assert_eq!(&m.grain_sectors()[..3], &[128, 256, 0]);
++    assert_eq!(m.grain_sectors().len(), 16);
++    assert_eq!(m.cid(), 0x12345678);
++    assert_eq!(m.extent_index(), 0);
++    assert_eq!(m.logical_offset(), 0);
++    m.revalidate().unwrap();
++    assert_eq!(m.metadata_read_bytes(), 16384);
++    assert_eq!(m.reserved_memory_bytes(), 11488);
++    let limits = SparseMetadataLimits {
++        memory_bytes: m.reserved_memory_bytes(),
++        read_bytes: m.metadata_read_bytes(),
++        ..SparseMetadataLimits::default()
++    };
++    let d = SparseDescriptor::parse(t.as_bytes()).unwrap();
++    assert!(SparseMetadata::load(&d, 0, &f::Resolver(f::device(&b)), limits).is_ok());
++    for l in [
++        SparseMetadataLimits {
++            memory_bytes: limits.memory_bytes - 1,
++            ..limits
++        },
++        SparseMetadataLimits {
++            read_bytes: limits.read_bytes - 1,
++            ..limits
++        },
++    ] {
++        assert!(matches!(
++            SparseMetadata::load(&d, 0, &f::Resolver(f::device(&b)), l),
++            Err(E::Limit(_))
++        ));
++    }
++}
++#[test]
++fn external_split_binding_empty_region_and_extent_index() {
++    let t = f::descriptor(
++        "twoGbMaxExtentSparse",
++        "RW 2048 SPARSE \"first.vmdk\"\nRDONLY 2048 SPARSE \"disk.vmdk\"",
++    );
++    let d = SparseDescriptor::parse(t.as_bytes()).unwrap();
++    let r = f::Resolver(f::device(&f::bytes(None)));
++    let m = SparseMetadata::load(&d, 1, &r, SparseMetadataLimits::default()).unwrap();
++    assert_eq!(m.logical_offset(), 1048576);
++    assert_eq!(m.extent_index(), 1);
++    assert!(matches!(
++        SparseMetadata::load(&d, 2, &r, SparseMetadataLimits::default()),
++        Err(E::Invalid("extent index"))
++    ));
++}
++#[test]
++fn descriptor_binding_rejects_missing_conflicting_and_capacity_mismatch() {
++    let t = text();
++    for embedded in [None, Some("garbage"), Some("version=1\n")] {
++        assert!(load(&f::bytes(embedded), &t).is_err());
++    }
++    for alternate in [
++        t.replace("12345678", "12345679"),
++        t.replace("disk.vmdk", "other.vmdk"),
++        t.replace("RW ", "RDONLY "),
++        t.replace("monolithicSparse", "twoGbMaxExtentSparse"),
++    ] {
++        assert!(matches!(
++            load(&f::bytes(Some(&alternate)), &t),
++            Err(E::Invalid("embedded/external descriptor mismatch"))
++        ));
++    }
++    let b = f::bytes(Some(&t));
++    assert!(matches!(
++        load(&b, &t.replace("2048", "4096")),
++        Err(E::Invalid("descriptor/header capacity mismatch"))
++    ));
++    let split = f::descriptor("twoGbMaxExtentSparse", "RW 2048 SPARSE \"disk.vmdk\"");
++    assert!(load(&b, &split).is_err());
++}
++#[test]
++fn metadata_placement_rejects_before_any_grain_table_read() {
++    let t = text();
++    for (position, value) in [
++        (26 * 512, 0),
++        (26 * 512, 1),
++        (26 * 512, 21),
++        (26 * 512, 22),
++        (26 * 512, 26),
++        (26 * 512, 127),
++        (26 * 512, u32::MAX),
++        (21 * 512, 27),
++        (21 * 512 + 4, 1),
++    ] {
++        let mut b = f::bytes(Some(&t));
++        f::put32(&mut b, position, value);
++        let tracked = Arc::new(Tracked::new(b));
++        let r = f::Resolver(tracked.clone());
++        assert!(
++            SparseMetadata::load(
++                &SparseDescriptor::parse(t.as_bytes()).unwrap(),
++                0,
++                &r,
++                SparseMetadataLimits::default()
++            )
++            .is_err()
++        );
++        assert_eq!(
++            tracked.tables.load(Ordering::Relaxed),
++            0,
++            "{position}/{value}"
++        );
++    }
++}
++#[test]
++fn redundant_disagreement_unused_slots_and_data_ranges_reject() {
++    let t = text();
++    let mut b = f::bytes(Some(&t));
++    f::put32(&mut b, 22 * 512, 256);
++    assert!(matches!(
++        load(&b, &t),
++        Err(E::Invalid("redundant grain tables disagree"))
++    ));
++    for (entry, value) in [
++        (0, 1),
++        (0, 127),
++        (0, 129),
++        (0, 384),
++        (0, u32::MAX),
++        (1, 128),
++        (16, 128),
++        (511, 128),
++    ] {
++        let mut b = f::bytes(Some(&t));
++        for table in [22, 27] {
++            f::put32(&mut b, table * 512 + entry * 4, value);
++        }
++        assert!(load(&b, &t).is_err(), "{entry}/{value}");
++    }
++}
++#[test]
++fn absent_redundancy_is_supported_without_recovery_fallback() {
++    let t = text();
++    let mut b = f::bytes(Some(&t));
++    f::put32(&mut b, 8, 1);
++    b[48..56].fill(0);
++    b[21 * 512..26 * 512].fill(0xa5);
++    assert!(load(&b, &t).is_ok());
++}
++struct Tracked {
++    bytes: Vec<u8>,
++    calls: AtomicUsize,
++    tables: AtomicUsize,
++    endpoints: AtomicUsize,
++    mode: usize,
++}
++impl Tracked {
++    fn new(bytes: Vec<u8>) -> Self {
++        Self {
++            bytes,
++            calls: AtomicUsize::new(0),
++            tables: AtomicUsize::new(0),
++            endpoints: AtomicUsize::new(0),
++            mode: 0,
++        }
++    }
++}
++impl BlockDevice for Tracked {
++    fn geometry(&self) -> DiskGeometry {
++        DiskGeometry::new(self.bytes.len() as u64, 512, 512).unwrap()
++    }
++    fn capabilities(&self) -> Capabilities {
++        Capabilities::READ
++    }
++    fn copy_endpoint(&self) -> rvvdk_core::Result<CopyEndpoint> {
++        let n = self.endpoints.fetch_add(1, Ordering::Relaxed);
++        Ok(CopyEndpoint {
++            size: self.bytes.len() as u64 - if self.mode == 2 && n > 0 { 1 } else { 0 },
++            capabilities: if self.mode == 3 && n > 0 {
++                Capabilities::empty()
++            } else {
++                Capabilities::READ
++            },
++            identity: Some(EndpointIdentity::LocalFile {
++                device: 1,
++                inode: if self.mode == 4 && n > 0 { 2 } else { 1 },
++            }),
++        })
++    }
++    fn read_at(&self, offset: u64, out: &mut [u8]) -> rvvdk_core::Result<usize> {
++        let n = self.calls.fetch_add(1, Ordering::Relaxed);
++        if out.len() == 2048 {
++            self.tables.fetch_add(1, Ordering::Relaxed);
++        }
++        if self.mode == 5 && offset >= 10752 {
++            return Ok(0);
++        }
++        if self.mode == 6 && offset >= 10752 {
++            return Err(rvvdk_core::Error::Io(
++                std::io::ErrorKind::PermissionDenied.into(),
++            ));
++        }
++        let len = out.len().min(if self.mode == 7 { 3 } else { out.len() });
++        out[..len].copy_from_slice(&self.bytes[offset as usize..offset as usize + len]);
++        if self.mode == 1 && offset == 0 && n > 0 {
++            out[0] ^= 1;
++        }
++        Ok(len)
++    }
++    fn write_at(&self, _: u64, _: &[u8]) -> rvvdk_core::Result<usize> {
++        panic!("no writes")
++    }
++    fn flush(&self) -> rvvdk_core::Result<()> {
++        panic!("no flush")
++    }
++}
++#[test]
++fn live_endpoint_header_changes_and_io_failures_propagate() {
++    let t = text();
++    let d = SparseDescriptor::parse(t.as_bytes()).unwrap();
++    for mode in 1..=7 {
++        let mut source = Tracked::new(f::bytes(Some(&t)));
++        source.mode = mode;
++        let result = SparseMetadata::load(
++            &d,
++            0,
++            &f::Resolver(Arc::new(source)),
++            SparseMetadataLimits::default(),
++        );
++        if mode == 7 {
++            assert!(result.is_ok());
++        } else {
++            assert!(result.is_err(), "{mode}");
++        }
++    }
++}
++#[test]
++fn budget_failures_precede_offset_reads_and_large_allocations() {
++    let t = text();
++    let source = Arc::new(Tracked::new(f::bytes(Some(&t))));
++    for l in [
++        SparseMetadataLimits {
++            memory_bytes: 0,
++            ..SparseMetadataLimits::default()
++        },
++        SparseMetadataLimits {
++            read_bytes: 512,
++            ..SparseMetadataLimits::default()
++        },
++        SparseMetadataLimits {
++            descriptor: Limits {
++                descriptor_bytes: 1,
++                ..Limits::default()
++            },
++            ..SparseMetadataLimits::default()
++        },
++    ] {
++        let before = source.calls.load(Ordering::Relaxed);
++        assert!(
++            SparseMetadata::load(
++                &SparseDescriptor::parse(t.as_bytes()).unwrap(),
++                0,
++                &f::Resolver(source.clone()),
++                l
++            )
++            .is_err()
++        );
++        assert_eq!(source.calls.load(Ordering::Relaxed) - before, 1);
++    }
++}
+diff --git a/crates/rvvdk-vmdk/tests/support/sparse_metadata.rs b/crates/rvvdk-vmdk/tests/support/sparse_metadata.rs
+new file mode 100644
+index 0000000..dd956fc
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/support/sparse_metadata.rs
+@@ -0,0 +1,39 @@
++#[path = "sparse.rs"]
++mod raw;
++use rvvdk_core::{BlockDevice, MemoryBlockDevice};
++use rvvdk_vmdk::{BackingError, BackingResolver};
++use std::sync::Arc;
++pub fn descriptor(kind: &str, extents: &str) -> String {
++    format!("version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"{kind}\"\n{extents}\n")
++}
++pub fn bytes(text: Option<&str>) -> Vec<u8> {
++    let mut b = vec![0; 196608];
++    b[..512].copy_from_slice(&raw::header());
++    if let Some(t) = text {
++        b[512..512 + t.len()].copy_from_slice(t.as_bytes());
++    }
++    raw::put32(&mut b, 21 * 512, 22);
++    raw::put32(&mut b, 26 * 512, 27);
++    for table in [22, 27] {
++        raw::put32(&mut b, table * 512, 128);
++        raw::put32(&mut b, table * 512 + 4, 256);
++    }
++    b[65536..131072].fill(0x5a);
++    b[131072..].fill(0xa5);
++    b
++}
++pub fn put32(b: &mut [u8], offset: usize, value: u32) {
++    raw::put32(b, offset, value)
++}
++pub struct Resolver(pub Arc<dyn BlockDevice>);
++impl BackingResolver for Resolver {
++    fn resolve(&self, name: &str) -> Result<Arc<dyn BlockDevice>, BackingError> {
++        assert_eq!(name, "disk.vmdk");
++        Ok(self.0.clone())
++    }
++}
++pub fn device(bytes: &[u8]) -> Arc<MemoryBlockDevice> {
++    let d = Arc::new(MemoryBlockDevice::new(bytes.len()).unwrap());
++    d.write_all_at(0, bytes).unwrap();
++    d
++}

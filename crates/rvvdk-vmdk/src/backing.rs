@@ -5,6 +5,8 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum BackingError {
+    #[error("sparse extents require the sparse metadata loader")]
+    SparseUnsupported,
     #[error("{0}")]
     Descriptor(#[from] DescriptorError),
     #[error("backing resource limit exceeded: {0}")]
@@ -168,6 +170,7 @@ impl ResolvedDescriptor {
         // Count and compute every physical requirement before invoking a resolver.
         for extent in descriptor.extents() {
             let backing = match extent.backing() {
+                ExtentBacking::Sparse { .. } => return Err(BackingError::SparseUnsupported),
                 ExtentBacking::Zero => ResolvedExtentBacking::Zero,
                 ExtentBacking::Flat {
                     file_name,

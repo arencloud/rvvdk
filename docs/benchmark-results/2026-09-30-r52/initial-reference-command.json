@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python",
+    "scripts/vmdk/compare_sparse_metadata.py",
+    "--inspect",
+    "/tmp/rvvdk-r52-xs6t63qa/candidate-target/release/examples/inspect_sparse_metadata",
+    "--cli",
+    "/tmp/rvvdk-r52-xs6t63qa/candidate-target/release/rvddk",
+    "--directory",
+    "/home/egevorky/RustroverProjects/rvvdk/target/r52-benchmark-storage/reference-metadata",
+    "--report",
+    "/home/egevorky/RustroverProjects/rvvdk/docs/benchmark-results/2026-09-30-r52/reference-metadata.json"
+  ],
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "Traceback (most recent call last):\n  File \"/home/egevorky/RustroverProjects/rvvdk/scripts/vmdk/compare_sparse_metadata.py\", line 79, in <module>\n    main()\n    ~~~~^^\n  File \"/home/egevorky/RustroverProjects/rvvdk/scripts/vmdk/compare_sparse_metadata.py\", line 48, in main\n    assert r.returncode == 0, r.stderr\n           ^^^^^^^^^^^^^^^^^\nAssertionError: Error: DescriptorError { line: 3, kind: Number }\n\n"
+}

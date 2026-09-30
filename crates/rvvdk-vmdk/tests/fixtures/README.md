@@ -52,3 +52,11 @@ QEMU monolithic/split sparse files, records full header hex and tool/file hashes
 and compares admitted capacity with QEMU info. It also records deliberate subset
 rejections and continued public CLI rejection. These are header-only checks, not
 logical sparse byte comparisons or VMware-produced/ESXi-tested images.
+
+R5.2 adds authored sparse descriptor/table fixtures in `tests/support/sparse_metadata.rs`.
+They exercise a version-1 base map with two allocated grains, unallocated entries,
+redundancy and embedded/external binding. The same VMware PDF pp. 3–9 supplies
+field semantics; no producer implementation source was read. The separate
+`compare_sparse_metadata.py` runner creates monolithic/split sparse images with
+QEMU, reconstructs bytes from the validated map only in a test utility, and compares
+with the original RAW oracle and QEMU. Production sparse reads remain disabled.

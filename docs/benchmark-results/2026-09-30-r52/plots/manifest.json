@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R5.2 \u00b7 Bounded sparse metadata validation",
+    "candidate": "patch 6a1e0c7c",
+    "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm memory / Btrfs",
+    "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "candidate_only": {
+      "title": "Sparse metadata validation \u00b7 first cost baseline",
+      "note": "1 MiB logical capacity \u00b7 memory-backed metadata \u00b7 no grain payload reads or filesystem I/O",
+      "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+    },
+    "workloads": {
+      "descriptor/small": {
+        "label": "Strict descriptor parsing",
+        "phase": "planning"
+      },
+      "resolution/load_descriptor": {
+        "label": "Unpadded local descriptor load",
+        "phase": "planning"
+      },
+      "cli_vmdk/copy_mixed_verify": {
+        "label": "FLAT/ZERO copy + verify \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/verify_only": {
+        "label": "RAW verify \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "sparse_metadata/monolithic": {
+        "label": "Load monolithic metadata",
+        "phase": "planning"
+      },
+      "sparse_metadata/split_empty_region": {
+        "label": "Load split metadata \u00b7 empty text region",
+        "phase": "planning"
+      },
+      "sparse_metadata/redundant_rejection": {
+        "label": "Reject redundant-table disagreement",
+        "phase": "planning"
+      },
+      "sparse_metadata/descriptor": {
+        "label": "Parse explicit sparse descriptor",
+        "phase": "planning"
+      }
+    }
+  },
+  "input_sha256": {
+    "plot-config.json": "8f0b255da0d6985992769ca603d46c00d4b4e939b91567feb7c9cc470bdba688",
+    "environment.json": "7fdad0f58926628f2168bb2e8702a11bbfa551c1655dc9508e4e0ed24ec4f7a5",
+    "measurements.json": "55da5e2f9943d5c0c0db61a4ecaae43f3c7324185ec33dcf379ed79c0cb4a41c",
+    "summary.json": "961753fcde0191a96cabfca7f8926c1e246b0e02eaa5c27f0624d22c84f235b8",
+    "candidate-only-measurements.json": "e834030911839156b5d1a0025ec22e58f19ee6ffaddff97ab06594b081d75447"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "4f39638ffddb125d1bfefe0079cfb014be9feef2bcd16ae4e939767a36add212",
+    "planning-latency.png": "d0adfa970ca475525a909b58718ad40e46cc3d4c3a63ad7250e484469b0f1394",
+    "copy-latency.svg": "c51c4ca8414175ccf9d5f9be1f59abc6405667e387d29f81b9b3dd39862252ae",
+    "copy-latency.png": "ffdf7f7069a45778619e2efb163afdb50a55a623e20c3cfba6216bab5f5ec0ca",
+    "relative-change.svg": "064e112ad8a50261e55f6449e3ee224183b4c6cfcb24de930aab926646da1537",
+    "relative-change.png": "622f0a44abb2913710a0ac15bc6d6a95564bf3b4973d19831bb21f4e0053c6f9",
+    "sample-distributions.svg": "461af08003f8e4690bdbb7258636dfd1e04309ae083d851e11afe52821fff603",
+    "sample-distributions.png": "986f90ab4bf16c90c8397a2c8ea600e4bd01ee228abe5a1c89f7349cbb906657",
+    "candidate-only.svg": "2e2fbdfdda2b071b5c863e965bd857860e540b3f714f7238bfb7510cdba2dd0d",
+    "candidate-only.png": "e43f53089c7f56cb19f62d9e5dcdde84687c847570fffac2849792e98e4d79ef",
+    "computed.json": "4a30bb0bae0cef7e9d85dc7da94e253468c0f1347eb439696c3356ea68d7a56c"
+  }
+}
