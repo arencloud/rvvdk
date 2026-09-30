@@ -1,0 +1,221 @@
+{
+  "main": [
+    {
+      "benchmark": "cli_vmdk/inspect_mixed",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          50534.5476889215,
+          47228.05710102489,
+          51882.11517367459
+        ],
+        "candidate": [
+          47711.64438884918,
+          54762.7964635064,
+          53616.59372720642
+        ]
+      },
+      "baseline_ns": 50534.5476889215,
+      "candidate_ns": 53616.59372720642,
+      "change_percent": 6.098889134730667,
+      "paired_changes_percent": [
+        -5.5860860127796785,
+        15.953947346095676,
+        3.343114573732575
+      ]
+    },
+    {
+      "benchmark": "cli_vmdk/plan_mixed",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          57319.06902502157,
+          81906.43395303327,
+          64104.24549763033
+        ],
+        "candidate": [
+          56033.930946291555,
+          65393.44982896237,
+          63449.29807692308
+        ]
+      },
+      "baseline_ns": 64104.24549763033,
+      "candidate_ns": 63449.29807692308,
+      "change_percent": -1.0216911775858262,
+      "paired_changes_percent": [
+        -2.2420777248999157,
+        -20.160789973519975,
+        -1.0216911775858262
+      ]
+    },
+    {
+      "benchmark": "cli_vmdk/copy_mixed_verify",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          20386951.375,
+          20909876.375,
+          20610213.25
+        ],
+        "candidate": [
+          20866423.125,
+          20529281.625,
+          20956580.0
+        ]
+      },
+      "baseline_ns": 20610213.25,
+      "candidate_ns": 20866423.125,
+      "change_percent": 1.2431209318030767,
+      "paired_changes_percent": [
+        2.351856053318313,
+        -1.8201673848968425,
+        1.68055878800768
+      ]
+    },
+    {
+      "benchmark": "cli_transfer/verify_only",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          3295275.65,
+          3741191.222222222,
+          3804596.4444444445
+        ],
+        "candidate": [
+          3320735.7,
+          3853795.5555555555,
+          3828728.777777778
+        ]
+      },
+      "baseline_ns": 3741191.222222222,
+      "candidate_ns": 3828728.777777778,
+      "change_percent": 2.339831095389977,
+      "paired_changes_percent": [
+        0.772622769812914,
+        3.009852387776313,
+        0.6342941672190294
+      ]
+    },
+    {
+      "benchmark": "cli_sparse/copy_split_verify",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          20327074.625,
+          21369979.0,
+          20514815.75
+        ],
+        "candidate": [
+          20308437.25,
+          22042299.666666664,
+          20412710.875
+        ]
+      },
+      "baseline_ns": 20514815.75,
+      "candidate_ns": 20412710.875,
+      "change_percent": -0.4977128541844178,
+      "paired_changes_percent": [
+        -0.09168744319498767,
+        3.1460988645176657,
+        -0.4977128541844178
+      ]
+    }
+  ],
+  "followup": [
+    {
+      "benchmark": "cli_vmdk/inspect_mixed",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          53620.2346686449,
+          54896.95940054496,
+          51240.23986125934
+        ],
+        "candidate": [
+          52461.73407821229,
+          53212.40897027601,
+          50818.234869516935
+        ]
+      },
+      "baseline_ns": 53620.2346686449,
+      "candidate_ns": 52461.73407821229,
+      "change_percent": -2.160566057928981,
+      "paired_changes_percent": [
+        -2.160566057928981,
+        -3.0685678199004696,
+        -0.8235812183647995
+      ]
+    }
+  ],
+  "candidate_only": [
+    {
+      "benchmark": "cli_parents/inspect_mono",
+      "candidate_ns": 176155.45490716182,
+      "run_medians_ns": [
+        176155.45490716182,
+        178307.89138576778,
+        172049.88594164455
+      ]
+    },
+    {
+      "benchmark": "cli_parents/plan_split",
+      "candidate_ns": 164227.92366412215,
+      "run_medians_ns": [
+        164227.92366412215,
+        169048.91895261843,
+        162363.0
+      ]
+    },
+    {
+      "benchmark": "cli_parents/copy_mono_verify",
+      "candidate_ns": 19930309.125,
+      "run_medians_ns": [
+        19907450.625,
+        20022359.75,
+        19930309.125
+      ]
+    },
+    {
+      "benchmark": "cli_parents/copy_split_verify",
+      "candidate_ns": 19929520.375,
+      "run_medians_ns": [
+        19929520.375,
+        19785810.875,
+        20121373.625
+      ]
+    },
+    {
+      "benchmark": "cli_parents/verify_split",
+      "candidate_ns": 259005.59999999998,
+      "run_medians_ns": [
+        229293.80993150687,
+        259005.59999999998,
+        260141.80546075085
+      ]
+    }
+  ]
+}

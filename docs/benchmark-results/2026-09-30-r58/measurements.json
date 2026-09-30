@@ -1,0 +1,4322 @@
+[
+  {
+    "tag": "pair1-0-candidate",
+    "benchmark": "cli_vmdk/inspect_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/inspect_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "inspect_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/inspect_mixed",
+        "directory_name": "cli_vmdk/inspect_mixed",
+        "title": "cli_vmdk/inspect_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 47519.87174172028,
+            "upper_bound": 48007.170717178946
+          },
+          "point_estimate": 47752.558565642124,
+          "standard_error": 124.82110844649905
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 47366.19156540386,
+            "upper_bound": 47805.11365260901
+          },
+          "point_estimate": 47711.64438884918,
+          "standard_error": 114.67606489599797
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 296.12364563625425,
+            "upper_bound": 881.8958219415058
+          },
+          "point_estimate": 641.6536901809196,
+          "standard_error": 156.54803113112595
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 467.5867403824231,
+            "upper_bound": 856.9219934803999
+          },
+          "point_estimate": 696.1630354543191,
+          "standard_error": 99.49748323960686
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0,
+          1399.0
+        ],
+        "times": [
+          66209662.0,
+          68801995.0,
+          66256806.0,
+          67213054.0,
+          66717133.0,
+          66076574.0,
+          68161709.0,
+          65805684.0,
+          66789953.0,
+          69183483.0,
+          66780048.0,
+          66815844.0,
+          66615145.0,
+          68942425.0,
+          65318673.0,
+          66985336.0,
+          65989323.0,
+          65844704.0,
+          66273798.0,
+          66563848.0,
+          66790819.0,
+          65791519.0,
+          67483275.0,
+          65749102.0,
+          66792017.0,
+          67458588.0,
+          65782802.0,
+          67612216.0,
+          66426484.0,
+          66942864.0
+        ]
+      },
+      "tukey.json": [
+        45011.44424588992,
+        46133.25822015725,
+        49124.76215153681,
+        50246.576125804146
+      ]
+    },
+    "variant": "candidate",
+    "pair": 1
+  },
+  {
+    "tag": "pair1-0-baseline",
+    "benchmark": "cli_vmdk/inspect_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/baseline-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/inspect_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "inspect_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/inspect_mixed",
+        "directory_name": "cli_vmdk/inspect_mixed",
+        "title": "cli_vmdk/inspect_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 49329.44471692344,
+            "upper_bound": 51512.96695830277
+          },
+          "point_estimate": 50391.71990706773,
+          "standard_error": 559.3542094859167
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 48964.81254585473,
+            "upper_bound": 51601.15737344094
+          },
+          "point_estimate": 50534.5476889215,
+          "standard_error": 707.2331254137341
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1726.677481304252,
+            "upper_bound": 4143.597165027786
+          },
+          "point_estimate": 2611.4492005927514,
+          "standard_error": 609.4062704390897
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2163.615035876128,
+            "upper_bound": 3953.711055049595
+          },
+          "point_estimate": 3115.3193343654852,
+          "standard_error": 465.366349264066
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0,
+          1363.0
+        ],
+        "times": [
+          63529976.0,
+          71269755.0,
+          80899486.0,
+          61446134.0,
+          63209571.0,
+          70468129.0,
+          66313126.0,
+          67321161.0,
+          73016781.0,
+          69313001.0,
+          69605852.0,
+          71193240.0,
+          66745021.0,
+          66468183.0,
+          67249724.0,
+          68992230.0,
+          66733058.0,
+          68764947.0,
+          70196626.0,
+          65615761.0,
+          64938178.0,
+          75740295.0,
+          69436504.0,
+          73671206.0,
+          72321819.0,
+          61839706.0,
+          71671561.0,
+          71059061.0,
+          63141959.0,
+          68345376.0
+        ]
+      },
+      "tukey.json": [
+        38098.66122523844,
+        43389.71588407923,
+        57499.194974321355,
+        62790.24963316215
+      ]
+    },
+    "variant": "baseline",
+    "pair": 1
+  },
+  {
+    "tag": "pair1-1-candidate",
+    "benchmark": "cli_vmdk/plan_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/plan_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "plan_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/plan_mixed",
+        "directory_name": "cli_vmdk/plan_mixed",
+        "title": "cli_vmdk/plan_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 56010.772814009644,
+            "upper_bound": 56711.17008667236
+          },
+          "point_estimate": 56341.476555839734,
+          "standard_error": 178.9977049322384
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 55896.80434782608,
+            "upper_bound": 56490.399829497015
+          },
+          "point_estimate": 56033.930946291555,
+          "standard_error": 153.46398168975875
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 305.8099434198941,
+            "upper_bound": 1314.055657745016
+          },
+          "point_estimate": 800.8517177513496,
+          "standard_error": 277.31244783873245
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 657.696652202302,
+            "upper_bound": 1277.185154905539
+          },
+          "point_estimate": 994.6250057428678,
+          "standard_error": 159.93269207653606
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0,
+          1173.0
+        ],
+        "times": [
+          65522026.0,
+          65963535.0,
+          67359103.0,
+          67441639.0,
+          66446108.0,
+          66545900.0,
+          65606146.0,
+          66080370.0,
+          67922894.0,
+          64781792.0,
+          65637535.0,
+          65178876.0,
+          64856213.0,
+          65843433.0,
+          64639363.0,
+          65882661.0,
+          65599211.0,
+          65371735.0,
+          65306296.0,
+          65630256.0,
+          66562528.0,
+          64676722.0,
+          68200132.0,
+          69604527.0,
+          65678960.0,
+          67337655.0,
+          65776642.0,
+          65534692.0,
+          66935516.0,
+          64734094.0
+        ]
+      },
+      "tukey.json": [
+        52823.63000852515,
+        54293.02035379369,
+        58211.39460784313,
+        59680.78495311167
+      ]
+    },
+    "variant": "candidate",
+    "pair": 1
+  },
+  {
+    "tag": "pair1-1-baseline",
+    "benchmark": "cli_vmdk/plan_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/baseline-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/plan_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "plan_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/plan_mixed",
+        "directory_name": "cli_vmdk/plan_mixed",
+        "title": "cli_vmdk/plan_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 57041.97049971239,
+            "upper_bound": 57986.12148907102
+          },
+          "point_estimate": 57509.4214265171,
+          "standard_error": 241.89342916707258
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 56867.37575496118,
+            "upper_bound": 58136.76100086281
+          },
+          "point_estimate": 57319.06902502157,
+          "standard_error": 306.36838429491667
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 769.0817868637439,
+            "upper_bound": 2111.4046494003283
+          },
+          "point_estimate": 1521.2256045717932,
+          "standard_error": 332.81369820757214
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1033.2842267523909,
+            "upper_bound": 1561.745897086027
+          },
+          "point_estimate": 1338.28961208804,
+          "standard_error": 134.09102216337635
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0,
+          1159.0
+        ],
+        "times": [
+          65647634.0,
+          66020003.0,
+          64251660.0,
+          66583090.0,
+          66141325.0,
+          64857469.0,
+          66410793.0,
+          64202105.0,
+          69466128.0,
+          67447835.0,
+          65798574.0,
+          68715845.0,
+          66237851.0,
+          64898900.0,
+          68975581.0,
+          68006280.0,
+          66805413.0,
+          68379273.0,
+          67577134.0,
+          66454809.0,
+          69671458.0,
+          66804795.0,
+          67666858.0,
+          68746896.0,
+          66086706.0,
+          67313177.0,
+          65081312.0,
+          65043384.0,
+          65530558.0,
+          64779737.0
+        ]
+      },
+      "tukey.json": [
+        51169.997411561715,
+        53867.9266609146,
+        61062.40465918895,
+        63760.33390854183
+      ]
+    },
+    "variant": "baseline",
+    "pair": 1
+  },
+  {
+    "tag": "pair1-2-candidate",
+    "benchmark": "cli_vmdk/copy_mixed_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/copy_mixed_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "copy_mixed_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/copy_mixed_verify",
+        "directory_name": "cli_vmdk/copy_mixed_verify",
+        "title": "cli_vmdk/copy_mixed_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20793692.016458333,
+            "upper_bound": 21187438.733333334
+          },
+          "point_estimate": 20976553.583333332,
+          "standard_error": 101379.63782851232
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20706945.0,
+            "upper_bound": 21055453.125
+          },
+          "point_estimate": 20866423.125,
+          "standard_error": 105366.00566813425
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 216336.16970926523,
+            "upper_bound": 572757.8365065157
+          },
+          "point_estimate": 319925.61519518495,
+          "standard_error": 90838.23472135683
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 309957.92510481837,
+            "upper_bound": 734893.0834363622
+          },
+          "point_estimate": 566875.7647638088,
+          "standard_error": 105413.36682649114
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          84957704.0,
+          84533606.0,
+          84211631.0,
+          83316935.0,
+          83565899.0,
+          83365486.0,
+          84331329.0,
+          84231994.0,
+          90282702.0,
+          86060872.0,
+          84532820.0,
+          81563162.0,
+          84073686.0,
+          84113351.0,
+          82200213.0,
+          88693115.0,
+          89869130.0,
+          82995850.0,
+          82671092.0,
+          82750386.0,
+          84326351.0,
+          82634692.0,
+          83009649.0,
+          83851778.0,
+          81388677.0,
+          82905174.0,
+          82161436.0,
+          81202130.0,
+          81848753.0,
+          81536827.0
+        ]
+      },
+      "tukey.json": [
+        19396228.625,
+        20028588.3125,
+        21714880.8125,
+        22347240.5
+      ]
+    },
+    "variant": "candidate",
+    "pair": 1
+  },
+  {
+    "tag": "pair1-2-baseline",
+    "benchmark": "cli_vmdk/copy_mixed_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/baseline-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/copy_mixed_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "copy_mixed_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/copy_mixed_verify",
+        "directory_name": "cli_vmdk/copy_mixed_verify",
+        "title": "cli_vmdk/copy_mixed_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20350396.865000002,
+            "upper_bound": 20982506.975
+          },
+          "point_estimate": 20617815.066666666,
+          "standard_error": 164769.37639201345
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20296899.125,
+            "upper_bound": 20479324.875
+          },
+          "point_estimate": 20386951.375,
+          "standard_error": 41453.573517554156
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 115897.43449240923,
+            "upper_bound": 297343.57902109623
+          },
+          "point_estimate": 215594.86972242594,
+          "standard_error": 44248.64371766013
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 175261.14912389833,
+            "upper_bound": 1380065.0701390025
+          },
+          "point_estimate": 911912.319682437,
+          "standard_error": 320030.0754939705
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          82138560.0,
+          81448041.0,
+          80887468.0,
+          82540795.0,
+          80726248.0,
+          82149960.0,
+          81565434.0,
+          80975226.0,
+          82792574.0,
+          80662539.0,
+          81677495.0,
+          82533749.0,
+          81352749.0,
+          81379570.0,
+          93261049.0,
+          97376953.0,
+          80997705.0,
+          81963651.0,
+          81652451.0,
+          81583283.0,
+          81292994.0,
+          82053010.0,
+          81082199.0,
+          80949616.0,
+          84781839.0,
+          81530177.0,
+          81870948.0,
+          79933181.0,
+          80073051.0,
+          80905293.0
+        ]
+      },
+      "tukey.json": [
+        19392966.375,
+        19819088.90625,
+        20955415.65625,
+        21381538.1875
+      ]
+    },
+    "variant": "baseline",
+    "pair": 1
+  },
+  {
+    "tag": "pair1-3-candidate",
+    "benchmark": "cli_transfer/verify_only",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/deps/transfer-4f18603c136fd44c",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/verify_only$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "verify_only",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/verify_only",
+        "directory_name": "cli_transfer/verify_only",
+        "title": "cli_transfer/verify_only"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3291542.8033333337,
+            "upper_bound": 3393598.5004166663
+          },
+          "point_estimate": 3339377.840000001,
+          "standard_error": 26227.45516399549
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3267396.95,
+            "upper_bound": 3357152.0999999996
+          },
+          "point_estimate": 3320735.7,
+          "standard_error": 20965.57109487084
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 52457.945308685164,
+            "upper_bound": 164368.81673187017
+          },
+          "point_estimate": 94525.01457184588,
+          "standard_error": 27028.410020406955
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 83150.22046533272,
+            "upper_bound": 191405.42440462537
+          },
+          "point_estimate": 145600.7220958875,
+          "standard_error": 27929.59965765664
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0
+        ],
+        "times": [
+          33392734.0,
+          33736046.0,
+          33697908.0,
+          33167880.0,
+          31994388.0,
+          32578524.0,
+          31779045.0,
+          34778370.0,
+          37260844.0,
+          33247235.0,
+          31395218.0,
+          32234500.0,
+          32769415.0,
+          32163940.0,
+          33395593.0,
+          33630149.0,
+          37776178.0,
+          32914889.0,
+          34996068.0,
+          33220015.0,
+          33714108.0,
+          33512893.0,
+          32958209.0,
+          33942137.0,
+          32561065.0,
+          35286402.0,
+          32519102.0,
+          32299604.0,
+          33194699.0,
+          31696194.0
+        ]
+      },
+      "tukey.json": [
+        2898819.700000002,
+        3075889.487500001,
+        3548075.587499999,
+        3725145.374999998
+      ]
+    },
+    "variant": "candidate",
+    "pair": 1
+  },
+  {
+    "tag": "pair1-3-baseline",
+    "benchmark": "cli_transfer/verify_only",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/baseline-target/release/deps/transfer-4f18603c136fd44c",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/verify_only$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "verify_only",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/verify_only",
+        "directory_name": "cli_transfer/verify_only",
+        "title": "cli_transfer/verify_only"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3262335.5113333333,
+            "upper_bound": 3325153.4989166656
+          },
+          "point_estimate": 3293324.733333333,
+          "standard_error": 15978.802343846386
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3271162.45,
+            "upper_bound": 3327539.15
+          },
+          "point_estimate": 3295275.65,
+          "standard_error": 13501.136142106667
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 36558.02428096505,
+            "upper_bound": 131956.73501729945
+          },
+          "point_estimate": 96536.16143614054,
+          "standard_error": 24147.94074502569
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 67525.88098470854,
+            "upper_bound": 106969.24332856953
+          },
+          "point_estimate": 89489.37659818598,
+          "standard_error": 10046.299329983827
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0,
+          10.0
+        ],
+        "times": [
+          32812933.0,
+          33714923.0,
+          33797902.0,
+          34182458.0,
+          31577923.0,
+          33382835.0,
+          34164836.0,
+          34906366.0,
+          32674787.0,
+          32748462.0,
+          33748808.0,
+          33421516.0,
+          31459031.0,
+          32863060.0,
+          33028138.0,
+          32341123.0,
+          32990320.0,
+          33460187.0,
+          31440874.0,
+          31946759.0,
+          32100161.0,
+          33026391.0,
+          32172045.0,
+          31488941.0,
+          34326490.0,
+          32949438.0,
+          32262135.0,
+          32956075.0,
+          32884555.0,
+          33167948.0
+        ]
+      },
+      "tukey.json": [
+        2877597.025,
+        3052892.6125,
+        3520347.5125,
+        3695643.1000000006
+      ]
+    },
+    "variant": "baseline",
+    "pair": 1
+  },
+  {
+    "tag": "pair1-4-candidate",
+    "benchmark": "cli_sparse/copy_split_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/deps/sparse-dbd3f170780e6f92",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_sparse/copy_split_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_sparse",
+        "function_id": "copy_split_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_sparse/copy_split_verify",
+        "directory_name": "cli_sparse/copy_split_verify",
+        "title": "cli_sparse/copy_split_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20275549.5,
+            "upper_bound": 20447714.125
+          },
+          "point_estimate": 20359433.433333334,
+          "standard_error": 43957.79472746798
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20219996.375,
+            "upper_bound": 20395735.375
+          },
+          "point_estimate": 20308437.25,
+          "standard_error": 42321.79087857881
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 112855.8806464076,
+            "upper_bound": 374357.97595381737
+          },
+          "point_estimate": 254573.16433042288,
+          "standard_error": 61371.79875554873
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 183957.73418208855,
+            "upper_bound": 293481.3643830426
+          },
+          "point_estimate": 246436.41497843238,
+          "standard_error": 27940.67713860076
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          80547009.0,
+          80323115.0,
+          81538230.0,
+          81088509.0,
+          81918096.0,
+          81234907.0,
+          80093445.0,
+          81147347.0,
+          80345574.0,
+          81260138.0,
+          80471721.0,
+          80546831.0,
+          81627653.0,
+          82491729.0,
+          83828479.0,
+          80671462.0,
+          83097022.0,
+          82833616.0,
+          81106955.0,
+          82506150.0,
+          82393930.0,
+          81197622.0,
+          82910521.0,
+          81393662.0,
+          81232591.0,
+          82605163.0,
+          80564876.0,
+          81355439.0,
+          80510397.0,
+          80289823.0
+        ]
+      },
+      "tukey.json": [
+        18845247.125,
+        19491558.03125,
+        21215053.78125,
+        21861364.6875
+      ]
+    },
+    "variant": "candidate",
+    "pair": 1
+  },
+  {
+    "tag": "pair1-4-baseline",
+    "benchmark": "cli_sparse/copy_split_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/baseline-target/release/deps/sparse-dbd3f170780e6f92",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_sparse/copy_split_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_sparse",
+        "function_id": "copy_split_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_sparse/copy_split_verify",
+        "directory_name": "cli_sparse/copy_split_verify",
+        "title": "cli_sparse/copy_split_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20275152.966666665,
+            "upper_bound": 20420611.759375
+          },
+          "point_estimate": 20347152.883333333,
+          "standard_error": 36813.08910881977
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20228354.625,
+            "upper_bound": 20431735.5
+          },
+          "point_estimate": 20327074.625,
+          "standard_error": 63347.830246892714
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 111596.22664377093,
+            "upper_bound": 293869.6619577706
+          },
+          "point_estimate": 214678.62293869257,
+          "standard_error": 45881.53324793548
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 155181.70463203112,
+            "upper_bound": 246995.23983362582
+          },
+          "point_estimate": 205588.20128253804,
+          "standard_error": 23545.644805627937
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          82734060.0,
+          82375478.0,
+          80873750.0,
+          83176870.0,
+          80193924.0,
+          80596577.0,
+          79614660.0,
+          81747068.0,
+          80709130.0,
+          81370831.0,
+          80684830.0,
+          81673075.0,
+          82160146.0,
+          80980307.0,
+          81520125.0,
+          80433479.0,
+          81245766.0,
+          80711693.0,
+          80953087.0,
+          80807071.0,
+          82117040.0,
+          80746514.0,
+          81810026.0,
+          82676519.0,
+          81069800.0,
+          82213828.0,
+          81706816.0,
+          81069697.0,
+          81597715.0,
+          82088464.0
+        ]
+      },
+      "tukey.json": [
+        19247512.375,
+        19718962.84375,
+        20976164.09375,
+        21447614.5625
+      ]
+    },
+    "variant": "baseline",
+    "pair": 1
+  },
+  {
+    "tag": "pair2-0-baseline",
+    "benchmark": "cli_vmdk/inspect_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/baseline-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/inspect_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "inspect_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/inspect_mixed",
+        "directory_name": "cli_vmdk/inspect_mixed",
+        "title": "cli_vmdk/inspect_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 47201.84751098097,
+            "upper_bound": 47999.182406051754
+          },
+          "point_estimate": 47565.75844314301,
+          "standard_error": 205.0501185561431
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 47113.121156661786,
+            "upper_bound": 47552.93814055637
+          },
+          "point_estimate": 47228.05710102489,
+          "standard_error": 127.36219909586711
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 297.9032843890557,
+            "upper_bound": 877.6867027927617
+          },
+          "point_estimate": 539.4666844196219,
+          "standard_error": 144.94535897883122
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 550.6005767848073,
+            "upper_bound": 1565.9312529565227
+          },
+          "point_estimate": 1140.7530079988767,
+          "standard_error": 261.1419726029882
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0,
+          1366.0
+        ],
+        "times": [
+          64014965.0,
+          64332766.0,
+          63433793.0,
+          64455749.0,
+          64571303.0,
+          65005096.0,
+          70292949.0,
+          64678910.0,
+          63760401.0,
+          64414785.0,
+          65458220.0,
+          64679875.0,
+          64362184.0,
+          62583606.0,
+          64372646.0,
+          64018007.0,
+          65120079.0,
+          64909531.0,
+          64130926.0,
+          64874077.0,
+          63991636.0,
+          63787787.0,
+          64350863.0,
+          64450541.0,
+          65234213.0,
+          65232696.0,
+          68962412.0,
+          67313913.0,
+          66271269.0,
+          66179583.0
+        ]
+      },
+      "tukey.json": [
+        44737.86145680819,
+        45861.38534040995,
+        48857.44903001464,
+        49980.9729136164
+      ]
+    },
+    "variant": "baseline",
+    "pair": 2
+  },
+  {
+    "tag": "pair2-0-candidate",
+    "benchmark": "cli_vmdk/inspect_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/inspect_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "inspect_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/inspect_mixed",
+        "directory_name": "cli_vmdk/inspect_mixed",
+        "title": "cli_vmdk/inspect_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 54276.27559568596,
+            "upper_bound": 55054.601655379985
+          },
+          "point_estimate": 54668.01933784801,
+          "standard_error": 199.2227332923436
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 54058.16064710308,
+            "upper_bound": 55409.25771256584
+          },
+          "point_estimate": 54762.7964635064,
+          "standard_error": 398.3256083603922
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 810.6023321100631,
+            "upper_bound": 1758.4606238600973
+          },
+          "point_estimate": 1491.8391708057597,
+          "standard_error": 243.81416350534985
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 889.4487682041577,
+            "upper_bound": 1290.802988353424
+          },
+          "point_estimate": 1114.748878764777,
+          "standard_error": 102.33248279526347
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0,
+          1329.0
+        ],
+        "times": [
+          69532256.0,
+          71075278.0,
+          71471457.0,
+          72234961.0,
+          71686829.0,
+          71186661.0,
+          70384614.0,
+          71413492.0,
+          71004203.0,
+          70616259.0,
+          71056029.0,
+          71999762.0,
+          72053134.0,
+          74363807.0,
+          73675316.0,
+          72242037.0,
+          74269764.0,
+          73694415.0,
+          74429782.0,
+          73428804.0,
+          73676849.0,
+          72790578.0,
+          74353370.0,
+          72768935.0,
+          73602491.0,
+          73423004.0,
+          73152439.0,
+          74378123.0,
+          75107608.0,
+          74541674.0
+        ]
+      },
+      "tukey.json": [
+        48639.47516930022,
+        51192.568002257336,
+        58000.81555680964,
+        60553.90838976675
+      ]
+    },
+    "variant": "candidate",
+    "pair": 2
+  },
+  {
+    "tag": "pair2-1-baseline",
+    "benchmark": "cli_vmdk/plan_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/baseline-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/plan_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "plan_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/plan_mixed",
+        "directory_name": "cli_vmdk/plan_mixed",
+        "title": "cli_vmdk/plan_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 73706.46510110892,
+            "upper_bound": 80237.81940720808
+          },
+          "point_estimate": 77025.91477495107,
+          "standard_error": 1679.6386814179411
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 68550.30870841487,
+            "upper_bound": 84905.66731898239
+          },
+          "point_estimate": 81906.43395303327,
+          "standard_error": 4270.244424419857
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2512.3338375889275,
+            "upper_bound": 14378.332881719864
+          },
+          "point_estimate": 6895.654441276296,
+          "standard_error": 3696.0602598549135
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7933.056125444205,
+            "upper_bound": 10177.365405000804
+          },
+          "point_estimate": 9382.631286764537,
+          "standard_error": 569.5540156772652
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0,
+          1022.0
+        ],
+        "times": [
+          68679397.0,
+          66592643.0,
+          67888768.0,
+          67370445.0,
+          65359873.0,
+          65370072.0,
+          64679765.0,
+          66306764.0,
+          65477312.0,
+          69416154.0,
+          70700677.0,
+          75230350.0,
+          79017040.0,
+          86734858.0,
+          82548476.0,
+          84868275.0,
+          86812326.0,
+          88523797.0,
+          87615068.0,
+          87193014.0,
+          86988132.0,
+          87719738.0,
+          87120963.0,
+          88207421.0,
+          85018088.0,
+          91143885.0,
+          88848063.0,
+          85582734.0,
+          85267591.0,
+          79332858.0
+        ]
+      },
+      "tukey.json": [
+        10843.870107632058,
+        38732.31922700585,
+        113101.5168786693,
+        140989.96599804307
+      ]
+    },
+    "variant": "baseline",
+    "pair": 2
+  },
+  {
+    "tag": "pair2-1-candidate",
+    "benchmark": "cli_vmdk/plan_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/plan_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "plan_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/plan_mixed",
+        "directory_name": "cli_vmdk/plan_mixed",
+        "title": "cli_vmdk/plan_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 65634.58053971875,
+            "upper_bound": 68205.12454199925
+          },
+          "point_estimate": 66816.11968833143,
+          "standard_error": 659.9318266804632
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 64970.45553021665,
+            "upper_bound": 66123.4007981756
+          },
+          "point_estimate": 65393.44982896237,
+          "standard_error": 358.77417398458704
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 825.9172249037427,
+            "upper_bound": 3131.5977042662003
+          },
+          "point_estimate": 1572.9903918001794,
+          "standard_error": 607.1842308797818
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1993.8185919325708,
+            "upper_bound": 4991.313435834128
+          },
+          "point_estimate": 3691.5951314707086,
+          "standard_error": 778.4873162140512
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0,
+          877.0
+        ],
+        "times": [
+          69675478.0,
+          65659699.0,
+          63807100.0,
+          62809773.0,
+          61837113.0,
+          60144278.0,
+          60053082.0,
+          60147428.0,
+          57548049.0,
+          58090072.0,
+          56913266.0,
+          57857546.0,
+          57289407.0,
+          56042208.0,
+          57197050.0,
+          56053913.0,
+          57410704.0,
+          57044913.0,
+          56200552.0,
+          56293743.0,
+          56545431.0,
+          57890373.0,
+          57229151.0,
+          56817202.0,
+          58480138.0,
+          56597511.0,
+          57627129.0,
+          55554390.0,
+          56056939.0,
+          57058471.0
+        ]
+      },
+      "tukey.json": [
+        54310.37286202962,
+        59454.17944697832,
+        73170.99700684153,
+        78314.80359179023
+      ]
+    },
+    "variant": "candidate",
+    "pair": 2
+  },
+  {
+    "tag": "pair2-2-baseline",
+    "benchmark": "cli_vmdk/copy_mixed_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/baseline-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/copy_mixed_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "copy_mixed_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/copy_mixed_verify",
+        "directory_name": "cli_vmdk/copy_mixed_verify",
+        "title": "cli_vmdk/copy_mixed_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20790431.366666667,
+            "upper_bound": 21030490.936875
+          },
+          "point_estimate": 20905527.633333333,
+          "standard_error": 61234.47307103016
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20759389.25,
+            "upper_bound": 20995383.0
+          },
+          "point_estimate": 20909876.375,
+          "standard_error": 70869.96328687065
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 168496.0924379718,
+            "upper_bound": 373819.97748836875
+          },
+          "point_estimate": 271945.52952200174,
+          "standard_error": 51541.84131822538
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 211489.0357998461,
+            "upper_bound": 461414.63835766306
+          },
+          "point_estimate": 342461.7112380124,
+          "standard_error": 65843.19439616808
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          88122746.0,
+          84404579.0,
+          84727223.0,
+          84362612.0,
+          84441575.0,
+          81901236.0,
+          82463423.0,
+          83112283.0,
+          83838831.0,
+          83665429.0,
+          83096199.0,
+          82838068.0,
+          82491864.0,
+          85280634.0,
+          84003117.0,
+          82978915.0,
+          82895214.0,
+          84552865.0,
+          83959947.0,
+          83791082.0,
+          85829199.0,
+          83192249.0,
+          80631515.0,
+          82006146.0,
+          82201670.0,
+          82928963.0,
+          83834438.0,
+          83365468.0,
+          83613582.0,
+          84132244.0
+        ]
+      },
+      "tukey.json": [
+        19674886.25,
+        20200399.53125,
+        21601768.28125,
+        22127281.5625
+      ]
+    },
+    "variant": "baseline",
+    "pair": 2
+  },
+  {
+    "tag": "pair2-2-candidate",
+    "benchmark": "cli_vmdk/copy_mixed_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/copy_mixed_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "copy_mixed_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/copy_mixed_verify",
+        "directory_name": "cli_vmdk/copy_mixed_verify",
+        "title": "cli_vmdk/copy_mixed_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20536969.94708333,
+            "upper_bound": 20894739.241666667
+          },
+          "point_estimate": 20702161.891666666,
+          "standard_error": 91744.79854646094
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20444763.25,
+            "upper_bound": 20697254.375
+          },
+          "point_estimate": 20529281.625,
+          "standard_error": 70068.36348865593
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 173538.69756907225,
+            "upper_bound": 474256.48880526423
+          },
+          "point_estimate": 300979.28480654955,
+          "standard_error": 74758.05736041273
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 285264.96539402014,
+            "upper_bound": 661613.4569714642
+          },
+          "point_estimate": 509976.6211129011,
+          "standard_error": 95628.10934338403
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          81500015.0,
+          81483610.0,
+          83046496.0,
+          81815652.0,
+          81544478.0,
+          81903540.0,
+          85114420.0,
+          86010774.0,
+          88062563.0,
+          82527307.0,
+          86191774.0,
+          82080305.0,
+          82153948.0,
+          83367518.0,
+          82043664.0,
+          82416887.0,
+          82606843.0,
+          82738093.0,
+          81742454.0,
+          88791477.0,
+          81145460.0,
+          83018373.0,
+          81999748.0,
+          83130507.0,
+          80994490.0,
+          82839942.0,
+          81006967.0,
+          81103466.0,
+          80767399.0,
+          81111257.0
+        ]
+      },
+      "tukey.json": [
+        19231531.8125,
+        19804657.25,
+        21332991.75,
+        21906117.1875
+      ]
+    },
+    "variant": "candidate",
+    "pair": 2
+  },
+  {
+    "tag": "pair2-3-baseline",
+    "benchmark": "cli_transfer/verify_only",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/baseline-target/release/deps/transfer-4f18603c136fd44c",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/verify_only$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "verify_only",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/verify_only",
+        "directory_name": "cli_transfer/verify_only",
+        "title": "cli_transfer/verify_only"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3729048.506944444,
+            "upper_bound": 3831528.0259259255
+          },
+          "point_estimate": 3778405.1555555547,
+          "standard_error": 26268.341548628316
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3677336.0,
+            "upper_bound": 3821570.5
+          },
+          "point_estimate": 3741191.222222222,
+          "standard_error": 33387.00068090229
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 88999.15855328226,
+            "upper_bound": 206996.73709174013
+          },
+          "point_estimate": 137452.91432638967,
+          "standard_error": 30532.891278511066
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 105071.43915351159,
+            "upper_bound": 179048.40615063647
+          },
+          "point_estimate": 146645.9571323127,
+          "standard_error": 18992.195019459337
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0
+        ],
+        "times": [
+          33689415.0,
+          35585181.0,
+          33621408.0,
+          36584439.0,
+          35259010.0,
+          33061329.0,
+          33651164.0,
+          34280928.0,
+          32780448.0,
+          32264886.0,
+          37379804.0,
+          34079540.0,
+          33652027.0,
+          32487992.0,
+          32769481.0,
+          34419870.0,
+          33119980.0,
+          32797724.0,
+          34718860.0,
+          32444852.0,
+          36307675.0,
+          33564040.0,
+          34466517.0,
+          33848287.0,
+          33072068.0,
+          35317967.0,
+          32947097.0,
+          34368399.0,
+          32478456.0,
+          35150548.0
+        ]
+      },
+      "tukey.json": [
+        3103921.916666667,
+        3383941.791666667,
+        4130661.458333333,
+        4410681.333333332
+      ]
+    },
+    "variant": "baseline",
+    "pair": 2
+  },
+  {
+    "tag": "pair2-3-candidate",
+    "benchmark": "cli_transfer/verify_only",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/deps/transfer-4f18603c136fd44c",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/verify_only$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "verify_only",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/verify_only",
+        "directory_name": "cli_transfer/verify_only",
+        "title": "cli_transfer/verify_only"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3814668.0458333334,
+            "upper_bound": 3898946.3666666667
+          },
+          "point_estimate": 3856434.9,
+          "standard_error": 21539.19523689051
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3821567.5,
+            "upper_bound": 3892305.611111111
+          },
+          "point_estimate": 3853795.5555555555,
+          "standard_error": 20796.66503325136
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 51028.12589406967,
+            "upper_bound": 173317.3371563356
+          },
+          "point_estimate": 101776.6993264358,
+          "standard_error": 32422.912839302193
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 86441.29916346597,
+            "upper_bound": 147421.17795370196
+          },
+          "point_estimate": 120146.01107595667,
+          "standard_error": 15674.447128474621
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0
+        ],
+        "times": [
+          34414209.0,
+          37182139.0,
+          33399578.0,
+          35748585.0,
+          34166471.0,
+          35532584.0,
+          34723786.0,
+          37103829.0,
+          35917956.0,
+          33298624.0,
+          35215305.0,
+          33376961.0,
+          32662817.0,
+          34374006.0,
+          35388669.0,
+          32974618.0,
+          34884396.0,
+          35845820.0,
+          34199559.0,
+          35669028.0,
+          34879294.0,
+          34765693.0,
+          34511535.0,
+          33683662.0,
+          34476233.0,
+          33741603.0,
+          35177105.0,
+          34414746.0,
+          34864078.0,
+          34644534.0
+        ]
+      },
+      "tukey.json": [
+        3406998.666666665,
+        3602096.166666666,
+        4122356.166666668,
+        4317453.666666668
+      ]
+    },
+    "variant": "candidate",
+    "pair": 2
+  },
+  {
+    "tag": "pair2-4-baseline",
+    "benchmark": "cli_sparse/copy_split_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/baseline-target/release/deps/sparse-dbd3f170780e6f92",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_sparse/copy_split_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_sparse",
+        "function_id": "copy_split_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_sparse/copy_split_verify",
+        "directory_name": "cli_sparse/copy_split_verify",
+        "title": "cli_sparse/copy_split_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 21305510.388888884,
+            "upper_bound": 22564979.04444444
+          },
+          "point_estimate": 21772341.622222226,
+          "standard_error": 358471.59421422763
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 21273069.833333332,
+            "upper_bound": 21513977.833333332
+          },
+          "point_estimate": 21369979.0,
+          "standard_error": 73366.92895154755
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 183315.8266454972,
+            "upper_bound": 530087.8061890583
+          },
+          "point_estimate": 328273.0854719868,
+          "standard_error": 91505.33802867518
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 293635.2796151906,
+            "upper_bound": 3336868.952689715
+          },
+          "point_estimate": 2011577.0117792108,
+          "standard_error": 1044723.9608420052
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0
+        ],
+        "times": [
+          63702627.0,
+          66697306.0,
+          63363525.0,
+          62976849.0,
+          64467583.0,
+          63287535.0,
+          65051034.0,
+          96621523.0,
+          67854287.0,
+          63887777.0,
+          63791662.0,
+          64049276.0,
+          62353334.0,
+          64682216.0,
+          62820530.0,
+          63846757.0,
+          64138807.0,
+          63862012.0,
+          65205622.0,
+          64225319.0,
+          66200172.0,
+          64081067.0,
+          63285209.0,
+          64604734.0,
+          64479133.0,
+          64461438.0,
+          62375885.0,
+          63015054.0,
+          65430445.0,
+          64692028.0
+        ]
+      },
+      "tukey.json": [
+        19908159.000000007,
+        20528796.250000004,
+        22183828.91666666,
+        22804466.166666657
+      ]
+    },
+    "variant": "baseline",
+    "pair": 2
+  },
+  {
+    "tag": "pair2-4-candidate",
+    "benchmark": "cli_sparse/copy_split_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/deps/sparse-dbd3f170780e6f92",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_sparse/copy_split_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_sparse",
+        "function_id": "copy_split_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_sparse/copy_split_verify",
+        "directory_name": "cli_sparse/copy_split_verify",
+        "title": "cli_sparse/copy_split_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 22138586.888888888,
+            "upper_bound": 23619039.752500005
+          },
+          "point_estimate": 22780817.90000001,
+          "standard_error": 381943.11568491184
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 21677232.166666664,
+            "upper_bound": 23067374.833333332
+          },
+          "point_estimate": 22042299.666666664,
+          "standard_error": 341581.3996277902
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 502537.8863781681,
+            "upper_bound": 1933598.484271763
+          },
+          "point_estimate": 1027250.0321626626,
+          "standard_error": 399628.79081072414
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1033148.6087094136,
+            "upper_bound": 3153673.1994470353
+          },
+          "point_estimate": 2128990.8706471436,
+          "standard_error": 640472.395827884
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0
+        ],
+        "times": [
+          67731850.0,
+          66870543.0,
+          73750378.0,
+          65447676.0,
+          64394065.0,
+          63936654.0,
+          71810790.0,
+          66294372.0,
+          71545548.0,
+          72426127.0,
+          70672399.0,
+          71923235.0,
+          71962109.0,
+          77336770.0,
+          95497427.0,
+          65287955.0,
+          72418142.0,
+          65244729.0,
+          63297078.0,
+          66660931.0,
+          64855698.0,
+          63124356.0,
+          64564601.0,
+          64159920.0,
+          66281103.0,
+          63538044.0,
+          65207695.0,
+          65972695.0,
+          64260629.0,
+          63800092.0
+        ]
+      },
+      "tukey.json": [
+        14171119.166666657,
+        17825009.41666666,
+        27568716.750000004,
+        31222607.000000007
+      ]
+    },
+    "variant": "candidate",
+    "pair": 2
+  },
+  {
+    "tag": "pair3-0-candidate",
+    "benchmark": "cli_vmdk/inspect_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/inspect_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "inspect_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/inspect_mixed",
+        "directory_name": "cli_vmdk/inspect_mixed",
+        "title": "cli_vmdk/inspect_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 52883.06266897643,
+            "upper_bound": 56040.055361050334
+          },
+          "point_estimate": 54327.71045465596,
+          "standard_error": 807.4973375473271
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 52610.55361050328,
+            "upper_bound": 55377.69620714807
+          },
+          "point_estimate": 53616.59372720642,
+          "standard_error": 902.3145705730527
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1551.75823393875,
+            "upper_bound": 4132.407866897677
+          },
+          "point_estimate": 2894.629918850745,
+          "standard_error": 649.8219980281384
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2201.0428982948974,
+            "upper_bound": 6245.735037742382
+          },
+          "point_estimate": 4504.221541419828,
+          "standard_error": 1063.475840858568
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0,
+          1371.0
+        ],
+        "times": [
+          65467399.0,
+          67137312.0,
+          68669394.0,
+          67008172.0,
+          69356242.0,
+          70718133.0,
+          72247024.0,
+          72032485.0,
+          71899298.0,
+          72225653.0,
+          74831845.0,
+          75676926.0,
+          77607955.0,
+          77399403.0,
+          74492443.0,
+          72438280.0,
+          71567302.0,
+          72401011.0,
+          75251213.0,
+          72524257.0,
+          76201467.0,
+          76312091.0,
+          76864596.0,
+          71832940.0,
+          76168717.0,
+          74640391.0,
+          76640872.0,
+          91353201.0,
+          95810773.0,
+          77721936.0
+        ]
+      },
+      "tukey.json": [
+        42702.27060539753,
+        47554.464806710435,
+        60493.64934354486,
+        65345.843544857766
+      ]
+    },
+    "variant": "candidate",
+    "pair": 3
+  },
+  {
+    "tag": "pair3-0-baseline",
+    "benchmark": "cli_vmdk/inspect_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/baseline-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/inspect_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "inspect_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/inspect_mixed",
+        "directory_name": "cli_vmdk/inspect_mixed",
+        "title": "cli_vmdk/inspect_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 51778.571784734915,
+            "upper_bound": 52742.98177864106
+          },
+          "point_estimate": 52251.17894576477,
+          "standard_error": 246.49789280342193
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 51461.4634369287,
+            "upper_bound": 52894.73080438757
+          },
+          "point_estimate": 51882.11517367459,
+          "standard_error": 489.8432390677161
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 558.2490328678941,
+            "upper_bound": 2021.4473766852532
+          },
+          "point_estimate": 1266.101076425324,
+          "standard_error": 388.1058950612806
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1045.798046491325,
+            "upper_bound": 1656.0002797702018
+          },
+          "point_estimate": 1374.5165242964654,
+          "standard_error": 156.128531835631
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0,
+          1094.0
+        ],
+        "times": [
+          60891502.0,
+          59451729.0,
+          58315225.0,
+          58388016.0,
+          58048996.0,
+          57390854.0,
+          58760961.0,
+          56990819.0,
+          58658945.0,
+          58869470.0,
+          57684675.0,
+          57621879.0,
+          56340285.0,
+          56292907.0,
+          59011490.0,
+          56027278.0,
+          58752412.0,
+          55060334.0,
+          56304775.0,
+          56099717.0,
+          57516447.0,
+          56035670.0,
+          56357455.0,
+          54755089.0,
+          55813319.0,
+          56527249.0,
+          54795363.0,
+          55969513.0,
+          55816181.0,
+          56335138.0
+        ]
+      },
+      "tukey.json": [
+        44878.67664533822,
+        48057.10877513712,
+        56532.92778793418,
+        59711.359917733076
+      ]
+    },
+    "variant": "baseline",
+    "pair": 3
+  },
+  {
+    "tag": "pair3-1-candidate",
+    "benchmark": "cli_vmdk/plan_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/plan_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "plan_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/plan_mixed",
+        "directory_name": "cli_vmdk/plan_mixed",
+        "title": "cli_vmdk/plan_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 63230.95389676114,
+            "upper_bound": 63858.61166244939
+          },
+          "point_estimate": 63542.59865047234,
+          "standard_error": 159.8970517708839
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 63186.38815789473,
+            "upper_bound": 63715.33147773279
+          },
+          "point_estimate": 63449.29807692308,
+          "standard_error": 137.68751329686694
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 369.48477188162764,
+            "upper_bound": 1092.6686775648107
+          },
+          "point_estimate": 794.982710987451,
+          "standard_error": 195.76685175985838
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 616.3653584176095,
+            "upper_bound": 1121.6090243329847
+          },
+          "point_estimate": 896.5157545688674,
+          "standard_error": 128.76093075996536
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0,
+          988.0
+        ],
+        "times": [
+          62719048.0,
+          64696658.0,
+          63258640.0,
+          62438309.0,
+          62738601.0,
+          62417994.0,
+          63011959.0,
+          61978329.0,
+          63711527.0,
+          62199092.0,
+          63355954.0,
+          64635354.0,
+          61902301.0,
+          62826803.0,
+          61472117.0,
+          62656765.0,
+          61993158.0,
+          60621122.0,
+          62303468.0,
+          61943987.0,
+          62592999.0,
+          62611946.0,
+          62889536.0,
+          63672581.0,
+          62862544.0,
+          63368568.0,
+          63384866.0,
+          62243542.0,
+          64297990.0,
+          62596866.0
+        ]
+      },
+      "tukey.json": [
+        59756.29301619434,
+        61385.49645748988,
+        65730.03896761133,
+        67359.24240890687
+      ]
+    },
+    "variant": "candidate",
+    "pair": 3
+  },
+  {
+    "tag": "pair3-1-baseline",
+    "benchmark": "cli_vmdk/plan_mixed",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/baseline-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/plan_mixed$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "plan_mixed",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/plan_mixed",
+        "directory_name": "cli_vmdk/plan_mixed",
+        "title": "cli_vmdk/plan_mixed"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 63950.74537124803,
+            "upper_bound": 67613.34858925751
+          },
+          "point_estimate": 65571.77835703002,
+          "standard_error": 948.3455003887993
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 63474.6037914692,
+            "upper_bound": 64982.21042654029
+          },
+          "point_estimate": 64104.24549763033,
+          "standard_error": 377.4107973823956
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1056.5077677835227,
+            "upper_bound": 3189.5889940843817
+          },
+          "point_estimate": 1785.5464420442784,
+          "standard_error": 537.9517323792153
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2002.5734899503934,
+            "upper_bound": 7700.6928027220765
+          },
+          "point_estimate": 5283.334937340714,
+          "standard_error": 1532.1521121204933
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0,
+          1055.0
+        ],
+        "times": [
+          65904010.0,
+          68443295.0,
+          65924729.0,
+          68819437.0,
+          68110193.0,
+          67218304.0,
+          67608919.0,
+          67614219.0,
+          66334159.0,
+          68669169.0,
+          71375069.0,
+          67645739.0,
+          68278610.0,
+          67315841.0,
+          66021041.0,
+          64714473.0,
+          66384653.0,
+          64241447.0,
+          67778802.0,
+          66789179.0,
+          65033671.0,
+          67142235.0,
+          65344623.0,
+          70169781.0,
+          68704467.0,
+          69565026.0,
+          74764046.0,
+          75674803.0,
+          82284357.0,
+          91472488.0
+        ]
+      },
+      "tukey.json": [
+        55938.43270142183,
+        59413.189099526084,
+        68679.20616113744,
+        72153.96255924169
+      ]
+    },
+    "variant": "baseline",
+    "pair": 3
+  },
+  {
+    "tag": "pair3-2-candidate",
+    "benchmark": "cli_vmdk/copy_mixed_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/copy_mixed_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "copy_mixed_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/copy_mixed_verify",
+        "directory_name": "cli_vmdk/copy_mixed_verify",
+        "title": "cli_vmdk/copy_mixed_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 21121408.691666666,
+            "upper_bound": 23422083.783125002
+          },
+          "point_estimate": 22145101.333333332,
+          "standard_error": 593150.116041625
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20676930.625,
+            "upper_bound": 21284410.875
+          },
+          "point_estimate": 20956580.0,
+          "standard_error": 167772.33987321155
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 420937.0046518743,
+            "upper_bound": 1258922.154224664
+          },
+          "point_estimate": 818213.3816488087,
+          "standard_error": 214262.27774455186
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1479375.4876628579,
+            "upper_bound": 4350363.713300368
+          },
+          "point_estimate": 3292241.3170576,
+          "standard_error": 727162.9157532188
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          88278279.0,
+          85365714.0,
+          84781748.0,
+          90964727.0,
+          85902762.0,
+          83844784.0,
+          128390799.0,
+          121242697.0,
+          120391634.0,
+          82788866.0,
+          81332369.0,
+          83218156.0,
+          81818482.0,
+          81388686.0,
+          81487743.0,
+          80906555.0,
+          81485228.0,
+          81092485.0,
+          80798320.0,
+          112641915.0,
+          82674279.0,
+          84634677.0,
+          82741166.0,
+          83740015.0,
+          85089077.0,
+          86508434.0,
+          83807856.0,
+          83908893.0,
+          85186210.0,
+          80999604.0
+        ]
+      },
+      "tukey.json": [
+        17244052.75,
+        18818329.84375,
+        23016402.09375,
+        24590679.1875
+      ]
+    },
+    "variant": "candidate",
+    "pair": 3
+  },
+  {
+    "tag": "pair3-2-baseline",
+    "benchmark": "cli_vmdk/copy_mixed_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/baseline-target/release/deps/vmdk-90b4c2d227696f18",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_vmdk/copy_mixed_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_vmdk",
+        "function_id": "copy_mixed_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_vmdk/copy_mixed_verify",
+        "directory_name": "cli_vmdk/copy_mixed_verify",
+        "title": "cli_vmdk/copy_mixed_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20503802.348958336,
+            "upper_bound": 20728583.558333334
+          },
+          "point_estimate": 20610370.166666668,
+          "standard_error": 57187.603973036035
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20471929.125,
+            "upper_bound": 20682961.125
+          },
+          "point_estimate": 20610213.25,
+          "standard_error": 52994.19076189575
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 105907.30521976948,
+            "upper_bound": 373026.7865024507
+          },
+          "point_estimate": 218960.74231266975,
+          "standard_error": 68355.71550878628
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 195776.1128515825,
+            "upper_bound": 433232.01379086025
+          },
+          "point_estimate": 317491.3341469918,
+          "standard_error": 64078.28183701074
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          82720162.0,
+          80902217.0,
+          81849891.0,
+          82391066.0,
+          83042630.0,
+          82285585.0,
+          82525739.0,
+          86822546.0,
+          82815912.0,
+          82932692.0,
+          83768653.0,
+          83447532.0,
+          82434443.0,
+          81622363.0,
+          81925114.0,
+          82743527.0,
+          84098406.0,
+          82073238.0,
+          82616899.0,
+          82447263.0,
+          82826683.0,
+          81850319.0,
+          80823010.0,
+          81441975.0,
+          80777087.0,
+          81518202.0,
+          84278329.0,
+          80216344.0,
+          82685059.0,
+          81361534.0
+        ]
+      },
+      "tukey.json": [
+        19561252.3125,
+        19990531.78125,
+        21135277.03125,
+        21564556.5
+      ]
+    },
+    "variant": "baseline",
+    "pair": 3
+  },
+  {
+    "tag": "pair3-3-candidate",
+    "benchmark": "cli_transfer/verify_only",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/deps/transfer-4f18603c136fd44c",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/verify_only$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "verify_only",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/verify_only",
+        "directory_name": "cli_transfer/verify_only",
+        "title": "cli_transfer/verify_only"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3800728.8148148153,
+            "upper_bound": 3929301.7111111116
+          },
+          "point_estimate": 3862003.066666667,
+          "standard_error": 32953.7867670841
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3792690.5555555555,
+            "upper_bound": 3894488.222222222
+          },
+          "point_estimate": 3828728.777777778,
+          "standard_error": 29065.51945192838
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 67467.27676888299,
+            "upper_bound": 235170.2549248935
+          },
+          "point_estimate": 160772.97641237627,
+          "standard_error": 41988.581787624724
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 124276.92629416814,
+            "upper_bound": 231786.40595434365
+          },
+          "point_estimate": 184975.62381294742,
+          "standard_error": 27541.58493856084
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0
+        ],
+        "times": [
+          33512091.0,
+          32237825.0,
+          33811034.0,
+          32747229.0,
+          33398821.0,
+          32457229.0,
+          32263308.0,
+          37925232.0,
+          39090768.0,
+          35774012.0,
+          34678810.0,
+          38405480.0,
+          35932528.0,
+          34231885.0,
+          35942089.0,
+          35621953.0,
+          34520915.0,
+          35036398.0,
+          34882181.0,
+          36358450.0,
+          34063072.0,
+          35623355.0,
+          34310319.0,
+          34528220.0,
+          34074307.0,
+          34194123.0,
+          33453109.0,
+          34396203.0,
+          34205492.0,
+          35064390.0
+        ]
+      },
+      "tukey.json": [
+        3180795.611111111,
+        3472289.111111111,
+        4249605.111111111,
+        4541098.611111111
+      ]
+    },
+    "variant": "candidate",
+    "pair": 3
+  },
+  {
+    "tag": "pair3-3-baseline",
+    "benchmark": "cli_transfer/verify_only",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/baseline-target/release/deps/transfer-4f18603c136fd44c",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_transfer/verify_only$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "verify_only",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/verify_only",
+        "directory_name": "cli_transfer/verify_only",
+        "title": "cli_transfer/verify_only"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3782074.1663888884,
+            "upper_bound": 3865278.0750925923
+          },
+          "point_estimate": 3821939.625925925,
+          "standard_error": 21354.572792059
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3761815.388888889,
+            "upper_bound": 3828800.4444444445
+          },
+          "point_estimate": 3804596.4444444445,
+          "standard_error": 21294.737321886296
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 53489.07711704553,
+            "upper_bound": 173191.64562523412
+          },
+          "point_estimate": 105495.22479375196,
+          "standard_error": 31553.336468905232
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 85907.26810878773,
+            "upper_bound": 141705.68578509308
+          },
+          "point_estimate": 119009.21785581764,
+          "standard_error": 14256.030510514323
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0,
+          9.0
+        ],
+        "times": [
+          34819931.0,
+          35493658.0,
+          34240000.0,
+          35663379.0,
+          34304818.0,
+          33884824.0,
+          33089813.0,
+          34242736.0,
+          35414804.0,
+          36054675.0,
+          33680615.0,
+          33386292.0,
+          36743358.0,
+          33736790.0,
+          34368314.0,
+          33862618.0,
+          36636210.0,
+          34550094.0,
+          34265784.0,
+          34943605.0,
+          33850059.0,
+          33277123.0,
+          33903977.0,
+          33440635.0,
+          33254362.0,
+          33187780.0,
+          34288623.0,
+          33004736.0,
+          36337835.0,
+          33996251.0
+        ]
+      },
+      "tukey.json": [
+        3337841.722222221,
+        3540846.3472222215,
+        4082192.0138888895,
+        4285196.63888889
+      ]
+    },
+    "variant": "baseline",
+    "pair": 3
+  },
+  {
+    "tag": "pair3-4-candidate",
+    "benchmark": "cli_sparse/copy_split_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/deps/sparse-dbd3f170780e6f92",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_sparse/copy_split_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_sparse",
+        "function_id": "copy_split_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_sparse/copy_split_verify",
+        "directory_name": "cli_sparse/copy_split_verify",
+        "title": "cli_sparse/copy_split_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20386574.538958333,
+            "upper_bound": 20584319.697291665
+          },
+          "point_estimate": 20478014.808333334,
+          "standard_error": 50210.90074404233
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20376780.875,
+            "upper_bound": 20555330.0
+          },
+          "point_estimate": 20412710.875,
+          "standard_error": 54321.823105535404
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 123502.24573239684,
+            "upper_bound": 272048.0142451823
+          },
+          "point_estimate": 211447.11097106338,
+          "standard_error": 37624.45586296929
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 147677.91889425035,
+            "upper_bound": 380336.18669110205
+          },
+          "point_estimate": 280060.2784566307,
+          "standard_error": 60969.93929485917
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          82165105.0,
+          82558029.0,
+          82472334.0,
+          81507636.0,
+          81645891.0,
+          82084666.0,
+          81671679.0,
+          82257878.0,
+          81290834.0,
+          81655796.0,
+          81618201.0,
+          81200415.0,
+          81565769.0,
+          85078040.0,
+          82243385.0,
+          81115137.0,
+          81307153.0,
+          85491620.0,
+          82639331.0,
+          82218939.0,
+          82664889.0,
+          81619009.0,
+          80489507.0,
+          80783922.0,
+          80268423.0,
+          80932097.0,
+          82341855.0,
+          82223701.0,
+          81506611.0,
+          80743925.0
+        ]
+      },
+      "tukey.json": [
+        19604222.6875,
+        19963975.5625,
+        20923316.5625,
+        21283069.4375
+      ]
+    },
+    "variant": "candidate",
+    "pair": 3
+  },
+  {
+    "tag": "pair3-4-baseline",
+    "benchmark": "cli_sparse/copy_split_verify",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r58-onvhklrc/baseline-target/release/deps/sparse-dbd3f170780e6f92",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "30",
+      "--warm-up-time",
+      "0.3",
+      "--measurement-time",
+      "2",
+      "cli_sparse/copy_split_verify$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_sparse",
+        "function_id": "copy_split_verify",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_sparse/copy_split_verify",
+        "directory_name": "cli_sparse/copy_split_verify",
+        "title": "cli_sparse/copy_split_verify"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20462435.175,
+            "upper_bound": 20715468.688333333
+          },
+          "point_estimate": 20572710.591666665,
+          "standard_error": 64942.156470879374
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20401332.375,
+            "upper_bound": 20597946.0
+          },
+          "point_estimate": 20514815.75,
+          "standard_error": 48447.22825876364
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 135238.32179903984,
+            "upper_bound": 362182.12366998196
+          },
+          "point_estimate": 255615.24678692222,
+          "standard_error": 60591.2233651598
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 173742.93123356954,
+            "upper_bound": 539683.8602118898
+          },
+          "point_estimate": 359390.8499639588,
+          "standard_error": 110527.08468265244
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ],
+        "times": [
+          81106720.0,
+          81384233.0,
+          81181391.0,
+          83035666.0,
+          82391784.0,
+          82041445.0,
+          81072355.0,
+          81565084.0,
+          81913752.0,
+          82340481.0,
+          82750949.0,
+          82006312.0,
+          80931382.0,
+          83879377.0,
+          83274525.0,
+          82283225.0,
+          83221378.0,
+          83809670.0,
+          82746858.0,
+          81054828.0,
+          81979018.0,
+          81645575.0,
+          88477752.0,
+          82722356.0,
+          82311517.0,
+          81115599.0,
+          80983902.0,
+          82138263.0,
+          81282793.0,
+          82077081.0
+        ]
+      },
+      "tukey.json": [
+        19252603.625,
+        19789820.9375,
+        21222400.4375,
+        21759617.75
+      ]
+    },
+    "variant": "baseline",
+    "pair": 3
+  }
+]

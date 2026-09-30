@@ -1,14 +1,16 @@
 # rvvdk Benchmarks
 
-Latest step: [R5.7 sparse parent-read benchmarks and plots](benchmark-results/2026-09-30-r57/README.md).
-Twenty-four paired controls, 18 triggered longer repeats and 30 new read/query runs
-retain source/binary/harness identities. Synthetic 1 MiB inherited reads at depths
-1/4/16 take 52.005 / 54.608 / 58.974 µs; full queries take 0.292 / 3.713 / 14.947 µs.
-These memory-device costs exclude metadata acquisition and are not storage throughput.
-Every adverse pair and repeat remains visible. The original QEMU partial-write
-fixture mismatch is preserved separately from qualified logical-byte cases.
+Latest step: [R5.8 confined CLI parent-chain benchmarks and plots](benchmark-results/2026-09-30-r58/README.md).
+Thirty matched controls, 6 longer repeat runs and fifteen initial parent CLI
+runs retain source/binary/harness identities. Main control changes are
++6.10%, -1.02%, +1.24%, +2.34%, -0.50%; all adverse pairs and repeats remain visible.
+New timings include acquisition, path confinement, observations and command work
+on 1 MiB three-layer chains. Warm local costs are not physical storage throughput.
+All four CLI commands pass independent QEMU/RAW reference qualification; the prior
+producer partial-write discrepancy remains unqualified and preserved.
 Prior [R5.5 scaling](benchmark-results/2026-09-30-r55/README.md),
-[R5.6 acquisition](benchmark-results/2026-09-30-r56/README.md), PERF.0 and R4.4
+[R5.6 acquisition](benchmark-results/2026-09-30-r56/README.md),
+[R5.7 parent reads](benchmark-results/2026-09-30-r57/README.md), PERF.0 and R4.4
 qualification and earlier adverse timing investigations remain recorded.
 
 ## Performance policy — adopted 2026-09-28

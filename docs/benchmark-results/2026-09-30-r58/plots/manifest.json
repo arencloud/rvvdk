@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R5.8 \u00b7 Confined CLI sparse parents",
+    "candidate": "patch 1807f042",
+    "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm Btrfs fixtures",
+    "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "candidate_only": {
+      "title": "Parent CLI \u00b7 first end-to-end baselines",
+      "note": "1 MiB \u00b7 3 layers \u00b7 admission + command timed \u00b7 not physical storage throughput",
+      "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+    },
+    "workloads": {
+      "cli_vmdk/inspect_mixed": {
+        "label": "FLAT/ZERO inspect \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "cli_vmdk/plan_mixed": {
+        "label": "FLAT/ZERO plan \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "cli_vmdk/copy_mixed_verify": {
+        "label": "FLAT/ZERO copy + verify \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/verify_only": {
+        "label": "RAW verify \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "cli_sparse/copy_split_verify": {
+        "label": "Base sparse copy + verify \u00b7 2 MiB",
+        "phase": "copy"
+      },
+      "cli_parents/inspect_mono": {
+        "label": "Inspect \u00b7 monolithic chain",
+        "phase": "copy"
+      },
+      "cli_parents/plan_split": {
+        "label": "Plan \u00b7 split chain",
+        "phase": "copy"
+      },
+      "cli_parents/copy_mono_verify": {
+        "label": "Copy + verify \u00b7 monolithic chain",
+        "phase": "copy"
+      },
+      "cli_parents/copy_split_verify": {
+        "label": "Copy + verify \u00b7 split chain",
+        "phase": "copy"
+      },
+      "cli_parents/verify_split": {
+        "label": "Verify \u00b7 split chain",
+        "phase": "copy"
+      }
+    },
+    "repeat_sampling": "3 adjacent pairs \u00b7 40 flat samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+  },
+  "input_sha256": {
+    "plot-config.json": "748adef3e4361729560a64e2f77d7c4958813bc63b9873638326d877a9fc1a02",
+    "environment.json": "434b492c7cca5f7ceba2777235d4c682c1ac99d65083772bb1ee430958a7ec9f",
+    "measurements.json": "0206005a2d101bb787b0db40a56c21ad4c04cc3b607db7723b3d4eec2620c075",
+    "summary.json": "cf16b5be6769e1e55cec7b27b0b5460a1defacc53e0cc363d691e822aef4504e",
+    "followup-measurements.json": "8809e527b8c472c781d447c5c8baa19b652aa1d445be63a47aa401ceeec26433",
+    "followup-summary.json": "2c536cfb6fc43a991703cc932fea12efc2cc88caa1fbb96e5fd55f0a11e0c8ba",
+    "candidate-only-measurements.json": "0bf89b6eb4d752d94acfbd331153f7969cb12d225278fe071333c248f866d807"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "30466db741825170408fb8c8dc7a9ac7192fd0d6cec40d02c045f28f91f60565",
+    "planning-latency.png": "bb6e7564cbf053121594a4218d787d2cc31efb61926af1f5b6609ce1b0b9fdcf",
+    "copy-latency.svg": "9b67ff39b8b22502aa60d19a6233b6ebb8531f0e0ac646e24f0a227d054f9cd6",
+    "copy-latency.png": "b0078cc9767f2b539db088e295cf3ab4392f567f95f05ec4dfac65e29bfc3e85",
+    "relative-change.svg": "e0c5e98923a387506d85846607efd212cfe1604bb5bf9c96754991b0c8b077e3",
+    "relative-change.png": "e202ebd3ace85dbc82ab9c6fd4ab50ae48754b7d3482f503d13c891a6dc1298f",
+    "sample-distributions.svg": "dab2cb5a82ee98d50b9ec1e9af8fb624e9edffa52056b19dc24cc906dfbb05d7",
+    "sample-distributions.png": "b88185a4faa6fcd5f7e655f3df8acf511cb9669f35331a110c351f9dd856f622",
+    "followup-change.svg": "592228da0f74b75b44b50f395a342d31a9a6a4d94edfe9fe8f99fb305f196e46",
+    "followup-change.png": "857d4f346f39fd88c6ba796c37cf8439c0d568439b4b6906b1157831153bb7db",
+    "candidate-only.svg": "c34031634f7948394102f0df0dccbbd06f363d3c1bcd1323d45211c843cf49b8",
+    "candidate-only.png": "0ab855a65203def1ccbfdd3d434938de6459496f269ddf1aca2cfa2dc1d1cf64",
+    "computed.json": "ba34935b4ae56bd99032aba2c11843d5b9674495f9c0591b108482ba8a44d348"
+  }
+}

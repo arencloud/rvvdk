@@ -22,6 +22,8 @@ fn source(command: Command) -> Command {
                 .value_parser(["raw", "vmdk"])
                 .help("Explicit input format; no format autodetection"),
         )
+        .arg(Arg::new("allow-parents").long("allow-parents").action(ArgAction::SetTrue)
+            .help("Opt in to hosted-sparse parent chains in the source directory; requires --format vmdk"))
         .arg(
             Arg::new("memory-budget")
                 .long("memory-budget")
@@ -98,7 +100,7 @@ pub(crate) fn command() -> Command {
     // Build only the selected command's options. The full list and summaries
     // remain available in root help, without cloning unrelated argument trees.
     Command::new("rvddk").version(env!("CARGO_PKG_VERSION"))
-        .about("Inspect, plan, copy, and verify local RAW or base FLAT/ZERO/hosted-sparse VMDK sources (RAW destinations)")
+        .about("Inspect, plan, copy, and verify local RAW or FLAT/ZERO/hosted-sparse VMDK sources (RAW destinations)")
         .subcommand_required(true).arg_required_else_help(true)
         .arg(Arg::new("json").long("json").global(true).action(ArgAction::SetTrue)
             .help("Emit schema-versioned JSON; errors go to stderr"))

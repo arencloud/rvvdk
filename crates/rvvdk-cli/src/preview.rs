@@ -88,7 +88,11 @@ pub(crate) struct Preview {
 }
 pub(crate) fn build(name: &str, args: &clap::ArgMatches) -> Result<Preview> {
     let source_path = args.get_one::<PathBuf>("source").expect("required source");
-    let opened = OpenedSource::open(source_path, args.get_one::<String>("format").unwrap())?;
+    let opened = OpenedSource::open(
+        source_path,
+        args.get_one::<String>("format").unwrap(),
+        args.get_flag("allow-parents"),
+    )?;
     let source = opened.logical();
     let endpoint = source.copy_endpoint()?;
     let (device, inode) = opened.identity();

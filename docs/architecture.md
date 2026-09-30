@@ -1288,3 +1288,16 @@ Copy preflight revalidates and rejects all descriptor/backing destination aliase
 including hidden ancestors. Quiescence remains the caller's responsibility.
 [Contract](vmdk-chain-disk.md); [ADR-0043](adr/0043-read-only-sparse-parent-fallback.md).
 CLI parent acquisition/lifecycle integration is R5.8.
+
+## Confined CLI parent-chain acquisition (R5.8)
+
+`--format vmdk --allow-parents` selects `SparseChainDisk` for all four public
+commands. A pinned source directory resolves basename-only parent hints; every
+layer's backing references use that same confined directory. The CLI retains
+identity/size/timestamp observations for every descriptor/backing and integrates
+whole-chain aliases with existing threaded copy, verification and publication.
+Default base-only acquisition is unchanged. Successful chain reports expose
+leaf-to-base identities/CIDs, aggregate loader counts and separate entry probes.
+See [ADR-0044](adr/0044-confined-cli-parent-chains.md), [contract](cli-vmdk-parents.md)
+and [qualification](benchmark-results/2026-09-30-r58/README.md). R5.9 will add
+coverage-guided fuzzing; live VMware access remains gated by V0 lab qualification.

@@ -1,0 +1,2282 @@
+{
+  "directory": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli",
+  "cli_sha256": "337a22a573b1c70be6e71e99d56353a80aa2cc6934185ecc6cc07f01081d44fd",
+  "qemu_sha256": "4362e911c13bb90e39b69479462cd4adb840749b582f4892ca114eb7e94dcf2e",
+  "qemu_io_sha256": "628a2c8566346bc9bc9fa9610d7245f3f18ef2a80f54caf2c3ad501b3576da11",
+  "generator_sha256": "ca73906605b4c4c4aad0b52c0f59d6d3b6592cf7a80b9d79d53963e1e39226e4",
+  "cases": [
+    {
+      "name": "mono",
+      "reports": {
+        "inspect": {
+          "schema_version": 1,
+          "command": "inspect",
+          "format": "vmdk",
+          "status": "inspected",
+          "source": {
+            "path": {
+              "display": "layer2.vmdk"
+            },
+            "logical_bytes": 1048576,
+            "logical_block_size": 512,
+            "physical_block_size": 512,
+            "vmdk": {
+              "backing_file_count": 3,
+              "backing_identities": [
+                {
+                  "device": 38,
+                  "inode": 122389566
+                },
+                {
+                  "device": 38,
+                  "inode": 122389564
+                },
+                {
+                  "device": 38,
+                  "inode": 122389561
+                }
+              ],
+              "chain_descriptor_bytes": 30720,
+              "cid": "a7dbaf08",
+              "descriptor_extent_count": 3,
+              "descriptor_identity": {
+                "device": 38,
+                "inode": 122389566
+              },
+              "entry_probe_bytes": 12,
+              "layer_count": 3,
+              "layers": [
+                {
+                  "cid": "a7dbaf08",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389566
+                  },
+                  "parent_cid": "8f6d09bb"
+                },
+                {
+                  "cid": "8f6d09bb",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389564
+                  },
+                  "parent_cid": "3bf5c9f9"
+                },
+                {
+                  "cid": "3bf5c9f9",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389561
+                  },
+                  "parent_cid": null
+                }
+              ],
+              "layout": "hosted_sparse_chain",
+              "metadata_memory_reservation_bytes": 67544,
+              "metadata_read_bytes": 81408,
+              "parent_policy": "same_directory_basename"
+            }
+          },
+          "summary": {
+            "logical_bytes": 1048576,
+            "data_bytes": 262144,
+            "zero_bytes": 786432,
+            "hole_bytes": 0,
+            "extent_count": 3
+          }
+        },
+        "plan": {
+          "schema_version": 1,
+          "command": "plan",
+          "format": "vmdk",
+          "status": "preview",
+          "source": {
+            "path": {
+              "display": "layer2.vmdk"
+            },
+            "logical_bytes": 1048576,
+            "logical_block_size": 512,
+            "physical_block_size": 512,
+            "vmdk": {
+              "backing_file_count": 3,
+              "backing_identities": [
+                {
+                  "device": 38,
+                  "inode": 122389566
+                },
+                {
+                  "device": 38,
+                  "inode": 122389564
+                },
+                {
+                  "device": 38,
+                  "inode": 122389561
+                }
+              ],
+              "chain_descriptor_bytes": 30720,
+              "cid": "a7dbaf08",
+              "descriptor_extent_count": 3,
+              "descriptor_identity": {
+                "device": 38,
+                "inode": 122389566
+              },
+              "entry_probe_bytes": 12,
+              "layer_count": 3,
+              "layers": [
+                {
+                  "cid": "a7dbaf08",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389566
+                  },
+                  "parent_cid": "8f6d09bb"
+                },
+                {
+                  "cid": "8f6d09bb",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389564
+                  },
+                  "parent_cid": "3bf5c9f9"
+                },
+                {
+                  "cid": "3bf5c9f9",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389561
+                  },
+                  "parent_cid": null
+                }
+              ],
+              "layout": "hosted_sparse_chain",
+              "metadata_memory_reservation_bytes": 67544,
+              "metadata_read_bytes": 81408,
+              "parent_policy": "same_directory_basename"
+            }
+          },
+          "summary": {
+            "logical_bytes": 1048576,
+            "data_bytes": 262144,
+            "zero_bytes": 786432,
+            "hole_bytes": 0,
+            "extent_count": 3
+          },
+          "destination": {
+            "path": {
+              "display": "rvddk.raw"
+            },
+            "state": "new",
+            "policy": "create_new_no_clobber",
+            "existing_bytes": null,
+            "copy_range_bytes": 1048576,
+            "preserved_tail_bytes": 0,
+            "write_access_checked": false
+          },
+          "execution": {
+            "requested_backend": "auto",
+            "selected_backend": "threaded",
+            "selection_reason": "portable_api",
+            "runtime_prepared": false,
+            "block_size": 65537,
+            "buffer_alignment": 4096,
+            "workers": 4,
+            "work_queue_capacity": 4,
+            "native_queue_depth": 8,
+            "native_read_window": 4,
+            "memory_budget_bytes": 268435456,
+            "threaded_payload_estimate_bytes": 262692,
+            "threaded_payload_fits_budget": true
+          }
+        },
+        "copy": {
+          "backend": "threaded",
+          "command": "copy",
+          "copy_memory_budget_bytes": 268304382,
+          "destination": {
+            "display": "rvddk.raw"
+          },
+          "destination_policy": "create_new_no_clobber",
+          "destination_tail_bytes": 0,
+          "durability": "file_and_directory_synced",
+          "elapsed_seconds": 0.038737345,
+          "format": "vmdk",
+          "logical_bytes": 1048576,
+          "planned_backend": "threaded",
+          "requested_backend": "auto",
+          "runtime_fallback": null,
+          "schema_version": 1,
+          "selection_reason": "portable_api",
+          "source": {
+            "display": "layer2.vmdk"
+          },
+          "stats": {
+            "blocks_copied": 4,
+            "bytes_discarded": 0,
+            "bytes_read": 262144,
+            "bytes_written": 262144,
+            "bytes_zeroed": 786432,
+            "extents_processed": 3
+          },
+          "status": "completed",
+          "verification": {
+            "bytes_verified": 1048576,
+            "elapsed_seconds": 0.000344163
+          },
+          "verification_payload_bytes": 131074
+        },
+        "verify": {
+          "command": "verify",
+          "destination": {
+            "display": "rvddk.raw"
+          },
+          "destination_tail_bytes": 0,
+          "elapsed_seconds": 0.001008484,
+          "format": "vmdk",
+          "logical_bytes": 1048576,
+          "schema_version": 1,
+          "source": {
+            "display": "layer2.vmdk"
+          },
+          "status": "verified",
+          "verification_payload_bytes": 2097152
+        }
+      },
+      "raw_sha256": "ef21e0a5ced0251b774a4cd8b7108786de7fc352b09638117ffa45b19f788c52",
+      "writes": [
+        [
+          [
+            32768,
+            512,
+            119
+          ],
+          [
+            65024,
+            1024,
+            136
+          ]
+        ],
+        [
+          [
+            32768,
+            512,
+            0
+          ],
+          [
+            131072,
+            512,
+            153
+          ]
+        ]
+      ],
+      "source_unchanged": true,
+      "public_cli_rejects_parent": true
+    },
+    {
+      "name": "split",
+      "reports": {
+        "inspect": {
+          "schema_version": 1,
+          "command": "inspect",
+          "format": "vmdk",
+          "status": "inspected",
+          "source": {
+            "path": {
+              "display": "layer2.vmdk"
+            },
+            "logical_bytes": 1048576,
+            "logical_block_size": 512,
+            "physical_block_size": 512,
+            "vmdk": {
+              "backing_file_count": 3,
+              "backing_identities": [
+                {
+                  "device": 38,
+                  "inode": 122389585
+                },
+                {
+                  "device": 38,
+                  "inode": 122389583
+                },
+                {
+                  "device": 38,
+                  "inode": 122389581
+                }
+              ],
+              "chain_descriptor_bytes": 1536,
+              "cid": "8e532a7b",
+              "descriptor_extent_count": 3,
+              "descriptor_identity": {
+                "device": 38,
+                "inode": 122389584
+              },
+              "entry_probe_bytes": 12,
+              "layer_count": 3,
+              "layers": [
+                {
+                  "cid": "8e532a7b",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389584
+                  },
+                  "parent_cid": "396a2518"
+                },
+                {
+                  "cid": "396a2518",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389582
+                  },
+                  "parent_cid": "8389eb0f"
+                },
+                {
+                  "cid": "8389eb0f",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389580
+                  },
+                  "parent_cid": null
+                }
+              ],
+              "layout": "hosted_sparse_chain",
+              "metadata_memory_reservation_bytes": 38360,
+              "metadata_read_bytes": 50688,
+              "parent_policy": "same_directory_basename"
+            }
+          },
+          "summary": {
+            "logical_bytes": 1048576,
+            "data_bytes": 262144,
+            "zero_bytes": 786432,
+            "hole_bytes": 0,
+            "extent_count": 3
+          }
+        },
+        "plan": {
+          "schema_version": 1,
+          "command": "plan",
+          "format": "vmdk",
+          "status": "preview",
+          "source": {
+            "path": {
+              "display": "layer2.vmdk"
+            },
+            "logical_bytes": 1048576,
+            "logical_block_size": 512,
+            "physical_block_size": 512,
+            "vmdk": {
+              "backing_file_count": 3,
+              "backing_identities": [
+                {
+                  "device": 38,
+                  "inode": 122389585
+                },
+                {
+                  "device": 38,
+                  "inode": 122389583
+                },
+                {
+                  "device": 38,
+                  "inode": 122389581
+                }
+              ],
+              "chain_descriptor_bytes": 1536,
+              "cid": "8e532a7b",
+              "descriptor_extent_count": 3,
+              "descriptor_identity": {
+                "device": 38,
+                "inode": 122389584
+              },
+              "entry_probe_bytes": 12,
+              "layer_count": 3,
+              "layers": [
+                {
+                  "cid": "8e532a7b",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389584
+                  },
+                  "parent_cid": "396a2518"
+                },
+                {
+                  "cid": "396a2518",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389582
+                  },
+                  "parent_cid": "8389eb0f"
+                },
+                {
+                  "cid": "8389eb0f",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389580
+                  },
+                  "parent_cid": null
+                }
+              ],
+              "layout": "hosted_sparse_chain",
+              "metadata_memory_reservation_bytes": 38360,
+              "metadata_read_bytes": 50688,
+              "parent_policy": "same_directory_basename"
+            }
+          },
+          "summary": {
+            "logical_bytes": 1048576,
+            "data_bytes": 262144,
+            "zero_bytes": 786432,
+            "hole_bytes": 0,
+            "extent_count": 3
+          },
+          "destination": {
+            "path": {
+              "display": "rvddk.raw"
+            },
+            "state": "new",
+            "policy": "create_new_no_clobber",
+            "existing_bytes": null,
+            "copy_range_bytes": 1048576,
+            "preserved_tail_bytes": 0,
+            "write_access_checked": false
+          },
+          "execution": {
+            "requested_backend": "auto",
+            "selected_backend": "threaded",
+            "selection_reason": "portable_api",
+            "runtime_prepared": false,
+            "block_size": 65537,
+            "buffer_alignment": 4096,
+            "workers": 4,
+            "work_queue_capacity": 4,
+            "native_queue_depth": 8,
+            "native_read_window": 4,
+            "memory_budget_bytes": 268435456,
+            "threaded_payload_estimate_bytes": 262692,
+            "threaded_payload_fits_budget": true
+          }
+        },
+        "copy": {
+          "backend": "threaded",
+          "command": "copy",
+          "copy_memory_budget_bytes": 268304382,
+          "destination": {
+            "display": "rvddk.raw"
+          },
+          "destination_policy": "create_new_no_clobber",
+          "destination_tail_bytes": 0,
+          "durability": "file_and_directory_synced",
+          "elapsed_seconds": 0.019605165,
+          "format": "vmdk",
+          "logical_bytes": 1048576,
+          "planned_backend": "threaded",
+          "requested_backend": "auto",
+          "runtime_fallback": null,
+          "schema_version": 1,
+          "selection_reason": "portable_api",
+          "source": {
+            "display": "layer2.vmdk"
+          },
+          "stats": {
+            "blocks_copied": 4,
+            "bytes_discarded": 0,
+            "bytes_read": 262144,
+            "bytes_written": 262144,
+            "bytes_zeroed": 786432,
+            "extents_processed": 3
+          },
+          "status": "completed",
+          "verification": {
+            "bytes_verified": 1048576,
+            "elapsed_seconds": 0.000282866
+          },
+          "verification_payload_bytes": 131074
+        },
+        "verify": {
+          "command": "verify",
+          "destination": {
+            "display": "rvddk.raw"
+          },
+          "destination_tail_bytes": 0,
+          "elapsed_seconds": 0.00102367,
+          "format": "vmdk",
+          "logical_bytes": 1048576,
+          "schema_version": 1,
+          "source": {
+            "display": "layer2.vmdk"
+          },
+          "status": "verified",
+          "verification_payload_bytes": 2097152
+        }
+      },
+      "raw_sha256": "ef21e0a5ced0251b774a4cd8b7108786de7fc352b09638117ffa45b19f788c52",
+      "writes": [
+        [
+          [
+            32768,
+            512,
+            119
+          ],
+          [
+            65024,
+            1024,
+            136
+          ]
+        ],
+        [
+          [
+            32768,
+            512,
+            0
+          ],
+          [
+            131072,
+            512,
+            153
+          ]
+        ]
+      ],
+      "source_unchanged": true,
+      "public_cli_rejects_parent": true
+    },
+    {
+      "name": "mixed",
+      "reports": {
+        "inspect": {
+          "schema_version": 1,
+          "command": "inspect",
+          "format": "vmdk",
+          "status": "inspected",
+          "source": {
+            "path": {
+              "display": "layer2.vmdk"
+            },
+            "logical_bytes": 4194304,
+            "logical_block_size": 512,
+            "physical_block_size": 512,
+            "vmdk": {
+              "backing_file_count": 3,
+              "backing_identities": [
+                {
+                  "device": 38,
+                  "inode": 122389593
+                },
+                {
+                  "device": 38,
+                  "inode": 122389592
+                },
+                {
+                  "device": 38,
+                  "inode": 122389590
+                }
+              ],
+              "chain_descriptor_bytes": 20992,
+              "cid": "1c43eedd",
+              "descriptor_extent_count": 3,
+              "descriptor_identity": {
+                "device": 38,
+                "inode": 122389593
+              },
+              "entry_probe_bytes": 12,
+              "layer_count": 3,
+              "layers": [
+                {
+                  "cid": "1c43eedd",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389593
+                  },
+                  "parent_cid": "d5b04c72"
+                },
+                {
+                  "cid": "d5b04c72",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389591
+                  },
+                  "parent_cid": "21ddcb19"
+                },
+                {
+                  "cid": "21ddcb19",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389590
+                  },
+                  "parent_cid": null
+                }
+              ],
+              "layout": "hosted_sparse_chain",
+              "metadata_memory_reservation_bytes": 58968,
+              "metadata_read_bytes": 71168,
+              "parent_policy": "same_directory_basename"
+            }
+          },
+          "summary": {
+            "logical_bytes": 4194304,
+            "data_bytes": 262144,
+            "zero_bytes": 3932160,
+            "hole_bytes": 0,
+            "extent_count": 3
+          }
+        },
+        "plan": {
+          "schema_version": 1,
+          "command": "plan",
+          "format": "vmdk",
+          "status": "preview",
+          "source": {
+            "path": {
+              "display": "layer2.vmdk"
+            },
+            "logical_bytes": 4194304,
+            "logical_block_size": 512,
+            "physical_block_size": 512,
+            "vmdk": {
+              "backing_file_count": 3,
+              "backing_identities": [
+                {
+                  "device": 38,
+                  "inode": 122389593
+                },
+                {
+                  "device": 38,
+                  "inode": 122389592
+                },
+                {
+                  "device": 38,
+                  "inode": 122389590
+                }
+              ],
+              "chain_descriptor_bytes": 20992,
+              "cid": "1c43eedd",
+              "descriptor_extent_count": 3,
+              "descriptor_identity": {
+                "device": 38,
+                "inode": 122389593
+              },
+              "entry_probe_bytes": 12,
+              "layer_count": 3,
+              "layers": [
+                {
+                  "cid": "1c43eedd",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389593
+                  },
+                  "parent_cid": "d5b04c72"
+                },
+                {
+                  "cid": "d5b04c72",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389591
+                  },
+                  "parent_cid": "21ddcb19"
+                },
+                {
+                  "cid": "21ddcb19",
+                  "descriptor_extent_count": 1,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389590
+                  },
+                  "parent_cid": null
+                }
+              ],
+              "layout": "hosted_sparse_chain",
+              "metadata_memory_reservation_bytes": 58968,
+              "metadata_read_bytes": 71168,
+              "parent_policy": "same_directory_basename"
+            }
+          },
+          "summary": {
+            "logical_bytes": 4194304,
+            "data_bytes": 262144,
+            "zero_bytes": 3932160,
+            "hole_bytes": 0,
+            "extent_count": 3
+          },
+          "destination": {
+            "path": {
+              "display": "rvddk.raw"
+            },
+            "state": "new",
+            "policy": "create_new_no_clobber",
+            "existing_bytes": null,
+            "copy_range_bytes": 4194304,
+            "preserved_tail_bytes": 0,
+            "write_access_checked": false
+          },
+          "execution": {
+            "requested_backend": "auto",
+            "selected_backend": "threaded",
+            "selection_reason": "portable_api",
+            "runtime_prepared": false,
+            "block_size": 65537,
+            "buffer_alignment": 4096,
+            "workers": 4,
+            "work_queue_capacity": 4,
+            "native_queue_depth": 8,
+            "native_read_window": 4,
+            "memory_budget_bytes": 268435456,
+            "threaded_payload_estimate_bytes": 262692,
+            "threaded_payload_fits_budget": true
+          }
+        },
+        "copy": {
+          "backend": "threaded",
+          "command": "copy",
+          "copy_memory_budget_bytes": 268304382,
+          "destination": {
+            "display": "rvddk.raw"
+          },
+          "destination_policy": "create_new_no_clobber",
+          "destination_tail_bytes": 0,
+          "durability": "file_and_directory_synced",
+          "elapsed_seconds": 0.021669319,
+          "format": "vmdk",
+          "logical_bytes": 4194304,
+          "planned_backend": "threaded",
+          "requested_backend": "auto",
+          "runtime_fallback": null,
+          "schema_version": 1,
+          "selection_reason": "portable_api",
+          "source": {
+            "display": "layer2.vmdk"
+          },
+          "stats": {
+            "blocks_copied": 4,
+            "bytes_discarded": 0,
+            "bytes_read": 262144,
+            "bytes_written": 262144,
+            "bytes_zeroed": 3932160,
+            "extents_processed": 3
+          },
+          "status": "completed",
+          "verification": {
+            "bytes_verified": 4194304,
+            "elapsed_seconds": 0.000908555
+          },
+          "verification_payload_bytes": 131074
+        },
+        "verify": {
+          "command": "verify",
+          "destination": {
+            "display": "rvddk.raw"
+          },
+          "destination_tail_bytes": 0,
+          "elapsed_seconds": 0.001709698,
+          "format": "vmdk",
+          "logical_bytes": 4194304,
+          "schema_version": 1,
+          "source": {
+            "display": "layer2.vmdk"
+          },
+          "status": "verified",
+          "verification_payload_bytes": 2097152
+        }
+      },
+      "raw_sha256": "014d6ba95852f6bc8fc6195e5fca606f1aba227032b63fa6142887f623342242",
+      "writes": [
+        [
+          [
+            32768,
+            512,
+            119
+          ],
+          [
+            65024,
+            1024,
+            136
+          ]
+        ],
+        [
+          [
+            32768,
+            512,
+            0
+          ],
+          [
+            131072,
+            512,
+            153
+          ]
+        ]
+      ],
+      "source_unchanged": true,
+      "public_cli_rejects_parent": true
+    },
+    {
+      "name": "multi-split",
+      "reports": {
+        "inspect": {
+          "schema_version": 1,
+          "command": "inspect",
+          "format": "vmdk",
+          "status": "inspected",
+          "source": {
+            "path": {
+              "display": "layer2.vmdk"
+            },
+            "logical_bytes": 2147549184,
+            "logical_block_size": 512,
+            "physical_block_size": 512,
+            "vmdk": {
+              "backing_file_count": 6,
+              "backing_identities": [
+                {
+                  "device": 38,
+                  "inode": 122389605
+                },
+                {
+                  "device": 38,
+                  "inode": 122389606
+                },
+                {
+                  "device": 38,
+                  "inode": 122389602
+                },
+                {
+                  "device": 38,
+                  "inode": 122389603
+                },
+                {
+                  "device": 38,
+                  "inode": 122389599
+                },
+                {
+                  "device": 38,
+                  "inode": 122389600
+                }
+              ],
+              "chain_descriptor_bytes": 1536,
+              "cid": "b633910a",
+              "descriptor_extent_count": 6,
+              "descriptor_identity": {
+                "device": 38,
+                "inode": 122389604
+              },
+              "entry_probe_bytes": 12,
+              "layer_count": 3,
+              "layers": [
+                {
+                  "cid": "b633910a",
+                  "descriptor_extent_count": 2,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389604
+                  },
+                  "parent_cid": "2f6636a4"
+                },
+                {
+                  "cid": "2f6636a4",
+                  "descriptor_extent_count": 2,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389601
+                  },
+                  "parent_cid": "83cbd974"
+                },
+                {
+                  "cid": "83cbd974",
+                  "descriptor_extent_count": 2,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389598
+                  },
+                  "parent_cid": null
+                }
+              ],
+              "layout": "hosted_sparse_chain",
+              "metadata_memory_reservation_bytes": 865256,
+              "metadata_read_bytes": 873984,
+              "parent_policy": "same_directory_basename"
+            }
+          },
+          "summary": {
+            "logical_bytes": 2147549184,
+            "data_bytes": 393216,
+            "zero_bytes": 2147155968,
+            "hole_bytes": 0,
+            "extent_count": 3
+          }
+        },
+        "plan": {
+          "schema_version": 1,
+          "command": "plan",
+          "format": "vmdk",
+          "status": "preview",
+          "source": {
+            "path": {
+              "display": "layer2.vmdk"
+            },
+            "logical_bytes": 2147549184,
+            "logical_block_size": 512,
+            "physical_block_size": 512,
+            "vmdk": {
+              "backing_file_count": 6,
+              "backing_identities": [
+                {
+                  "device": 38,
+                  "inode": 122389605
+                },
+                {
+                  "device": 38,
+                  "inode": 122389606
+                },
+                {
+                  "device": 38,
+                  "inode": 122389602
+                },
+                {
+                  "device": 38,
+                  "inode": 122389603
+                },
+                {
+                  "device": 38,
+                  "inode": 122389599
+                },
+                {
+                  "device": 38,
+                  "inode": 122389600
+                }
+              ],
+              "chain_descriptor_bytes": 1536,
+              "cid": "b633910a",
+              "descriptor_extent_count": 6,
+              "descriptor_identity": {
+                "device": 38,
+                "inode": 122389604
+              },
+              "entry_probe_bytes": 12,
+              "layer_count": 3,
+              "layers": [
+                {
+                  "cid": "b633910a",
+                  "descriptor_extent_count": 2,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389604
+                  },
+                  "parent_cid": "2f6636a4"
+                },
+                {
+                  "cid": "2f6636a4",
+                  "descriptor_extent_count": 2,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389601
+                  },
+                  "parent_cid": "83cbd974"
+                },
+                {
+                  "cid": "83cbd974",
+                  "descriptor_extent_count": 2,
+                  "descriptor_identity": {
+                    "device": 38,
+                    "inode": 122389598
+                  },
+                  "parent_cid": null
+                }
+              ],
+              "layout": "hosted_sparse_chain",
+              "metadata_memory_reservation_bytes": 865256,
+              "metadata_read_bytes": 873984,
+              "parent_policy": "same_directory_basename"
+            }
+          },
+          "summary": {
+            "logical_bytes": 2147549184,
+            "data_bytes": 393216,
+            "zero_bytes": 2147155968,
+            "hole_bytes": 0,
+            "extent_count": 3
+          },
+          "destination": {
+            "path": {
+              "display": "rvddk.raw"
+            },
+            "state": "new",
+            "policy": "create_new_no_clobber",
+            "existing_bytes": null,
+            "copy_range_bytes": 2147549184,
+            "preserved_tail_bytes": 0,
+            "write_access_checked": false
+          },
+          "execution": {
+            "requested_backend": "auto",
+            "selected_backend": "threaded",
+            "selection_reason": "portable_api",
+            "runtime_prepared": false,
+            "block_size": 65537,
+            "buffer_alignment": 4096,
+            "workers": 4,
+            "work_queue_capacity": 4,
+            "native_queue_depth": 8,
+            "native_read_window": 4,
+            "memory_budget_bytes": 268435456,
+            "threaded_payload_estimate_bytes": 262692,
+            "threaded_payload_fits_budget": true
+          }
+        },
+        "copy": {
+          "backend": "threaded",
+          "command": "copy",
+          "copy_memory_budget_bytes": 268304382,
+          "destination": {
+            "display": "rvddk.raw"
+          },
+          "destination_policy": "create_new_no_clobber",
+          "destination_tail_bytes": 0,
+          "durability": "file_and_directory_synced",
+          "elapsed_seconds": 0.892402023,
+          "format": "vmdk",
+          "logical_bytes": 2147549184,
+          "planned_backend": "threaded",
+          "requested_backend": "auto",
+          "runtime_fallback": null,
+          "schema_version": 1,
+          "selection_reason": "portable_api",
+          "source": {
+            "display": "layer2.vmdk"
+          },
+          "stats": {
+            "blocks_copied": 6,
+            "bytes_discarded": 0,
+            "bytes_read": 393216,
+            "bytes_written": 393216,
+            "bytes_zeroed": 2147155968,
+            "extents_processed": 3
+          },
+          "status": "completed",
+          "verification": {
+            "bytes_verified": 2147549184,
+            "elapsed_seconds": 0.518043655
+          },
+          "verification_payload_bytes": 131074
+        },
+        "verify": {
+          "command": "verify",
+          "destination": {
+            "display": "rvddk.raw"
+          },
+          "destination_tail_bytes": 0,
+          "elapsed_seconds": 0.383448969,
+          "format": "vmdk",
+          "logical_bytes": 2147549184,
+          "schema_version": 1,
+          "source": {
+            "display": "layer2.vmdk"
+          },
+          "status": "verified",
+          "verification_payload_bytes": 2097152
+        }
+      },
+      "raw_sha256": "2a7d265f1b5c7d89dc107b3f653ceb40af5ab93027fea0d81d99d501c46076ce",
+      "writes": [
+        [
+          [
+            32768,
+            512,
+            119
+          ],
+          [
+            65024,
+            1024,
+            136
+          ],
+          [
+            2147417600,
+            1024,
+            161
+          ]
+        ],
+        [
+          [
+            32768,
+            512,
+            0
+          ],
+          [
+            131072,
+            512,
+            153
+          ],
+          [
+            2147483136,
+            1024,
+            178
+          ],
+          [
+            2147483648,
+            65536,
+            178
+          ]
+        ]
+      ],
+      "source_unchanged": true,
+      "public_cli_rejects_parent": true
+    }
+  ],
+  "files": {
+    "mixed/layer0.vmdk": {
+      "bytes": 262144,
+      "sha256": "82e76af51d87f2e67871ec3c0c2d294f25fc0bd8189354f8b82b4b2474c6e799"
+    },
+    "mixed/layer1-s001.vmdk": {
+      "bytes": 196608,
+      "sha256": "e17a0057237edd829beaa764b07c89221353646d35dbfd8093aa0dd011580463"
+    },
+    "mixed/layer1.vmdk": {
+      "bytes": 512,
+      "sha256": "bc1da488823600e04b80796652692707233100f3d936e58602aec3faf303013d"
+    },
+    "mixed/layer2.vmdk": {
+      "bytes": 196608,
+      "sha256": "040544054dd3d00bd6d4e00c7c8fab67271571f38889cd04404094ff70b8a5a7"
+    },
+    "mixed/oracle.raw": {
+      "bytes": 4194304,
+      "sha256": "014d6ba95852f6bc8fc6195e5fca606f1aba227032b63fa6142887f623342242"
+    },
+    "mixed/qemu.raw": {
+      "bytes": 4194304,
+      "sha256": "014d6ba95852f6bc8fc6195e5fca606f1aba227032b63fa6142887f623342242"
+    },
+    "mixed/rvddk.raw": {
+      "bytes": 4194304,
+      "sha256": "014d6ba95852f6bc8fc6195e5fca606f1aba227032b63fa6142887f623342242"
+    },
+    "mono/layer0.vmdk": {
+      "bytes": 262144,
+      "sha256": "70df3248768c264655dc1ae88f8855d2ecb00e17202a10f1fb5bdb9f263005ae"
+    },
+    "mono/layer1.vmdk": {
+      "bytes": 196608,
+      "sha256": "540dcd99b99ef9c3c688f06573ac7649e875059b97c47e9f52734326ae9aa7b0"
+    },
+    "mono/layer2.vmdk": {
+      "bytes": 196608,
+      "sha256": "a5ab8153a7f2aa6ecd446cb36dbcd8629e70de6d3d431e1bcc78f47514ae2a96"
+    },
+    "mono/oracle.raw": {
+      "bytes": 1048576,
+      "sha256": "ef21e0a5ced0251b774a4cd8b7108786de7fc352b09638117ffa45b19f788c52"
+    },
+    "mono/qemu.raw": {
+      "bytes": 1048576,
+      "sha256": "ef21e0a5ced0251b774a4cd8b7108786de7fc352b09638117ffa45b19f788c52"
+    },
+    "mono/rvddk.raw": {
+      "bytes": 1048576,
+      "sha256": "ef21e0a5ced0251b774a4cd8b7108786de7fc352b09638117ffa45b19f788c52"
+    },
+    "multi-split/layer0-s001.vmdk": {
+      "bytes": 589824,
+      "sha256": "c1d2621b5e3f3dec3309eff63180adad313bb48e096c1f78d1c3f62dfea8a02e"
+    },
+    "multi-split/layer0-s002.vmdk": {
+      "bytes": 131072,
+      "sha256": "8691b268bdde76b273ff27b84c05f187dc1c8bab3c4a63f352552426f575a51c"
+    },
+    "multi-split/layer0.vmdk": {
+      "bytes": 512,
+      "sha256": "722f9d9f2cbcb488b6c8114416d30ea577fd6c15ed4f76f37cfc5299d5a27c41"
+    },
+    "multi-split/layer1-s001.vmdk": {
+      "bytes": 589824,
+      "sha256": "45fdb066a348808a31d00e3a49b5dfcecf8081256bc34d9aeaca42db6cfbf080"
+    },
+    "multi-split/layer1-s002.vmdk": {
+      "bytes": 65536,
+      "sha256": "f37812426ad7bd1e2b3d397e6c395de667d639db3afe69412e92a2f1e72a1e40"
+    },
+    "multi-split/layer1.vmdk": {
+      "bytes": 512,
+      "sha256": "0517357c903863fa369c7ddac17733e002cbdefe3523b7cbd04b7dd99bca08f6"
+    },
+    "multi-split/layer2-s001.vmdk": {
+      "bytes": 524288,
+      "sha256": "c97813a3f2bb5d95ba5a35b97c54efca3ad10913b99d624da7ac35e6e8917d9f"
+    },
+    "multi-split/layer2-s002.vmdk": {
+      "bytes": 131072,
+      "sha256": "ad8a939a605f39c84de12e95a5e3d06d0b033f45d127e0edadbd757a6de9868f"
+    },
+    "multi-split/layer2.vmdk": {
+      "bytes": 512,
+      "sha256": "d18c8f3369b5213f16817b5662273ddddf3a982f8f4e2af7889721fc655f0a9c"
+    },
+    "multi-split/oracle.raw": {
+      "bytes": 2147549184,
+      "sha256": "2a7d265f1b5c7d89dc107b3f653ceb40af5ab93027fea0d81d99d501c46076ce"
+    },
+    "multi-split/qemu.raw": {
+      "bytes": 2147549184,
+      "sha256": "2a7d265f1b5c7d89dc107b3f653ceb40af5ab93027fea0d81d99d501c46076ce"
+    },
+    "multi-split/rvddk.raw": {
+      "bytes": 2147549184,
+      "sha256": "2a7d265f1b5c7d89dc107b3f653ceb40af5ab93027fea0d81d99d501c46076ce"
+    },
+    "split/layer0-s001.vmdk": {
+      "bytes": 262144,
+      "sha256": "ca90c76d5144b5b3f17c4f13aea92f78d806c6247241dd5a4d52f445e15c6031"
+    },
+    "split/layer0.vmdk": {
+      "bytes": 512,
+      "sha256": "610b7afa84edbcb608f410f6d0450e49b8208168f63fc171e29d6909475561e8"
+    },
+    "split/layer1-s001.vmdk": {
+      "bytes": 196608,
+      "sha256": "dc5a58df2935e9d14b5327b66128786d2f8c88cddf5cadc7273116b1e09ed8da"
+    },
+    "split/layer1.vmdk": {
+      "bytes": 512,
+      "sha256": "fd1000954170cea4f9c18774afe49b01107df0d7bd958c031f08ab27d0a28b4b"
+    },
+    "split/layer2-s001.vmdk": {
+      "bytes": 196608,
+      "sha256": "ae08621e71ff4c9c5227e8a9e6bd8f4d4669931c292886e11fc16d9d1ca1083e"
+    },
+    "split/layer2.vmdk": {
+      "bytes": 512,
+      "sha256": "36a395bc71980ed830f752fa9cdc06091c87d5f69f09f0aa82f43e91facfc7cc"
+    },
+    "split/oracle.raw": {
+      "bytes": 1048576,
+      "sha256": "ef21e0a5ced0251b774a4cd8b7108786de7fc352b09638117ffa45b19f788c52"
+    },
+    "split/qemu.raw": {
+      "bytes": 1048576,
+      "sha256": "ef21e0a5ced0251b774a4cd8b7108786de7fc352b09638117ffa45b19f788c52"
+    },
+    "split/rvddk.raw": {
+      "bytes": 1048576,
+      "sha256": "ef21e0a5ced0251b774a4cd8b7108786de7fc352b09638117ffa45b19f788c52"
+    }
+  },
+  "commands": [
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "--version"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli",
+      "exit_code": 0,
+      "stdout": "qemu-img version 10.2.2 (qemu-10.2.2-1.fc44)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "--version"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli",
+      "exit_code": 0,
+      "stdout": "qemu-io version 10.2.2 (qemu-10.2.2-1.fc44)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mono/oracle.raw",
+        "layer0.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mono",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "-b",
+        "layer0.vmdk",
+        "-F",
+        "vmdk",
+        "layer1.vmdk",
+        "1048576"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mono",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer1.vmdk', fmt=vmdk size=1048576 backing_file=layer0.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=monolithicSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 119 32768 512",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mono",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 32768\n512 bytes, 1 ops; 00.02 sec (26.469 KiB/sec and 52.9390 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 136 65024 1024",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mono",
+      "exit_code": 0,
+      "stdout": "wrote 1024/1024 bytes at offset 65024\n1 KiB, 1 ops; 00.02 sec (57.591 KiB/sec and 57.5912 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "-b",
+        "layer1.vmdk",
+        "-F",
+        "vmdk",
+        "layer2.vmdk",
+        "1048576"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mono",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer2.vmdk', fmt=vmdk size=1048576 backing_file=layer1.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=monolithicSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 0 32768 512",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mono",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 32768\n512 bytes, 1 ops; 00.01 sec (39.198 KiB/sec and 78.3968 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 153 131072 512",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mono",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 131072\n512 bytes, 1 ops; 00.03 sec (19.509 KiB/sec and 39.0179 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "inspect",
+        "layer2.vmdk",
+        "--format",
+        "vmdk",
+        "--allow-parents",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mono",
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"inspect\",\n  \"format\": \"vmdk\",\n  \"status\": \"inspected\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"layer2.vmdk\"\n    },\n    \"logical_bytes\": 1048576,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 3,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122389566\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389564\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389561\n        }\n      ],\n      \"chain_descriptor_bytes\": 30720,\n      \"cid\": \"a7dbaf08\",\n      \"descriptor_extent_count\": 3,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122389566\n      },\n      \"entry_probe_bytes\": 12,\n      \"layer_count\": 3,\n      \"layers\": [\n        {\n          \"cid\": \"a7dbaf08\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389566\n          },\n          \"parent_cid\": \"8f6d09bb\"\n        },\n        {\n          \"cid\": \"8f6d09bb\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389564\n          },\n          \"parent_cid\": \"3bf5c9f9\"\n        },\n        {\n          \"cid\": \"3bf5c9f9\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389561\n          },\n          \"parent_cid\": null\n        }\n      ],\n      \"layout\": \"hosted_sparse_chain\",\n      \"metadata_memory_reservation_bytes\": 67544,\n      \"metadata_read_bytes\": 81408,\n      \"parent_policy\": \"same_directory_basename\"\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 1048576,\n    \"data_bytes\": 262144,\n    \"zero_bytes\": 786432,\n    \"hole_bytes\": 0,\n    \"extent_count\": 3\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "plan",
+        "layer2.vmdk",
+        "rvddk.raw",
+        "--format",
+        "vmdk",
+        "--allow-parents",
+        "--json",
+        "--backend",
+        "auto",
+        "--workers",
+        "4",
+        "--block-size",
+        "65537"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mono",
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"plan\",\n  \"format\": \"vmdk\",\n  \"status\": \"preview\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"layer2.vmdk\"\n    },\n    \"logical_bytes\": 1048576,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 3,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122389566\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389564\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389561\n        }\n      ],\n      \"chain_descriptor_bytes\": 30720,\n      \"cid\": \"a7dbaf08\",\n      \"descriptor_extent_count\": 3,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122389566\n      },\n      \"entry_probe_bytes\": 12,\n      \"layer_count\": 3,\n      \"layers\": [\n        {\n          \"cid\": \"a7dbaf08\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389566\n          },\n          \"parent_cid\": \"8f6d09bb\"\n        },\n        {\n          \"cid\": \"8f6d09bb\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389564\n          },\n          \"parent_cid\": \"3bf5c9f9\"\n        },\n        {\n          \"cid\": \"3bf5c9f9\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389561\n          },\n          \"parent_cid\": null\n        }\n      ],\n      \"layout\": \"hosted_sparse_chain\",\n      \"metadata_memory_reservation_bytes\": 67544,\n      \"metadata_read_bytes\": 81408,\n      \"parent_policy\": \"same_directory_basename\"\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 1048576,\n    \"data_bytes\": 262144,\n    \"zero_bytes\": 786432,\n    \"hole_bytes\": 0,\n    \"extent_count\": 3\n  },\n  \"destination\": {\n    \"path\": {\n      \"display\": \"rvddk.raw\"\n    },\n    \"state\": \"new\",\n    \"policy\": \"create_new_no_clobber\",\n    \"existing_bytes\": null,\n    \"copy_range_bytes\": 1048576,\n    \"preserved_tail_bytes\": 0,\n    \"write_access_checked\": false\n  },\n  \"execution\": {\n    \"requested_backend\": \"auto\",\n    \"selected_backend\": \"threaded\",\n    \"selection_reason\": \"portable_api\",\n    \"runtime_prepared\": false,\n    \"block_size\": 65537,\n    \"buffer_alignment\": 4096,\n    \"workers\": 4,\n    \"work_queue_capacity\": 4,\n    \"native_queue_depth\": 8,\n    \"native_read_window\": 4,\n    \"memory_budget_bytes\": 268435456,\n    \"threaded_payload_estimate_bytes\": 262692,\n    \"threaded_payload_fits_budget\": true\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "copy",
+        "layer2.vmdk",
+        "rvddk.raw",
+        "--format",
+        "vmdk",
+        "--allow-parents",
+        "--json",
+        "--backend",
+        "auto",
+        "--workers",
+        "4",
+        "--block-size",
+        "65537",
+        "--verify"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mono",
+      "exit_code": 0,
+      "stdout": "{\n  \"backend\": \"threaded\",\n  \"command\": \"copy\",\n  \"copy_memory_budget_bytes\": 268304382,\n  \"destination\": {\n    \"display\": \"rvddk.raw\"\n  },\n  \"destination_policy\": \"create_new_no_clobber\",\n  \"destination_tail_bytes\": 0,\n  \"durability\": \"file_and_directory_synced\",\n  \"elapsed_seconds\": 0.038737345,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 1048576,\n  \"planned_backend\": \"threaded\",\n  \"requested_backend\": \"auto\",\n  \"runtime_fallback\": null,\n  \"schema_version\": 1,\n  \"selection_reason\": \"portable_api\",\n  \"source\": {\n    \"display\": \"layer2.vmdk\"\n  },\n  \"stats\": {\n    \"blocks_copied\": 4,\n    \"bytes_discarded\": 0,\n    \"bytes_read\": 262144,\n    \"bytes_written\": 262144,\n    \"bytes_zeroed\": 786432,\n    \"extents_processed\": 3\n  },\n  \"status\": \"completed\",\n  \"verification\": {\n    \"bytes_verified\": 1048576,\n    \"elapsed_seconds\": 0.000344163\n  },\n  \"verification_payload_bytes\": 131074\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "verify",
+        "layer2.vmdk",
+        "rvddk.raw",
+        "--format",
+        "vmdk",
+        "--allow-parents",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mono",
+      "exit_code": 0,
+      "stdout": "{\n  \"command\": \"verify\",\n  \"destination\": {\n    \"display\": \"rvddk.raw\"\n  },\n  \"destination_tail_bytes\": 0,\n  \"elapsed_seconds\": 0.001008484,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 1048576,\n  \"schema_version\": 1,\n  \"source\": {\n    \"display\": \"layer2.vmdk\"\n  },\n  \"status\": \"verified\",\n  \"verification_payload_bytes\": 2097152\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "vmdk",
+        "-O",
+        "raw",
+        "layer2.vmdk",
+        "qemu.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mono",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "layer2.vmdk",
+        "rvddk.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mono",
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "inspect",
+        "layer2.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mono",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 4: unsupported feature: parent chain\"},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/split/oracle.raw",
+        "layer0.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/split",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "-b",
+        "layer0.vmdk",
+        "-F",
+        "vmdk",
+        "layer1.vmdk",
+        "1048576"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/split",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer1.vmdk', fmt=vmdk size=1048576 backing_file=layer0.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=twoGbMaxExtentSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 119 32768 512",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/split",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 32768\n512 bytes, 1 ops; 00.01 sec (39.437 KiB/sec and 78.8742 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 136 65024 1024",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/split",
+      "exit_code": 0,
+      "stdout": "wrote 1024/1024 bytes at offset 65024\n1 KiB, 1 ops; 00.01 sec (78.792 KiB/sec and 78.7916 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "-b",
+        "layer1.vmdk",
+        "-F",
+        "vmdk",
+        "layer2.vmdk",
+        "1048576"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/split",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer2.vmdk', fmt=vmdk size=1048576 backing_file=layer1.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=twoGbMaxExtentSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 0 32768 512",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/split",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 32768\n512 bytes, 1 ops; 00.01 sec (39.411 KiB/sec and 78.8224 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 153 131072 512",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/split",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 131072\n512 bytes, 1 ops; 00.01 sec (39.657 KiB/sec and 79.3131 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "inspect",
+        "layer2.vmdk",
+        "--format",
+        "vmdk",
+        "--allow-parents",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/split",
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"inspect\",\n  \"format\": \"vmdk\",\n  \"status\": \"inspected\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"layer2.vmdk\"\n    },\n    \"logical_bytes\": 1048576,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 3,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122389585\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389583\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389581\n        }\n      ],\n      \"chain_descriptor_bytes\": 1536,\n      \"cid\": \"8e532a7b\",\n      \"descriptor_extent_count\": 3,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122389584\n      },\n      \"entry_probe_bytes\": 12,\n      \"layer_count\": 3,\n      \"layers\": [\n        {\n          \"cid\": \"8e532a7b\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389584\n          },\n          \"parent_cid\": \"396a2518\"\n        },\n        {\n          \"cid\": \"396a2518\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389582\n          },\n          \"parent_cid\": \"8389eb0f\"\n        },\n        {\n          \"cid\": \"8389eb0f\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389580\n          },\n          \"parent_cid\": null\n        }\n      ],\n      \"layout\": \"hosted_sparse_chain\",\n      \"metadata_memory_reservation_bytes\": 38360,\n      \"metadata_read_bytes\": 50688,\n      \"parent_policy\": \"same_directory_basename\"\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 1048576,\n    \"data_bytes\": 262144,\n    \"zero_bytes\": 786432,\n    \"hole_bytes\": 0,\n    \"extent_count\": 3\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "plan",
+        "layer2.vmdk",
+        "rvddk.raw",
+        "--format",
+        "vmdk",
+        "--allow-parents",
+        "--json",
+        "--backend",
+        "auto",
+        "--workers",
+        "4",
+        "--block-size",
+        "65537"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/split",
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"plan\",\n  \"format\": \"vmdk\",\n  \"status\": \"preview\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"layer2.vmdk\"\n    },\n    \"logical_bytes\": 1048576,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 3,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122389585\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389583\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389581\n        }\n      ],\n      \"chain_descriptor_bytes\": 1536,\n      \"cid\": \"8e532a7b\",\n      \"descriptor_extent_count\": 3,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122389584\n      },\n      \"entry_probe_bytes\": 12,\n      \"layer_count\": 3,\n      \"layers\": [\n        {\n          \"cid\": \"8e532a7b\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389584\n          },\n          \"parent_cid\": \"396a2518\"\n        },\n        {\n          \"cid\": \"396a2518\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389582\n          },\n          \"parent_cid\": \"8389eb0f\"\n        },\n        {\n          \"cid\": \"8389eb0f\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389580\n          },\n          \"parent_cid\": null\n        }\n      ],\n      \"layout\": \"hosted_sparse_chain\",\n      \"metadata_memory_reservation_bytes\": 38360,\n      \"metadata_read_bytes\": 50688,\n      \"parent_policy\": \"same_directory_basename\"\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 1048576,\n    \"data_bytes\": 262144,\n    \"zero_bytes\": 786432,\n    \"hole_bytes\": 0,\n    \"extent_count\": 3\n  },\n  \"destination\": {\n    \"path\": {\n      \"display\": \"rvddk.raw\"\n    },\n    \"state\": \"new\",\n    \"policy\": \"create_new_no_clobber\",\n    \"existing_bytes\": null,\n    \"copy_range_bytes\": 1048576,\n    \"preserved_tail_bytes\": 0,\n    \"write_access_checked\": false\n  },\n  \"execution\": {\n    \"requested_backend\": \"auto\",\n    \"selected_backend\": \"threaded\",\n    \"selection_reason\": \"portable_api\",\n    \"runtime_prepared\": false,\n    \"block_size\": 65537,\n    \"buffer_alignment\": 4096,\n    \"workers\": 4,\n    \"work_queue_capacity\": 4,\n    \"native_queue_depth\": 8,\n    \"native_read_window\": 4,\n    \"memory_budget_bytes\": 268435456,\n    \"threaded_payload_estimate_bytes\": 262692,\n    \"threaded_payload_fits_budget\": true\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "copy",
+        "layer2.vmdk",
+        "rvddk.raw",
+        "--format",
+        "vmdk",
+        "--allow-parents",
+        "--json",
+        "--backend",
+        "auto",
+        "--workers",
+        "4",
+        "--block-size",
+        "65537",
+        "--verify"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/split",
+      "exit_code": 0,
+      "stdout": "{\n  \"backend\": \"threaded\",\n  \"command\": \"copy\",\n  \"copy_memory_budget_bytes\": 268304382,\n  \"destination\": {\n    \"display\": \"rvddk.raw\"\n  },\n  \"destination_policy\": \"create_new_no_clobber\",\n  \"destination_tail_bytes\": 0,\n  \"durability\": \"file_and_directory_synced\",\n  \"elapsed_seconds\": 0.019605165,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 1048576,\n  \"planned_backend\": \"threaded\",\n  \"requested_backend\": \"auto\",\n  \"runtime_fallback\": null,\n  \"schema_version\": 1,\n  \"selection_reason\": \"portable_api\",\n  \"source\": {\n    \"display\": \"layer2.vmdk\"\n  },\n  \"stats\": {\n    \"blocks_copied\": 4,\n    \"bytes_discarded\": 0,\n    \"bytes_read\": 262144,\n    \"bytes_written\": 262144,\n    \"bytes_zeroed\": 786432,\n    \"extents_processed\": 3\n  },\n  \"status\": \"completed\",\n  \"verification\": {\n    \"bytes_verified\": 1048576,\n    \"elapsed_seconds\": 0.000282866\n  },\n  \"verification_payload_bytes\": 131074\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "verify",
+        "layer2.vmdk",
+        "rvddk.raw",
+        "--format",
+        "vmdk",
+        "--allow-parents",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/split",
+      "exit_code": 0,
+      "stdout": "{\n  \"command\": \"verify\",\n  \"destination\": {\n    \"display\": \"rvddk.raw\"\n  },\n  \"destination_tail_bytes\": 0,\n  \"elapsed_seconds\": 0.00102367,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 1048576,\n  \"schema_version\": 1,\n  \"source\": {\n    \"display\": \"layer2.vmdk\"\n  },\n  \"status\": \"verified\",\n  \"verification_payload_bytes\": 2097152\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "vmdk",
+        "-O",
+        "raw",
+        "layer2.vmdk",
+        "qemu.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/split",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "layer2.vmdk",
+        "rvddk.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/split",
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "inspect",
+        "layer2.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/split",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 4: unsupported feature: parent chain\"},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mixed/oracle.raw",
+        "layer0.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mixed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "-b",
+        "layer0.vmdk",
+        "-F",
+        "vmdk",
+        "layer1.vmdk",
+        "4194304"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mixed",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer1.vmdk', fmt=vmdk size=4194304 backing_file=layer0.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=twoGbMaxExtentSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 119 32768 512",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mixed",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 32768\n512 bytes, 1 ops; 00.01 sec (39.067 KiB/sec and 78.1333 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 136 65024 1024",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mixed",
+      "exit_code": 0,
+      "stdout": "wrote 1024/1024 bytes at offset 65024\n1 KiB, 1 ops; 00.01 sec (79.893 KiB/sec and 79.8932 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "-b",
+        "layer1.vmdk",
+        "-F",
+        "vmdk",
+        "layer2.vmdk",
+        "4194304"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mixed",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer2.vmdk', fmt=vmdk size=4194304 backing_file=layer1.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=monolithicSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 0 32768 512",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mixed",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 32768\n512 bytes, 1 ops; 00.01 sec (38.838 KiB/sec and 77.6762 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 153 131072 512",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mixed",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 131072\n512 bytes, 1 ops; 00.01 sec (39.414 KiB/sec and 78.8289 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "inspect",
+        "layer2.vmdk",
+        "--format",
+        "vmdk",
+        "--allow-parents",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mixed",
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"inspect\",\n  \"format\": \"vmdk\",\n  \"status\": \"inspected\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"layer2.vmdk\"\n    },\n    \"logical_bytes\": 4194304,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 3,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122389593\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389592\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389590\n        }\n      ],\n      \"chain_descriptor_bytes\": 20992,\n      \"cid\": \"1c43eedd\",\n      \"descriptor_extent_count\": 3,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122389593\n      },\n      \"entry_probe_bytes\": 12,\n      \"layer_count\": 3,\n      \"layers\": [\n        {\n          \"cid\": \"1c43eedd\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389593\n          },\n          \"parent_cid\": \"d5b04c72\"\n        },\n        {\n          \"cid\": \"d5b04c72\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389591\n          },\n          \"parent_cid\": \"21ddcb19\"\n        },\n        {\n          \"cid\": \"21ddcb19\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389590\n          },\n          \"parent_cid\": null\n        }\n      ],\n      \"layout\": \"hosted_sparse_chain\",\n      \"metadata_memory_reservation_bytes\": 58968,\n      \"metadata_read_bytes\": 71168,\n      \"parent_policy\": \"same_directory_basename\"\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 4194304,\n    \"data_bytes\": 262144,\n    \"zero_bytes\": 3932160,\n    \"hole_bytes\": 0,\n    \"extent_count\": 3\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "plan",
+        "layer2.vmdk",
+        "rvddk.raw",
+        "--format",
+        "vmdk",
+        "--allow-parents",
+        "--json",
+        "--backend",
+        "auto",
+        "--workers",
+        "4",
+        "--block-size",
+        "65537"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mixed",
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"plan\",\n  \"format\": \"vmdk\",\n  \"status\": \"preview\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"layer2.vmdk\"\n    },\n    \"logical_bytes\": 4194304,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 3,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122389593\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389592\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389590\n        }\n      ],\n      \"chain_descriptor_bytes\": 20992,\n      \"cid\": \"1c43eedd\",\n      \"descriptor_extent_count\": 3,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122389593\n      },\n      \"entry_probe_bytes\": 12,\n      \"layer_count\": 3,\n      \"layers\": [\n        {\n          \"cid\": \"1c43eedd\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389593\n          },\n          \"parent_cid\": \"d5b04c72\"\n        },\n        {\n          \"cid\": \"d5b04c72\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389591\n          },\n          \"parent_cid\": \"21ddcb19\"\n        },\n        {\n          \"cid\": \"21ddcb19\",\n          \"descriptor_extent_count\": 1,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389590\n          },\n          \"parent_cid\": null\n        }\n      ],\n      \"layout\": \"hosted_sparse_chain\",\n      \"metadata_memory_reservation_bytes\": 58968,\n      \"metadata_read_bytes\": 71168,\n      \"parent_policy\": \"same_directory_basename\"\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 4194304,\n    \"data_bytes\": 262144,\n    \"zero_bytes\": 3932160,\n    \"hole_bytes\": 0,\n    \"extent_count\": 3\n  },\n  \"destination\": {\n    \"path\": {\n      \"display\": \"rvddk.raw\"\n    },\n    \"state\": \"new\",\n    \"policy\": \"create_new_no_clobber\",\n    \"existing_bytes\": null,\n    \"copy_range_bytes\": 4194304,\n    \"preserved_tail_bytes\": 0,\n    \"write_access_checked\": false\n  },\n  \"execution\": {\n    \"requested_backend\": \"auto\",\n    \"selected_backend\": \"threaded\",\n    \"selection_reason\": \"portable_api\",\n    \"runtime_prepared\": false,\n    \"block_size\": 65537,\n    \"buffer_alignment\": 4096,\n    \"workers\": 4,\n    \"work_queue_capacity\": 4,\n    \"native_queue_depth\": 8,\n    \"native_read_window\": 4,\n    \"memory_budget_bytes\": 268435456,\n    \"threaded_payload_estimate_bytes\": 262692,\n    \"threaded_payload_fits_budget\": true\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "copy",
+        "layer2.vmdk",
+        "rvddk.raw",
+        "--format",
+        "vmdk",
+        "--allow-parents",
+        "--json",
+        "--backend",
+        "auto",
+        "--workers",
+        "4",
+        "--block-size",
+        "65537",
+        "--verify"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mixed",
+      "exit_code": 0,
+      "stdout": "{\n  \"backend\": \"threaded\",\n  \"command\": \"copy\",\n  \"copy_memory_budget_bytes\": 268304382,\n  \"destination\": {\n    \"display\": \"rvddk.raw\"\n  },\n  \"destination_policy\": \"create_new_no_clobber\",\n  \"destination_tail_bytes\": 0,\n  \"durability\": \"file_and_directory_synced\",\n  \"elapsed_seconds\": 0.021669319,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 4194304,\n  \"planned_backend\": \"threaded\",\n  \"requested_backend\": \"auto\",\n  \"runtime_fallback\": null,\n  \"schema_version\": 1,\n  \"selection_reason\": \"portable_api\",\n  \"source\": {\n    \"display\": \"layer2.vmdk\"\n  },\n  \"stats\": {\n    \"blocks_copied\": 4,\n    \"bytes_discarded\": 0,\n    \"bytes_read\": 262144,\n    \"bytes_written\": 262144,\n    \"bytes_zeroed\": 3932160,\n    \"extents_processed\": 3\n  },\n  \"status\": \"completed\",\n  \"verification\": {\n    \"bytes_verified\": 4194304,\n    \"elapsed_seconds\": 0.000908555\n  },\n  \"verification_payload_bytes\": 131074\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "verify",
+        "layer2.vmdk",
+        "rvddk.raw",
+        "--format",
+        "vmdk",
+        "--allow-parents",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mixed",
+      "exit_code": 0,
+      "stdout": "{\n  \"command\": \"verify\",\n  \"destination\": {\n    \"display\": \"rvddk.raw\"\n  },\n  \"destination_tail_bytes\": 0,\n  \"elapsed_seconds\": 0.001709698,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 4194304,\n  \"schema_version\": 1,\n  \"source\": {\n    \"display\": \"layer2.vmdk\"\n  },\n  \"status\": \"verified\",\n  \"verification_payload_bytes\": 2097152\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "vmdk",
+        "-O",
+        "raw",
+        "layer2.vmdk",
+        "qemu.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mixed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "layer2.vmdk",
+        "rvddk.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mixed",
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "inspect",
+        "layer2.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/mixed",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 4: unsupported feature: parent chain\"},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split/oracle.raw",
+        "layer0.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "-b",
+        "layer0.vmdk",
+        "-F",
+        "vmdk",
+        "layer1.vmdk",
+        "2147549184"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer1.vmdk', fmt=vmdk size=2147549184 backing_file=layer0.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=twoGbMaxExtentSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 119 32768 512",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 32768\n512 bytes, 1 ops; 00.01 sec (39.609 KiB/sec and 79.2190 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 136 65024 1024",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 0,
+      "stdout": "wrote 1024/1024 bytes at offset 65024\n1 KiB, 1 ops; 00.01 sec (78.614 KiB/sec and 78.6135 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 161 2147417600 1024",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 0,
+      "stdout": "wrote 1024/1024 bytes at offset 2147417600\n1 KiB, 1 ops; 00.02 sec (52.286 KiB/sec and 52.2860 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "-b",
+        "layer1.vmdk",
+        "-F",
+        "vmdk",
+        "layer2.vmdk",
+        "2147549184"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer2.vmdk', fmt=vmdk size=2147549184 backing_file=layer1.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=twoGbMaxExtentSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 0 32768 512",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 32768\n512 bytes, 1 ops; 00.01 sec (39.223 KiB/sec and 78.4453 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 153 131072 512",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 131072\n512 bytes, 1 ops; 00.01 sec (39.635 KiB/sec and 79.2700 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 178 2147483136 1024",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 0,
+      "stdout": "wrote 1024/1024 bytes at offset 2147483136\n1 KiB, 1 ops; 00.02 sec (51.773 KiB/sec and 51.7729 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 178 2147483648 65536",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 0,
+      "stdout": "wrote 65536/65536 bytes at offset 2147483648\n64 KiB, 1 ops; 00.01 sec (4.979 MiB/sec and 79.6627 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "inspect",
+        "layer2.vmdk",
+        "--format",
+        "vmdk",
+        "--allow-parents",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"inspect\",\n  \"format\": \"vmdk\",\n  \"status\": \"inspected\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"layer2.vmdk\"\n    },\n    \"logical_bytes\": 2147549184,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 6,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122389605\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389606\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389602\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389603\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389599\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389600\n        }\n      ],\n      \"chain_descriptor_bytes\": 1536,\n      \"cid\": \"b633910a\",\n      \"descriptor_extent_count\": 6,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122389604\n      },\n      \"entry_probe_bytes\": 12,\n      \"layer_count\": 3,\n      \"layers\": [\n        {\n          \"cid\": \"b633910a\",\n          \"descriptor_extent_count\": 2,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389604\n          },\n          \"parent_cid\": \"2f6636a4\"\n        },\n        {\n          \"cid\": \"2f6636a4\",\n          \"descriptor_extent_count\": 2,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389601\n          },\n          \"parent_cid\": \"83cbd974\"\n        },\n        {\n          \"cid\": \"83cbd974\",\n          \"descriptor_extent_count\": 2,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389598\n          },\n          \"parent_cid\": null\n        }\n      ],\n      \"layout\": \"hosted_sparse_chain\",\n      \"metadata_memory_reservation_bytes\": 865256,\n      \"metadata_read_bytes\": 873984,\n      \"parent_policy\": \"same_directory_basename\"\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 2147549184,\n    \"data_bytes\": 393216,\n    \"zero_bytes\": 2147155968,\n    \"hole_bytes\": 0,\n    \"extent_count\": 3\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "plan",
+        "layer2.vmdk",
+        "rvddk.raw",
+        "--format",
+        "vmdk",
+        "--allow-parents",
+        "--json",
+        "--backend",
+        "auto",
+        "--workers",
+        "4",
+        "--block-size",
+        "65537"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"plan\",\n  \"format\": \"vmdk\",\n  \"status\": \"preview\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"layer2.vmdk\"\n    },\n    \"logical_bytes\": 2147549184,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 6,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122389605\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389606\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389602\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389603\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389599\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122389600\n        }\n      ],\n      \"chain_descriptor_bytes\": 1536,\n      \"cid\": \"b633910a\",\n      \"descriptor_extent_count\": 6,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122389604\n      },\n      \"entry_probe_bytes\": 12,\n      \"layer_count\": 3,\n      \"layers\": [\n        {\n          \"cid\": \"b633910a\",\n          \"descriptor_extent_count\": 2,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389604\n          },\n          \"parent_cid\": \"2f6636a4\"\n        },\n        {\n          \"cid\": \"2f6636a4\",\n          \"descriptor_extent_count\": 2,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389601\n          },\n          \"parent_cid\": \"83cbd974\"\n        },\n        {\n          \"cid\": \"83cbd974\",\n          \"descriptor_extent_count\": 2,\n          \"descriptor_identity\": {\n            \"device\": 38,\n            \"inode\": 122389598\n          },\n          \"parent_cid\": null\n        }\n      ],\n      \"layout\": \"hosted_sparse_chain\",\n      \"metadata_memory_reservation_bytes\": 865256,\n      \"metadata_read_bytes\": 873984,\n      \"parent_policy\": \"same_directory_basename\"\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 2147549184,\n    \"data_bytes\": 393216,\n    \"zero_bytes\": 2147155968,\n    \"hole_bytes\": 0,\n    \"extent_count\": 3\n  },\n  \"destination\": {\n    \"path\": {\n      \"display\": \"rvddk.raw\"\n    },\n    \"state\": \"new\",\n    \"policy\": \"create_new_no_clobber\",\n    \"existing_bytes\": null,\n    \"copy_range_bytes\": 2147549184,\n    \"preserved_tail_bytes\": 0,\n    \"write_access_checked\": false\n  },\n  \"execution\": {\n    \"requested_backend\": \"auto\",\n    \"selected_backend\": \"threaded\",\n    \"selection_reason\": \"portable_api\",\n    \"runtime_prepared\": false,\n    \"block_size\": 65537,\n    \"buffer_alignment\": 4096,\n    \"workers\": 4,\n    \"work_queue_capacity\": 4,\n    \"native_queue_depth\": 8,\n    \"native_read_window\": 4,\n    \"memory_budget_bytes\": 268435456,\n    \"threaded_payload_estimate_bytes\": 262692,\n    \"threaded_payload_fits_budget\": true\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "copy",
+        "layer2.vmdk",
+        "rvddk.raw",
+        "--format",
+        "vmdk",
+        "--allow-parents",
+        "--json",
+        "--backend",
+        "auto",
+        "--workers",
+        "4",
+        "--block-size",
+        "65537",
+        "--verify"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 0,
+      "stdout": "{\n  \"backend\": \"threaded\",\n  \"command\": \"copy\",\n  \"copy_memory_budget_bytes\": 268304382,\n  \"destination\": {\n    \"display\": \"rvddk.raw\"\n  },\n  \"destination_policy\": \"create_new_no_clobber\",\n  \"destination_tail_bytes\": 0,\n  \"durability\": \"file_and_directory_synced\",\n  \"elapsed_seconds\": 0.892402023,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 2147549184,\n  \"planned_backend\": \"threaded\",\n  \"requested_backend\": \"auto\",\n  \"runtime_fallback\": null,\n  \"schema_version\": 1,\n  \"selection_reason\": \"portable_api\",\n  \"source\": {\n    \"display\": \"layer2.vmdk\"\n  },\n  \"stats\": {\n    \"blocks_copied\": 6,\n    \"bytes_discarded\": 0,\n    \"bytes_read\": 393216,\n    \"bytes_written\": 393216,\n    \"bytes_zeroed\": 2147155968,\n    \"extents_processed\": 3\n  },\n  \"status\": \"completed\",\n  \"verification\": {\n    \"bytes_verified\": 2147549184,\n    \"elapsed_seconds\": 0.518043655\n  },\n  \"verification_payload_bytes\": 131074\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "verify",
+        "layer2.vmdk",
+        "rvddk.raw",
+        "--format",
+        "vmdk",
+        "--allow-parents",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 0,
+      "stdout": "{\n  \"command\": \"verify\",\n  \"destination\": {\n    \"display\": \"rvddk.raw\"\n  },\n  \"destination_tail_bytes\": 0,\n  \"elapsed_seconds\": 0.383448969,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 2147549184,\n  \"schema_version\": 1,\n  \"source\": {\n    \"display\": \"layer2.vmdk\"\n  },\n  \"status\": \"verified\",\n  \"verification_payload_bytes\": 2097152\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "vmdk",
+        "-O",
+        "raw",
+        "layer2.vmdk",
+        "qemu.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "layer2.vmdk",
+        "rvddk.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r58-onvhklrc/candidate-target/release/rvddk",
+        "inspect",
+        "layer2.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r58-benchmark-storage/reference-cli/multi-split",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 4: unsupported feature: parent chain\"},\"schema_version\":1}\n"
+    }
+  ]
+}

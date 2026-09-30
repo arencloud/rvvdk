@@ -24,7 +24,7 @@ Virtual disk tools need to understand both **what a disk means** and **how its
 bytes are stored**. rvvdk separates logical disks, disk formats, backing storage,
 and execution so each can evolve independently.
 
-The current workspace provides a local RAW and read-only base FLAT/ZERO and hosted sparse VMDK copy engine,
+The current workspace provides a local RAW and read-only FLAT/ZERO, hosted sparse and sparse-parent VMDK copy engine,
 with sparse source extent discovery, bounded concurrency, reusable aligned buffers, and Linux
 io_uring execution. The longer-term goal is an independent Rust toolkit for
 VMware disk access and migration, extensible to other platforms.
@@ -34,7 +34,8 @@ VMware disk access and migration, extensible to other platforms.
 > A [bounded VMDK descriptor parser](docs/vmdk-descriptor.md) is available.
 > [FLAT/ZERO](docs/vmdk-logical.md) and [base hosted sparse](docs/vmdk-sparse-disk.md)
 > VMDK disks are readable through Rust APIs and [all four CLI commands](docs/cli-vmdk.md), with RAW output and
-> [bounded terminal-padding support](docs/vmdk-padding.md).
+> [bounded terminal-padding support](docs/vmdk-padding.md). Hosted sparse parents are
+> available through [explicit CLI opt-in](docs/cli-vmdk-parents.md).
 > VMware remote access, CBT, and durable resume are planned.
 > The [roadmap](docs/roadmap.md) tracks completed fixes and remaining work;
 > the [dated review](docs/project-review-2026-09-28.md) records the starting assessment.
@@ -59,7 +60,7 @@ VMware disk access and migration, extensible to other platforms.
 | **Copy memory budget** | Configurable 256 MiB default for buffers, queue entries, and extent metadata; [scope and limits](docs/copy-memory.md) |
 | **VMDK descriptors** | [Hosted base FLAT/ZERO metadata](docs/vmdk-descriptor.md), bounded parsing, [confined backing resolution](docs/vmdk-backing.md) and [logical reads](docs/vmdk-logical.md) |
 | **Hosted sparse reads** | [Read-only base monolithic/split sparse](docs/vmdk-sparse-disk.md), bounded metadata and [CLI inspect/plan/copy/verify](docs/cli-vmdk.md) |
-| **Parent chains** | [Read-only sparse parent fallback](docs/vmdk-chain-disk.md) in Rust, bounded metadata and whole-chain alias checks; CLI support pending |
+| **Parent chains** | [Read-only sparse parent fallback](docs/vmdk-chain-disk.md) with bounded metadata, whole-chain alias checks and [opt-in CLI support](docs/cli-vmdk-parents.md) |
 | **VMware access** | Planned; no VMware VDDK dependency in the current workspace |
 
 The [endpoint contract](docs/architecture.md#copy-endpoint-preflight-r05) describes
@@ -146,14 +147,15 @@ flowchart TD
     FD --> Local
     Logical --> VMDK["VMDK · FLAT/ZERO reads"]
     Logical --> Sparse["Base hosted sparse · logical reads"]
-    Sparse -. "planned" .-> Parents["Parent chains and other sparse formats"]
+    Sparse --> Parents["Sparse parent chains · opt-in CLI"]
+    Parents -. "planned" .-> Other["Other sparse formats"]
     VMDK --> Device
     Sparse --> Device
 
     classDef implemented fill:#0f172a,stroke:#38bdf8,color:#f8fafc;
     classDef planned fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-dasharray:5 5;
-    class API,Mover,Portable,Native,Logical,Raw,Device,Memory,Local,FD,VMDK,Sparse implemented;
-    class Parents planned;
+    class API,Mover,Portable,Native,Logical,Raw,Device,Memory,Local,FD,VMDK,Sparse,Parents implemented;
+    class Other planned;
 ```
 
 Native acceleration currently serves Linux RAW backends. Future format readers
@@ -170,7 +172,7 @@ migration and exceptional cleanup behavior.
 |:---|:---|
 | [`rvvdk-cli`](crates/rvvdk-cli) | `rvddk` RAW/VMDK inspect, plan, copy to RAW and bounded verify; human/JSON reports |
 | [`rvvdk-core`](crates/rvvdk-core) | Disk contracts, ranges, extents, RAW/memory devices, and buffer ownership |
-| [`rvvdk-vmdk`](crates/rvvdk-vmdk) | Bounded descriptors, backing resolution and read-only FLAT/ZERO/base sparse disks |
+| [`rvvdk-vmdk`](crates/rvvdk-vmdk) | Bounded descriptors, backing resolution and read-only FLAT/ZERO and sparse parent disks |
 | [`rvvdk-local`](crates/rvvdk-local) | Local regular-file access, sparse discovery, and direct-I/O handling |
 | [`rvvdk-platform`](crates/rvvdk-platform) | Platform-specific backend capabilities |
 | [`rvvdk-datamover`](crates/rvvdk-datamover) | Planning, execution strategies, scheduling, statistics, and progress |
@@ -225,8 +227,8 @@ workloads. Measurements depend on the filesystem, page cache, hardware, and
 flush policy. See the [benchmark notes](docs/benchmarks.md) for historical results
 and the [review](docs/project-review-2026-09-28.md) for measurement gaps.
 
-Explore the [R5.7 benchmark charts](docs/benchmark-results/2026-09-30-r57/README.md)
-for parent-read depth and fragmentation costs, paired changes, and sample distributions. A
+Explore the [R5.8 benchmark charts](docs/benchmark-results/2026-09-30-r58/README.md)
+for CLI parent-chain costs, paired changes, and sample distributions. A
 [reusable generator](scripts/benchmarks/README.md) exports SVG and PNG figures.
 
 ## Inspect, copy and verify from the command line
@@ -241,6 +243,13 @@ target/release/rvddk verify source.raw destination.raw --format raw
 
 Planning creates and writes nothing. Existing destinations require `--overwrite`
 to preview in-place changes; native selection and runtime readiness stay deferred.
+Use `--allow-parents` with `--format vmdk` for [sparse parent chains](docs/cli-vmdk-parents.md).
+Parent hints must be basenames in the source directory:
+
+```bash
+rvddk copy leaf.vmdk output.raw --format vmdk --allow-parents --backend auto --workers 4 --verify
+```
+
 Convert a supported base FLAT/ZERO or hosted sparse VMDK to RAW:
 
 ```bash

@@ -147,7 +147,11 @@ fn verify<C: Cancellation>(
     let started = Instant::now();
     let source_path = args.get_one::<PathBuf>("source").unwrap();
     let destination_path = args.get_one::<PathBuf>("destination").unwrap();
-    let opened = Source::open(source_path, args.get_one::<String>("format").unwrap())?;
+    let opened = Source::open(
+        source_path,
+        args.get_one::<String>("format").unwrap(),
+        args.get_flag("allow-parents"),
+    )?;
     let source = opened.logical();
     let destination_file = target::verify_destination(destination_path)?;
     let destination_stamp = stamp(&destination_file)?;
@@ -207,7 +211,11 @@ fn copy_controlled<C: Cancellation>(
     let started = Instant::now();
     let source_path = args.get_one::<PathBuf>("source").unwrap();
     let destination_path = args.get_one::<PathBuf>("destination").unwrap();
-    let opened = Source::open(source_path, args.get_one::<String>("format").unwrap())?;
+    let opened = Source::open(
+        source_path,
+        args.get_one::<String>("format").unwrap(),
+        args.get_flag("allow-parents"),
+    )?;
     let source = opened.logical();
     let budget = *args.get_one::<usize>("memory-budget").unwrap();
     let block = *args.get_one::<usize>("block-size").unwrap();
@@ -238,6 +246,7 @@ fn copy_controlled<C: Cancellation>(
             Disk::Raw(raw) => mover.plan_raw_with_destination(raw, &destination)?,
             Disk::Vmdk(vmdk) => mover.plan_with_destination(vmdk, &destination)?,
             Disk::Sparse(sparse) => mover.plan_with_destination(sparse, &destination)?,
+            Disk::Chain(chain) => mover.plan_with_destination(chain, &destination)?,
         };
         if target.existing {
             target.check_name()?;
@@ -259,6 +268,13 @@ fn copy_controlled<C: Cancellation>(
                 mover.execute_plan_controlled(&plan, vmdk, &destination, cancellation, &observer)?
             }
             Disk::Sparse(sparse) => mover.execute_plan_controlled(
+                &plan,
+                sparse,
+                &destination,
+                cancellation,
+                &observer,
+            )?,
+            Disk::Chain(sparse) => mover.execute_plan_controlled(
                 &plan,
                 sparse,
                 &destination,

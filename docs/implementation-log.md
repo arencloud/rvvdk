@@ -1846,14 +1846,68 @@ creation and buffers are outside timing. These memory-backed mapping/copy costs
 are not storage throughput. Plot regeneration is byte-identical; earlier evidence
 is unchanged. Depth/boundary scanning remains visible for future measured tuning.
 
+## R5.8 — Confined CLI sparse parent chains (2026-09-30)
+
+Completed in this step's commit; baseline `6f8f317`.
+[Contract](cli-vmdk-parents.md), [ADR-0044](adr/0044-confined-cli-parent-chains.md),
+[evidence and plots](benchmark-results/2026-09-30-r58/README.md).
+
+All four commands accept `--format vmdk --allow-parents`, loading sparse-only
+chains through the bounded library. Parent hints must be basenames in the pinned
+source directory. Every descriptor/backing retains timestamp/identity/size
+observations and participates in destination alias protection. The existing
+portable copy, logical verification, cancellation and publication rules apply.
+Default base-only acquisition is unchanged. Preview reports expose layer/CID/
+identity provenance and loader budgets separately from entry probes. External
+monolithic mirrors are accepted in chain mode under library binding checks.
+
+Validation: **537 passed, one existing gated test** (538 distinct), clean Clippy
+and formatting, portable core/datamover/VMDK check with its existing warning.
+Thirteen new CLI tests cover inherited data/allocated zeros, all commands and
+source families, ancestor alias/mutation protection, confined paths, depth 16/17,
+malformed chains, mirrors/container binding, budgets, cancellation and publication.
+A separate **173-test** CLI/VMDK run passes with integration fixtures on Btrfs;
+five existing CLI unit fault tests retain system-temporary fixtures. Independent
+release builds and validation targets are retained in the evidence.
+
+QEMU-generated mono/split/mixed/multi-file split three-layer chains pass all four
+commands. Full copied bytes match independent RAW overlays and QEMU decoding;
+QEMU compare passes; source hashes are unchanged. The largest disk is 2 GiB +
+64 KiB. Default-mode inspection still rejects all four parent leaves. The prior
+partial second-extent producer discrepancy and failed evidence remain unchanged;
+this step uses the separately qualified full-grain replacement for that large
+case and does not qualify the original producer path. No SDK/producer source or
+ESXi is used.
+
+Performance: **30 matched runs**, **6 longer follow-up runs**, and
+**15 initial parent CLI runs**. Main changes for FLAT/ZERO inspect, plan, copy,
+RAW verify and base sparse copy are **+6.10%, -1.02%, +1.24%, +2.34%, -0.50%**. Every adverse aggregate
+or individual pair above +5% triggers longer alternating pairs; all runs remain
+visible, without pooling or causal speedup claims.
+
+- `cli_vmdk/inspect_mixed`: -2.16% aggregate; pairs -2.16%, -3.07%, -0.82%.
+
+Initial end-to-end parent costs (1 MiB, three layers; admission included):
+
+- `cli_parents/inspect_mono`: 0.176 ms median across three run medians.
+- `cli_parents/plan_split`: 0.164 ms median across three run medians.
+- `cli_parents/copy_mono_verify`: 19.930 ms median across three run medians.
+- `cli_parents/copy_split_verify`: 19.930 ms median across three run medians.
+- `cli_parents/verify_split`: 0.259 ms median across three run medians.
+
+SVG/PNG regeneration is byte-identical. Source patch reconstruction, binary and
+harness identities, sample medians, repeat triggers, reference hashes and local
+links pass audit. PERF.0, R4.4 and earlier adverse investigations remain open for
+a controlled runner; warm local timings are not physical storage throughput.
+
 ## Next session
 
-Start **R5.8**: parent-chain CLI acquisition under explicit confined resolver policy,
-per-source observations and existing alias, cancellation, verification and publication
-contracts. Qualify inspect/plan/copy/verify on parent chains, preserve separate loader
-and copy budgets, and keep the initial QEMU partial second-extent write discrepancy
-visible. Each completed step gets tests, benchmark evidence/plots, log updates and
-an automatic local commit. Coverage-guided fuzzing remains future work.
+Start **R5.9**: bounded coverage-guided fuzz harnesses for descriptor/header,
+sparse metadata and parent-chain admission. Retain authored seeds, explicit
+input/resource limits, smoke-run commands and any failure/minimization evidence.
+Keep the initial QEMU partial second-extent write discrepancy visible. Each
+completed step gets validation, benchmark evidence/plots, log updates and an
+automatic local commit. Broader path policies and formats remain separate work.
 
 ESXi remains unnecessary for local work; request the 60-day trial when V0's lab
 proof is ready. Keep PERF.0, R4.4 preview overhead/tuning and earlier adverse timing

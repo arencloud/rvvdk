@@ -1,0 +1,885 @@
+diff --git a/crates/rvvdk-cli/Cargo.toml b/crates/rvvdk-cli/Cargo.toml
+index 31bc92d..a65b099 100644
+--- a/crates/rvvdk-cli/Cargo.toml
++++ b/crates/rvvdk-cli/Cargo.toml
+@@ -41,3 +41,7 @@ harness = false
+ [[bench]]
+ name = "sparse"
+ harness = false
++
++[[bench]]
++name = "parents"
++harness = false
+diff --git a/crates/rvvdk-cli/src/args.rs b/crates/rvvdk-cli/src/args.rs
+index 9b50fb0..739a512 100644
+--- a/crates/rvvdk-cli/src/args.rs
++++ b/crates/rvvdk-cli/src/args.rs
+@@ -22,6 +22,8 @@ fn source(command: Command) -> Command {
+                 .value_parser(["raw", "vmdk"])
+                 .help("Explicit input format; no format autodetection"),
+         )
++        .arg(Arg::new("allow-parents").long("allow-parents").action(ArgAction::SetTrue)
++            .help("Opt in to hosted-sparse parent chains in the source directory; requires --format vmdk"))
+         .arg(
+             Arg::new("memory-budget")
+                 .long("memory-budget")
+@@ -98,7 +100,7 @@ pub(crate) fn command() -> Command {
+     // Build only the selected command's options. The full list and summaries
+     // remain available in root help, without cloning unrelated argument trees.
+     Command::new("rvddk").version(env!("CARGO_PKG_VERSION"))
+-        .about("Inspect, plan, copy, and verify local RAW or base FLAT/ZERO/hosted-sparse VMDK sources (RAW destinations)")
++        .about("Inspect, plan, copy, and verify local RAW or FLAT/ZERO/hosted-sparse VMDK sources (RAW destinations)")
+         .subcommand_required(true).arg_required_else_help(true)
+         .arg(Arg::new("json").long("json").global(true).action(ArgAction::SetTrue)
+             .help("Emit schema-versioned JSON; errors go to stderr"))
+diff --git a/crates/rvvdk-cli/src/preview.rs b/crates/rvvdk-cli/src/preview.rs
+index 8aedcdd..bc21515 100644
+--- a/crates/rvvdk-cli/src/preview.rs
++++ b/crates/rvvdk-cli/src/preview.rs
+@@ -88,7 +88,11 @@ pub(crate) struct Preview {
+ }
+ pub(crate) fn build(name: &str, args: &clap::ArgMatches) -> Result<Preview> {
+     let source_path = args.get_one::<PathBuf>("source").expect("required source");
+-    let opened = OpenedSource::open(source_path, args.get_one::<String>("format").unwrap())?;
++    let opened = OpenedSource::open(
++        source_path,
++        args.get_one::<String>("format").unwrap(),
++        args.get_flag("allow-parents"),
++    )?;
+     let source = opened.logical();
+     let endpoint = source.copy_endpoint()?;
+     let (device, inode) = opened.identity();
+diff --git a/crates/rvvdk-cli/src/source.rs b/crates/rvvdk-cli/src/source.rs
+index 0d6da85..3a06d0d 100644
+--- a/crates/rvvdk-cli/src/source.rs
++++ b/crates/rvvdk-cli/src/source.rs
+@@ -16,6 +16,8 @@ use std::{
+     sync::{Arc, Mutex},
+ };
+ 
++mod chain;
++
+ type Result<T> = std::result::Result<T, Failure>;
+ type Stamp = (u64, u64, u64, i64, i64, i64, i64);
+ pub(crate) fn stamp(file: &File) -> std::io::Result<Stamp> {
+@@ -44,6 +46,7 @@ pub(crate) enum Disk {
+     Raw(RawDisk<LocalFileBlockDevice>),
+     Vmdk(VmdkDisk),
+     Sparse(SparseDisk),
++    Chain(rvvdk_vmdk::SparseChainDisk),
+ }
+ pub(crate) struct Source {
+     pub disk: Disk,
+@@ -79,7 +82,16 @@ impl BackingResolver for ObservingResolver {
+     }
+ }
+ impl Source {
+-    pub fn open(path: &Path, format: &str) -> Result<Self> {
++    pub fn open(path: &Path, format: &str, allow_parents: bool) -> Result<Self> {
++        if allow_parents {
++            if format != "vmdk" {
++                return Err(Failure::new(
++                    "arguments",
++                    "--allow-parents requires --format vmdk",
++                ));
++            }
++            return chain::open(path);
++        }
+         let source = if format == "raw" {
+             let file = Observed::new(target::source(path)?)
+                 .map_err(|e| Failure::io("inspect source", e))?;
+@@ -153,16 +165,19 @@ impl Source {
+             Disk::Raw(d) => d,
+             Disk::Vmdk(d) => d,
+             Disk::Sparse(d) => d,
++            Disk::Chain(d) => d,
+         }
+     }
+     pub fn format(&self) -> &'static str {
+         match self.disk {
+             Disk::Raw(_) => "raw",
+-            Disk::Vmdk(_) | Disk::Sparse(_) => "vmdk",
++            Disk::Vmdk(_) | Disk::Sparse(_) | Disk::Chain(_) => "vmdk",
+         }
+     }
+     pub fn validate_backend(&self, requested: &str) -> Result<()> {
+-        if matches!(self.disk, Disk::Vmdk(_) | Disk::Sparse(_)) && requested == "io-uring" {
++        if matches!(self.disk, Disk::Vmdk(_) | Disk::Sparse(_) | Disk::Chain(_))
++            && requested == "io-uring"
++        {
+             return Err(Failure::new(
+                 "unsupported_backend",
+                 "VMDK logical sources require threaded or auto execution",
+@@ -198,6 +213,26 @@ impl Source {
+         (self.files[0].initial.0, self.files[0].initial.1)
+     }
+     pub fn vmdk_report(&self) -> Option<serde_json::Value> {
++        if let Disk::Chain(disk) = &self.disk {
++            let chain = disk.chain();
++            let layers = chain.layers();
++            let backings = layers.iter().flat_map(|l| l.metadata()).collect::<Vec<_>>();
++            return Some(serde_json::json!({
++                "descriptor_identity":{"device":self.identity().0,"inode":self.identity().1},
++                "layout":"hosted_sparse_chain", "parent_policy":"same_directory_basename",
++                "layer_count":layers.len(), "cid":format!("{:08x}",layers[0].cid()),
++                "backing_file_count":backings.len(), "descriptor_extent_count":backings.len(),
++                "metadata_memory_reservation_bytes":chain.reserved_memory_bytes(),
++                "metadata_read_bytes":chain.metadata_read_bytes(),
++                "chain_descriptor_bytes":chain.descriptor_bytes(), "entry_probe_bytes":4*layers.len(),
++                "layers":layers.iter().map(|l| serde_json::json!({
++                    "cid":format!("{:08x}",l.cid()), "parent_cid":l.parent_cid().map(|v|format!("{v:08x}")),
++                    "descriptor_identity":chain::identity_json(l.descriptor_endpoint().identity),
++                    "descriptor_extent_count":l.metadata().len()
++                })).collect::<Vec<_>>(),
++                "backing_identities":backings.iter().map(|m|chain::identity_json(m.initial_endpoint().identity)).collect::<Vec<_>>()
++            }));
++        }
+         if let Disk::Sparse(disk) = &self.disk {
+             return Some(serde_json::json!({
+                 "descriptor_identity": {"device":self.identity().0,"inode":self.identity().1},
+@@ -299,3 +334,9 @@ fn acquire(source: &mut Observed) -> Result<(Vec<u8>, bool)> {
+     }
+     Ok((bytes, false))
+ }
++
++impl From<rvvdk_vmdk::SparseChainError> for Failure {
++    fn from(error: rvvdk_vmdk::SparseChainError) -> Self {
++        Self::new("vmdk", error.to_string())
++    }
++}
+diff --git a/crates/rvvdk-cli/src/transfer.rs b/crates/rvvdk-cli/src/transfer.rs
+index 6b2c352..4eb012c 100644
+--- a/crates/rvvdk-cli/src/transfer.rs
++++ b/crates/rvvdk-cli/src/transfer.rs
+@@ -147,7 +147,11 @@ fn verify<C: Cancellation>(
+     let started = Instant::now();
+     let source_path = args.get_one::<PathBuf>("source").unwrap();
+     let destination_path = args.get_one::<PathBuf>("destination").unwrap();
+-    let opened = Source::open(source_path, args.get_one::<String>("format").unwrap())?;
++    let opened = Source::open(
++        source_path,
++        args.get_one::<String>("format").unwrap(),
++        args.get_flag("allow-parents"),
++    )?;
+     let source = opened.logical();
+     let destination_file = target::verify_destination(destination_path)?;
+     let destination_stamp = stamp(&destination_file)?;
+@@ -207,7 +211,11 @@ fn copy_controlled<C: Cancellation>(
+     let started = Instant::now();
+     let source_path = args.get_one::<PathBuf>("source").unwrap();
+     let destination_path = args.get_one::<PathBuf>("destination").unwrap();
+-    let opened = Source::open(source_path, args.get_one::<String>("format").unwrap())?;
++    let opened = Source::open(
++        source_path,
++        args.get_one::<String>("format").unwrap(),
++        args.get_flag("allow-parents"),
++    )?;
+     let source = opened.logical();
+     let budget = *args.get_one::<usize>("memory-budget").unwrap();
+     let block = *args.get_one::<usize>("block-size").unwrap();
+@@ -238,6 +246,7 @@ fn copy_controlled<C: Cancellation>(
+             Disk::Raw(raw) => mover.plan_raw_with_destination(raw, &destination)?,
+             Disk::Vmdk(vmdk) => mover.plan_with_destination(vmdk, &destination)?,
+             Disk::Sparse(sparse) => mover.plan_with_destination(sparse, &destination)?,
++            Disk::Chain(chain) => mover.plan_with_destination(chain, &destination)?,
+         };
+         if target.existing {
+             target.check_name()?;
+@@ -265,6 +274,13 @@ fn copy_controlled<C: Cancellation>(
+                 cancellation,
+                 &observer,
+             )?,
++            Disk::Chain(sparse) => mover.execute_plan_controlled(
++                &plan,
++                sparse,
++                &destination,
++                cancellation,
++                &observer,
++            )?,
+         };
+         let stats = report.stats();
+         counters = json!({"bytes_read":stats.bytes_read(),"bytes_written":stats.bytes_written(),"bytes_zeroed":stats.bytes_zeroed(),"bytes_discarded":stats.bytes_discarded(),"blocks_copied":stats.blocks_copied(),"extents_processed":stats.extents_processed()});
+diff --git a/crates/rvvdk-cli/benches/parents.rs b/crates/rvvdk-cli/benches/parents.rs
+new file mode 100644
+index 0000000..ad460c5
+--- /dev/null
++++ b/crates/rvvdk-cli/benches/parents.rs
+@@ -0,0 +1,93 @@
++#[path = "../tests/support/parents.rs"]
++mod parents;
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use std::{
++    fs,
++    time::{Duration, Instant},
++};
++fn parents_cli(c: &mut Criterion) {
++    let mono_fixture = parents::Fixture::new([false; 3]);
++    let split_fixture = parents::Fixture::new([true; 3]);
++    let mono = &mono_fixture.expected;
++    let split = &split_fixture.expected;
++    let destination = mono_fixture.destination.clone();
++    let mut group = c.benchmark_group("cli_parents");
++    group.sampling_mode(SamplingMode::Flat);
++    for (name, command, source, expected) in [
++        ("inspect_mono", "inspect", &mono_fixture.source, &mono),
++        ("plan_split", "plan", &split_fixture.source, &split),
++        ("copy_mono_verify", "copy", &mono_fixture.source, &mono),
++        ("copy_split_verify", "copy", &split_fixture.source, &split),
++        ("verify_split", "verify", &split_fixture.source, &split),
++    ] {
++        let mut args = vec![
++            "rvddk".into(),
++            command.into(),
++            source.clone().into_os_string(),
++        ];
++        if command != "inspect" {
++            args.push(destination.clone().into_os_string());
++        }
++        args.extend([
++            "--format".into(),
++            "vmdk".into(),
++            "--json".into(),
++            "--allow-parents".into(),
++        ]);
++        if command != "inspect" {
++            args.extend(["--block-size".into(), "65536".into()]);
++        }
++        if command == "plan" || command == "copy" {
++            args.extend([
++                "--backend".into(),
++                "auto".into(),
++                "--workers".into(),
++                "4".into(),
++            ]);
++        }
++        if command == "copy" {
++            args.push("--verify".into());
++        }
++        if command == "verify" {
++            fs::write(&destination, expected).unwrap();
++        }
++        let mut output = Vec::new();
++        let mut errors = Vec::new();
++        assert_eq!(
++            rvvdk_cli::run(args.clone(), &mut output, &mut errors),
++            0,
++            "{}",
++            String::from_utf8_lossy(&errors)
++        );
++        let report: serde_json::Value = serde_json::from_slice(&output).unwrap();
++        assert_eq!(report["format"], "vmdk");
++        if command == "copy" {
++            assert_eq!(report["backend"], "threaded");
++            assert_eq!(&fs::read(&destination).unwrap(), *expected);
++            fs::remove_file(&destination).unwrap();
++        }
++        group.bench_function(name, |b| {
++            b.iter_custom(|n| {
++                let mut elapsed = Duration::ZERO;
++                for _ in 0..n {
++                    let started = Instant::now();
++                    let code =
++                        rvvdk_cli::run(args.clone(), &mut std::io::sink(), &mut std::io::sink());
++                    elapsed += started.elapsed();
++                    assert_eq!(code, 0);
++                    if command == "copy" {
++                        assert_eq!(&fs::read(&destination).unwrap(), *expected);
++                        fs::remove_file(&destination).unwrap();
++                    }
++                }
++                elapsed
++            })
++        });
++        if command == "verify" {
++            fs::remove_file(&destination).unwrap();
++        }
++    }
++    group.finish();
++}
++criterion_group! {name=benches; config=Criterion::default().sample_size(30).warm_up_time(Duration::from_millis(300)).measurement_time(Duration::from_secs(2)); targets=parents_cli}
++criterion_main!(benches);
+diff --git a/crates/rvvdk-cli/src/source/chain.rs b/crates/rvvdk-cli/src/source/chain.rs
+new file mode 100644
+index 0000000..0334aa5
+--- /dev/null
++++ b/crates/rvvdk-cli/src/source/chain.rs
+@@ -0,0 +1,100 @@
++//! Explicit CLI policy: every parent descriptor is a basename in one pinned
++//! directory; each backing resolves relative to that same descriptor directory.
++use super::*;
++use rvvdk_core::EndpointIdentity;
++use rvvdk_vmdk::{
++    ChainEntry, ParentResolver, SparseChain, SparseChainDisk, SparseChainLimits, SparseChainSource,
++};
++struct Policy {
++    local: Arc<LocalResolver>,
++    files: Arc<Mutex<Vec<Observed>>>,
++}
++struct Backings {
++    local: Arc<LocalResolver>,
++    files: Arc<Mutex<Vec<Observed>>>,
++}
++fn retain(
++    file: File,
++    files: &Mutex<Vec<Observed>>,
++) -> std::result::Result<Arc<LocalFileBlockDevice>, BackingError> {
++    let observed = Observed::new(file).map_err(observation_error)?;
++    let device = LocalFileBlockDevice::from_buffered_file(
++        observed.file.try_clone().map_err(observation_error)?,
++    )
++    .map_err(BackingError::Adopt)?;
++    files.lock().unwrap().push(observed);
++    Ok(Arc::new(device))
++}
++impl BackingResolver for Backings {
++    fn resolve(&self, reference: &str) -> std::result::Result<Arc<dyn BlockDevice>, BackingError> {
++        Ok(retain(self.local.open_regular(reference)?, &self.files)?)
++    }
++}
++impl Policy {
++    fn source(&self, file: File) -> std::result::Result<SparseChainSource, BackingError> {
++        let descriptor = retain(file, &self.files)?;
++        let mut magic = [0; 4];
++        descriptor
++            .read_exact_at(0, &mut magic)
++            .map_err(BackingError::Adopt)?;
++        Ok(SparseChainSource {
++            descriptor,
++            backings: Arc::new(Backings {
++                local: self.local.clone(),
++                files: self.files.clone(),
++            }),
++            entry: if magic == *b"KDMV" {
++                ChainEntry::Embedded
++            } else {
++                ChainEntry::External
++            },
++        })
++    }
++}
++impl ParentResolver for Policy {
++    fn resolve_parent(
++        &self,
++        _: EndpointIdentity,
++        hint: &str,
++    ) -> std::result::Result<Option<SparseChainSource>, BackingError> {
++        // The library calls only for admitted children. All layers live in the
++        // same anchor, so parent lookup never depends on the current directory.
++        if hint.contains('/') {
++            return Err(BackingError::UnsafeReference);
++        }
++        let file = match self.local.open_regular(hint) {
++            Ok(file) => file,
++            Err(BackingError::Io { source, .. })
++                if source.kind() == std::io::ErrorKind::NotFound =>
++            {
++                return Ok(None);
++            }
++            Err(e) => return Err(e),
++        };
++        self.source(file).map(Some)
++    }
++}
++pub(super) fn open(path: &Path) -> Result<Source> {
++    let (file, local) = LocalResolver::open_descriptor_file(path)?;
++    let files = Arc::new(Mutex::new(Vec::new()));
++    let policy = Policy {
++        local: Arc::new(local),
++        files: files.clone(),
++    };
++    let chain = SparseChain::load(policy.source(file)?, &policy, SparseChainLimits::default())?;
++    drop(policy);
++    let source = Source {
++        disk: Disk::Chain(SparseChainDisk::new(chain)),
++        files: std::mem::take(&mut *files.lock().unwrap()),
++    };
++    source.revalidate()?;
++    Ok(source)
++}
++pub(super) fn identity_json(identity: Option<EndpointIdentity>) -> serde_json::Value {
++    match identity {
++        Some(EndpointIdentity::LocalFile { device, inode }) => {
++            serde_json::json!({"device":device,"inode":inode})
++        }
++        _ => unreachable!("CLI chain sources are identified local regular files"),
++    }
++}
+diff --git a/crates/rvvdk-cli/tests/parents.rs b/crates/rvvdk-cli/tests/parents.rs
+new file mode 100644
+index 0000000..24113c9
+--- /dev/null
++++ b/crates/rvvdk-cli/tests/parents.rs
+@@ -0,0 +1,341 @@
++#![cfg(target_os = "linux")]
++mod support {
++    pub mod parents;
++}
++use serde_json::Value;
++use std::{
++    fs,
++    io::Write,
++    os::unix::fs::{FileExt, symlink},
++};
++use support::parents::Fixture;
++#[test]
++fn chain_commands_resolve_inheritance_zeros_and_preserve_tail() {
++    for split in [[false; 3], [true; 3], [false, true, false]] {
++        for backend in ["auto", "threaded"] {
++            let f = Fixture::new(split);
++            let originals: Vec<_> = fs::read_dir(&f.root)
++                .unwrap()
++                .map(|e| {
++                    let p = e.unwrap().path();
++                    let b = fs::read(&p).unwrap();
++                    (p, b)
++                })
++                .collect();
++            let (c, r) = f.run("inspect", &["--extents"]);
++            assert_eq!(c, 0, "{r}");
++            assert_eq!(r["source"]["vmdk"]["layer_count"], 3);
++            assert_eq!(r["source"]["vmdk"]["layout"], "hosted_sparse_chain");
++            assert_eq!(r["source"]["logical_bytes"], 1048576);
++            let (c, r) = f.run("plan", &["--backend", backend]);
++            assert_eq!(c, 0, "{r}");
++            assert!(!f.destination.exists());
++            for overwrite in [false, true] {
++                if overwrite {
++                    fs::write(&f.destination, vec![0xcc; 1048576 + 513]).unwrap();
++                }
++                let mut extras = vec![
++                    "--verify",
++                    "--backend",
++                    backend,
++                    "--workers",
++                    "4",
++                    "--block-size",
++                    "65537",
++                ];
++                if overwrite {
++                    extras.push("--overwrite");
++                }
++                let (c, r) = f.run("copy", &extras);
++                assert_eq!(c, 0, "{r}");
++                let b = fs::read(&f.destination).unwrap();
++                assert_eq!(b[..1048576], f.expected);
++                assert!(b[1048576..].iter().all(|b| *b == 0xcc));
++                assert_eq!(f.run("verify", &[]).0, 0);
++            }
++            fs::OpenOptions::new()
++                .write(true)
++                .open(&f.destination)
++                .unwrap()
++                .write_all_at(&[7], 140000)
++                .unwrap();
++            let (c, r) = f.run("verify", &[]);
++            assert_eq!(c, 1);
++            assert_eq!(r["error"]["details"]["mismatch_offset"], 140000);
++            for (p, b) in originals {
++                assert_eq!(fs::read(p).unwrap(), b);
++            }
++        }
++    }
++}
++#[test]
++fn opt_in_requires_vmdk_and_default_still_rejects_parents() {
++    let f = Fixture::new([true; 3]);
++    for command in ["inspect", "plan", "copy", "verify"] {
++        let mut a = f.args(command, &[]);
++        a.retain(|v| v != "--allow-parents");
++        assert_eq!(rvvdk_cli::run(a, &mut Vec::new(), &mut Vec::new()), 1);
++        let mut a = f.args(command, &[]);
++        let i = a.iter().position(|v| v == "vmdk").unwrap();
++        a[i] = "raw".into();
++        assert_eq!(rvvdk_cli::run(a, &mut Vec::new(), &mut Vec::new()), 1);
++    }
++    assert!(!f.destination.exists());
++}
++#[test]
++fn all_ancestor_descriptors_and_backings_reject_destination_aliases() {
++    for name in [
++        "layer0.vmdk",
++        "layer0-s001.vmdk",
++        "layer1.vmdk",
++        "layer1-s001.vmdk",
++        "layer2.vmdk",
++        "layer2-s001.vmdk",
++    ] {
++        let f = Fixture::new([true; 3]);
++        let p = f.root.join(name);
++        let before = fs::read(&p).unwrap();
++        fs::hard_link(&p, &f.destination).unwrap();
++        for command in ["plan", "copy", "verify"] {
++            assert_eq!(
++                f.run(
++                    command,
++                    if command == "verify" {
++                        &[]
++                    } else {
++                        &["--overwrite"]
++                    }
++                )
++                .0,
++                1
++            );
++            assert_eq!(fs::read(&p).unwrap(), before);
++        }
++    }
++}
++#[test]
++fn unsafe_missing_or_symlink_parents_never_publish() {
++    for hint in [
++        "missing.vmdk",
++        "../layer1.vmdk",
++        "/layer1.vmdk",
++        "dir/layer1.vmdk",
++        "a\\b",
++        "file:x",
++        "link.vmdk",
++    ] {
++        let f = Fixture::new([true; 3]);
++        symlink("layer1.vmdk", f.root.join("link.vmdk")).unwrap();
++        f.replace("layer2.vmdk", "layer1.vmdk", hint);
++        assert_eq!(f.run("copy", &[]).0, 1, "{hint}");
++        assert!(!f.destination.exists());
++    }
++}
++#[test]
++fn invalid_chain_metadata_never_publishes() {
++    for (name, from, to) in [
++        ("layer1.vmdk", "CID=00000002", "CID=00000009"),
++        ("layer2.vmdk", "RW 2048", "RW 2047"),
++        ("layer2.vmdk", "layer1.vmdk", "layer2.vmdk"),
++        ("layer0.vmdk", "twoGbMaxExtentSparse", "streamOptimized"),
++    ] {
++        let f = Fixture::new([true; 3]);
++        f.replace(name, from, to);
++        assert_eq!(f.run("copy", &[]).0, 1);
++        assert!(!f.destination.exists());
++    }
++}
++#[test]
++fn parent_backing_symlinks_and_oversized_descriptors_rejected() {
++    for oversized in [false, true] {
++        let f = Fixture::new([true; 3]);
++        if oversized {
++            let p = f.root.join("layer0.vmdk");
++            let mut b = fs::read(&p).unwrap();
++            b.resize(1048577, 0);
++            fs::write(p, b).unwrap();
++        } else {
++            fs::rename(f.root.join("layer0-s001.vmdk"), f.root.join("saved")).unwrap();
++            symlink("saved", f.root.join("layer0-s001.vmdk")).unwrap();
++        }
++        assert_eq!(f.run("copy", &[]).0, 1);
++        assert!(!f.destination.exists());
++    }
++}
++struct Events<F> {
++    buffer: Vec<u8>,
++    hook: F,
++}
++impl<F: FnMut(&Value)> Write for Events<F> {
++    fn write(&mut self, b: &[u8]) -> std::io::Result<usize> {
++        self.buffer.extend(b);
++        while let Some(end) = self.buffer.iter().position(|b| *b == b'\n') {
++            let line: Vec<_> = self.buffer.drain(..=end).collect();
++            (self.hook)(&serde_json::from_slice(&line).unwrap());
++        }
++        Ok(b.len())
++    }
++    fn flush(&mut self) -> std::io::Result<()> {
++        Ok(())
++    }
++}
++#[test]
++fn ancestor_descriptor_metadata_and_payload_mutations_prevent_publication() {
++    for (name, offset) in [
++        ("layer0.vmdk", 0),
++        ("layer1.vmdk", 0),
++        ("layer0-s001.vmdk", 0),
++        ("layer0-s001.vmdk", 27 * 512),
++        ("layer0-s001.vmdk", 65536),
++        ("layer1-s001.vmdk", 65536),
++    ] {
++        let f = Fixture::new([true; 3]);
++        let mut error = Value::Null;
++        let mut events = Events {
++            buffer: vec![],
++            hook: |v: &Value| {
++                if v["phase"] == "verification" {
++                    fs::OpenOptions::new()
++                        .write(true)
++                        .open(f.root.join(name))
++                        .unwrap()
++                        .write_all_at(&[0xff], offset)
++                        .unwrap();
++                }
++                if !v["error"].is_null() {
++                    error = v.clone();
++                }
++            },
++        };
++        assert_eq!(
++            rvvdk_cli::run(
++                f.args("copy", &["--progress"]),
++                &mut Vec::new(),
++                &mut events
++            ),
++            1
++        );
++        assert_eq!(error["error"]["code"], "source_changed");
++        assert!(!f.destination.exists());
++    }
++}
++#[test]
++fn parent_chain_publication_cancellation_and_collision() {
++    let f = Fixture::new([false; 3]);
++    let token = rvvdk_datamover::CancellationToken::new();
++    let mut events = Events {
++        buffer: vec![],
++        hook: |v: &Value| {
++            if v["phase"] == "publication" {
++                token.cancel();
++            }
++        },
++    };
++    assert_eq!(
++        rvvdk_cli::run_with_cancellation(
++            f.args("copy", &["--verify", "--progress"]),
++            &mut Vec::new(),
++            &mut events,
++            &token
++        ),
++        130
++    );
++    assert!(!f.destination.exists());
++    let mut events = Events {
++        buffer: vec![],
++        hook: |v: &Value| {
++            if v["phase"] == "publication" {
++                fs::write(&f.destination, b"winner").unwrap();
++            }
++        },
++    };
++    assert_eq!(
++        rvvdk_cli::run(
++            f.args("copy", &["--progress", "--overwrite"]),
++            &mut Vec::new(),
++            &mut events
++        ),
++        1
++    );
++    assert_eq!(fs::read(&f.destination).unwrap(), b"winner");
++}
++#[test]
++fn native_and_budget_rejections_precede_publication() {
++    let f = Fixture::new([true; 3]);
++    for extras in [
++        &["--backend", "io-uring"][..],
++        &["--memory-budget", "1"][..],
++    ] {
++        assert_eq!(f.run("copy", extras).0, 1);
++        assert!(!f.destination.exists());
++    }
++}
++#[test]
++fn base_entry_and_padded_parent_descriptors_supported() {
++    let mut f = Fixture::new([true; 3]);
++    let p = f.root.join("layer0.vmdk");
++    let mut b = fs::read(&p).unwrap();
++    b.resize(8192, 0);
++    fs::write(&p, b).unwrap();
++    assert_eq!(f.run("copy", &["--verify"]).0, 0);
++    f.source = p;
++    let (c, r) = f.run("inspect", &[]);
++    assert_eq!(c, 0, "{r}");
++    assert_eq!(r["source"]["vmdk"]["layer_count"], 1);
++}
++#[test]
++fn depth_limit_is_enforced_before_output_creation() {
++    let mut f = Fixture::new([true; 3]);
++    let template = fs::read_to_string(f.root.join("layer2.vmdk")).unwrap();
++    for i in 3..17 {
++        let text = template
++            .replace("CID=00000003", &format!("CID={:08x}", i + 1))
++            .replace("parentCID=00000002", &format!("parentCID={i:08x}"))
++            .replace("layer1.vmdk", &format!("layer{}.vmdk", i - 1))
++            .replace("layer2-s001.vmdk", &format!("layer{i}-s001.vmdk"));
++        fs::write(f.root.join(format!("layer{i}.vmdk")), text).unwrap();
++        fs::copy(
++            f.root.join("layer2-s001.vmdk"),
++            f.root.join(format!("layer{i}-s001.vmdk")),
++        )
++        .unwrap();
++    }
++    f.source = f.root.join("layer15.vmdk");
++    let (c, r) = f.run("inspect", &[]);
++    assert_eq!(c, 0, "{r}");
++    assert_eq!(r["source"]["vmdk"]["layer_count"], 16);
++    f.source = f.root.join("layer16.vmdk");
++    assert_eq!(f.run("copy", &[]).0, 1);
++    assert!(!f.destination.exists());
++}
++#[test]
++fn embedded_identity_binding_and_external_mirrors() {
++    let mut f = Fixture::new([false; 3]);
++    let original = fs::read(&f.source).unwrap();
++    let end = original[512..].iter().position(|b| *b == 0).unwrap() + 512;
++    fs::write(f.root.join("mirror.vmdk"), &original[512..end]).unwrap();
++    f.source = f.root.join("mirror.vmdk");
++    let (c, r) = f.run("copy", &["--verify"]);
++    assert_eq!(c, 0, "{r}");
++    assert_eq!(fs::read(&f.destination).unwrap(), f.expected);
++    fs::remove_file(&f.destination).unwrap();
++    // An embedded descriptor may name a hard link to its own container, but
++    // cannot redirect to a byte-identical second inode.
++    f.source = f.root.join("layer2.vmdk");
++    fs::rename(&f.source, f.root.join("saved2.vmdk")).unwrap();
++    fs::hard_link(f.root.join("saved2.vmdk"), &f.source).unwrap();
++    f.source = f.root.join("saved2.vmdk");
++    assert_eq!(f.run("inspect", &[]).0, 0);
++    fs::remove_file(f.root.join("layer2.vmdk")).unwrap();
++    fs::write(f.root.join("layer2.vmdk"), original).unwrap();
++    assert_eq!(f.run("copy", &[]).0, 1);
++    assert!(!f.destination.exists());
++}
++#[test]
++fn parent_opt_in_rejects_flat_sources() {
++    let f = Fixture::new([true; 3]);
++    fs::write(&f.source,b"# Disk DescriptorFile\nversion=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"monolithicFlat\"\nRW 2048 FLAT \"flat.raw\" 0\n").unwrap();
++    fs::write(f.root.join("flat.raw"), vec![0; 1048576]).unwrap();
++    assert_eq!(f.run("copy", &[]).0, 1);
++    assert!(!f.destination.exists());
++}
+diff --git a/crates/rvvdk-cli/tests/support/parents.rs b/crates/rvvdk-cli/tests/support/parents.rs
+new file mode 100644
+index 0000000..08a524d
+--- /dev/null
++++ b/crates/rvvdk-cli/tests/support/parents.rs
+@@ -0,0 +1,126 @@
++#![allow(dead_code)]
++#[path = "../../../rvvdk-vmdk/tests/support/sparse_metadata.rs"]
++mod sparse;
++use std::{
++    ffi::OsString,
++    fs,
++    path::PathBuf,
++    sync::atomic::{AtomicUsize, Ordering},
++};
++pub struct Fixture {
++    pub root: PathBuf,
++    pub source: PathBuf,
++    pub destination: PathBuf,
++    pub expected: Vec<u8>,
++}
++impl Fixture {
++    pub fn new(split: [bool; 3]) -> Self {
++        static NEXT: AtomicUsize = AtomicUsize::new(0);
++        let root = std::env::var_os("RVVDK_TEST_DIR")
++            .or_else(|| std::env::var_os("RVVDK_BENCH_DIR"))
++            .map(PathBuf::from)
++            .unwrap_or_else(std::env::temp_dir)
++            .join(format!(
++                "rvddk-parents-{}-{}",
++                std::process::id(),
++                NEXT.fetch_add(1, Ordering::Relaxed)
++            ));
++        fs::create_dir(&root).unwrap();
++        for (i, is_split) in split.into_iter().enumerate() {
++            let name = format!("layer{i}.vmdk");
++            let backing = if is_split {
++                format!("layer{i}-s001.vmdk")
++            } else {
++                name.clone()
++            };
++            let kind = if is_split {
++                "twoGbMaxExtentSparse"
++            } else {
++                "monolithicSparse"
++            };
++            let mut text = sparse::descriptor(kind, &format!("RW 2048 SPARSE \"{backing}\""))
++                .replace("CID=12345678", &format!("CID={:08x}", i + 1));
++            if i > 0 {
++                text = text.replace(
++                    "parentCID=ffffffff",
++                    &format!(
++                        "parentCID={i:08x}\nparentFileNameHint=\"layer{}.vmdk\"",
++                        i - 1
++                    ),
++                );
++            }
++            let mut bytes = sparse::bytes(if is_split { None } else { Some(&text) });
++            // Base owns grains 0/1. Middle overrides grain 1. Leaf allocates
++            // an all-zero grain 2: allocated zeros must mask ancestor data.
++            if i > 0 {
++                for table in [22 * 512, 27 * 512] {
++                    bytes[table..table + 12].fill(0);
++                    bytes[table + i * 4..table + i * 4 + 4].copy_from_slice(&128u32.to_le_bytes());
++                }
++                bytes[65536..131072].fill(if i == 1 { 0x33 } else { 0 });
++            } else {
++                // Grain 2 aliases no physical allocation: allocate third grain.
++                bytes.resize(262144, 0x77);
++                for table in [22 * 512, 27 * 512] {
++                    bytes[table + 8..table + 12].copy_from_slice(&384u32.to_le_bytes());
++                }
++            }
++            fs::write(root.join(&backing), bytes).unwrap();
++            if is_split {
++                fs::write(root.join(name), text).unwrap();
++            }
++        }
++        let mut expected = vec![0; 1048576];
++        expected[..65536].fill(0x5a);
++        expected[65536..131072].fill(0x33);
++        Self {
++            source: root.join("layer2.vmdk"),
++            destination: root.join("output.raw"),
++            root,
++            expected,
++        }
++    }
++    pub fn args(&self, command: &str, extras: &[&str]) -> Vec<OsString> {
++        let mut args = vec![
++            "rvddk".into(),
++            command.into(),
++            self.source.clone().into_os_string(),
++        ];
++        if command != "inspect" {
++            args.push(self.destination.clone().into_os_string());
++        }
++        args.extend([
++            "--format".into(),
++            "vmdk".into(),
++            "--json".into(),
++            "--allow-parents".into(),
++        ]);
++        args.extend(extras.iter().map(OsString::from));
++        args
++    }
++    pub fn run(&self, command: &str, extras: &[&str]) -> (i32, serde_json::Value) {
++        let (mut out, mut err) = (Vec::new(), Vec::new());
++        let code = rvvdk_cli::run(self.args(command, extras), &mut out, &mut err);
++        (
++            code,
++            serde_json::from_slice(if code == 0 {
++                &out
++            } else {
++                assert!(out.is_empty());
++                &err
++            })
++            .unwrap(),
++        )
++    }
++    pub fn replace(&self, name: &str, from: &str, to: &str) {
++        let p = self.root.join(name);
++        let t = fs::read_to_string(&p).unwrap();
++        assert!(t.contains(from));
++        fs::write(p, t.replace(from, to)).unwrap();
++    }
++}
++impl Drop for Fixture {
++    fn drop(&mut self) {
++        fs::remove_dir_all(&self.root).unwrap();
++    }
++}

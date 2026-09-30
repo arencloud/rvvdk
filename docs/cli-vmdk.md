@@ -1,4 +1,4 @@
-# VMDK sources in the CLI (R4.4–R5.4)
+# VMDK sources in the CLI (R4.4–R5.8)
 
 All four commands accept explicit `--format vmdk`. Destinations are always RAW;
 there is no RAW/VMDK autodetection or VMDK writer. Linux and the existing
@@ -15,10 +15,13 @@ The [descriptor subset](vmdk-descriptor.md) and [logical reader](vmdk-logical.md
 define hosted base `monolithicFlat`, split flat and custom FLAT/ZERO layouts.
 R5.4 additionally accepts the [clean version-1 base sparse subset](vmdk-sparse-disk.md):
 `monolithicSparse` containers and external `twoGbMaxExtentSparse`/`2GbMaxExtentSparse`
-descriptors. Parent chains, version 2, dirty state, compressed/encrypted images and
+descriptors. Without `--allow-parents`, parent chains reject. Version 2, dirty state, compressed/encrypted images and
 managed variants reject. [Bounded terminal NUL padding](vmdk-padding.md) is accepted
 during acquisition; embedded NULs or nonzero suffixes reject. Files are never rewritten. Custom layouts have byte
 oracle coverage, but independent decoder qualification remains open.
+
+Add `--allow-parents` for [confined sparse parent chains](cli-vmdk-parents.md).
+The remaining acquisition details in this document describe the default base-only path.
 
 ## Opening and identity
 
@@ -111,4 +114,4 @@ R5.4 [evidence and plots](benchmark-results/2026-09-30-r54/README.md) qualify al
 commands against QEMU-produced monolithic/split fixtures, including a two-file split
 disk. See [ADR-0041](adr/0041-sparse-cli-source-acquisition.md). R5.5 adds
 [adversarial and scaling qualification](vmdk-sparse-qualification.md). R5.6 now provides [metadata-only parent admission](vmdk-parent-chain.md).
-R5.7 now adds [logical parent reads](vmdk-chain-disk.md); R5.8 handles CLI parent exposure.
+R5.7 now adds [logical parent reads](vmdk-chain-disk.md); R5.8 adds [explicit confined CLI parent support](cli-vmdk-parents.md).

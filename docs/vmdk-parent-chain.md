@@ -2,9 +2,9 @@
 
 `SparseChain` validates and retains hosted-sparse metadata from leaf to base. It
 has no logical read/write or extent-query interface and is not a `VirtualDisk`.
-`SparseDescriptor`/`SparseDisk` and the public CLI continue to reject parents.
+`SparseDescriptor`/`SparseDisk` and the default CLI path continue to reject parents.
 [R5.7 SparseChainDisk](vmdk-chain-disk.md) now wraps it with logical parent fallback
-and whole-chain alias checks; CLI parent exposure remains R5.8.
+and whole-chain alias checks; R5.8 adds [opt-in CLI acquisition](cli-vmdk-parents.md).
 [Evidence and plots](benchmark-results/2026-09-30-r56/README.md) record qualification.
 
 ## Format and admission policy
@@ -63,7 +63,8 @@ same retained object. Identity/alias checks precede backing metadata reads.
 The Linux `inspect_chain` example is a qualification helper with one explicitly
 selected confined directory and basename-only parent hints. It rejects traversal,
 subdirectory hints and symlinks through this policy and `LocalResolver`; there is
-no public CLI parent support. Its four-byte entry probe per source is outside
+no public CLI policy. R5.8 supplies [public CLI parent access](cli-vmdk-parents.md)
+separately. The helper’s four-byte entry probe per source is outside
 `SparseChain` read counters. The library itself never probes entry type.
 
 ## Aggregate budgets and ownership
@@ -118,5 +119,5 @@ Existing metadata/read/CLI controls retain paired comparisons and adverse repeat
 R5.7 now adds [read-only logical parent fallback](vmdk-chain-disk.md), range mapping, differing grain/
 extent boundaries, whole-chain destination alias protection and independent byte
 oracles. An unallocated child grain falls through until allocated data or the base
-is reached. Only a fully resolved zero range can become logical Zero. Public CLI
-parent acquisition remains a later step. ESXi is still unnecessary for local work.
+is reached. Only a fully resolved zero range can become logical Zero. R5.8 adds [public CLI
+parent acquisition](cli-vmdk-parents.md). ESXi is still unnecessary for local work.

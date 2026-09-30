@@ -1,0 +1,54 @@
+{
+  "title": "R5.8 \u00b7 Confined CLI sparse parents",
+  "candidate": "patch 1807f042",
+  "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm Btrfs fixtures",
+  "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+  "candidate_only": {
+    "title": "Parent CLI \u00b7 first end-to-end baselines",
+    "note": "1 MiB \u00b7 3 layers \u00b7 admission + command timed \u00b7 not physical storage throughput",
+    "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+  },
+  "workloads": {
+    "cli_vmdk/inspect_mixed": {
+      "label": "FLAT/ZERO inspect \u00b7 1 MiB",
+      "phase": "planning"
+    },
+    "cli_vmdk/plan_mixed": {
+      "label": "FLAT/ZERO plan \u00b7 1 MiB",
+      "phase": "planning"
+    },
+    "cli_vmdk/copy_mixed_verify": {
+      "label": "FLAT/ZERO copy + verify \u00b7 1 MiB",
+      "phase": "copy"
+    },
+    "cli_transfer/verify_only": {
+      "label": "RAW verify \u00b7 16 MiB",
+      "phase": "copy"
+    },
+    "cli_sparse/copy_split_verify": {
+      "label": "Base sparse copy + verify \u00b7 2 MiB",
+      "phase": "copy"
+    },
+    "cli_parents/inspect_mono": {
+      "label": "Inspect \u00b7 monolithic chain",
+      "phase": "copy"
+    },
+    "cli_parents/plan_split": {
+      "label": "Plan \u00b7 split chain",
+      "phase": "copy"
+    },
+    "cli_parents/copy_mono_verify": {
+      "label": "Copy + verify \u00b7 monolithic chain",
+      "phase": "copy"
+    },
+    "cli_parents/copy_split_verify": {
+      "label": "Copy + verify \u00b7 split chain",
+      "phase": "copy"
+    },
+    "cli_parents/verify_split": {
+      "label": "Verify \u00b7 split chain",
+      "phase": "copy"
+    }
+  },
+  "repeat_sampling": "3 adjacent pairs \u00b7 40 flat samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+}

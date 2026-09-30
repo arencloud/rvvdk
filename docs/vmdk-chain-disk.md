@@ -3,7 +3,7 @@
 `SparseChainDisk` owns a validated `SparseChain` and implements `VirtualDisk` for
 read-only logical access. Its constructor adds no mapping allocation or I/O; chain
 admission remains the [R5.6 contract](vmdk-parent-chain.md). Public CLI parent
-acquisition is the following step. [Evidence and plots](benchmark-results/2026-09-30-r57/README.md)
+acquisition is defined by [R5.8](cli-vmdk-parents.md). [Evidence and plots](benchmark-results/2026-09-30-r57/README.md)
 retain validation, independent reference bytes and first performance baselines.
 
 ## Resolution and zero semantics
@@ -87,7 +87,7 @@ cases. The original large-case partial second-extent write failed the overlay or
 rvddk and QEMU agree on the produced bytes, which differ outside the intended write.
 That failure and its hashes remain in the report. A separate large case fully
 overwrites the affected grain; it does not qualify the original producer path. Source images
-remain unchanged; public CLI still rejects the parent leaf. Only authored fixture
+remain unchanged; default-mode public CLI rejects the parent leaf. Only authored fixture
 code, the previously consulted specification and QEMU command output are used.
 
 Ten new timings cover full 1 MiB reads and extent queries at depths 1/4/16, leaf
@@ -95,7 +95,5 @@ reads, alternating ownership, fragmented physical placement and all-zero reads.
 Fixture creation, admission, buffers and byte assertions are outside timing.
 These are memory-device mapping/copy costs, not physical storage throughput.
 
-Next R5.8 integrates parent chains into CLI acquisition under an explicit confined
-resolver policy, source observations and existing publication/cancellation/alias
-contracts. Qualify inspect/plan/copy/verify and preserve independent loader/copy
-budgets. ESXi is not needed for this local step.
+R5.8 now provides [explicit confined CLI parent acquisition](cli-vmdk-parents.md)
+with full lifecycle integration. Next R5.9 adds bounded coverage-guided fuzzing.

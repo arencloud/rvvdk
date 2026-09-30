@@ -16,6 +16,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+mod chain;
+
 type Result<T> = std::result::Result<T, Failure>;
 type Stamp = (u64, u64, u64, i64, i64, i64, i64);
 pub(crate) fn stamp(file: &File) -> std::io::Result<Stamp> {
@@ -44,6 +46,7 @@ pub(crate) enum Disk {
     Raw(RawDisk<LocalFileBlockDevice>),
     Vmdk(VmdkDisk),
     Sparse(SparseDisk),
+    Chain(rvvdk_vmdk::SparseChainDisk),
 }
 pub(crate) struct Source {
     pub disk: Disk,
@@ -79,7 +82,16 @@ impl BackingResolver for ObservingResolver {
     }
 }
 impl Source {
-    pub fn open(path: &Path, format: &str) -> Result<Self> {
+    pub fn open(path: &Path, format: &str, allow_parents: bool) -> Result<Self> {
+        if allow_parents {
+            if format != "vmdk" {
+                return Err(Failure::new(
+                    "arguments",
+                    "--allow-parents requires --format vmdk",
+                ));
+            }
+            return chain::open(path);
+        }
         let source = if format == "raw" {
             let file = Observed::new(target::source(path)?)
                 .map_err(|e| Failure::io("inspect source", e))?;
@@ -153,16 +165,19 @@ impl Source {
             Disk::Raw(d) => d,
             Disk::Vmdk(d) => d,
             Disk::Sparse(d) => d,
+            Disk::Chain(d) => d,
         }
     }
     pub fn format(&self) -> &'static str {
         match self.disk {
             Disk::Raw(_) => "raw",
-            Disk::Vmdk(_) | Disk::Sparse(_) => "vmdk",
+            Disk::Vmdk(_) | Disk::Sparse(_) | Disk::Chain(_) => "vmdk",
         }
     }
     pub fn validate_backend(&self, requested: &str) -> Result<()> {
-        if matches!(self.disk, Disk::Vmdk(_) | Disk::Sparse(_)) && requested == "io-uring" {
+        if matches!(self.disk, Disk::Vmdk(_) | Disk::Sparse(_) | Disk::Chain(_))
+            && requested == "io-uring"
+        {
             return Err(Failure::new(
                 "unsupported_backend",
                 "VMDK logical sources require threaded or auto execution",
@@ -198,6 +213,26 @@ impl Source {
         (self.files[0].initial.0, self.files[0].initial.1)
     }
     pub fn vmdk_report(&self) -> Option<serde_json::Value> {
+        if let Disk::Chain(disk) = &self.disk {
+            let chain = disk.chain();
+            let layers = chain.layers();
+            let backings = layers.iter().flat_map(|l| l.metadata()).collect::<Vec<_>>();
+            return Some(serde_json::json!({
+                "descriptor_identity":{"device":self.identity().0,"inode":self.identity().1},
+                "layout":"hosted_sparse_chain", "parent_policy":"same_directory_basename",
+                "layer_count":layers.len(), "cid":format!("{:08x}",layers[0].cid()),
+                "backing_file_count":backings.len(), "descriptor_extent_count":backings.len(),
+                "metadata_memory_reservation_bytes":chain.reserved_memory_bytes(),
+                "metadata_read_bytes":chain.metadata_read_bytes(),
+                "chain_descriptor_bytes":chain.descriptor_bytes(), "entry_probe_bytes":4*layers.len(),
+                "layers":layers.iter().map(|l| serde_json::json!({
+                    "cid":format!("{:08x}",l.cid()), "parent_cid":l.parent_cid().map(|v|format!("{v:08x}")),
+                    "descriptor_identity":chain::identity_json(l.descriptor_endpoint().identity),
+                    "descriptor_extent_count":l.metadata().len()
+                })).collect::<Vec<_>>(),
+                "backing_identities":backings.iter().map(|m|chain::identity_json(m.initial_endpoint().identity)).collect::<Vec<_>>()
+            }));
+        }
         if let Disk::Sparse(disk) = &self.disk {
             return Some(serde_json::json!({
                 "descriptor_identity": {"device":self.identity().0,"inode":self.identity().1},
@@ -298,4 +333,10 @@ fn acquire(source: &mut Observed) -> Result<(Vec<u8>, bool)> {
         bytes.extend_from_slice(&chunk[..n]);
     }
     Ok((bytes, false))
+}
+
+impl From<rvvdk_vmdk::SparseChainError> for Failure {
+    fn from(error: rvvdk_vmdk::SparseChainError) -> Self {
+        Self::new("vmdk", error.to_string())
+    }
 }
