@@ -7,8 +7,9 @@ and [metadata validation](vmdk-sparse-metadata.md). Supported descriptor types a
 monolithicSparse and twoGbMaxExtentSparse/2GbMaxExtentSparse. Parents, compressed
 streams, dirty recovery, version 2 and managed variants remain unsupported.
 
-This is a library API. The public CLI and existing Descriptor/VmdkDisk paths still
-support FLAT/ZERO only; sparse CLI acquisition and publication need a separate step.
+This is a library API. [R5.4 CLI integration](cli-vmdk.md) now accepts its supported
+subset through explicit VMDK mode. Existing Descriptor/VmdkDisk paths remain
+FLAT/ZERO-only.
 No VMware SDK or third-party implementation source is used.
 
 ## Ownership and admission
@@ -99,6 +100,7 @@ patterned RAW oracles and QEMU. A multi-file fixture crosses the 2 GiB boundary.
 The reference helper reads every byte in 65,537-byte chunks; it leaves zero-only
 output chunks sparse without substituting a second mapping implementation.
 
-Next is R5.4: explicit sparse CLI acquisition and inspect/plan/copy/verify integration,
-with descriptor provenance, publication, cancellation and destination alias checks
-preserved. Parent chains remain separate. ESXi is not required for this local work.
+R5.4 now provides [sparse CLI acquisition and integration](cli-vmdk.md), preserving
+descriptor provenance, publication, cancellation and alias checks. Next is R5.5:
+adversarial validation and capacity/fragmentation benchmarks. Parent chains remain
+separate. ESXi is not required for this local work.

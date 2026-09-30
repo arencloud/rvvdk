@@ -1,0 +1,693 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running unittests src/lib.rs (target/r54-validation/debug/deps/rvvdk_cli-dd7594df275febe0)
+transfer::tests::corruption_fails_before_publication_and_reports_offset: test
+transfer::tests::failed_overwrite_keeps_partial_output_and_tail: test
+transfer::tests::file_sync_and_directory_sync_failures_have_distinct_output_states: test
+transfer::tests::observed_source_mutation_rejects_publication: test
+transfer::tests::racing_name_is_never_replaced_even_when_overwrite_was_requested: test
+
+5 tests, 0 benchmarks
+     Running unittests src/main.rs (target/r54-validation/debug/deps/rvddk-b0d11d7502ae493a)
+0 tests, 0 benchmarks
+     Running tests/commands.rs (target/r54-validation/debug/deps/commands-fa94fe3944506b2d)
+actual_binary_handles_help_errors_and_special_files_without_blocking: test
+aliases_symlinks_and_small_destinations_reject_without_changes: test
+commands_succeed_when_writable_opens_and_ring_setup_are_denied: test
+inspect_dense_empty_and_odd_images_with_explicit_extent_output: test
+metadata_budget_failure_and_unadmitted_execution_estimate_are_distinct: test
+missing_parent_and_non_file_paths_fail_before_output: test
+new_destination_preview_never_creates_output_and_native_is_deferred: test
+non_utf8_paths_round_trip_and_control_characters_are_escaped: test
+output_write_and_flush_failures_return_failure: test
+overwrite_is_explicit_preserves_bytes_and_reports_untouched_tail: test
+sparse_map_matches_library_topology_without_reading_payload: test
+usage_errors_are_json_and_tunables_are_checked: test
+
+12 tests, 0 benchmarks
+     Running tests/sparse.rs (target/r54-validation/debug/deps/sparse-c48ad9366da61123)
+cancellation_and_publication_collision_preserve_output_policy: test
+container_cannot_redirect_to_another_inode_or_external_monolithic_descriptor: test
+malformed_features_confinement_and_size_bounds_fail_without_output: test
+monolithic_container_uses_logical_capacity_and_raw_remains_explicit: test
+monolithic_metadata_and_payload_changes_prevent_publication: test
+padded_split_descriptor_is_preserved: test
+same_size_backing_or_descriptor_mutation_prevents_publication: test
+sparse_descriptor_and_every_backing_hardlink_reject_before_mutation: test
+sparse_native_and_budget_failures_do_not_publish: test
+split_inspect_plan_copy_verify_and_tail_preservation: test
+
+10 tests, 0 benchmarks
+     Running tests/transfers.rs (target/r54-validation/debug/deps/transfers-0f9b4962b2959f1b)
+cancelled_overwrite_keeps_inode_tail_and_reports_partial_effects: test
+lifecycle_json_is_separate_from_success_and_actual_backend_is_reported: test
+new_and_overwrite_copies_verify_empty_odd_and_sparse_images_across_backends: test
+no_clobber_alias_symlink_and_capacity_rejections_preserve_contents: test
+progress_cancellation_preserves_private_and_published_destination_states: test
+progress_output_failure_stops_before_publication: test
+report_failure_retains_completed_operation_and_published_bytes: test
+runtime_ring_denial_auto_falls_back_but_explicit_native_does_not_publish: test
+sigint_and_sigterm_cancel_binary_copy_and_verify_with_bounded_shutdown: test
+sparse_copy_cancellation_after_full_logical_processing_is_not_completion: test
+verification_buffers_and_copy_budget_are_jointly_admitted: test
+verification_checks_holes_and_first_mismatch_without_mutation: test
+
+12 tests, 0 benchmarks
+     Running tests/vmdk.rs (target/r54-validation/debug/deps/vmdk-a0d2bcd738101b5d)
+cancellation_and_publication_collision_preserve_output_policy: test
+copies_verify_logical_bytes_and_preserve_overwrite_tail: test
+descriptor_and_every_backing_hardlink_are_rejected_without_mutation: test
+logical_inspection_and_preview_use_capacity_and_portable_selection: test
+malformed_unsupported_and_unconfined_sources_fail_without_output: test
+native_rejection_precedes_destination_open_and_budget_failure_does_not_publish: test
+padded_sources_work_in_all_commands_without_rewriting_the_descriptor: test
+same_size_backing_or_descriptor_mutation_prevents_publication: test
+zero_only_source_and_explicit_raw_selection: test
+
+9 tests, 0 benchmarks
+     Running unittests src/lib.rs (target/r54-validation/debug/deps/rvvdk_core-baafb1d6c362a5b8)
+block_device::tests::accepts_valid_range: test
+block_device::tests::detects_read_only_device: test
+block_device::tests::detects_writable_device: test
+block_device::tests::exact_io_handles_partial_operations: test
+block_device::tests::rejects_out_of_bounds_range: test
+block_device::tests::rejects_overflowing_range: test
+block_device::tests::reports_size: test
+buffer::tests::buffer_can_be_modified: test
+buffer::tests::buffer_is_zero_initialized: test
+buffer::tests::creates_aligned_buffer: test
+buffer::tests::fill_changes_complete_buffer: test
+buffer::tests::rejects_non_power_of_two_alignment: test
+buffer::tests::rejects_zero_alignment: test
+buffer_pool::tests::acquire_removes_buffer: test
+buffer_pool::tests::acquire_waits_until_buffer_is_returned: test
+buffer_pool::tests::acquired_buffer_is_aligned: test
+buffer_pool::tests::buffer_is_reused_after_release: test
+buffer_pool::tests::buffer_pool_is_send_and_sync: test
+buffer_pool::tests::creates_pool: test
+buffer_pool::tests::drop_returns_buffer: test
+buffer_pool::tests::rejects_zero_capacity: test
+extent::tests::creates_data_extent: test
+extent::tests::rejects_empty_extent: test
+memory::tests::allows_read_on_read_only_device: test
+memory::tests::creates_memory_device: test
+memory::tests::discard_clears_memory_backend_range: test
+memory::tests::flush_fails_when_not_supported: test
+memory::tests::flush_succeeds_when_supported: test
+memory::tests::new_device_is_zero_initialized: test
+memory::tests::preserves_unmodified_data: test
+memory::tests::read_exact_at_reads_complete_buffer: test
+memory::tests::read_only_device_rejects_discard: test
+memory::tests::read_only_device_rejects_write_zero: test
+memory::tests::rejects_out_of_bounds_read: test
+memory::tests::rejects_out_of_bounds_write: test
+memory::tests::rejects_write_on_read_only_device: test
+memory::tests::write_all_at_writes_complete_buffer: test
+memory::tests::write_zero_clears_requested_range: test
+memory::tests::write_zero_rejects_out_of_bounds_range: test
+memory::tests::writes_and_reads_data: test
+memory::tests::zero_length_read_is_valid: test
+memory::tests::zero_length_write_is_valid: test
+memory::tests::zero_read_discard_guarantee_is_explicit: test
+range::tests::contains_offset_inside_range: test
+range::tests::creates_valid_range: test
+range::tests::detects_overflow: test
+range::tests::empty_range_is_valid: test
+raw::tests::discard_works_through_raw_disk: test
+raw::tests::empty_range_has_no_extents: test
+raw::tests::exact_io_works_through_virtual_disk: test
+raw::tests::exposes_device_geometry: test
+raw::tests::exposes_full_range_as_data_extent: test
+raw::tests::exposes_partial_range_as_data_extent: test
+raw::tests::preserves_device_capabilities: test
+raw::tests::rejects_extent_outside_disk: test
+raw::tests::returns_underlying_device: test
+raw::tests::write_zero_works_through_raw_disk: test
+raw::tests::writes_and_reads_data: test
+
+58 tests, 0 benchmarks
+     Running unittests src/lib.rs (target/r54-validation/debug/deps/rvvdk_datamover-18cb3deebdeb1d2b)
+concurrent::tests::discard_failure_wakes_full_queue: test
+concurrent::tests::error_returns_buffers_with_more_workers_than_buffers: test
+concurrent::tests::failed_copy_aggregates_healthy_and_failing_workers_after_join: test
+concurrent::tests::first_producer_error_keeps_uncertainty_from_a_later_worker_failure: test
+concurrent::tests::first_recorded_error_survives_later_errors: test
+concurrent::tests::one_worker_failure_stops_healthy_peers: test
+concurrent::tests::producer_error_wakes_idle_workers: test
+concurrent::tests::public_copy_preserves_worker_error_without_flushing: test
+concurrent::tests::read_failure_wakes_full_queue: test
+concurrent::tests::successful_producer_drains_queued_work: test
+concurrent::tests::worker_panics_unblock_producer_and_propagate: test
+concurrent::tests::write_failure_wakes_full_queue: test
+concurrent::tests::zero_failure_wakes_full_queue: test
+execution::tests::derives_odd_read_window: test
+execution::tests::derives_read_window: test
+execution::tests::explicit_native_cannot_fallback_but_auto_records_incompatibility: test
+execution::tests::rejects_read_window_above_queue_depth: test
+execution::tests::rejects_zero_queue_depth: test
+execution::tests::supports_custom_read_window: test
+execution::tests::threaded_is_default: test
+failure::tests::native_cleanup_keeps_original_cause_and_prior_extent_progress: test
+io_uring::capabilities::tests::creates_io_uring: test
+io_uring::capabilities::tests::rejects_zero_queue_depth: test
+io_uring::capabilities::tests::supports_multiple_queue_depths: test
+io_uring::compatibility::request_tests::buffered_odd_ranges_and_backend_only_sparse_extents_need_no_direct_alignment: test
+io_uring::compatibility::request_tests::mixed_pairs_enforce_each_direct_endpoint_and_distinguish_memory_from_offset_alignment: test
+io_uring::compatibility::request_tests::rejects_invalid_declarations_and_unallocatable_layouts: test
+io_uring::compatibility::request_tests::validates_signed_ranges_and_sqe_lengths_even_without_payload: test
+io_uring::compatibility::request_tests::validates_splits_but_not_an_unused_block_boundary: test
+io_uring::copy::tests::advances_offset: test
+io_uring::copy::tests::pipeline_error_preserves_confirmed_blocks_and_short_reads: test
+io_uring::copy::tests::request_length_returns_full_block: test
+io_uring::copy::tests::request_length_returns_partial_tail: test
+io_uring::copy::tests::request_length_returns_zero_at_end: test
+io_uring::copy::tests::short_write_cqe_counts_confirmed_bytes_without_counting_a_complete_block: test
+io_uring::engine::tests::admission_lasts_from_enqueue_until_confirmation_not_buffer_drop: test
+io_uring::engine::tests::capacity_error_returns_only_unpublished_buffer: test
+io_uring::engine::tests::creates_engine: test
+io_uring::engine::tests::drop_after_fatal_wait_keeps_unconfirmed_owners: test
+io_uring::engine::tests::duplicate_completion_does_not_release_another_buffer: test
+io_uring::engine::tests::interrupted_submit_and_wait_retry_without_releasing_buffers: test
+io_uring::engine::tests::malformed_results_release_only_the_confirmed_operation: test
+io_uring::engine::tests::missing_completion_retains_owners_without_spinning: test
+io_uring::engine::tests::negative_cqe_does_not_prevent_draining_other_operations: test
+io_uring::engine::tests::owned_completion_without_submission_fails: test
+io_uring::engine::tests::partial_submission_retains_submitted_and_queued_owners: test
+io_uring::engine::tests::queued_fd_survives_caller_close_and_descriptor_reuse: test
+io_uring::engine::tests::regular_file_negative_completion_releases_admission: test
+io_uring::engine::tests::rejects_zero_queue_depth: test
+io_uring::engine::tests::shutdown_is_idempotent_and_returns_all_confirmed_buffers: test
+io_uring::engine::tests::submit_errors_before_and_after_kernel_entry_keep_owners: test
+io_uring::engine::tests::unconfirmed_shutdown_quarantines_admission_with_owners: test
+io_uring::engine::tests::unconfirmed_shutdown_retains_buffers_and_rejects_reuse: test
+io_uring::engine::tests::unknown_or_nonfinal_completions_never_release_owners: test
+io_uring::engine::tests::unwinding_after_submission_drains_before_returning_buffers: test
+io_uring::engine::tests::user_data_wraparound_skips_live_ids: test
+io_uring::engine::tests::wait_error_retains_owners_until_shutdown_completes: test
+observer::tests::closure_can_observe_progress: test
+observer::tests::noop_observer_accepts_snapshot: test
+options::tests::rejects_zero_concurrency: test
+options::tests::rejects_zero_queue_capacity: test
+plan::tests::constructor_rejects_invalid_topology_even_when_byte_totals_match: test
+plan::tests::extent_boundary_changes_fingerprint: test
+plan::tests::extent_kind_changes_fingerprint: test
+plan::tests::identical_extent_maps_have_identical_fingerprints: test
+plan::tests::rejects_accounting_larger_than_logical_size: test
+plan::tests::rejects_extent_bytes_that_do_not_match_logical_size: test
+plan::tests::stores_copy_plan_metadata: test
+plan::tests::summarizes_extents: test
+plan::tests::supports_empty_plan: test
+planner::tests::iterator_streams_extent_blocks: test
+planner::tests::large_extent_is_lazy: test
+preflight::tests::copy_preserves_metadata_error_context_and_errno: test
+progress::tests::calculates_logical_completion: test
+progress::tests::calculates_logical_throughput: test
+progress::tests::completion_is_clamped_to_one: test
+progress::tests::empty_copy_is_complete: test
+progress::tests::logical_completion_is_independent_of_write_accounting: test
+progress::tests::zero_elapsed_has_zero_throughput: test
+verify::tests::bounded_verification_covers_odd_tail_and_reports_first_mismatch: test
+verify::tests::budget_empty_and_alias_checks: test
+
+81 tests, 0 benchmarks
+     Running tests/concurrent.rs (target/r54-validation/debug/deps/concurrent-c240c519532f6a14)
+concurrent_copy_matches_source: test
+concurrent_copy_preserves_block_boundaries: test
+different_concurrency_levels_produce_identical_results: test
+
+3 tests, 0 benchmarks
+     Running tests/controlled.rs (target/r54-validation/debug/deps/controlled-3734277fd4f55fcd)
+cancellation_at_start_transfer_and_flush_joins_workers_and_never_completes: test
+flush_failure_and_cancellation_during_flush_are_terminal_without_success: test
+native_progress_cancellation_drains_or_reports_uncertainty_then_can_reuse_files: test
+sequential_and_concurrent_callbacks_are_coordinated_and_complete_after_flush: test
+verification_stops_at_matching_prefix_and_pre_cancelled_input_is_untouched: test
+
+5 tests, 0 benchmarks
+     Running tests/copy.rs (target/r54-validation/debug/deps/copy-f689e25f1de2d700)
+copies_final_partial_block: test
+copies_memory_disk: test
+rejects_destination_smaller_than_source: test
+
+3 tests, 0 benchmarks
+     Running tests/copy_failures.rs (target/r54-validation/debug/deps/copy_failures-41a218e9842a3a02)
+flush_failure_keeps_full_completed_counters_without_claiming_durability: test
+native_sparse_failures_keep_prior_extents_and_fallback_write_context: test
+preparation_rejections_are_typed_and_do_not_claim_execution_progress: test
+sequential_failures_report_attempted_operation_and_confirmed_lower_bounds: test
+
+4 tests, 0 benchmarks
+     Running tests/copy_plan.rs (target/r54-validation/debug/deps/copy_plan-480342380ce0d67f)
+auto_plan_selects_io_uring_for_compatible_linux_backends: test
+destination_smaller_than_source_is_rejected_during_planning: test
+explicit_io_uring_plan_reports_io_uring_backend: test
+portable_plan_reports_threaded_backend: test
+
+4 tests, 0 benchmarks
+     Running tests/direct_tail.rs (target/r54-validation/debug/deps/direct_tail-01288d8e210a6e0f)
+direct_copy_handles_disk_smaller_than_alignment: test
+direct_copy_handles_multiple_unaligned_sizes: test
+direct_copy_handles_unaligned_disk_size: test
+
+3 tests, 0 benchmarks
+     Running tests/execution_parity.rs (target/r54-validation/debug/deps/execution_parity-f4c069dfa762ee00)
+parity_with_ordinary_discard_and_write_zero: test
+parity_with_ordinary_discard_fallback: test
+parity_with_write_zero_and_discard: test
+parity_with_write_zero_only: test
+parity_with_zero_write_fallback: test
+
+5 tests, 0 benchmarks
+     Running tests/execution_preparation.rs (target/r54-validation/debug/deps/execution_preparation-723a01dc675ab166)
+native_budget_uses_executing_queue_depth_and_rejects_all_entry_points: test
+native_configuration_alignment_rejection_precedes_observation: test
+native_flush_failure_keeps_completed_counts_and_suppresses_final_observation: test
+native_preparation_refreshes_both_backend_alignments_on_every_execution: test
+native_strategy_rejection_precedes_observation: test
+
+5 tests, 0 benchmarks
+     Running tests/execution_selection.rs (target/r54-validation/debug/deps/execution_selection-958fdbde7f264079)
+portable_auto_records_the_api_boundary_without_changing_logical_intent: test
+portable_plan_records_explicit_threaded_selection: test
+raw_planning_records_request_and_reason_separately_from_logical_intent: test
+
+3 tests, 0 benchmarks
+     Running tests/execution_strategy.rs (target/r54-validation/debug/deps/execution_strategy-d308d28ac6423666)
+datamover_accepts_auto_execution: test
+datamover_accepts_io_uring_execution: test
+datamover_defaults_to_threaded_execution: test
+
+3 tests, 0 benchmarks
+     Running tests/extents.rs (target/r54-validation/debug/deps/extents-a30441330ee98281)
+hole_extent_falls_back_to_zero_writes: test
+hole_extent_uses_write_zero_when_discard_is_unavailable: test
+processes_data_zero_and_hole_extents: test
+rejects_extent_map_with_gap: test
+rejects_overlapping_extent_map: test
+zero_extent_falls_back_to_writes: test
+
+6 tests, 0 benchmarks
+     Running tests/hole_guarantee.rs (target/r54-validation/debug/deps/hole_guarantee-e4ede40301dbdd3c)
+every_capability_combination_preserves_mixed_logical_bytes_across_portable_paths: test
+native_sparse_dispatch_requires_the_same_zero_read_guarantee: test
+partial_guaranteed_discard_failure_is_not_retried_or_reported_complete: test
+
+3 tests, 0 benchmarks
+     Running tests/io_uring.rs (target/r54-validation/debug/deps/io_uring-e575969dd8a358ae)
+positional_io_respects_offsets: test
+positional_read_reports_end_of_file: test
+positional_write_and_read_round_trip: test
+
+3 tests, 0 benchmarks
+     Running tests/io_uring_compatibility.rs (target/r54-validation/debug/deps/io_uring_compatibility-a6d98a567e52f8c4)
+evaluates_buffered_pair: test
+evaluates_direct_pair: test
+mixed_pair_is_not_fully_direct: test
+
+3 tests, 0 benchmarks
+     Running tests/io_uring_copy.rs (target/r54-validation/debug/deps/io_uring_copy-6b9513427caa97d2)
+copies_file_with_io_uring_pipeline: test
+copies_non_zero_file_range: test
+copies_partial_final_block: test
+copies_with_multiple_queue_depths: test
+pipeline_uses_reads_and_writes_concurrently: test
+supports_custom_read_window: test
+zero_length_copy_does_nothing: test
+
+7 tests, 0 benchmarks
+     Running tests/io_uring_extent_copy.rs (target/r54-validation/debug/deps/io_uring_extent_copy-af619999634c4b9d)
+copies_data_hole_data_extent_plan: test
+copies_data_zero_data_extent_plan: test
+copies_hole_extent_with_destination_semantics: test
+copies_multiple_data_extents: test
+copies_zero_extent_with_destination_semantics: test
+low_level_extent_copy_still_rejects_hole: test
+low_level_extent_copy_still_rejects_zero: test
+
+7 tests, 0 benchmarks
+     Running tests/io_uring_extent_plan.rs (target/r54-validation/debug/deps/io_uring_extent_plan-aabc36275d2ec440)
+accepts_data_and_zero_extent_map: test
+accepts_dense_extent_map: test
+accepts_empty_zero_sized_disk: test
+accepts_hole_only_extent_map: test
+accepts_sparse_extent_map_with_hole: test
+accepts_zero_only_extent_map: test
+rejects_extent_beyond_disk_size: test
+rejects_extents_for_zero_sized_disk: test
+rejects_gap_in_extent_map: test
+rejects_incomplete_extent_map: test
+
+10 tests, 0 benchmarks
+     Running tests/io_uring_lifetime.rs (target/r54-validation/debug/deps/io_uring_lifetime-c5ea7e85eb59ce6b)
+readonly_preflight_preserves_context_without_leaking_descriptors: test
+short_source_preflight_preserves_context_without_leaking_descriptors: test
+
+2 tests, 0 benchmarks
+     Running tests/io_uring_owned.rs (target/r54-validation/debug/deps/io_uring_owned-f3ee1969ede61b31)
+drain_returns_all_completed_operations: test
+dropping_engine_with_outstanding_operations_returns_buffers: test
+multiple_owned_reads_remain_in_flight: test
+multiple_owned_writes_remain_in_flight: test
+owned_read_returns_completed_buffer_with_data: test
+owned_submission_rejects_oversized_request: test
+owned_write_completes_and_returns_buffer: test
+
+7 tests, 0 benchmarks
+     Running tests/local_concurrency.rs (target/r54-validation/debug/deps/local_concurrency-5f84cd2c1d6e24ef)
+disjoint_direct_subpage_requests_remain_pipeline_compatible: test
+local_aligned_unaligned_sparse_and_flush_paths_all_join_admission: test
+queued_native_read_blocks_buffered_alias_and_unaligned_fallback_until_confirmed: test
+queued_native_writer_excludes_inspection_and_other_queues_without_losing_buffers: test
+
+4 tests, 0 benchmarks
+     Running tests/local_copy.rs (target/r54-validation/debug/deps/local_copy-6f3a67a102fbc2b5)
+copies_local_raw_disk: test
+
+1 test, 0 benchmarks
+     Running tests/local_sparse_copy.rs (target/r54-validation/debug/deps/local_sparse_copy-0e25f5b4083d9156)
+local_sparse_destination_preserves_bytes_and_counters_across_executors: test
+
+1 test, 0 benchmarks
+     Running tests/memory_budget.rs (target/r54-validation/debug/deps/memory_budget-929210ed3c41c956)
+execution_boundary_precedes_observation_and_io_for_all_portable_paths: test
+live_revalidation_charges_both_vecs_and_releases_them_before_execution: test
+oversized_configuration_rejects_without_allocation_or_io: test
+planning_charges_unused_extent_capacity_and_accepts_exact_limit: test
+
+4 tests, 0 benchmarks
+     Running tests/native_copy.rs (target/r54-validation/debug/deps/native_copy-a15d7352331aef12)
+auto_selects_io_uring_for_linux_fd_backends: test
+datamover_copies_with_io_uring_direct_execution: test
+datamover_copies_with_io_uring_native_execution: test
+native_copy_requires_native_strategy: test
+native_report_identifies_io_uring_backend: test
+
+5 tests, 0 benchmarks
+     Running tests/native_requests.rs (target/r54-validation/debug/deps/native_requests-6a8382ef9a885993)
+changed_direct_flag_is_rejected_before_observation: test
+fallback_uses_threaded_budget_and_fd_only_native_api_never_silently_falls_back: test
+odd_and_aligned_copies_select_once_and_preserve_bytes_across_endpoint_modes: test
+preparation_rechecks_requests_before_callbacks_and_sparse_prefix_then_allows_replanning: test
+unaligned_data_after_sparse_prefix_falls_back_or_rejects_before_mutation: test
+unaligned_split_block_falls_back_but_unused_block_boundary_is_allowed: test
+
+6 tests, 0 benchmarks
+     Running tests/native_runtime.rs (target/r54-validation/debug/deps/native_runtime-cf31e2a9391c628b)
+denied_setup_falls_back_before_progress_for_auto_only: test
+descriptor_duplication_denial_is_not_ring_unavailability: test
+invalid_or_exhausted_ring_setup_does_not_fallback: test
+observer_panic_releases_unsubmitted_native_resources: test
+prepared_ring_is_reused_across_data_and_zero_fallback_extents: test
+runtime_fallback_checks_the_threaded_budget_before_observation: test
+sparse_only_and_empty_plans_do_not_require_a_ring: test
+submission_failure_after_sparse_prefix_never_retries_threaded: test
+
+8 tests, 0 benchmarks
+     Running tests/native_validation.rs (target/r54-validation/debug/deps/native_validation-db4c6c45cdfb425a)
+empty_plans_are_valid_no_ops: test
+engine_rejects_invalid_offsets_without_publishing_or_poisoning: test
+invalid_alignment_precedes_zero_then_data: test
+invalid_configuration_precedes_every_extent_path: test
+range_validation_includes_empty_copies: test
+unrepresentable_plan_range_precedes_destination_calls: test
+unsupported_later_extent_precedes_data_writes: test
+zero_block_fallback_is_bounded: test
+
+8 tests, 0 benchmarks
+     Running tests/plan_execution.rs (target/r54-validation/debug/deps/plan_execution-ee624ca76a42e632)
+auto_plan_executes_selected_backend: test
+copy_with_report_uses_plan_execution_path: test
+io_uring_plan_executes_successfully: test
+planned_execution_rejects_changed_source_size: test
+threaded_plan_executes_successfully: test
+
+5 tests, 0 benchmarks
+     Running tests/plan_parity.rs (target/r54-validation/debug/deps/plan_parity-0279798219d29b21)
+auto_direct_and_planned_execution_are_equivalent: test
+io_uring_direct_and_planned_execution_are_equivalent: test
+threaded_direct_and_planned_execution_are_equivalent: test
+
+3 tests, 0 benchmarks
+     Running tests/plan_validation.rs (target/r54-validation/debug/deps/plan_validation-c4fd9044eba8063e)
+both_entry_points_reject_changed_alignment: test
+both_entry_points_reject_changed_source_size_before_partial_copy: test
+both_entry_points_reject_larger_execution_blocks_without_panicking: test
+both_entry_points_reject_smaller_destination_before_partial_copy: test
+both_entry_points_reject_smaller_execution_blocks: test
+concurrent_observer_rejects_invalid_plan_before_emitting_progress: test
+native_observer_rejects_invalid_plan_before_emitting_progress: test
+stale_hole_plan_must_not_clear_new_source_data: test
+
+8 tests, 0 benchmarks
+     Running tests/portable_plan.rs (target/r54-validation/debug/deps/portable_plan-e63ab13c1f982b51)
+auto_stays_logical_and_explicit_native_is_rejected: test
+empty_trait_object_plan_is_flushed_and_observed: test
+local_raw_disks_share_the_portable_api_and_native_plans_stay_explicit: test
+memory_disks_support_the_same_plan_and_copy_report_api: test
+portable_observation_does_not_finish_after_flush_failure: test
+portable_plan_checks_block_alignment_capacity_and_aliases: test
+portable_preflight_checks_flush_support_before_any_callback: test
+portable_validation_rejects_stale_and_invalid_maps_before_observation: test
+trait_object_plans_preserve_translated_data_zero_and_hole_semantics: test
+
+9 tests, 0 benchmarks
+     Running tests/preflight.rs (target/r54-validation/debug/deps/preflight-af98239877f9ff2d)
+aliases_rejected_for_memory_and_hard_linked_files: test
+append_descriptor_cannot_redirect_explicit_writes: test
+changed_file_sizes_rejected_before_observer_notification: test
+execution_rechecks_aliasing_instead_of_trusting_planning: test
+missing_flush_rejected_before_portable_writes: test
+native_alias_rejected_before_zeroing_source: test
+native_backend_descriptor_mismatch_precedes_zero_writes: test
+native_readonly_descriptor_rejected_before_zero_extent: test
+nonregular_native_endpoint_is_rejected: test
+portable_access_requirements_are_explicit: test
+readonly_replacement_rejected_before_observer_notification: test
+source_write_only_rejected_before_zero_extent: test
+undersized_native_destination_is_not_extended: test
+valid_native_range_preserves_prefix_and_tail: test
+
+14 tests, 0 benchmarks
+     Running tests/preflight_binding.rs (target/r54-validation/debug/deps/preflight_binding-27067d67f048dedb)
+descriptor_binding_is_validated_before_planning_or_observation: test
+
+1 test, 0 benchmarks
+     Running tests/preflight_snapshot.rs (target/r54-validation/debug/deps/preflight_snapshot-ef46b1a753577752)
+custom_endpoint_checks_remain_fresh_and_authoritative: test
+
+1 test, 0 benchmarks
+     Running tests/progress_observer.rs (target/r54-validation/debug/deps/progress_observer-6c545b0e0b581cd6)
+sparse_threaded_execution_emits_intermediate_progress: test
+
+1 test, 0 benchmarks
+     Running tests/semantic_policy.rs (target/r54-validation/debug/deps/semantic_policy-9ba7f353f39c74a0)
+advertised_sparse_operation_failure_is_not_retried_as_a_write: test
+byte_threshold_and_flush_order_are_preserved_for_data_and_sparse_operations: test
+direct_planned_and_observed_calls_preserve_operation_trace_and_tail_accounting: test
+native_sparse_failure_keeps_the_same_no_retry_policy: test
+threshold_snapshot_is_not_a_durability_event_on_failed_flush: test
+
+5 tests, 0 benchmarks
+     Running tests/unified_dispatch.rs (target/r54-validation/debug/deps/unified_dispatch-28685c3875fd383d)
+auto_selects_io_uring_for_dense_linux_fd_backends: test
+auto_uses_io_uring_for_hole_extents: test
+destination_smaller_than_source_is_rejected: test
+explicit_io_uring_handles_hole_extents: test
+explicit_io_uring_reports_io_uring_backend: test
+threaded_strategy_reports_threaded_backend: test
+
+6 tests, 0 benchmarks
+     Running unittests src/lib.rs (target/r54-validation/debug/deps/rvvdk_local-1c25f92ba816d1fc)
+file::discovery::tests::backwards_nonprogressing_and_past_eof_offsets_are_rejected: test
+file::discovery::tests::dense_fallback_reads_all_logical_bytes_including_real_holes_and_nonzero_tail: test
+file::discovery::tests::discovery_holds_admission_across_seeks_and_releases_after_error: test
+file::discovery::tests::interrupted_queries_retry_the_same_offset_and_whence: test
+file::discovery::tests::invalid_and_empty_ranges_do_not_seek_and_observed_truncation_is_rejected: test
+file::discovery::tests::missing_hole_after_known_data_is_an_error: test
+file::discovery::tests::real_errors_propagate_even_after_a_successful_prefix: test
+file::discovery::tests::shrink_during_discovery_cannot_return_a_hole_or_dense_map: test
+file::discovery::tests::trailing_holes_and_data_beyond_the_query_are_clipped: test
+file::discovery::tests::unsupported_at_either_seek_or_after_a_partial_map_replaces_the_whole_query: test
+file::discovery::tests::unsupported_discovery_does_not_hide_later_errors_or_map_changes: test
+file::preflight_tests::inspection_preserves_logical_restrictions_and_current_capacity: test
+file::preflight_tests::inspection_rejects_other_descriptor_even_for_same_inode: test
+file::preflight_tests::refreshes_append_flags_before_portable_copy: test
+file::preflight_tests::rejects_mismatched_direct_and_buffered_handles: test
+file::sparse::alias_tests::independent_buffered_alias_append_flag_is_rejected: test
+file::sparse::tests::empty_and_invalid_ranges_never_reach_the_kernel_operation: test
+file::sparse::tests::fallback_rechecks_append_flags_even_after_mode_is_cached: test
+file::sparse::tests::interrupted_calls_retry_but_real_errors_are_not_hidden_or_cached: test
+file::sparse::tests::sparse_guard_covers_syscall_fallback_and_error_unwinding: test
+file::sparse::tests::unsupported_modes_fall_back_in_bounded_chunks_and_cache_independently: test
+
+21 tests, 0 benchmarks
+     Running tests/adopt.rs (target/r54-validation/debug/deps/adopt-e052a19aa7ba2146)
+adoption_derives_rights_and_retains_unlinked_file: test
+
+1 test, 0 benchmarks
+     Running tests/direct_io.rs (target/r54-validation/debug/deps/direct_io-597fe03760126c60)
+buffered_device_has_no_direct_io_alignment: test
+direct_io_falls_back_for_unaligned_offset: test
+direct_io_handles_aligned_bulk_and_unaligned_tail: test
+direct_io_reads_and_writes_aligned_buffer: test
+discovers_direct_io_alignment: test
+opens_direct_io_device: test
+
+6 tests, 0 benchmarks
+     Running tests/linux_backend.rs (target/r54-validation/debug/deps/linux_backend-a7b8895766e12f83)
+buffered_file_reports_buffered_capability: test
+direct_file_reports_direct_capability: test
+
+2 tests, 0 benchmarks
+     Running tests/local_file.rs (target/r54-validation/debug/deps/local_file-7692dcae5e3614b0)
+does_not_depend_on_file_cursor: test
+opens_file_read_only: test
+reads_at_offset: test
+rejects_out_of_bounds_read: test
+rejects_write_on_read_only_device: test
+writes_at_offset: test
+
+6 tests, 0 benchmarks
+     Running tests/raw_disk.rs (target/r54-validation/debug/deps/raw_disk-049814adce560e52)
+raw_disk_works_with_local_file_backend: test
+
+1 test, 0 benchmarks
+     Running tests/sparse.rs (target/r54-validation/debug/deps/sparse-ae009c10cf0abc0a)
+discovers_sparse_file_extents: test
+raw_disk_exposes_sparse_extents: test
+
+2 tests, 0 benchmarks
+     Running tests/sparse_write.rs (target/r54-validation/debug/deps/sparse_write-022d295f77e9addb)
+sparse_writes_reject_read_only_invalid_and_truncated_ranges_without_growth: test
+storage_hole_punch_reclaims_blocks_and_preserves_data: test
+zero_and_punch_preserve_unaligned_edges_size_and_readback_for_both_open_modes: test
+
+3 tests, 0 benchmarks
+     Running unittests src/lib.rs (target/r54-validation/debug/deps/rvvdk_platform-adab90b660f6d2d3)
+access::tests::concurrent_admission_excludes_a_writer_until_cross_thread_release: test
+access::tests::empty_overflow_release_and_unwind_preserve_admission: test
+access::tests::mixed_modes_conflict_within_page_but_same_mode_subpage_writes_do_not: test
+access::tests::overlap_matrix_is_symmetric_and_flush_is_exclusive: test
+access::tests::wrapped_ids_skip_live_entries: test
+linux::access_tests::non_read_write_access_mode_is_not_advertised_as_data_access: test
+linux::tests::fd_only_backends_remain_dyn_compatible: test
+linux::tests::stores_capabilities: test
+
+8 tests, 0 benchmarks
+     Running unittests src/lib.rs (target/r54-validation/debug/deps/rvvdk_vmdk-9ef03e684d11fd24)
+local::tests::replacement_between_pin_and_reopen_cannot_redirect_reads: test
+
+1 test, 0 benchmarks
+     Running tests/backing.rs (target/r54-validation/debug/deps/backing-36bf79bd5b33ebfc)
+bounded_loading_handles_short_reads_interrupts_exact_limit_and_one_probe: test
+loading_propagates_io_and_parser_failures: test
+opaque_references_deduplicate_and_outlive_input_and_resolver: test
+resource_limits_fail_before_any_resolver_call: test
+revalidation_uses_live_capacity_access_and_known_identity: test
+truncation_and_read_permissions_are_checked_and_failures_drop_sources: test
+zero_extents_resolve_without_sources: test
+
+7 tests, 0 benchmarks
+     Running tests/descriptor.rs (target/r54-validation/debug/deps/descriptor-bd61329e7909ca0b)
+deterministic_mutations_never_panic_or_escape_layout_invariants: test
+duplicates_order_and_required_fields_are_validated: test
+each_resource_limit_accepts_boundary_and_rejects_next_byte_or_entry: test
+encoding_controls_and_error_locations_are_precise: test
+fixtures_have_checked_contiguous_byte_ranges: test
+lexical_variants_preserve_filename_case_and_borrow_input: test
+metadata_is_informational_and_unknown_features_rejected: test
+numbers_and_all_arithmetic_boundaries_are_checked: test
+path_policy_is_explicitly_deferred_without_any_file_access: test
+rejects_unsupported_variants_and_parent_chains: test
+supported_create_types_enforce_shape_and_split_capacity: test
+syntax_and_quoting_fail_closed: test
+
+12 tests, 0 benchmarks
+     Running tests/local_logical.rs (target/r54-validation/debug/deps/local_logical-ab1db0032f6c33df)
+local_second_backing_hardlink_and_late_truncation_fail_before_mutation: test
+
+1 test, 0 benchmarks
+     Running tests/local_resolution.rs (target/r54-validation/debug/deps/local_resolution-af80f3ae324ffa66)
+dangerous_lexical_names_and_symlink_components_fail: test
+descriptor_acquisition_ignores_untrusted_file_size_and_obeys_bound: test
+descriptor_parent_and_nested_regular_files_are_used_read_only: test
+live_truncation_is_detected_and_failed_resolution_leaks_no_file_handles: test
+mounted_namespaces_and_magic_links_are_not_followed: test
+nonregular_files_reject_without_opening_a_fifo_for_io: test
+pinned_anchor_and_backings_survive_path_replacement_and_hardlinks_have_identity: test
+
+7 tests, 0 benchmarks
+     Running tests/logical.rs (target/r54-validation/debug/deps/logical-29c51cf90ca56ef1)
+all_ranges_match_flat_zero_offset_and_repeated_source_oracle: test
+binary_lookup_handles_1024_distinct_logical_positions: test
+composite_alias_checks_apply_to_direct_planned_and_trait_object_copies: test
+concurrent_reads_share_immutable_mapping_and_backing_handles: test
+constructor_and_execute_preflight_reject_late_truncation_before_writes: test
+every_backing_alias_is_checked_and_unknown_identity_copies_fail_closed: test
+extents_are_clipped_coalesced_and_never_report_physical_holes: test
+maximum_capacity_zero_extent_and_last_byte_do_not_overflow: test
+partial_reads_complete_but_eof_and_io_errors_are_not_zero_filled: test
+portable_copy_preserves_data_zero_and_destination_tail: test
+range_errors_precede_buffer_changes_and_all_mutations_are_unsupported: test
+
+11 tests, 0 benchmarks
+     Running tests/padding.rs (target/r54-validation/debug/deps/padding-9923b16130c28aeb)
+chunk_boundaries_and_interruptions_preserve_padding_and_require_eof: test
+embedded_nuls_and_nonzero_suffixes_cannot_hide_text: test
+empty_all_nul_and_invalid_prefixes_still_fail_validation: test
+limit_includes_padding_and_oversize_consumes_only_one_probe: test
+original_bytes_and_strict_text_view_are_distinct: test
+suffix_policy_does_not_require_a_final_newline_or_sector_alignment: test
+
+6 tests, 0 benchmarks
+     Running tests/sparse_disk.rs (target/r54-validation/debug/deps/sparse_disk-d39e166e850d8a1d)
+aggregate_budgets_reject_before_later_offset_reads_and_release_handles: test
+contiguous_grains_merge_reads_and_zeros_never_read_payload: test
+endpoint_changes_after_planning_reject_before_destination_writes: test
+every_backing_alias_and_unknown_identity_fail_copy_and_verify_preflight: test
+extent_queries_clip_coalesce_across_sources_and_enforce_output_limit: test
+final_acquisition_rechecks_earlier_sources: test
+invalid_ranges_do_not_touch_buffers_and_all_mutations_reject: test
+local_hardlink_alias_and_path_replacement_use_retained_inode: test
+portable_copy_and_verify_preserve_zeros_and_destination_tail: test
+reads_match_oracle_at_grain_boundaries_and_unaligned_ranges: test
+retained_sources_support_concurrent_reads_after_input_and_resolver_drop: test
+short_reads_complete_and_payload_eof_or_errors_are_never_zero_filled: test
+split_reads_and_extents_cross_backings_with_different_grain_sizes: test
+
+13 tests, 0 benchmarks
+     Running tests/sparse_header.rs (target/r54-validation/debug/deps/sparse_header-5ab4ffacdea50c9e)
+acquisition_reads_only_one_sector_and_propagates_short_io: test
+checked_arithmetic_and_independent_limits: test
+deterministic_mutations_never_panic_or_escape_admitted_bounds: test
+exact_little_endian_geometry_and_regions: test
+external_descriptor_nonredundant_and_optional_newline_flag: test
+grain_capacity_and_directory_rounding: test
+metadata_ranges_pairs_overlap_and_file_bounds: test
+rejects_versions_flags_compression_dirty_and_reserved_bytes: test
+truncation_excess_and_magic_fail_without_casts: test
+
+9 tests, 0 benchmarks
+     Running tests/sparse_metadata.rs (target/r54-validation/debug/deps/sparse_metadata-2766069de77ed473)
+absent_redundancy_is_supported_without_recovery_fallback: test
+budget_failures_precede_offset_reads_and_large_allocations: test
+descriptor_binding_rejects_missing_conflicting_and_capacity_mismatch: test
+explicit_sparse_subset_preserves_default_parser_rejection: test
+external_split_binding_empty_region_and_extent_index: test
+live_endpoint_header_changes_and_io_failures_propagate: test
+metadata_placement_rejects_before_any_grain_table_read: test
+redundant_disagreement_unused_slots_and_data_ranges_reject: test
+retained_map_and_exact_budget_accounting: test
+
+9 tests, 0 benchmarks
+   Doc-tests rvvdk_cli
+0 tests, 0 benchmarks
+   Doc-tests rvvdk_core
+0 tests, 0 benchmarks
+   Doc-tests rvvdk_datamover
+0 tests, 0 benchmarks
+   Doc-tests rvvdk_local
+0 tests, 0 benchmarks
+   Doc-tests rvvdk_platform
+0 tests, 0 benchmarks
+   Doc-tests rvvdk_vmdk
+0 tests, 0 benchmarks

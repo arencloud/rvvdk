@@ -99,6 +99,5 @@ those maps, not a production sparse reader or arbitrary VMware images.
 
 The separate [R5.3 SparseDisk layer](vmdk-sparse-disk.md) now provides read-only base
 logical mapping, aggregate admission, composite alias protection and retained-source
-consistency. SparseMetadata itself still exposes no logical reads. Next is R5.4 CLI
-integration; parent chains, version 2, streamOptimized, managed variants and writes
-remain separate.
+consistency. SparseMetadata itself still exposes no logical reads. R5.4 now adds [CLI integration](cli-vmdk.md); parent chains, version 2,
+streamOptimized, managed variants and writes remain separate.

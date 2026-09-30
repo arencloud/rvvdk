@@ -1233,3 +1233,20 @@ preflight; all backing identities participate in destination alias checks. No na
 RAW endpoint, writes, parent inference or automatic snapshot is exposed. Sources
 must stay quiescent. Public CLI integration is R5.4. See the
 [contract](vmdk-sparse-disk.md) and [ADR-0040](adr/0040-read-only-base-sparse-mapping.md).
+
+
+## Sparse CLI acquisition and lifecycle (R5.4)
+
+Explicit VMDK mode dispatches the opened source's bounded first chunk to text or
+hosted sparse header admission. External text admits FLAT/ZERO or split sparse;
+binary input must bind a monolithic embedded descriptor to the opened container's
+inode. The observing confined resolver rejects a different inode before reading its
+metadata. No RAW autodetection or fallback to unconfined lookup is introduced.
+
+Source owns SparseDisk plus timestamp/identity observations for the descriptor and
+all loaded extents. Existing preview, alias checks, portable execution, verification,
+cancellation and private publication apply. Sparse sources never enter the RAW
+native adapter. Defaults bound source metadata independently of execution payload;
+sparse preview counters report loader reservations/read work, excluding entry
+acquisition. See [CLI contract](cli-vmdk.md) and
+[ADR-0041](adr/0041-sparse-cli-source-acquisition.md).

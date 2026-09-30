@@ -98,11 +98,11 @@ pub(crate) fn command() -> Command {
     // Build only the selected command's options. The full list and summaries
     // remain available in root help, without cloning unrelated argument trees.
     Command::new("rvddk").version(env!("CARGO_PKG_VERSION"))
-        .about("Inspect, plan, copy, and verify local RAW or FLAT/ZERO VMDK sources (RAW destinations)")
+        .about("Inspect, plan, copy, and verify local RAW or base FLAT/ZERO/hosted-sparse VMDK sources (RAW destinations)")
         .subcommand_required(true).arg_required_else_help(true)
         .arg(Arg::new("json").long("json").global(true).action(ArgAction::SetTrue)
             .help("Emit schema-versioned JSON; errors go to stderr"))
-        .subcommand(Command::new("inspect").about("Inspect a RAW file or FLAT/ZERO VMDK descriptor")
+        .subcommand(Command::new("inspect").about("Inspect a RAW file, base VMDK descriptor or hosted sparse container")
             .defer(|c| extents(source(c))))
         .subcommand(Command::new("plan").about("Preview logical work and destination policy; does not create or write output")
             .defer(|c| extents(copy_options(c))

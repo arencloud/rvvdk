@@ -24,16 +24,16 @@ Virtual disk tools need to understand both **what a disk means** and **how its
 bytes are stored**. rvvdk separates logical disks, disk formats, backing storage,
 and execution so each can evolve independently.
 
-The current workspace provides a local RAW and read-only FLAT/ZERO VMDK copy engine with sparse source
-extent discovery, bounded concurrency, reusable aligned buffers, and Linux
+The current workspace provides a local RAW and read-only base FLAT/ZERO and hosted sparse VMDK copy engine,
+with sparse source extent discovery, bounded concurrency, reusable aligned buffers, and Linux
 io_uring execution. The longer-term goal is an independent Rust toolkit for
 VMware disk access and migration, extensible to other platforms.
 
 > [!IMPORTANT]
 > **Active development.** The project exposes Rust libraries and a local disk CLI.
 > A [bounded VMDK descriptor parser](docs/vmdk-descriptor.md) is available.
-> [Read-only FLAT/ZERO VMDK disks](docs/vmdk-logical.md) are available through Rust APIs
-> and [all four CLI commands](docs/cli-vmdk.md), with RAW output and
+> [FLAT/ZERO](docs/vmdk-logical.md) and [base hosted sparse](docs/vmdk-sparse-disk.md)
+> VMDK disks are readable through Rust APIs and [all four CLI commands](docs/cli-vmdk.md), with RAW output and
 > [bounded terminal-padding support](docs/vmdk-padding.md).
 > VMware remote access, CBT, and durable resume are planned.
 > The [roadmap](docs/roadmap.md) tracks completed fixes and remaining work;
@@ -58,7 +58,7 @@ VMware disk access and migration, extensible to other platforms.
 | **Sparse destination output** | Linux zeroing and hole punching with safe bounded fallback; [contract and allocation evidence](docs/local-sparse-output.md) |
 | **Copy memory budget** | Configurable 256 MiB default for buffers, queue entries, and extent metadata; [scope and limits](docs/copy-memory.md) |
 | **VMDK descriptors** | [Hosted base FLAT/ZERO metadata](docs/vmdk-descriptor.md), bounded parsing, [confined backing resolution](docs/vmdk-backing.md) and [logical reads](docs/vmdk-logical.md) |
-| **Hosted sparse reads** | [Read-only base monolithic/split sparse library API](docs/vmdk-sparse-disk.md), bounded metadata and alias protection; CLI integration pending |
+| **Hosted sparse reads** | [Read-only base monolithic/split sparse](docs/vmdk-sparse-disk.md), bounded metadata and [CLI inspect/plan/copy/verify](docs/cli-vmdk.md) |
 | **VMware access** | Planned; no VMware VDDK dependency in the current workspace |
 
 The [endpoint contract](docs/architecture.md#copy-endpoint-preflight-r05) describes
@@ -144,7 +144,7 @@ flowchart TD
     Native --> FD["RAW backend access · LinuxFdBackend"]
     FD --> Local
     Logical --> VMDK["VMDK · FLAT/ZERO reads"]
-    Logical --> Sparse["Base hosted sparse · library reads"]
+    Logical --> Sparse["Base hosted sparse · logical reads"]
     Sparse -. "planned" .-> Parents["Parent chains and other sparse formats"]
     VMDK --> Device
     Sparse --> Device
@@ -169,7 +169,7 @@ migration and exceptional cleanup behavior.
 |:---|:---|
 | [`rvvdk-cli`](crates/rvvdk-cli) | `rvddk` RAW/VMDK inspect, plan, copy to RAW and bounded verify; human/JSON reports |
 | [`rvvdk-core`](crates/rvvdk-core) | Disk contracts, ranges, extents, RAW/memory devices, and buffer ownership |
-| [`rvvdk-vmdk`](crates/rvvdk-vmdk) | Bounded descriptors, backing resolution and read-only FLAT/ZERO logical disks |
+| [`rvvdk-vmdk`](crates/rvvdk-vmdk) | Bounded descriptors, backing resolution and read-only FLAT/ZERO/base sparse disks |
 | [`rvvdk-local`](crates/rvvdk-local) | Local regular-file access, sparse discovery, and direct-I/O handling |
 | [`rvvdk-platform`](crates/rvvdk-platform) | Platform-specific backend capabilities |
 | [`rvvdk-datamover`](crates/rvvdk-datamover) | Planning, execution strategies, scheduling, statistics, and progress |
@@ -224,7 +224,7 @@ workloads. Measurements depend on the filesystem, page cache, hardware, and
 flush policy. See the [benchmark notes](docs/benchmarks.md) for historical results
 and the [review](docs/project-review-2026-09-28.md) for measurement gaps.
 
-Explore the [R5.3 benchmark charts](docs/benchmark-results/2026-09-30-r53/README.md)
+Explore the [R5.4 benchmark charts](docs/benchmark-results/2026-09-30-r54/README.md)
 for latency comparisons, paired changes, and sample distributions. A
 [reusable generator](scripts/benchmarks/README.md) exports SVG and PNG figures.
 
@@ -240,7 +240,7 @@ target/release/rvddk verify source.raw destination.raw --format raw
 
 Planning creates and writes nothing. Existing destinations require `--overwrite`
 to preview in-place changes; native selection and runtime readiness stay deferred.
-Convert a supported FLAT/ZERO VMDK to RAW:
+Convert a supported base FLAT/ZERO or hosted sparse VMDK to RAW:
 
 ```bash
 target/release/rvddk copy disk.vmdk output.raw --format vmdk --verify --progress

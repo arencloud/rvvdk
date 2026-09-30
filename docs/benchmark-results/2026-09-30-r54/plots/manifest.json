@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R5.4 \u00b7 Sparse CLI integration",
+    "candidate": "patch 69a12417",
+    "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm Btrfs",
+    "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "candidate_only": {
+      "title": "Sparse CLI operations \u00b7 first cost baselines",
+      "note": "Complete CLI calls \u00b7 copy includes verification, engine flush, file/directory sync and publication",
+      "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+    },
+    "workloads": {
+      "cli_vmdk/inspect_mixed": {
+        "label": "FLAT/ZERO inspect \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "cli_vmdk/plan_mixed": {
+        "label": "FLAT/ZERO plan \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "cli_vmdk/copy_mixed_verify": {
+        "label": "FLAT/ZERO copy + verify \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/verify_only": {
+        "label": "RAW verify \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "cli_sparse/inspect_mono": {
+        "label": "Sparse inspect \u00b7 monolithic 1 MiB",
+        "phase": "planning"
+      },
+      "cli_sparse/plan_split": {
+        "label": "Sparse plan \u00b7 split 2 MiB",
+        "phase": "planning"
+      },
+      "cli_sparse/copy_mono_verify": {
+        "label": "Sparse copy + verify \u00b7 monolithic 1 MiB",
+        "phase": "copy"
+      },
+      "cli_sparse/copy_split_verify": {
+        "label": "Sparse copy + verify \u00b7 split 2 MiB",
+        "phase": "copy"
+      },
+      "cli_sparse/verify_split": {
+        "label": "Sparse verify \u00b7 split 2 MiB",
+        "phase": "copy"
+      }
+    }
+  },
+  "input_sha256": {
+    "plot-config.json": "7451e86801dded1c62dad026efe2643c4da3220930a17f4046de525690c8b190",
+    "environment.json": "fbe310fbc56e184b293eadccadd5d11a3638ef6864054fae3be8a021cc4bdab0",
+    "measurements.json": "b75423065dc5792c8fb41ec5fd2e4bf364af80444c50409ae6b5997e63b6a7bc",
+    "summary.json": "9ca68ee69d45fb758e46358e7e5050466d6024d7c4217e9db8786331441b29fd",
+    "candidate-only-measurements.json": "ba4354c618b335faf9247de09e215e2b4ee7eea3ea5f8a0a3b34c18cd7e53058"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "d8ff018b461dbf5c2711ff442d4d515f13edc8bd5655d0db527264557c3852c9",
+    "planning-latency.png": "6ff0f52a475f04cdb933d5cf9ea12797672f7873e4addce511eb07bbb1ccfdb6",
+    "copy-latency.svg": "1da8f167f279ff1f6d7603071a4b3b8bda9551eafadab8e2e9f18cbc0b466a88",
+    "copy-latency.png": "637db7207865215d39b3ef421c371012d04d88a352661fcc7086358ecb678966",
+    "relative-change.svg": "702fc495005770680fee86c77ece4ed69da117bf90dedcd7571930f3aaaa3b09",
+    "relative-change.png": "7cf457d752ff70d362fa38f3b1932b8f5b163c23e25cf4828af6fe65afa97fab",
+    "sample-distributions.svg": "ff6c6302536f8620d0da4b4a5396c70dfb01b9a9bd30aa9c7f950448e088a611",
+    "sample-distributions.png": "f68818b73f47f52bb1d7e06f5b778b9cafcaf59ac7acf56b9a7d4da49d91f8da",
+    "candidate-only.svg": "136d9c68de2289d05d9077dc6cbe38dd54c629f3b6b56c6be86c4886e8ac237f",
+    "candidate-only.png": "092456afb1aacecdb68d17424f04bd9bd69cab048214fa6b1f2153a17202d239",
+    "computed.json": "c5b74c89d0c3e486eec9c025baae51d3e54712976a72f610497d862e806b4ffd"
+  }
+}

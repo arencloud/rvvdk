@@ -1621,12 +1621,66 @@ requests are proven by tests, not a timing advantage on this shared memory workl
 Opening, reading, queries and copying have different boundaries; no storage throughput
 claim follows. Larger-capacity performance and prior tuning follow-ups remain open.
 
+## R5.4 — Sparse CLI acquisition and lifecycle integration
+
+Date: 2026-09-30. Status: **Complete within the supported base sparse CLI subset**.
+Baseline: `81aa801`, initially clean. The enclosing commit records this step.
+[Evidence](benchmark-results/2026-09-30-r54/README.md) retains source/harness/binary
+identities, all samples, reference hashes, validation and SVG/PNG plots.
+
+Explicit --format vmdk now accepts monolithic sparse containers and external split
+sparse descriptors for inspect/plan/copy/verify. Bounded entry acquisition shares
+its first text read with format dispatch; binary header/range checks precede embedded
+text reads. Monolithic extent resolution must match the opened container's device/
+inode before backing metadata reads. Different-inode redirection fails; same-inode
+hard links are accepted. Source observations retain the descriptor and every loaded
+backing. SparseDisk participates in portable planning/execution with existing alias,
+verification, cancellation and no-replace publication behavior. Sources remain
+quiescent by caller responsibility, with timestamp checks at existing boundaries.
+
+Sparse preview reports add layout and loader memory/read counters under schema 1.
+Loader budgets stay independent of copy/verification memory-budget and exclude CLI
+entry acquisition/observation resources. RAW selection remains explicit; native RAW
+execution, parent chains, compressed/managed variants and VMDK writes remain outside
+this step. Existing flat parsing is reused once after bounded acquisition; library
+Descriptor/DescriptorText contracts remain unchanged. [Contract](cli-vmdk.md);
+[ADR-0041](adr/0041-sparse-cli-source-acquisition.md).
+
+Validation: **488 distinct passed, one existing gated allocation test** (489 total).
+Ten new CLI tests cover both sparse entry forms, all commands, threaded/auto copying,
+overwrite tails, mismatch offsets, original bytes, same-inode binding, all aliases,
+malformed headers/tables, confinement, limits, native/budget rejection, source changes,
+cancellation and publication collisions. Separate 124-test CLI/VMDK validation passes
+with integration fixtures on Btrfs; five existing CLI unit fault tests retain system-
+temporary fixtures. Formatting, strict all-target Clippy and portable core/datamover/
+VMDK wasm32 checks pass (existing control::sum warning). A fresh validation target
+avoids stale pre-existing local artifacts; both release variants also build fresh.
+
+All four public commands pass on four QEMU fixtures: 1 MiB and 64 MiB monolithic,
+1 MiB split, and two-file 2 GiB + 64 KiB split with data across the boundary. Plan
+creates nothing. Copy uses auto/threaded, four workers, 65,537-byte blocks and full
+verification, then reports file/directory sync. Output SHA-256 equals the RAW oracle;
+QEMU compare agrees and source hashes stay unchanged. Earlier staged reference
+runners retain historical CLI-rejection expectations; the new sparse CLI runner
+qualifies current behavior. No SDK/producer implementation source or ESXi was used.
+
+Performance: 24 matched runs show **-15.58%, -17.96%, +1.19%, +2.83%** for existing
+FLAT/ZERO inspect, plan, copy+verify and RAW verify. No adverse aggregate or pair
+exceeds +5%, so no longer repeats trigger. The favorable -43.54% plan pair remains
+visible; shared-host variability prevents a precise causal speedup claim. The code
+removes duplicate flat parsing and adds no separate text probe syscall, but this
+does not close R4.4 or PERF.0 qualification. Fifteen first sparse CLI runs establish
+**55.584 µs inspect**, **82.264 µs split plan**, **19.718 ms monolithic copy+verify**,
+**20.212 ms split copy+verify**, and **0.243 ms split verify**. Copy timings include
+verification, flush, file/directory sync and publication. Sizes/boundaries differ;
+these are first warm-Btrfs CLI baselines, not cold-storage or engine speedup results.
+
 ## Next session
 
-Start **R5.4**: explicit sparse CLI source acquisition and inspect/plan/copy/verify
-integration. Preserve descriptor provenance, destination identity/alias checks,
-publication and cancellation. Keep parent chains and broader variants separate.
-Each step gets tests, reference checks, benchmarks, plots and a commit.
+Start **R5.5**: adversarial sparse validation and capacity/fragmentation benchmark
+coverage before parent-chain support. Extend bounded malformed-input checks and
+measure larger maps, fragmented reads and query scaling. Preserve original/adverse
+runs; each completed step gets tests, benchmarks, plots and a commit.
 
 ESXi remains unnecessary for local work; request the 60-day trial when V0's lab
 proof is ready. Keep PERF.0, R4.4 preview overhead/tuning and earlier adverse timing

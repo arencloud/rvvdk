@@ -237,6 +237,7 @@ fn copy_controlled<C: Cancellation>(
         let plan = match &opened.disk {
             Disk::Raw(raw) => mover.plan_raw_with_destination(raw, &destination)?,
             Disk::Vmdk(vmdk) => mover.plan_with_destination(vmdk, &destination)?,
+            Disk::Sparse(sparse) => mover.plan_with_destination(sparse, &destination)?,
         };
         if target.existing {
             target.check_name()?;
@@ -257,6 +258,13 @@ fn copy_controlled<C: Cancellation>(
             Disk::Vmdk(vmdk) => {
                 mover.execute_plan_controlled(&plan, vmdk, &destination, cancellation, &observer)?
             }
+            Disk::Sparse(sparse) => mover.execute_plan_controlled(
+                &plan,
+                sparse,
+                &destination,
+                cancellation,
+                &observer,
+            )?,
         };
         let stats = report.stats();
         counters = json!({"bytes_read":stats.bytes_read(),"bytes_written":stats.bytes_written(),"bytes_zeroed":stats.bytes_zeroed(),"bytes_discarded":stats.bytes_discarded(),"blocks_copied":stats.blocks_copied(),"extents_processed":stats.extents_processed()});

@@ -1,0 +1,49 @@
+{
+  "title": "R5.4 \u00b7 Sparse CLI integration",
+  "candidate": "patch 69a12417",
+  "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 warm Btrfs",
+  "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+  "candidate_only": {
+    "title": "Sparse CLI operations \u00b7 first cost baselines",
+    "note": "Complete CLI calls \u00b7 copy includes verification, engine flush, file/directory sync and publication",
+    "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+  },
+  "workloads": {
+    "cli_vmdk/inspect_mixed": {
+      "label": "FLAT/ZERO inspect \u00b7 1 MiB",
+      "phase": "planning"
+    },
+    "cli_vmdk/plan_mixed": {
+      "label": "FLAT/ZERO plan \u00b7 1 MiB",
+      "phase": "planning"
+    },
+    "cli_vmdk/copy_mixed_verify": {
+      "label": "FLAT/ZERO copy + verify \u00b7 1 MiB",
+      "phase": "copy"
+    },
+    "cli_transfer/verify_only": {
+      "label": "RAW verify \u00b7 16 MiB",
+      "phase": "copy"
+    },
+    "cli_sparse/inspect_mono": {
+      "label": "Sparse inspect \u00b7 monolithic 1 MiB",
+      "phase": "planning"
+    },
+    "cli_sparse/plan_split": {
+      "label": "Sparse plan \u00b7 split 2 MiB",
+      "phase": "planning"
+    },
+    "cli_sparse/copy_mono_verify": {
+      "label": "Sparse copy + verify \u00b7 monolithic 1 MiB",
+      "phase": "copy"
+    },
+    "cli_sparse/copy_split_verify": {
+      "label": "Sparse copy + verify \u00b7 split 2 MiB",
+      "phase": "copy"
+    },
+    "cli_sparse/verify_split": {
+      "label": "Sparse verify \u00b7 split 2 MiB",
+      "phase": "copy"
+    }
+  }
+}

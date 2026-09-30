@@ -4,12 +4,14 @@ use crate::{error::Failure, target};
 use rvvdk_core::{BlockDevice, RawDisk, VirtualDisk};
 use rvvdk_local::LocalFileBlockDevice;
 use rvvdk_vmdk::{
-    BackingError, BackingResolver, DescriptorText, Limits, LocalResolver, ResolutionLimits,
-    ResolvedDescriptor, VmdkDisk,
+    BackingError, BackingResolver, CreateType, Descriptor, Limits, LocalResolver, ResolutionLimits,
+    ResolvedDescriptor, SparseDescriptor, SparseDisk, SparseDiskLimits, SparseHeader, SparseLimits,
+    VmdkDisk,
 };
 use std::{
     fs::{File, Metadata},
-    os::unix::fs::MetadataExt,
+    io::Read,
+    os::unix::fs::{FileExt, MetadataExt},
     path::Path,
     sync::{Arc, Mutex},
 };
@@ -41,6 +43,7 @@ impl Observed {
 pub(crate) enum Disk {
     Raw(RawDisk<LocalFileBlockDevice>),
     Vmdk(VmdkDisk),
+    Sparse(SparseDisk),
 }
 pub(crate) struct Source {
     pub disk: Disk,
@@ -48,6 +51,7 @@ pub(crate) struct Source {
 }
 struct ObservingResolver {
     local: LocalResolver,
+    embedded_identity: Option<(u64, u64)>,
     files: Mutex<Vec<Observed>>,
 }
 fn observation_error(source: std::io::Error) -> BackingError {
@@ -60,6 +64,12 @@ impl BackingResolver for ObservingResolver {
     fn resolve(&self, reference: &str) -> std::result::Result<Arc<dyn BlockDevice>, BackingError> {
         let file = self.local.open_regular(reference)?;
         let observed = Observed::new(file).map_err(observation_error)?;
+        if self
+            .embedded_identity
+            .is_some_and(|identity| identity != (observed.initial.0, observed.initial.1))
+        {
+            return Err(BackingError::LocalIdentityChanged);
+        }
         let device = LocalFileBlockDevice::from_buffered_file(
             observed.file.try_clone().map_err(observation_error)?,
         )
@@ -86,19 +96,52 @@ impl Source {
             let (file, local) = LocalResolver::open_descriptor_file(path)?;
             let mut descriptor =
                 Observed::new(file).map_err(|e| Failure::io("inspect descriptor", e))?;
-            let text = DescriptorText::read_from(&mut descriptor.file, Limits::default())?;
+            let (bytes, embedded) = acquire(&mut descriptor)?;
             let resolver = ObservingResolver {
                 local,
+                embedded_identity: embedded.then_some((descriptor.initial.0, descriptor.initial.1)),
                 files: Mutex::new(vec![descriptor]),
             };
-            let resolved = ResolvedDescriptor::resolve(
-                &text.parse()?,
-                &resolver,
-                ResolutionLimits::default(),
-            )?;
-            let disk = VmdkDisk::new(resolved)?;
+            let end = bytes.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
+            let disk = if !embedded {
+                match Descriptor::parse(&bytes[..end]) {
+                    Ok(parsed) => Disk::Vmdk(VmdkDisk::new(ResolvedDescriptor::resolve(
+                        &parsed,
+                        &resolver,
+                        ResolutionLimits::default(),
+                    )?)?),
+                    Err(flat_error) => {
+                        let parsed = SparseDescriptor::parse(&bytes)
+                            .map_err(|_| Failure::from(flat_error))?;
+                        if parsed.create_type() != CreateType::TwoGbMaxExtentSparse {
+                            return Err(Failure::new(
+                                "vmdk",
+                                "monolithic sparse input must be its container file",
+                            ));
+                        }
+                        Disk::Sparse(SparseDisk::load(
+                            &parsed,
+                            &resolver,
+                            SparseDiskLimits::default(),
+                        )?)
+                    }
+                }
+            } else {
+                let parsed = SparseDescriptor::parse(&bytes)?;
+                if parsed.create_type() != CreateType::MonolithicSparse {
+                    return Err(Failure::new(
+                        "vmdk",
+                        "embedded input requires a monolithic sparse descriptor",
+                    ));
+                }
+                Disk::Sparse(SparseDisk::load(
+                    &parsed,
+                    &resolver,
+                    SparseDiskLimits::default(),
+                )?)
+            };
             Self {
-                disk: Disk::Vmdk(disk),
+                disk,
                 files: resolver.files.into_inner().unwrap(),
             }
         };
@@ -109,16 +152,17 @@ impl Source {
         match &self.disk {
             Disk::Raw(d) => d,
             Disk::Vmdk(d) => d,
+            Disk::Sparse(d) => d,
         }
     }
     pub fn format(&self) -> &'static str {
         match self.disk {
             Disk::Raw(_) => "raw",
-            Disk::Vmdk(_) => "vmdk",
+            Disk::Vmdk(_) | Disk::Sparse(_) => "vmdk",
         }
     }
     pub fn validate_backend(&self, requested: &str) -> Result<()> {
-        if matches!(self.disk, Disk::Vmdk(_)) && requested == "io-uring" {
+        if matches!(self.disk, Disk::Vmdk(_) | Disk::Sparse(_)) && requested == "io-uring" {
             return Err(Failure::new(
                 "unsupported_backend",
                 "VMDK logical sources require threaded or auto execution",
@@ -154,6 +198,18 @@ impl Source {
         (self.files[0].initial.0, self.files[0].initial.1)
     }
     pub fn vmdk_report(&self) -> Option<serde_json::Value> {
+        if let Disk::Sparse(disk) = &self.disk {
+            return Some(serde_json::json!({
+                "descriptor_identity": {"device":self.identity().0,"inode":self.identity().1},
+                "layout":"hosted_sparse",
+                "backing_file_count":disk.metadata().len(),
+                "descriptor_extent_count":disk.metadata().len(),
+                "cid":format!("{:08x}",disk.cid()),
+                "metadata_memory_reservation_bytes":disk.reserved_memory_bytes(),
+                "metadata_read_bytes":disk.metadata_read_bytes(),
+                "backing_identities":self.files.iter().skip(1).map(|f| serde_json::json!({"device":f.initial.0,"inode":f.initial.1})).collect::<Vec<_>>()
+            }));
+        }
         let Disk::Vmdk(disk) = &self.disk else {
             return None;
         };
@@ -175,4 +231,71 @@ impl From<rvvdk_vmdk::DescriptorError> for Failure {
     fn from(error: rvvdk_vmdk::DescriptorError) -> Self {
         Self::new("vmdk", error.to_string())
     }
+}
+
+impl From<rvvdk_vmdk::SparseMetadataError> for Failure {
+    fn from(error: rvvdk_vmdk::SparseMetadataError) -> Self {
+        Self::new("vmdk", error.to_string())
+    }
+}
+impl From<rvvdk_vmdk::SparseError> for Failure {
+    fn from(error: rvvdk_vmdk::SparseError) -> Self {
+        Self::new("vmdk", error.to_string())
+    }
+}
+/// The first bounded chunk is also descriptor input, so text sources need no
+/// extra probe syscall. Format dispatch stays inside explicit --format vmdk.
+fn acquire(source: &mut Observed) -> Result<(Vec<u8>, bool)> {
+    let mut chunk = [0; 4096];
+    let mut n = 0;
+    while n < 4 {
+        match source.file.read(&mut chunk[n..]) {
+            Ok(0) => break,
+            Ok(count) => n += count,
+            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(e) => return Err(observation_error(e).into()),
+        }
+    }
+    if chunk[..n].starts_with(b"KDMV") {
+        let mut raw = [0; 512];
+        source
+            .file
+            .read_exact_at(&mut raw, 0)
+            .map_err(observation_error)?;
+        let header =
+            SparseHeader::parse_with_limits(&raw, source.initial.2, SparseLimits::default())?;
+        let region = header
+            .descriptor()
+            .ok_or_else(|| Failure::new("vmdk", "missing embedded descriptor"))?;
+        let mut text = vec![0; region.length() as usize]; // admitted by the 1 MiB header limit
+        source
+            .file
+            .read_exact_at(&mut text, region.offset())
+            .map_err(observation_error)?;
+        return Ok((text, true));
+    }
+    let limit = Limits::default().descriptor_bytes;
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(&chunk[..n]);
+    loop {
+        let remaining = limit - bytes.len();
+        let count = if remaining == 0 {
+            1
+        } else {
+            remaining.min(chunk.len())
+        };
+        let n = match source.file.read(&mut chunk[..count]) {
+            Ok(n) => n,
+            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(e) => return Err(observation_error(e).into()),
+        };
+        if n == 0 {
+            break;
+        }
+        if remaining == 0 {
+            return Err(BackingError::Limit("descriptor acquisition bytes").into());
+        }
+        bytes.extend_from_slice(&chunk[..n]);
+    }
+    Ok((bytes, false))
 }

@@ -1,0 +1,77 @@
+[
+  {
+    "label": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "target/r54-validation"
+    },
+    "exit_code": 0
+  },
+  {
+    "label": "tests",
+    "command": [
+      "cargo",
+      "test",
+      "--workspace"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "target/r54-validation"
+    },
+    "exit_code": 0
+  },
+  {
+    "label": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "target/r54-validation"
+    },
+    "exit_code": 0
+  },
+  {
+    "label": "portable",
+    "command": [
+      "cargo",
+      "check",
+      "-p",
+      "rvvdk-core",
+      "-p",
+      "rvvdk-datamover",
+      "-p",
+      "rvvdk-vmdk",
+      "--target",
+      "wasm32-unknown-unknown"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "target/r54-validation"
+    },
+    "exit_code": 0
+  },
+  {
+    "label": "test-inventory",
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--",
+      "--list"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "target/r54-validation"
+    },
+    "exit_code": 0
+  }
+]

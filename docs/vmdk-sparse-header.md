@@ -87,5 +87,4 @@ validates directory/table contents and placement, and requires redundancy agreem
 These guarantees belong to that loader; header admission alone remains unchanged.
 
 [R5.3 SparseDisk](vmdk-sparse-disk.md) now adds read-only base sparse mapping with
-aggregate admission and alias protection. Next is R5.4 CLI integration; parent-chain
-work remains separate.
+aggregate admission and alias protection. R5.4 now adds [CLI integration](cli-vmdk.md); parent-chain work remains separate.
