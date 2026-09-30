@@ -237,7 +237,7 @@ inspect/plan/copy/verify; RAW destinations and existing publication contracts.
 **R4.5 complete**: [bounded terminal NUL acquisition](vmdk-padding.md), original
 byte preservation and unmodified generated hosted descriptor reference tests.
 Custom independent-decoder qualification remains separate and open.
-Next bounded package is **R5.5**, below.
+Next bounded package is **R5.6**, below.
 Each package gets tests, benchmarks and a commit. No ESXi needed yet.
 
 - [x] R4.1 parser crate, explicit subset, input limits, checked arithmetic, fixture provenance.
@@ -259,7 +259,7 @@ Acceptance: single/multi-extent supported flat VMDK images copy to byte-equivale
 
 ### R5 — Hosted sparse VMDK and parent-chain reads
 
-**R5.1–R5.4 complete**: [header admission](vmdk-sparse-header.md),
+**R5.1–R5.5 complete**: [header admission](vmdk-sparse-header.md),
 [metadata validation](vmdk-sparse-metadata.md) and
 [read-only base sparse logical mapping](vmdk-sparse-disk.md), with descriptor binding,
 aggregate admission, Data/Zero reads and composite alias protection. Full production
@@ -268,16 +268,18 @@ disk. [Explicit sparse CLI integration](cli-vmdk.md) now preserves descriptor
 provenance, alias checks and the existing publication/cancellation flow. Parent
 chains remain pending.
 
-Next bounded package **R5.5**: adversarial sparse validation and capacity/fragmentation
-performance coverage. Extend bounded malformed-input checks and measure larger maps,
-fragmented reads and metadata-query scaling before parent-chain support. No ESXi
+R5.5 adds [deterministic adversarial and scaling qualification](vmdk-sparse-qualification.md).
+Next bounded package **R5.6**: parent-chain metadata admission and explicit resolver
+policy, with CID/identity validation, missing-parent errors, cycle/depth limits and
+aggregate budgets. Logical parent reads and CLI support follow separately. No ESXi
 is required.
 
 - [x] R5.1 hosted sparse header parsing and bounded admission.
 - [x] R5.2 metadata acquisition and validation before sparse logical mapping.
 - [x] R5.3 read-only base sparse mapping, aggregate metadata limits and alias protection.
 - [x] R5.4 explicit sparse CLI source acquisition and integration.
-- [ ] R5.5 adversarial sparse validation and capacity/fragmentation benchmarks.
+- [x] R5.5 adversarial sparse validation and capacity/fragmentation benchmarks.
+- [ ] R5.6 bounded parent-chain metadata admission and resolution policy.
 
 - [x] Add supported base sparse headers, grain directories/tables, cross-grain reads and bounded eager metadata maps; lazy caching remains optional future tuning.
 - [ ] Validate every metadata offset/count before allocation or I/O; limit total metadata work and chain depth.
@@ -406,7 +408,7 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 
 ## First implementation session — R0.1 completed
 
-The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete; R3.1 adds inspect/plan and R3.2 adds copy/verify; R3.3 adds lifecycle progress and cancellation; R4.1–R4.4 implement bounded local FLAT/ZERO VMDK sources; R4.5 qualifies bounded padded descriptor acquisition; R5.1 admits hosted sparse headers; R5.2 validates metadata and descriptor binding; R5.3 adds base sparse logical mapping; R5.4 integrates sparse CLI sources; continue with R5.5 validation and scaling coverage.
+The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete; R3.1 adds inspect/plan and R3.2 adds copy/verify; R3.3 adds lifecycle progress and cancellation; R4.1–R4.4 implement bounded local FLAT/ZERO VMDK sources; R4.5 qualifies bounded padded descriptor acquisition; R5.1 admits hosted sparse headers; R5.2 validates metadata and descriptor binding; R5.3 adds base sparse logical mapping; R5.4 integrates sparse CLI sources; R5.5 qualifies sparse bounds and scaling; continue with R5.6 parent-chain metadata admission.
 
 R0.1 was the bounded change directly related to the observer work:
 
@@ -421,7 +423,7 @@ R0.1 was the bounded change directly related to the observer work:
    tradeoff in the implementation log. Update this checklist and ADR-0025 with
    the implemented behavior and remaining limitations.
 
-R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete. R3.1 inspect/plan and R3.2 copy/verify are complete. R3.3 progress and cancellation are complete. R4.1–R4.4 are complete within their documented subset. R4.5 bounded hosted descriptor acquisition compatibility is complete. R5.1 header admission, R5.2 metadata validation and R5.3 base sparse logical mapping are complete. R5.4 sparse CLI integration is complete. Start **R5.5** with adversarial validation and scaling benchmarks. Keep PERF.0 and the prior performance follow-ups open.
+R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete. R3.1 inspect/plan and R3.2 copy/verify are complete. R3.3 progress and cancellation are complete. R4.1–R4.4 are complete within their documented subset. R4.5 bounded hosted descriptor acquisition compatibility is complete. R5.1 header admission, R5.2 metadata validation and R5.3 base sparse logical mapping are complete. R5.4 sparse CLI integration is complete. R5.5 deterministic adversarial validation and scaling benchmarks are complete. Start **R5.6** with bounded parent-chain metadata admission. Keep PERF.0 and the prior performance follow-ups open.
 
 ## Decisions to record before their milestone
 

@@ -79,3 +79,18 @@ For each future measured step: record provenance and raw evidence, configure
 labels/conditions, run this generator, inspect the images, embed the applicable
 SVGs with PNG links, and commit the generator/config/results with the step.
 Do not refresh historical measurements merely to update their presentation.
+
+## Sparse scaling panels
+
+R5.5 also saves capacity counters and synthetic metadata/fragmentation timings:
+
+```bash
+target/benchmark-plots/bin/python scripts/benchmarks/plot_sparse_scaling.py docs/benchmark-results/2026-09-30-r55
+```
+
+The supplemental generator validates normalized samples and reads
+`capacity-profiles.json`; it writes SVG/PNG and a hash manifest under
+`scaling-plots/`. Use `--output` to reproduce elsewhere. Capacity/grain axes are
+logarithmic; latency and memory axes start at zero. Orange dots retain each run
+median. Error-path timing is labeled separately from successful query output.
+These memory-backed fixtures do not measure physical-storage throughput.

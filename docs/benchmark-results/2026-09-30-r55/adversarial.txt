@@ -1,0 +1,20 @@
+   Compiling rvvdk-vmdk v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-vmdk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.46s
+     Running tests/sparse_adversarial.rs (target/r55-validation/debug/deps/sparse_adversarial-bfcecf2148c2dc43)
+
+running 8 tests
+test maximum_header_capacity_is_rejected_by_aggregate_budget_before_offset_reads ... ok
+R55_PROFILE {"capacity_bytes":1048576,"grain_bytes":65536,"grain_count":16,"tables_per_copy":1,"fixture_metadata_bytes":65536,"reserved_memory_bytes":11720,"metadata_read_bytes":16384,"backend_calls":7}
+test truncation_at_every_metadata_region_boundary_is_rejected ... ok
+R55_PROFILE {"capacity_bytes":1073741824,"grain_bytes":65536,"grain_count":16384,"tables_per_copy":32,"fixture_metadata_bytes":196608,"reserved_memory_bytes":143656,"metadata_read_bytes":143360,"backend_calls":69}
+test invalid_directory_and_grain_pointer_sentinels_never_escape_source_bounds ... ok
+test output_count_boundary_and_small_queries_do_not_require_whole_disk_output ... ok
+test coalescing_and_fragmentation_have_exact_backend_request_counts ... ok
+R55_PROFILE {"capacity_bytes":68719476736,"grain_bytes":65536,"grain_count":1048576,"tables_per_copy":2048,"fixture_metadata_bytes":8454144,"reserved_memory_bytes":8481064,"metadata_read_bytes":8416256,"backend_calls":4101}
+test capacity_profiles_remain_within_default_admission_and_report_one_zero_extent ... ok
+corpus seed=0x617576355 cases=4096 admitted=65 rejected=4031
+test metadata_mutation_corpus_is_bounded_and_admitted_maps_match_encoded_tables ... ok
+test generated_geometries_and_table_boundaries_match_independent_byte_oracles ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.72s
+

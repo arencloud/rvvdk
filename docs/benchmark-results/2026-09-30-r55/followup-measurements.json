@@ -1,0 +1,986 @@
+[
+  {
+    "tag": "followup1-0-baseline",
+    "benchmark": "cli_transfer/verify_only",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r55-3ht3d253/baseline-target/release/deps/transfer-4f18603c136fd44c",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_transfer/verify_only$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "verify_only",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/verify_only",
+        "directory_name": "cli_transfer/verify_only",
+        "title": "cli_transfer/verify_only"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2924065.54444853,
+            "upper_bound": 2984888.2235294124
+          },
+          "point_estimate": 2951017.8838235294,
+          "standard_error": 15627.14406777842
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2912650.470588235,
+            "upper_bound": 2939590.529411765
+          },
+          "point_estimate": 2924997.617647059,
+          "standard_error": 5769.132824830028
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 22676.671838585517,
+            "upper_bound": 66685.47176315496
+          },
+          "point_estimate": 39759.712005888694,
+          "standard_error": 11016.718045813941
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 42480.81432604408,
+            "upper_bound": 141170.2710360506
+          },
+          "point_estimate": 99639.47587931085,
+          "standard_error": 25966.288345419714
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0,
+          17.0
+        ],
+        "times": [
+          49967069.0,
+          51829096.0,
+          49245204.0,
+          49461905.0,
+          50010616.0,
+          51856643.0,
+          51639153.0,
+          50617056.0,
+          50967907.0,
+          50157001.0,
+          49696102.0,
+          49099040.0,
+          49751871.0,
+          48518854.0,
+          49803945.0,
+          50745443.0,
+          49322693.0,
+          48792781.0,
+          49811263.0,
+          51124483.0,
+          49554508.0,
+          48745369.0,
+          49675904.0,
+          49595774.0,
+          49475608.0,
+          49762281.0,
+          49065922.0,
+          48769052.0,
+          49849858.0,
+          49240247.0,
+          50134462.0,
+          49239320.0,
+          49691976.0,
+          49979009.0,
+          48889185.0,
+          49698048.0,
+          49425199.0,
+          50326577.0,
+          56665904.0,
+          56489833.0
+        ]
+      },
+      "tukey.json": [
+        2742064.588235294,
+        2821129.963235294,
+        3031970.963235294,
+        3111036.338235294
+      ]
+    },
+    "variant": "baseline",
+    "pair": 1
+  },
+  {
+    "tag": "followup1-0-candidate",
+    "benchmark": "cli_transfer/verify_only",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r55-3ht3d253/candidate-target/release/deps/transfer-4f18603c136fd44c",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_transfer/verify_only$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "verify_only",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/verify_only",
+        "directory_name": "cli_transfer/verify_only",
+        "title": "cli_transfer/verify_only"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3701293.6597916675,
+            "upper_bound": 3909537.671666667
+          },
+          "point_estimate": 3803187.0,
+          "standard_error": 53175.498942516126
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3610492.5,
+            "upper_bound": 3957448.9
+          },
+          "point_estimate": 3741042.466666667,
+          "standard_error": 90992.35078921507
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 222424.1946911815,
+            "upper_bound": 488053.0328953272
+          },
+          "point_estimate": 377835.3153520826,
+          "standard_error": 76077.04326609889
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 271626.4919174745,
+            "upper_bound": 396009.20037197735
+          },
+          "point_estimate": 339542.9790534963,
+          "standard_error": 31839.632351368073
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0
+        ],
+        "times": [
+          64488199.0,
+          59319010.0,
+          54450791.0,
+          59404457.0,
+          56699821.0,
+          69943002.0,
+          58064019.0,
+          55531453.0,
+          55452104.0,
+          52813381.0,
+          52902354.0,
+          52385436.0,
+          50561558.0,
+          52104560.0,
+          53987131.0,
+          57301479.0,
+          63875881.0,
+          62136125.0,
+          62117639.0,
+          62294339.0,
+          61800315.0,
+          61141548.0,
+          61615060.0,
+          66551538.0,
+          61639681.0,
+          64327584.0,
+          59600858.0,
+          57148844.0,
+          56703923.0,
+          54327644.0,
+          53023065.0,
+          54632120.0,
+          54587399.0,
+          51201167.0,
+          51367214.0,
+          51795010.0,
+          49466455.0,
+          50033672.0,
+          52200445.0,
+          52915919.0
+        ]
+      },
+      "tukey.json": [
+        1777119.8166666673,
+        2651230.266666667,
+        4982191.466666667,
+        5856301.916666666
+      ]
+    },
+    "variant": "candidate",
+    "pair": 1
+  },
+  {
+    "tag": "followup2-0-candidate",
+    "benchmark": "cli_transfer/verify_only",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r55-3ht3d253/candidate-target/release/deps/transfer-4f18603c136fd44c",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_transfer/verify_only$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "verify_only",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/verify_only",
+        "directory_name": "cli_transfer/verify_only",
+        "title": "cli_transfer/verify_only"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3433736.146666666,
+            "upper_bound": 3555796.4233333343
+          },
+          "point_estimate": 3492396.743333333,
+          "standard_error": 31067.166381835
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3414522.2,
+            "upper_bound": 3536999.7
+          },
+          "point_estimate": 3485224.3666666667,
+          "standard_error": 32062.855813822265
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 82841.8549692634,
+            "upper_bound": 256850.6602799891
+          },
+          "point_estimate": 155732.84485518938,
+          "standard_error": 44203.43356215083
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 138542.38984461,
+            "upper_bound": 245458.14183743784
+          },
+          "point_estimate": 198288.5665430543,
+          "standard_error": 27219.37312716391
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0
+        ],
+        "times": [
+          49172120.0,
+          48856125.0,
+          49190800.0,
+          49194352.0,
+          49037769.0,
+          48575984.0,
+          48484728.0,
+          48612170.0,
+          49354187.0,
+          49801566.0,
+          50482488.0,
+          50353656.0,
+          51167548.0,
+          53584445.0,
+          53263824.0,
+          53348912.0,
+          51452491.0,
+          52345120.0,
+          52784466.0,
+          60676994.0,
+          59528818.0,
+          56286596.0,
+          54677026.0,
+          54293905.0,
+          54587961.0,
+          52849903.0,
+          53356297.0,
+          52611560.0,
+          53120859.0,
+          53086004.0,
+          52195614.0,
+          59576679.0,
+          55571477.0,
+          53023987.0,
+          52786565.0,
+          51793865.0,
+          52211611.0,
+          51948424.0,
+          50923032.0,
+          51268118.0
+        ]
+      },
+      "tukey.json": [
+        2720683.9499999993,
+        3034196.425,
+        3870229.6916666673,
+        4183742.1666666674
+      ]
+    },
+    "variant": "candidate",
+    "pair": 2
+  },
+  {
+    "tag": "followup2-0-baseline",
+    "benchmark": "cli_transfer/verify_only",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r55-3ht3d253/baseline-target/release/deps/transfer-4f18603c136fd44c",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_transfer/verify_only$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "verify_only",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/verify_only",
+        "directory_name": "cli_transfer/verify_only",
+        "title": "cli_transfer/verify_only"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3557790.1752916663,
+            "upper_bound": 3725986.131666667
+          },
+          "point_estimate": 3634405.928333333,
+          "standard_error": 42847.53488834731
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3518671.033333333,
+            "upper_bound": 3577709.1333333333
+          },
+          "point_estimate": 3548843.2666666666,
+          "standard_error": 17115.059173206206
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 53268.482714295526,
+            "upper_bound": 156003.86413037824
+          },
+          "point_estimate": 91739.53045129795,
+          "standard_error": 28384.801465606473
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 144412.07715292397,
+            "upper_bound": 374905.79814632627
+          },
+          "point_estimate": 274868.31126156356,
+          "standard_error": 59554.34837883757
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0
+        ],
+        "times": [
+          51032408.0,
+          61771602.0,
+          59858951.0,
+          60763630.0,
+          54802138.0,
+          53624093.0,
+          52932422.0,
+          51718327.0,
+          53347309.0,
+          54996344.0,
+          53887156.0,
+          53562435.0,
+          53538573.0,
+          53619490.0,
+          54164512.0,
+          54606438.0,
+          51619658.0,
+          53320936.0,
+          51876983.0,
+          52994339.0,
+          52785744.0,
+          51063271.0,
+          53144362.0,
+          51085534.0,
+          52774387.0,
+          52655492.0,
+          51683855.0,
+          52392464.0,
+          52043468.0,
+          53109039.0,
+          53918643.0,
+          52772412.0,
+          56137173.0,
+          52907800.0,
+          51580297.0,
+          52308188.0,
+          53707181.0,
+          65733304.0,
+          60193329.0,
+          70609870.0
+        ]
+      },
+      "tukey.json": [
+        3110706.633333331,
+        3301066.483333332,
+        3808692.7500000014,
+        3999052.6000000024
+      ]
+    },
+    "variant": "baseline",
+    "pair": 2
+  },
+  {
+    "tag": "followup3-0-baseline",
+    "benchmark": "cli_transfer/verify_only",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r55-3ht3d253/baseline-target/release/deps/transfer-4f18603c136fd44c",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_transfer/verify_only$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "verify_only",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/verify_only",
+        "directory_name": "cli_transfer/verify_only",
+        "title": "cli_transfer/verify_only"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3330817.937232143,
+            "upper_bound": 3369089.023660715
+          },
+          "point_estimate": 3349331.5125,
+          "standard_error": 9783.699078839813
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3318056.428571428,
+            "upper_bound": 3360443.0714285714
+          },
+          "point_estimate": 3336202.4642857146,
+          "standard_error": 12108.835487561453
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 26871.965672927046,
+            "upper_bound": 68998.45542503244
+          },
+          "point_estimate": 41552.564712295105,
+          "standard_error": 11135.03472100169
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 43986.79938378987,
+            "upper_bound": 79167.82182205917
+          },
+          "point_estimate": 62731.06694364432,
+          "standard_error": 9026.787836941508
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0,
+          14.0
+        ],
+        "times": [
+          49642014.0,
+          47409504.0,
+          47918885.0,
+          48487813.0,
+          47448566.0,
+          48518478.0,
+          48155383.0,
+          46664904.0,
+          46619610.0,
+          47364722.0,
+          46932392.0,
+          47626576.0,
+          47166778.0,
+          47090907.0,
+          46967172.0,
+          47788159.0,
+          46265723.0,
+          46982910.0,
+          44958662.0,
+          46473076.0,
+          47149548.0,
+          46380578.0,
+          46468089.0,
+          46323900.0,
+          46072255.0,
+          46644904.0,
+          46076751.0,
+          45729256.0,
+          46437491.0,
+          46583410.0,
+          46401087.0,
+          45425017.0,
+          46308621.0,
+          46320297.0,
+          46326046.0,
+          46851017.0,
+          47524989.0,
+          46748765.0,
+          46369893.0,
+          47001499.0
+        ]
+      },
+      "tukey.json": [
+        3093426.6071428573,
+        3202389.4196428573,
+        3492956.9196428573,
+        3601919.7321428573
+      ]
+    },
+    "variant": "baseline",
+    "pair": 3
+  },
+  {
+    "tag": "followup3-0-candidate",
+    "benchmark": "cli_transfer/verify_only",
+    "command": [
+      "taskset",
+      "-c",
+      "2-6",
+      "/tmp/rvvdk-r55-3ht3d253/candidate-target/release/deps/transfer-4f18603c136fd44c",
+      "--bench",
+      "--noplot",
+      "--sample-size",
+      "40",
+      "--warm-up-time",
+      "0.5",
+      "--measurement-time",
+      "4",
+      "cli_transfer/verify_only$"
+    ],
+    "criterion": {
+      "benchmark.json": {
+        "group_id": "cli_transfer",
+        "function_id": "verify_only",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cli_transfer/verify_only",
+        "directory_name": "cli_transfer/verify_only",
+        "title": "cli_transfer/verify_only"
+      },
+      "estimates.json": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3322606.220958334,
+            "upper_bound": 3357252.0566666676
+          },
+          "point_estimate": 3339384.0533333337,
+          "standard_error": 8814.518867947156
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3320397.466666667,
+            "upper_bound": 3354327.3
+          },
+          "point_estimate": 3335455.5,
+          "standard_error": 9488.870346463913
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 28477.286094427225,
+            "upper_bound": 76668.35809886469
+          },
+          "point_estimate": 50999.066934585775,
+          "standard_error": 12664.728016888173
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 40329.95368445394,
+            "upper_bound": 73038.91181199595
+          },
+          "point_estimate": 56622.50544740759,
+          "standard_error": 8657.139566477925
+        }
+      },
+      "sample.json": {
+        "sampling_mode": "Flat",
+        "iters": [
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0,
+          15.0
+        ],
+        "times": [
+          50094077.0,
+          51031439.0,
+          51386810.0,
+          50852655.0,
+          49102911.0,
+          49585782.0,
+          50224548.0,
+          50355228.0,
+          50345458.0,
+          49862596.0,
+          49632454.0,
+          49379586.0,
+          49027909.0,
+          49720109.0,
+          49969588.0,
+          49200848.0,
+          49396118.0,
+          49244360.0,
+          49913475.0,
+          48761087.0,
+          48769834.0,
+          50284361.0,
+          50617734.0,
+          53037517.0,
+          50755686.0,
+          51008763.0,
+          51242693.0,
+          50364742.0,
+          49817283.0,
+          50421905.0,
+          50103047.0,
+          50099191.0,
+          50134477.0,
+          48998761.0,
+          49801427.0,
+          51271003.0,
+          50904802.0,
+          49826051.0,
+          49810497.0,
+          49273620.0
+        ]
+      },
+      "tukey.json": [
+        3116058.4833333325,
+        3209308.108333333,
+        3457973.775000001,
+        3551223.4000000013
+      ]
+    },
+    "variant": "candidate",
+    "pair": 3
+  }
+]

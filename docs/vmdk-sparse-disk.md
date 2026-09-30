@@ -101,6 +101,7 @@ The reference helper reads every byte in 65,537-byte chunks; it leaves zero-only
 output chunks sparse without substituting a second mapping implementation.
 
 R5.4 now provides [sparse CLI acquisition and integration](cli-vmdk.md), preserving
-descriptor provenance, publication, cancellation and alias checks. Next is R5.5:
-adversarial validation and capacity/fragmentation benchmarks. Parent chains remain
-separate. ESXi is not required for this local work.
+descriptor provenance, publication, cancellation and alias checks. R5.5 adds
+[adversarial and scaling qualification](vmdk-sparse-qualification.md). Next is R5.6:
+bounded parent-chain metadata admission, before logical parent reads. ESXi is not
+required for this local work.

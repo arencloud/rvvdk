@@ -1250,3 +1250,14 @@ native adapter. Defaults bound source metadata independently of execution payloa
 sparse preview counters report loader reservations/read work, excluding entry
 acquisition. See [CLI contract](cli-vmdk.md) and
 [ADR-0041](adr/0041-sparse-cli-source-acquisition.md).
+
+## Sparse qualification and measured resource boundaries (R5.5)
+
+[Deterministic adversarial and scaling qualification](vmdk-sparse-qualification.md)
+adds no production behavior. Virtual backing devices allow 64 GiB capacity tests
+without allocating payload storage. Eager-map reservations can reject a 1 TiB
+header at the default budget; full queries scan grains even with one output, and
+65,537 alternating outputs exceed the separate query limit. Retain bounded eager
+mapping and two-pass output admission pending an independently measured change.
+R5.6 will admit parent-chain metadata under explicit resolver/CID/identity/cycle/
+depth/budget policy before introducing parent fallback reads.

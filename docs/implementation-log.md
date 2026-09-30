@@ -1675,12 +1675,64 @@ does not close R4.4 or PERF.0 qualification. Fifteen first sparse CLI runs estab
 verification, flush, file/directory sync and publication. Sizes/boundaries differ;
 these are first warm-Btrfs CLI baselines, not cold-storage or engine speedup results.
 
+## R5.5 — Adversarial sparse validation and scaling
+
+Date: 2026-09-30. Status: **Complete within deterministic corpus and synthetic scaling scope**.
+Baseline: `1d745b8`, initially clean. The enclosing commit records this step.
+[Evidence](benchmark-results/2026-09-30-r55/README.md) retains the exact patch,
+all 69 measured runs, counters, QEMU checks, validation and reproducible SVG/PNG.
+[Qualification contract](vmdk-sparse-qualification.md) records architecture and limits.
+Production Rust source, dependencies, supported formats and budgets are unchanged.
+
+Eight new tests cover 60 generated layouts × 24 read ranges, independent byte
+oracles, zero/contiguous/reversed/alternating/permuted mapping, exact backing request
+counts, table boundaries, invalid offsets/duplicates and truncation. A fixed-seed
+4,096-case corpus rejects 4,031 and admits 65 (64 positive controls), checking source
+bounds/read ceilings and admitted maps against decoded entries. This is finite
+mutation testing; coverage-guided fuzzing remains future work. One-header rejection
+protects the default aggregate budget for 1 TiB/64 KiB-grain input. 65,536 query
+outputs succeed; 65,537 fails without preventing a small tail query. Capacity
+profiles retain 1 MiB/1 GiB/64 GiB loader reservation and actual metadata reads.
+
+Validation: **496 distinct passed, one existing gated allocation test** (497 total),
+plus 132-test CLI/VMDK storage-configured run; five existing CLI unit fault tests
+still use system temporary files. Formatting, strict all-target Clippy and portable
+core/datamover/VMDK wasm32 checks pass (existing control::sum warning). All four
+public commands pass on four QEMU fixtures, including the two-file 2 GiB + 64 KiB
+split disk; RAW SHA-256/QEMU agree and source hashes remain unchanged. No live ESXi,
+VMware SDK or producer implementation source is used.
+
+Performance: 24 unchanged paired controls show **+0.65%, +0.10%, -0.51%, +3.62%**
+for monolithic metadata, contiguous 128 KiB reads, FLAT/ZERO copy+verify and RAW
+verify. The +10.85% RAW verify pair triggers six longer runs: +4.47% aggregate,
+with **+27.90%, -1.79%, -0.02%** pairs. That investigation stays open; no adverse
+run is discarded or pooled. Independent builds/shared-host variability prevent
+causal attribution with unchanged runtime source.
+
+Thirty-nine first synthetic scaling runs establish **5.592 µs / 32.134 µs /
+4.738 ms** opening zero maps at 1 MiB / 1 GiB / 64 GiB. A full 64 GiB zero query
+takes **1.303 ms** despite one output, versus **38.163 ns** for a reused-buffer
+4 KiB zero tail read. Alternating 32,768/65,536-output queries take **0.436 /
+0.903 ms**; rejecting 65,537 takes **0.263 ms**. Permuted 1 GiB opening is
+**0.221 ms**. Generated 1 MiB read medians are **16.417 / 13.593 / 14.475 µs**
+(contiguous/reversed/permuted); the contiguous second run is **40.115 µs**, retained
+as observed variation. Payload generation and cache effects prevent interpreting
+these as physical fragmentation penalties. Fixture setup/descriptor parsing are
+outside opening timing; validated map allocation/drop is inside. Virtual capacity
+requires metadata only; counters exclude fixture memory and are not RSS.
+
+Retain eager mapping/two-pass query admission. Separate measured proposals can
+address query scanning or sorted pointer validation; do not raise limits or infer
+an optimization from these first costs. PERF.0/R4.4 and earlier adverse results
+remain open. Historical evidence remains unchanged.
+
 ## Next session
 
-Start **R5.5**: adversarial sparse validation and capacity/fragmentation benchmark
-coverage before parent-chain support. Extend bounded malformed-input checks and
-measure larger maps, fragmented reads and query scaling. Preserve original/adverse
-runs; each completed step gets tests, benchmarks, plots and a commit.
+Start **R5.6**: bounded parent-chain metadata admission and explicit resolver policy,
+CID/identity checks, missing-parent errors, cycle/depth limits and aggregate budgets.
+Keep base admission distinct; parent fallback reads and CLI exposure follow in
+separate qualified steps. Each completed step gets tests, benchmarks, plots and a
+commit. Coverage-guided fuzzing remains pending.
 
 ESXi remains unnecessary for local work; request the 60-day trial when V0's lab
 proof is ready. Keep PERF.0, R4.4 preview overhead/tuning and earlier adverse timing

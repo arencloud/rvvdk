@@ -67,3 +67,12 @@ oracles and QEMU monolithic/split sources, then compares production logical read
 against both. The multi-file case crosses the 2 GiB split boundary. The dump helper
 reads every logical byte in 65,537-byte chunks and leaves zero-only output chunks
 unallocated; it is a qualification utility, not the public CLI publication path.
+
+R5.5 adds `support/sparse_scale.rs`: authored metadata layouts for multiple grain
+sizes, table boundaries, allocation patterns and virtual capacities. The synthetic
+BlockDevice stores only metadata and generates physical-grain payload bytes from an
+arithmetic pattern; it is not a real filesystem or allocated multi-GiB image.
+Expected logical bytes come from the authored allocation rule, independently of
+SparseDisk's map. Tests use fixed-seed mutations and bounded-read instrumentation.
+Benchmarks disable instrumentation and include generated payload costs. No producer
+implementation code or new disk-format acceptance is introduced.

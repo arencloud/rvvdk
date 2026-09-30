@@ -224,8 +224,8 @@ workloads. Measurements depend on the filesystem, page cache, hardware, and
 flush policy. See the [benchmark notes](docs/benchmarks.md) for historical results
 and the [review](docs/project-review-2026-09-28.md) for measurement gaps.
 
-Explore the [R5.4 benchmark charts](docs/benchmark-results/2026-09-30-r54/README.md)
-for latency comparisons, paired changes, and sample distributions. A
+Explore the [R5.5 benchmark charts](docs/benchmark-results/2026-09-30-r55/README.md)
+for capacity scaling, fragmentation costs, paired changes, and sample distributions. A
 [reusable generator](scripts/benchmarks/README.md) exports SVG and PNG figures.
 
 ## Inspect, copy and verify from the command line

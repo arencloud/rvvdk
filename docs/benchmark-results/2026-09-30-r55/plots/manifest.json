@@ -1,0 +1,125 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R5.5 \u00b7 Sparse bounds and scaling",
+    "candidate": "patch 530295d0",
+    "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 memory fixtures / warm Btrfs CLI",
+    "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "candidate_only": {
+      "title": "Sparse scaling \u00b7 first synthetic cost baselines",
+      "note": "Virtual capacity \u00b7 metadata in memory \u00b7 generated payload \u00b7 not storage throughput",
+      "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+    },
+    "workloads": {
+      "sparse_metadata/monolithic": {
+        "label": "Metadata load \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "sparse_disk/read_contiguous_128k": {
+        "label": "Contiguous read \u00b7 128 KiB",
+        "phase": "planning"
+      },
+      "cli_vmdk/copy_mixed_verify": {
+        "label": "FLAT/ZERO copy + verify \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/verify_only": {
+        "label": "RAW verify \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "sparse_scale/open_zero_1m": {
+        "label": "open zero 1m",
+        "phase": "planning"
+      },
+      "sparse_scale/open_zero_1g": {
+        "label": "open zero 1g",
+        "phase": "planning"
+      },
+      "sparse_scale/query_zero_1g": {
+        "label": "query zero 1g",
+        "phase": "planning"
+      },
+      "sparse_scale/open_zero_64g": {
+        "label": "open zero 64g",
+        "phase": "planning"
+      },
+      "sparse_scale/query_zero_64g": {
+        "label": "query zero 64g",
+        "phase": "planning"
+      },
+      "sparse_scale/tail_zero_4k_64g": {
+        "label": "tail zero 4k 64g",
+        "phase": "planning"
+      },
+      "sparse_scale/query_alternating_256m": {
+        "label": "query alternating 256m",
+        "phase": "planning"
+      },
+      "sparse_scale/query_alternating_512m": {
+        "label": "query alternating 512m",
+        "phase": "planning"
+      },
+      "sparse_scale/query_alternating_limit": {
+        "label": "query alternating limit",
+        "phase": "planning"
+      },
+      "sparse_scale/read_1m_contiguous": {
+        "label": "read 1m contiguous",
+        "phase": "planning"
+      },
+      "sparse_scale/read_1m_reversed": {
+        "label": "read 1m reversed",
+        "phase": "planning"
+      },
+      "sparse_scale/read_1m_permuted": {
+        "label": "read 1m permuted",
+        "phase": "planning"
+      },
+      "sparse_scale/open_permuted_1g": {
+        "label": "open permuted 1g",
+        "phase": "planning"
+      }
+    },
+    "repeat_sampling": "3 adjacent pairs \u00b7 40 flat samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+  },
+  "input_sha256": {
+    "plot-config.json": "2e73272a37982a65c0216731c7e36095473f214267faf5476f5ce84105bcac81",
+    "environment.json": "9ae8d673831883b6006de13262a55f5a5b5ee27fc5e7e0949d89ec2be63a5299",
+    "measurements.json": "a5c09f38f490f33547d04174e995f9fae1fee5fdd66390e500743174abb9916e",
+    "summary.json": "c2507ee3d7f8847f9fb98ecd3de1207b17ed46c738fb61e38ae560f455f05dd1",
+    "followup-measurements.json": "119fecacbd3c5697fc22092ccb1f0f0749ecb182f5d9bbe70b4d621a06b6e86b",
+    "followup-summary.json": "ea717e395595cd29e38e7987716cb8720f9d3bbc96ab937d8fabc8c85b6a19b3",
+    "candidate-only-measurements.json": "ef260750a483d1a3d93d35fb9dcd195b433fdf430c4dbbcb3a637afa54abbe7a"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "0dad391459e2e761b5ef4e6498a7558ee34b7165561cc0fe009a990f282fa838",
+    "planning-latency.png": "0efaacf5df993099ef49eeead07d216cd7894d9c87cfaddfbc9cfc652145e769",
+    "copy-latency.svg": "d23d6374ad0eb523e7071caf6983a2e29fc1251956bfe0fbb5ca39b08e8153cb",
+    "copy-latency.png": "17c48979546f5243a3e4ac43afc788f90c39b383cb2b85f746de2debe2ff7e59",
+    "relative-change.svg": "7c6bca650929b996782f2c6ede7462631af88b185c7502951b52adc7043056d5",
+    "relative-change.png": "c0d332bad43d73c115d414f2a29deb3f8b98f9619cd8d7ca94718434cdaf08ce",
+    "sample-distributions.svg": "3ba31591b964cdaaa81759d501b89a05e0a36e4cc153a43bca20c3c481538cd0",
+    "sample-distributions.png": "709ee885da481733738a774de76b3bf813bc6cbc356097bea9b6ac106e5924a4",
+    "followup-change.svg": "9eb8882a0bc103b7d96c6f7a43ca9da6c7e9f5bd17bb286795675a02c54c6cc3",
+    "followup-change.png": "710018a88697c5a011464218e29f455e01ddb99e4eb81655cf2f7421ee67ba09",
+    "candidate-only.svg": "2b9dfbb235facc6ea754a9571c3c78ed6098c76cd1fe452d918fa0d1695b90be",
+    "candidate-only.png": "d6633fd262499bce0ebe2e60404a4cd6dd68903f18a4db30e5220cef186f92d4",
+    "computed.json": "314ce3e046b3b0d2806d1e445ecb7a3af488def41d27f514d49243a51dac44cd"
+  }
+}

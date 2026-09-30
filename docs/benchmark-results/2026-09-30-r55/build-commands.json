@@ -1,0 +1,54 @@
+[
+  {
+    "variant": "baseline",
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "-p",
+      "rvvdk-cli",
+      "--bench",
+      "vmdk",
+      "--bench",
+      "transfer",
+      "-p",
+      "rvvdk-vmdk",
+      "--bench",
+      "sparse_metadata",
+      "--bench",
+      "sparse_disk",
+      "--target-dir",
+      "/tmp/rvvdk-r55-3ht3d253/baseline-target",
+      "--message-format=json"
+    ],
+    "cwd": "/tmp/rvvdk-r55-3ht3d253/baseline",
+    "exit_code": 0
+  },
+  {
+    "variant": "candidate",
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "-p",
+      "rvvdk-cli",
+      "--bench",
+      "vmdk",
+      "--bench",
+      "transfer",
+      "-p",
+      "rvvdk-vmdk",
+      "--bench",
+      "sparse_metadata",
+      "--bench",
+      "sparse_disk",
+      "--target-dir",
+      "/tmp/rvvdk-r55-3ht3d253/candidate-target",
+      "--message-format=json",
+      "--bench",
+      "sparse_scale"
+    ],
+    "cwd": "/home/egevorky/RustroverProjects/rvvdk",
+    "exit_code": 0
+  }
+]

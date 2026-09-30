@@ -109,6 +109,6 @@ ESXi installation is needed for these local commands.
 
 R5.4 [evidence and plots](benchmark-results/2026-09-30-r54/README.md) qualify all four
 commands against QEMU-produced monolithic/split fixtures, including a two-file split
-disk. See [ADR-0041](adr/0041-sparse-cli-source-acquisition.md). Next is R5.5:
-adversarial sparse validation and capacity/fragmentation performance coverage before
-parent-chain support.
+disk. See [ADR-0041](adr/0041-sparse-cli-source-acquisition.md). R5.5 adds
+[adversarial and scaling qualification](vmdk-sparse-qualification.md). Next is R5.6
+bounded parent-chain metadata admission, before logical fallback and CLI exposure.

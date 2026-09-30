@@ -1,0 +1,672 @@
+diff --git a/crates/rvvdk-vmdk/Cargo.toml b/crates/rvvdk-vmdk/Cargo.toml
+index 19bd6ee..3a5061c 100644
+--- a/crates/rvvdk-vmdk/Cargo.toml
++++ b/crates/rvvdk-vmdk/Cargo.toml
+@@ -44,3 +44,7 @@ harness = false
+ [[bench]]
+ name = "sparse_disk"
+ harness = false
++
++[[bench]]
++name = "sparse_scale"
++harness = false
+diff --git a/crates/rvvdk-vmdk/tests/fixtures/README.md b/crates/rvvdk-vmdk/tests/fixtures/README.md
+index ce1cd66..5abc705 100644
+--- a/crates/rvvdk-vmdk/tests/fixtures/README.md
++++ b/crates/rvvdk-vmdk/tests/fixtures/README.md
+@@ -67,3 +67,12 @@ oracles and QEMU monolithic/split sources, then compares production logical read
+ against both. The multi-file case crosses the 2 GiB split boundary. The dump helper
+ reads every logical byte in 65,537-byte chunks and leaves zero-only output chunks
+ unallocated; it is a qualification utility, not the public CLI publication path.
++
++R5.5 adds `support/sparse_scale.rs`: authored metadata layouts for multiple grain
++sizes, table boundaries, allocation patterns and virtual capacities. The synthetic
++BlockDevice stores only metadata and generates physical-grain payload bytes from an
++arithmetic pattern; it is not a real filesystem or allocated multi-GiB image.
++Expected logical bytes come from the authored allocation rule, independently of
++SparseDisk's map. Tests use fixed-seed mutations and bounded-read instrumentation.
++Benchmarks disable instrumentation and include generated payload costs. No producer
++implementation code or new disk-format acceptance is introduced.
+diff --git a/crates/rvvdk-vmdk/benches/sparse_scale.rs b/crates/rvvdk-vmdk/benches/sparse_scale.rs
+new file mode 100644
+index 0000000..cce21d3
+--- /dev/null
++++ b/crates/rvvdk-vmdk/benches/sparse_scale.rs
+@@ -0,0 +1,104 @@
++#[path = "../tests/support/sparse_scale.rs"]
++#[allow(dead_code)]
++mod f;
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use f::{Device, Layout, Pattern, Resolver};
++use rvvdk_core::VirtualDisk;
++use rvvdk_vmdk::{SparseDescriptor, SparseDisk, SparseDiskLimits};
++use std::{hint::black_box, sync::Arc};
++fn scale(c: &mut Criterion) {
++    let mut group = c.benchmark_group("sparse_scale");
++    group.sampling_mode(SamplingMode::Flat);
++    for (label, capacity) in [("1m", 1 << 20), ("1g", 1 << 30), ("64g", 64 << 30)] {
++        let l = Layout::new(capacity, 65536);
++        let source = Resolver(Arc::new(Device::new(l.clone(), Pattern::Zero, false)));
++        let text = SparseDescriptor::parse(l.text.as_bytes()).unwrap();
++        let disk = SparseDisk::load(&text, &source, SparseDiskLimits::default()).unwrap();
++        assert_eq!(disk.extents(0, capacity).unwrap().len(), 1);
++        group.bench_function(format!("open_zero_{label}"), |b| {
++            b.iter(|| {
++                black_box(
++                    SparseDisk::load(
++                        black_box(&text),
++                        black_box(&source),
++                        SparseDiskLimits::default(),
++                    )
++                    .unwrap(),
++                )
++            })
++        });
++        if capacity >= 1 << 30 {
++            group.bench_function(format!("query_zero_{label}"), |b| {
++                b.iter(|| black_box(disk.extents(black_box(0), black_box(capacity)).unwrap()))
++            });
++        }
++        if capacity == 64 << 30 {
++            let mut bytes = [0xa5; 4096];
++            disk.read_exact_at(capacity - 4096, &mut bytes).unwrap();
++            assert_eq!(bytes, [0; 4096]);
++            group.bench_function("tail_zero_4k_64g", |b| {
++                b.iter(|| {
++                    disk.read_exact_at(black_box(capacity - 4096), black_box(&mut bytes))
++                        .unwrap();
++                    black_box(&bytes);
++                })
++            });
++        }
++    }
++    for (label, grains) in [("256m", 32768), ("512m", 65536), ("limit", 65537)] {
++        let l = Layout::new(grains * 8192, 8192);
++        let source = Resolver(Arc::new(Device::new(
++            l.clone(),
++            Pattern::Alternating,
++            false,
++        )));
++        let disk = SparseDisk::load(
++            &SparseDescriptor::parse(l.text.as_bytes()).unwrap(),
++            &source,
++            SparseDiskLimits::default(),
++        )
++        .unwrap();
++        assert_eq!(disk.extents(0, disk.size()).is_err(), grains > 65536);
++        group.bench_function(format!("query_alternating_{label}"), |b| {
++            b.iter(|| black_box(disk.extents(black_box(0), black_box(disk.size()))))
++        });
++    }
++    for (label, pattern) in [
++        ("contiguous", Pattern::Contiguous),
++        ("reversed", Pattern::Reversed),
++        ("permuted", Pattern::Permuted),
++    ] {
++        let l = Layout::new(1 << 30, 65536);
++        let source = Resolver(Arc::new(Device::new(l.clone(), pattern, false)));
++        let text = SparseDescriptor::parse(l.text.as_bytes()).unwrap();
++        let disk = SparseDisk::load(&text, &source, SparseDiskLimits::default()).unwrap();
++        let mut bytes = vec![0; 1 << 20];
++        let offset = 537 * 65536;
++        disk.read_exact_at(offset, &mut bytes).unwrap();
++        assert_eq!(bytes, l.expected(offset, bytes.len(), pattern));
++        group.bench_function(format!("read_1m_{label}"), |b| {
++            b.iter(|| {
++                disk.read_exact_at(black_box(offset), black_box(&mut bytes))
++                    .unwrap();
++                black_box(&bytes);
++            })
++        });
++        if label == "permuted" {
++            group.bench_function("open_permuted_1g", |b| {
++                b.iter(|| {
++                    black_box(
++                        SparseDisk::load(
++                            black_box(&text),
++                            black_box(&source),
++                            SparseDiskLimits::default(),
++                        )
++                        .unwrap(),
++                    )
++                })
++            });
++        }
++    }
++    group.finish();
++}
++criterion_group!(benches, scale);
++criterion_main!(benches);
+diff --git a/crates/rvvdk-vmdk/tests/sparse_adversarial.rs b/crates/rvvdk-vmdk/tests/sparse_adversarial.rs
+new file mode 100644
+index 0000000..2893b95
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/sparse_adversarial.rs
+@@ -0,0 +1,283 @@
++#[path = "support/sparse_scale.rs"]
++#[allow(dead_code)]
++mod f;
++use f::{Device, Layout, Pattern, Resolver, put32};
++use rvvdk_core::{Error, ExtentKind, VirtualDisk};
++use rvvdk_vmdk::{SparseDescriptor, SparseDisk, SparseDiskLimits, SparseMetadataError};
++use std::sync::{
++    Arc,
++    atomic::{AtomicU64, Ordering},
++};
++fn load(source: Arc<Device>, limits: SparseDiskLimits) -> Result<SparseDisk, SparseMetadataError> {
++    let text = source.layout.text.clone();
++    SparseDisk::load(
++        &SparseDescriptor::parse(text.as_bytes()).unwrap(),
++        &Resolver(source),
++        limits,
++    )
++}
++fn next(seed: &mut u64) -> u64 {
++    *seed ^= *seed << 13;
++    *seed ^= *seed >> 7;
++    *seed ^= *seed << 17;
++    *seed
++}
++#[test]
++fn generated_geometries_and_table_boundaries_match_independent_byte_oracles() {
++    let mut seed = 0x52563535u64;
++    for grain in [8192, 65536, 1048576] {
++        for count in [17, 511, 512, 513, 1024] {
++            for pattern in [
++                Pattern::Zero,
++                Pattern::Contiguous,
++                Pattern::Reversed,
++                Pattern::Alternating,
++            ] {
++                let layout = Layout::new(count * grain, grain);
++                let d = load(
++                    Arc::new(Device::new(layout.clone(), pattern, false)),
++                    SparseDiskLimits::default(),
++                )
++                .unwrap();
++                for offset in [0, grain - 1, grain, layout.capacity - 1]
++                    .into_iter()
++                    .chain((0..20).map(|_| next(&mut seed) % layout.capacity))
++                {
++                    let len = (layout.capacity - offset).min(65537) as usize;
++                    let mut actual = vec![0xcc; len];
++                    d.read_exact_at(offset, &mut actual).unwrap();
++                    assert_eq!(
++                        actual,
++                        layout.expected(offset, len, pattern),
++                        "{grain} {count} {pattern:?} {offset}"
++                    );
++                    let extents = d.extents(offset, len as u64).unwrap();
++                    let mut pos = offset;
++                    for e in extents {
++                        assert_eq!(e.offset(), pos);
++                        assert!(e.length() > 0);
++                        for byte in [e.offset(), e.end() - 1] {
++                            assert_eq!(
++                                e.kind(),
++                                if layout.slot(byte / grain, pattern).is_some() {
++                                    ExtentKind::Data
++                                } else {
++                                    ExtentKind::Zero
++                                }
++                            );
++                        }
++                        pos = e.end();
++                    }
++                    assert_eq!(pos, offset + len as u64);
++                }
++            }
++        }
++    }
++}
++#[test]
++fn coalescing_and_fragmentation_have_exact_backend_request_counts() {
++    for (pattern, calls) in [
++        (Pattern::Zero, 0),
++        (Pattern::Contiguous, 1),
++        (Pattern::Reversed, 16),
++        (Pattern::Permuted, 16),
++        (Pattern::Alternating, 8),
++    ] {
++        let l = Layout::new(1024 * 65536, 65536);
++        let s = Arc::new(Device::new(l.clone(), pattern, true));
++        let d = load(s.clone(), SparseDiskLimits::default()).unwrap();
++        s.reset();
++        let mut b = vec![0; 16 * 65536];
++        d.read_exact_at(65536, &mut b).unwrap();
++        assert_eq!(s.calls.load(Ordering::Relaxed), calls);
++        assert_eq!(b, l.expected(65536, b.len(), pattern));
++    }
++}
++#[test]
++fn metadata_mutation_corpus_is_bounded_and_admitted_maps_match_encoded_tables() {
++    let layout = Layout::new(513 * 65536, 65536);
++    let original = layout.metadata(Pattern::Alternating);
++    let mut seed = 0x617576355u64;
++    let mut admitted = 0;
++    let mut rejected = 0;
++    let limits = SparseDiskLimits {
++        memory_bytes: 128 * 1024,
++        read_bytes: 128 * 1024,
++        ..SparseDiskLimits::default()
++    };
++    for case in 0..4096 {
++        let mut s = Device::new(layout.clone(), Pattern::Alternating, true);
++        s.metadata.clone_from(&original);
++        s.ceiling = limits.read_bytes;
++        let (base, len) = match case % 5 {
++            0 => (0, 512),
++            1 => (512, layout.text.len() + 8),
++            2 => (layout.gd, layout.directory_bytes),
++            3 => (layout.rgt, layout.tables * 2048),
++            _ => (layout.gt, layout.tables * 2048),
++        };
++        let pos = base + (next(&mut seed) as usize % len);
++        if case % 64 == 0 {
++            let at = 512 + layout.text.find("parentCID=ffffffff").unwrap() + "parentCID=".len();
++            s.metadata[at] = b'F'; // semantic-preserving positive control
++        } else {
++            s.metadata[pos] ^= (next(&mut seed) as u8) | 1;
++        }
++        let s = Arc::new(s);
++        match load(s.clone(), limits) {
++            Err(_) => rejected += 1,
++            Ok(d) => {
++                admitted += 1;
++                assert!(d.reserved_memory_bytes() <= limits.memory_bytes);
++                assert!(s.bytes.load(Ordering::Relaxed) <= limits.read_bytes);
++                // Decode admitted primary table words independently from source bytes.
++                // Geometry changes still bind to the caller's capacity; use the admitted
++                // header solely to locate bounded input words, not to compute the map.
++                let h = d.metadata()[0].header();
++                let gd = h.primary_directory().offset() as usize;
++                for (i, &entry) in d.metadata()[0].grain_sectors().iter().enumerate() {
++                    let pointer = u32::from_le_bytes(
++                        s.metadata[gd + i / 512 * 4..gd + i / 512 * 4 + 4]
++                            .try_into()
++                            .unwrap(),
++                    ) as usize
++                        * 512;
++                    assert_eq!(
++                        entry,
++                        u32::from_le_bytes(
++                            s.metadata[pointer + i % 512 * 4..pointer + i % 512 * 4 + 4]
++                                .try_into()
++                                .unwrap()
++                        )
++                    );
++                }
++                let e = d.extents(0, d.size()).unwrap();
++                assert_eq!(e.first().unwrap().offset(), 0);
++                assert_eq!(e.last().unwrap().end(), d.size());
++            }
++        }
++    }
++    assert!(admitted > 0 && rejected > 0);
++    println!("corpus seed=0x617576355 cases=4096 admitted={admitted} rejected={rejected}");
++}
++#[test]
++fn invalid_directory_and_grain_pointer_sentinels_never_escape_source_bounds() {
++    let l = Layout::new(513 * 65536, 65536);
++    for value in [0, 1, 2, 21, 22, u32::MAX] {
++        let mut s = Device::new(l.clone(), Pattern::Contiguous, true);
++        put32(&mut s.metadata, l.gd + 4, value);
++        let s = Arc::new(s);
++        assert!(load(s.clone(), SparseDiskLimits::default()).is_err());
++        assert_eq!(s.calls.load(Ordering::Relaxed), 4);
++    }
++    for value in [1, 2, 127, u32::MAX] {
++        let mut s = Device::new(l.clone(), Pattern::Contiguous, true);
++        for base in [l.gt, l.rgt] {
++            put32(&mut s.metadata, base + 512 * 4, value);
++        }
++        assert!(load(Arc::new(s), SparseDiskLimits::default()).is_err());
++    }
++    // A cross-table duplicate is invalid even when both redundant copies agree.
++    let mut s = Device::new(l.clone(), Pattern::Contiguous, true);
++    for base in [l.gt, l.rgt] {
++        put32(&mut s.metadata, base + 512 * 4, (l.overhead / 512) as u32);
++    }
++    assert!(load(Arc::new(s), SparseDiskLimits::default()).is_err());
++}
++#[test]
++fn truncation_at_every_metadata_region_boundary_is_rejected() {
++    let l = Layout::new(513 * 65536, 65536);
++    for size in [
++        0,
++        511,
++        512,
++        10751,
++        l.gd as u64 - 1,
++        l.rgt as u64,
++        l.gt as u64,
++        l.overhead - 1,
++        l.overhead,
++        l.overhead + l.capacity - 1,
++    ] {
++        let mut s = Device::new(l.clone(), Pattern::Contiguous, false);
++        s.observed_size = size;
++
++        assert!(
++            load(Arc::new(s), SparseDiskLimits::default()).is_err(),
++            "size={size}"
++        );
++    }
++}
++#[test]
++fn maximum_header_capacity_is_rejected_by_aggregate_budget_before_offset_reads() {
++    let l = Layout::new(1 << 40, 65536);
++    let s = Arc::new(Device {
++        metadata: l.header().to_vec(),
++        observed_size: l.overhead + l.capacity,
++        layout: l,
++        track: true,
++        calls: AtomicU64::new(0),
++        bytes: AtomicU64::new(0),
++        ceiling: 512,
++    });
++    assert!(matches!(
++        load(s.clone(), SparseDiskLimits::default()),
++        Err(SparseMetadataError::Limit(_))
++    ));
++    assert_eq!(s.calls.load(Ordering::Relaxed), 1);
++}
++#[test]
++fn output_count_boundary_and_small_queries_do_not_require_whole_disk_output() {
++    for count in [65536, 65537] {
++        let l = Layout::new(count * 8192, 8192);
++        let s = Arc::new(Device::new(l.clone(), Pattern::Alternating, true));
++        let d = load(s.clone(), SparseDiskLimits::default()).unwrap();
++        s.reset();
++        let result = d.extents(0, d.size());
++        if count == 65536 {
++            assert_eq!(result.unwrap().len(), 65536)
++        } else {
++            assert!(matches!(result, Err(Error::InvalidEndpoint { .. })));
++        }
++        let e = d.extents(d.size() - 1, 1).unwrap();
++        assert_eq!(e.len(), 1);
++        assert_eq!(
++            e[0].kind(),
++            if count % 2 == 1 {
++                ExtentKind::Data
++            } else {
++                ExtentKind::Zero
++            }
++        );
++        assert_eq!(s.calls.load(Ordering::Relaxed), 0);
++    }
++}
++
++#[test]
++fn capacity_profiles_remain_within_default_admission_and_report_one_zero_extent() {
++    for capacity in [1 << 20, 1 << 30, 64 << 30] {
++        let l = Layout::new(capacity, 65536);
++        let source = Arc::new(Device::new(l.clone(), Pattern::Zero, true));
++        let d = load(source.clone(), SparseDiskLimits::default()).unwrap();
++        assert_eq!(
++            source.bytes.load(Ordering::Relaxed),
++            d.metadata_read_bytes()
++        );
++        let mut b = [7; 4096];
++        d.read_exact_at(capacity - 4096, &mut b).unwrap();
++        assert_eq!(b, [0; 4096]);
++        let e = d.extents(0, d.size()).unwrap();
++        assert_eq!(e.len(), 1);
++        assert_eq!(e[0].kind(), ExtentKind::Zero);
++        println!(
++            "R55_PROFILE {{\"capacity_bytes\":{},\"grain_bytes\":65536,\"grain_count\":{},\"tables_per_copy\":{},\"fixture_metadata_bytes\":{},\"reserved_memory_bytes\":{},\"metadata_read_bytes\":{},\"backend_calls\":{}}}",
++            capacity,
++            l.grains,
++            l.tables,
++            l.overhead,
++            d.reserved_memory_bytes(),
++            d.metadata_read_bytes(),
++            source.calls.load(Ordering::Relaxed)
++        );
++    }
++}
+diff --git a/crates/rvvdk-vmdk/tests/support/sparse_scale.rs b/crates/rvvdk-vmdk/tests/support/sparse_scale.rs
+new file mode 100644
+index 0000000..cb33ac4
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/support/sparse_scale.rs
+@@ -0,0 +1,238 @@
++//! Authored hosted-sparse layouts; generated payload is not physical storage.
++use rvvdk_core::{BlockDevice, Capabilities, CopyEndpoint, DiskGeometry, EndpointIdentity, Result};
++use rvvdk_vmdk::{BackingError, BackingResolver};
++use std::sync::{
++    Arc,
++    atomic::{AtomicU64, Ordering},
++};
++#[derive(Clone, Copy, Debug)]
++pub enum Pattern {
++    Zero,
++    Contiguous,
++    Reversed,
++    Alternating,
++    Permuted,
++}
++#[derive(Clone)]
++pub struct Layout {
++    pub capacity: u64,
++    pub grain: u64,
++    pub grains: u64,
++    pub tables: usize,
++    pub directory_bytes: usize,
++    pub rgd: usize,
++    pub gd: usize,
++    pub rgt: usize,
++    pub gt: usize,
++    pub overhead: u64,
++    pub text: String,
++}
++pub fn put32(b: &mut [u8], o: usize, v: u32) {
++    b[o..o + 4].copy_from_slice(&v.to_le_bytes());
++}
++pub fn put64(b: &mut [u8], o: usize, v: u64) {
++    b[o..o + 8].copy_from_slice(&v.to_le_bytes());
++}
++impl Layout {
++    pub fn new(capacity: u64, grain: u64) -> Self {
++        assert!(
++            grain >= 8192
++                && grain.is_power_of_two()
++                && capacity > 0
++                && capacity.is_multiple_of(grain)
++        );
++        let grains = capacity / grain;
++        let tables = grains.div_ceil(512) as usize;
++        let directory_bytes = (tables * 4).div_ceil(512) * 512;
++        let rgd = 21 * 512;
++        let gd = rgd + directory_bytes;
++        let rgt = gd + directory_bytes;
++        let gt = rgt + tables * 2048;
++        let overhead = ((gt + tables * 2048) as u64).div_ceil(grain) * grain;
++        let text = format!(
++            "version=1\nCID=12345678\nparentCID=ffffffff\ncreateType=\"monolithicSparse\"\nRW {} SPARSE \"disk.vmdk\"\n",
++            capacity / 512
++        );
++        Self {
++            capacity,
++            grain,
++            grains,
++            tables,
++            directory_bytes,
++            rgd,
++            gd,
++            rgt,
++            gt,
++            overhead,
++            text,
++        }
++    }
++    pub fn header(&self) -> [u8; 512] {
++        let mut b = [0; 512];
++        put32(&mut b, 0, 0x564d444b);
++        put32(&mut b, 4, 1);
++        put32(&mut b, 8, 3);
++        put64(&mut b, 12, self.capacity / 512);
++        put64(&mut b, 20, self.grain / 512);
++        put64(&mut b, 28, 1);
++        put64(&mut b, 36, 20);
++        put32(&mut b, 44, 512);
++        put64(&mut b, 48, (self.rgd / 512) as u64);
++        put64(&mut b, 56, (self.gd / 512) as u64);
++        put64(&mut b, 64, self.overhead / 512);
++        b[73..77].copy_from_slice(b"\n \r\n");
++        b
++    }
++    pub fn slot(&self, index: u64, pattern: Pattern) -> Option<u64> {
++        match pattern {
++            Pattern::Zero => None,
++            Pattern::Contiguous => Some(index),
++            Pattern::Reversed => Some(self.grains - 1 - index),
++            Pattern::Alternating => {
++                if index.is_multiple_of(2) {
++                    Some(index)
++                } else {
++                    None
++                }
++            }
++            Pattern::Permuted => {
++                assert!(self.grains.is_power_of_two());
++                Some((index * 8191 + 17) % self.grains)
++            }
++        }
++    }
++    pub fn metadata(&self, pattern: Pattern) -> Vec<u8> {
++        let mut b = vec![0; self.overhead as usize];
++        b[..512].copy_from_slice(&self.header());
++        b[512..512 + self.text.len()].copy_from_slice(self.text.as_bytes());
++        for i in 0..self.tables {
++            put32(
++                &mut b,
++                self.rgd + i * 4,
++                ((self.rgt + i * 2048) / 512) as u32,
++            );
++            put32(&mut b, self.gd + i * 4, ((self.gt + i * 2048) / 512) as u32);
++        }
++        for i in 0..self.grains {
++            let v = self.slot(i, pattern).map_or(0, |slot| {
++                u32::try_from((self.overhead + slot * self.grain) / 512).unwrap()
++            });
++            for start in [self.rgt, self.gt] {
++                put32(&mut b, start + i as usize * 4, v);
++            }
++        }
++        b
++    }
++    pub fn expected(&self, offset: u64, len: usize, pattern: Pattern) -> Vec<u8> {
++        (offset..offset + len as u64)
++            .map(|pos| self.slot(pos / self.grain, pattern).map_or(0, payload_byte))
++            .collect()
++    }
++}
++pub fn payload_byte(slot: u64) -> u8 {
++    (slot % 251 + 1) as u8
++}
++pub struct Device {
++    pub layout: Layout,
++    pub metadata: Vec<u8>,
++    pub observed_size: u64,
++    pub track: bool,
++    pub calls: AtomicU64,
++    pub bytes: AtomicU64,
++    pub ceiling: u64,
++}
++impl Device {
++    pub fn new(layout: Layout, pattern: Pattern, track: bool) -> Self {
++        let observed_size = layout.overhead + layout.capacity;
++        let metadata = layout.metadata(pattern);
++        Self {
++            layout,
++            metadata,
++            observed_size,
++            track,
++            calls: AtomicU64::new(0),
++            bytes: AtomicU64::new(0),
++            ceiling: u64::MAX,
++        }
++    }
++    pub fn reset(&self) {
++        self.calls.store(0, Ordering::Relaxed);
++        self.bytes.store(0, Ordering::Relaxed);
++    }
++}
++impl BlockDevice for Device {
++    fn geometry(&self) -> DiskGeometry {
++        DiskGeometry::new(self.observed_size, 512, 512).unwrap()
++    }
++    fn capabilities(&self) -> Capabilities {
++        Capabilities::READ
++    }
++    fn copy_endpoint(&self) -> Result<CopyEndpoint> {
++        Ok(CopyEndpoint {
++            size: self.observed_size,
++            capabilities: self.capabilities(),
++            identity: Some(EndpointIdentity::Memory {
++                address: self as *const Self as usize,
++            }),
++        })
++    }
++    fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
++        if self.observed_size < 512 {
++            let n = self
++                .observed_size
++                .saturating_sub(offset)
++                .min(buffer.len() as u64) as usize;
++            if n > 0 {
++                buffer[..n].copy_from_slice(&self.metadata[offset as usize..offset as usize + n]);
++            }
++            return Ok(n);
++        }
++        assert!(
++            offset <= self.observed_size && buffer.len() as u64 <= self.observed_size - offset,
++            "out-of-file request"
++        );
++        if self.track {
++            self.calls.fetch_add(1, Ordering::Relaxed);
++            let total =
++                self.bytes.fetch_add(buffer.len() as u64, Ordering::Relaxed) + buffer.len() as u64;
++            assert!(total <= self.ceiling, "read payload budget escaped");
++        }
++        let mut pos = offset;
++        let mut done = 0;
++        while done < buffer.len() {
++            if pos < self.layout.overhead {
++                assert!(
++                    pos < self.metadata.len() as u64,
++                    "unexpected metadata read after header-only denial"
++                );
++                let n =
++                    (self.metadata.len() as u64 - pos).min((buffer.len() - done) as u64) as usize;
++                buffer[done..done + n]
++                    .copy_from_slice(&self.metadata[pos as usize..pos as usize + n]);
++                done += n;
++                pos += n as u64;
++            } else {
++                let relative = pos - self.layout.overhead;
++                let n = (self.layout.grain - relative % self.layout.grain)
++                    .min((buffer.len() - done) as u64) as usize;
++                buffer[done..done + n].fill(payload_byte(relative / self.layout.grain));
++                done += n;
++                pos += n as u64;
++            }
++        }
++        Ok(buffer.len())
++    }
++    fn write_at(&self, _: u64, _: &[u8]) -> Result<usize> {
++        panic!("source write")
++    }
++    fn flush(&self) -> Result<()> {
++        panic!("source flush")
++    }
++}
++pub struct Resolver(pub Arc<Device>);
++impl BackingResolver for Resolver {
++    fn resolve(&self, name: &str) -> std::result::Result<Arc<dyn BlockDevice>, BackingError> {
++        assert_eq!(name, "disk.vmdk");
++        Ok(self.0.clone())
++    }
++}

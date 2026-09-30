@@ -1,14 +1,14 @@
 # rvvdk Benchmarks
 
-Latest step: [R5.4 sparse CLI benchmarks and plots](benchmark-results/2026-09-30-r54/README.md).
-Twenty-four matched controls, six triggered longer repeats and twelve new header
-runs retain source/binary/harness identities. The adverse +5.32% mixed-copy pair
-remains recorded; longer repeats show -1.86% aggregate. Valid header admission
-costs 133.898 ns and performs no allocation or metadata I/O. This is header work,
-not logical sparse reads or data throughput. Prior
-[R4.4 preview overhead](benchmark-results/2026-09-29-r44/README.md) and broader
-qualification/tuning remain open.
-
+Latest step: [R5.5 sparse bounds and scaling plots](benchmark-results/2026-09-30-r55/README.md).
+Twenty-four paired controls, six triggered longer repeats and 39 new scaling runs
+retain source/binary/harness identities. Runtime code is unchanged. A RAW verify
+pair is +10.85%; longer repeats still include +27.90%, leaving investigation open.
+Synthetic 64 GiB zero maps open in 4.738 ms and full queries take 1.303 ms; capacity
+is virtual and these are not storage-throughput results. SVG/PNG panels show
+capacity, resource counters, query output limits and each run's variation. Prior
+[R4.4 preview overhead](benchmark-results/2026-09-29-r44/README.md), PERF.0 and earlier
+adverse timing investigations remain open.
 
 ## Performance policy — adopted 2026-09-28
 
@@ -23,7 +23,7 @@ the direct io_uring comparison. The harness correction is committed, but those
 historical results still need replacement measurements. Do not derive engine
 defaults or performance claims from an unmatched comparison.
 
-Latest measured step: [R4.3 logical VMDK mapping](benchmark-results/2026-09-29-r43/README.md)
+Earlier measured step: [R4.3 logical VMDK mapping](benchmark-results/2026-09-29-r43/README.md)
 includes SVG/PNG charts, matched planning/copy/verification/parser/resolver controls,
 and initial logical read and local copy costs. Every adverse aggregate or pair
 above +5% triggers longer repeats; prior qualification limits remain explicit.

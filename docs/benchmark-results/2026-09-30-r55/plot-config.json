@@ -1,0 +1,82 @@
+{
+  "title": "R5.5 \u00b7 Sparse bounds and scaling",
+  "candidate": "patch 530295d0",
+  "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 memory fixtures / warm Btrfs CLI",
+  "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+  "candidate_only": {
+    "title": "Sparse scaling \u00b7 first synthetic cost baselines",
+    "note": "Virtual capacity \u00b7 metadata in memory \u00b7 generated payload \u00b7 not storage throughput",
+    "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+  },
+  "workloads": {
+    "sparse_metadata/monolithic": {
+      "label": "Metadata load \u00b7 1 MiB",
+      "phase": "planning"
+    },
+    "sparse_disk/read_contiguous_128k": {
+      "label": "Contiguous read \u00b7 128 KiB",
+      "phase": "planning"
+    },
+    "cli_vmdk/copy_mixed_verify": {
+      "label": "FLAT/ZERO copy + verify \u00b7 1 MiB",
+      "phase": "copy"
+    },
+    "cli_transfer/verify_only": {
+      "label": "RAW verify \u00b7 16 MiB",
+      "phase": "copy"
+    },
+    "sparse_scale/open_zero_1m": {
+      "label": "open zero 1m",
+      "phase": "planning"
+    },
+    "sparse_scale/open_zero_1g": {
+      "label": "open zero 1g",
+      "phase": "planning"
+    },
+    "sparse_scale/query_zero_1g": {
+      "label": "query zero 1g",
+      "phase": "planning"
+    },
+    "sparse_scale/open_zero_64g": {
+      "label": "open zero 64g",
+      "phase": "planning"
+    },
+    "sparse_scale/query_zero_64g": {
+      "label": "query zero 64g",
+      "phase": "planning"
+    },
+    "sparse_scale/tail_zero_4k_64g": {
+      "label": "tail zero 4k 64g",
+      "phase": "planning"
+    },
+    "sparse_scale/query_alternating_256m": {
+      "label": "query alternating 256m",
+      "phase": "planning"
+    },
+    "sparse_scale/query_alternating_512m": {
+      "label": "query alternating 512m",
+      "phase": "planning"
+    },
+    "sparse_scale/query_alternating_limit": {
+      "label": "query alternating limit",
+      "phase": "planning"
+    },
+    "sparse_scale/read_1m_contiguous": {
+      "label": "read 1m contiguous",
+      "phase": "planning"
+    },
+    "sparse_scale/read_1m_reversed": {
+      "label": "read 1m reversed",
+      "phase": "planning"
+    },
+    "sparse_scale/read_1m_permuted": {
+      "label": "read 1m permuted",
+      "phase": "planning"
+    },
+    "sparse_scale/open_permuted_1g": {
+      "label": "open permuted 1g",
+      "phase": "planning"
+    }
+  },
+  "repeat_sampling": "3 adjacent pairs \u00b7 40 flat samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+}
