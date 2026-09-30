@@ -1,14 +1,15 @@
 # rvvdk Benchmarks
 
-Latest step: [R5.6 parent metadata benchmarks and plots](benchmark-results/2026-09-30-r56/README.md).
-Twenty-four paired controls, six triggered longer repeats and 18 new chain runs
-retain source/binary/harness identities. The +5.0069% contiguous-read pair triggers
-longer repeats (-0.53% aggregate; all pairs nonadverse); the original remains visible.
-Synthetic embedded metadata opens at 1/4/16 layers take 10.110/41.523/178.604 µs.
-These are memory-fixture acquisition costs, not logical parent reads or storage
-throughput. Prior [R5.5 capacity/fragmentation charts](benchmark-results/2026-09-30-r55/README.md),
-[R4.4 preview overhead](benchmark-results/2026-09-29-r44/README.md), PERF.0 and earlier
-adverse timing investigations remain recorded and open where applicable.
+Latest step: [R5.7 sparse parent-read benchmarks and plots](benchmark-results/2026-09-30-r57/README.md).
+Twenty-four paired controls, 18 triggered longer repeats and 30 new read/query runs
+retain source/binary/harness identities. Synthetic 1 MiB inherited reads at depths
+1/4/16 take 52.005 / 54.608 / 58.974 µs; full queries take 0.292 / 3.713 / 14.947 µs.
+These memory-device costs exclude metadata acquisition and are not storage throughput.
+Every adverse pair and repeat remains visible. The original QEMU partial-write
+fixture mismatch is preserved separately from qualified logical-byte cases.
+Prior [R5.5 scaling](benchmark-results/2026-09-30-r55/README.md),
+[R5.6 acquisition](benchmark-results/2026-09-30-r56/README.md), PERF.0 and R4.4
+qualification and earlier adverse timing investigations remain recorded.
 
 ## Performance policy — adopted 2026-09-28
 

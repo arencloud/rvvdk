@@ -1784,15 +1784,76 @@ include validation/allocation/drop, not fixture generation or logical parent rea
 No storage throughput or causal speedup is claimed. All plots reproduce identically;
 prior evidence remains unchanged. PERF.0/R4.4 and previous adverse follow-ups stay open.
 
+## R5.7 — Read-only logical sparse parent fallback
+
+Date: 2026-09-30. Status: **Complete within the admitted sparse-chain library scope**.
+Baseline: `5436dbc`, initially clean. The enclosing commit records this step.
+[Contract](vmdk-chain-disk.md), [ADR-0043](adr/0043-read-only-sparse-parent-fallback.md)
+and [evidence](benchmark-results/2026-09-30-r57/README.md) retain implementation
+policy, all 72 measured runs, source/harness/binary identities, validation and plots.
+
+`SparseChainDisk` wraps owned validated metadata with read-only VirtualDisk. An
+iterative walk clips at every consulted grain/extent boundary and resolves nearest
+allocated ancestor data or base-confirmed Zero. Allocated zeros remain Data; errors
+never fall back to older contents. Physical coalescing stays inside one retained
+backing map. Reads use constant auxiliary space and reuse caller buffers; two-pass
+logical extent queries enforce a separate default 65,536 output limit. Whole-chain
+destination alias checks include every descriptor and backing, including hidden
+ancestors. Copy preflight revalidates; standalone callers keep sources quiescent.
+Metadata admission/base APIs remain unchanged. CLI parent exposure is still pending.
+
+Validation: **524 distinct passed, one existing gated allocation test** (525 total),
+plus a 160-test CLI/VMDK run with integration fixtures on Btrfs; five existing CLI
+unit fault tests retain system temporary files. Formatting, strict all-target
+Clippy and portable core/datamover/VMDK wasm32 checks pass (existing control::sum
+warning). Twelve new tests cover nine grain combinations × 38 ranges, independent
+byte/kind oracles, split boundaries, allocated zero overrides, 1/4/16-layer fallback,
+coalescing, range/output limits, all source aliases, changed endpoints, short reads,
+EOF/errors, completed prefixes, retained handles and four-worker copy/verify.
+
+Qualified QEMU monolithic/split/mixed three-layer chains match independently edited
+RAW overlays and QEMU full decoding/compare, including two-file 2 GiB + 64 KiB.
+The helper reads every byte in 65,537-byte chunks; sources remain unchanged and
+public CLI still rejects parents. Metadata reference and all four base CLI commands
+also pass their prior qualification. Example acquisition now shares one confined
+fixture helper, separate from future public CLI policy. No SDK/producer source or
+ESXi is used.
+
+The original large-case partial cross-split write **failed** its independent oracle:
+rvddk and QEMU agree, but both return 65,024 bytes of 0x31 instead of retained 0x61
+at offset 2,147,484,160. Post-failure QEMU reads show base/intermediate still match;
+only the final layer differs. The original generator, failure output, invocation,
+source/output hashes and diagnostic commands are preserved. A separate qualified
+case fully overwrites that second-extent grain. The original producer partial-write
+path remains unqualified; smaller cases retain partial writes. No reader adjustment
+or claim about the producer's internal cause is made.
+
+Performance: 24 matched controls show **-0.88%, +1.20%, +0.86%, +1.20%** for base metadata,
+contiguous 128 KiB reads, FLAT/ZERO copy+verify and RAW verify. Individual adverse
+pairs **+5.81%, +24.27%, +13.71%** trigger 18 longer alternating runs:
+
+- `sparse_metadata/monolithic`: -0.62% aggregate; pairs -6.68%, +7.75%, -0.62%.
+- `sparse_disk/read_contiguous_128k`: +1.51% aggregate; pairs +1.51%, -4.59%, +13.94%.
+- `cli_transfer/verify_only`: +1.49% aggregate; pairs +2.01%, +0.20%, -0.72%.
+
+All original and adverse runs remain visible; no pooling or causal speedup claim.
+Earlier PERF.0/R4.4 and adverse investigations remain open. Thirty new synthetic
+runs establish 1 MiB inherited reads at depths 1/4/16 of **52.005 / 54.608 / 58.974 µs**,
+and full queries of **0.292 / 3.713 / 14.947 µs**. Two-layer leaf/alternating/
+fragmented/zero reads take **51.462 / 55.163 /
+56.304 / 16.787 µs**. Metadata acquisition, fixture
+creation and buffers are outside timing. These memory-backed mapping/copy costs
+are not storage throughput. Plot regeneration is byte-identical; earlier evidence
+is unchanged. Depth/boundary scanning remains visible for future measured tuning.
+
 ## Next session
 
-Start **R5.7**: read-only logical sparse parent fallback. Resolve unallocated child
-grains through ancestors; handle differing grain sizes and extent boundaries,
-produce Data/Zero only after complete resolution, and reject destinations aliased
-to any retained descriptor/backing. Use independent byte oracles and QEMU decoding,
-with bounded extent output and chain-depth/fragmentation benchmarks. Keep CLI parent
-exposure for a following step with acquisition/publication/cancellation qualification.
-Each completed step gets validation, evidence/plots, progress updates and a commit.
+Start **R5.8**: parent-chain CLI acquisition under explicit confined resolver policy,
+per-source observations and existing alias, cancellation, verification and publication
+contracts. Qualify inspect/plan/copy/verify on parent chains, preserve separate loader
+and copy budgets, and keep the initial QEMU partial second-extent write discrepancy
+visible. Each completed step gets tests, benchmark evidence/plots, log updates and
+an automatic local commit. Coverage-guided fuzzing remains future work.
 
 ESXi remains unnecessary for local work; request the 60-day trial when V0's lab
 proof is ready. Keep PERF.0, R4.4 preview overhead/tuning and earlier adverse timing

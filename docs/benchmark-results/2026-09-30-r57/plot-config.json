@@ -1,0 +1,70 @@
+{
+  "title": "R5.7 \u00b7 Logical sparse parent reads",
+  "candidate": "patch 50497111",
+  "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 memory fixtures / warm Btrfs CLI",
+  "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+  "candidate_only": {
+    "title": "Parent fallback \u00b7 first read and query baselines",
+    "note": "Memory devices \u00b7 admitted maps and buffers reused \u00b7 not storage throughput",
+    "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+  },
+  "workloads": {
+    "sparse_metadata/monolithic": {
+      "label": "Base metadata load \u00b7 1 MiB",
+      "phase": "planning"
+    },
+    "sparse_disk/read_contiguous_128k": {
+      "label": "Base contiguous read \u00b7 128 KiB",
+      "phase": "planning"
+    },
+    "cli_vmdk/copy_mixed_verify": {
+      "label": "FLAT/ZERO copy + verify \u00b7 1 MiB",
+      "phase": "copy"
+    },
+    "cli_transfer/verify_only": {
+      "label": "RAW verify \u00b7 16 MiB",
+      "phase": "copy"
+    },
+    "chain_disk/read_base_1m_depth1": {
+      "label": "Read 1 MiB \u00b7 base data \u00b7 depth 1",
+      "phase": "planning"
+    },
+    "chain_disk/query_base_1m_depth1": {
+      "label": "Query 1 MiB \u00b7 base data \u00b7 depth 1",
+      "phase": "planning"
+    },
+    "chain_disk/read_base_1m_depth4": {
+      "label": "Read 1 MiB \u00b7 base data \u00b7 depth 4",
+      "phase": "planning"
+    },
+    "chain_disk/query_base_1m_depth4": {
+      "label": "Query 1 MiB \u00b7 base data \u00b7 depth 4",
+      "phase": "planning"
+    },
+    "chain_disk/read_base_1m_depth16": {
+      "label": "Read 1 MiB \u00b7 base data \u00b7 depth 16",
+      "phase": "planning"
+    },
+    "chain_disk/query_base_1m_depth16": {
+      "label": "Query 1 MiB \u00b7 base data \u00b7 depth 16",
+      "phase": "planning"
+    },
+    "chain_disk/read_leaf_1m": {
+      "label": "Read 1 MiB \u00b7 leaf data",
+      "phase": "planning"
+    },
+    "chain_disk/read_alternating_1m": {
+      "label": "Read 1 MiB \u00b7 alternating ownership",
+      "phase": "planning"
+    },
+    "chain_disk/read_fragmented_1m": {
+      "label": "Read 1 MiB \u00b7 fragmented child",
+      "phase": "planning"
+    },
+    "chain_disk/read_zero_1m": {
+      "label": "Read 1 MiB \u00b7 all zero",
+      "phase": "planning"
+    }
+  },
+  "repeat_sampling": "3 adjacent pairs \u00b7 40 flat samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+}

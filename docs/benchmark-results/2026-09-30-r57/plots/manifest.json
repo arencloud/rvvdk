@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "config": {
+    "title": "R5.7 \u00b7 Logical sparse parent reads",
+    "candidate": "patch 50497111",
+    "conditions": "CPUs 2\u20136 \u00b7 powersave \u00b7 shared host \u00b7 memory fixtures / warm Btrfs CLI",
+    "main_sampling": "3 adjacent pairs \u00b7 30 flat samples/run \u00b7 0.3 s warmup \u00b7 2 s target",
+    "candidate_only": {
+      "title": "Parent fallback \u00b7 first read and query baselines",
+      "note": "Memory devices \u00b7 admitted maps and buffers reused \u00b7 not storage throughput",
+      "sampling": "3 runs/case \u00b7 30 flat samples \u00b7 0.3 s warmup \u00b7 2 s target"
+    },
+    "workloads": {
+      "sparse_metadata/monolithic": {
+        "label": "Base metadata load \u00b7 1 MiB",
+        "phase": "planning"
+      },
+      "sparse_disk/read_contiguous_128k": {
+        "label": "Base contiguous read \u00b7 128 KiB",
+        "phase": "planning"
+      },
+      "cli_vmdk/copy_mixed_verify": {
+        "label": "FLAT/ZERO copy + verify \u00b7 1 MiB",
+        "phase": "copy"
+      },
+      "cli_transfer/verify_only": {
+        "label": "RAW verify \u00b7 16 MiB",
+        "phase": "copy"
+      },
+      "chain_disk/read_base_1m_depth1": {
+        "label": "Read 1 MiB \u00b7 base data \u00b7 depth 1",
+        "phase": "planning"
+      },
+      "chain_disk/query_base_1m_depth1": {
+        "label": "Query 1 MiB \u00b7 base data \u00b7 depth 1",
+        "phase": "planning"
+      },
+      "chain_disk/read_base_1m_depth4": {
+        "label": "Read 1 MiB \u00b7 base data \u00b7 depth 4",
+        "phase": "planning"
+      },
+      "chain_disk/query_base_1m_depth4": {
+        "label": "Query 1 MiB \u00b7 base data \u00b7 depth 4",
+        "phase": "planning"
+      },
+      "chain_disk/read_base_1m_depth16": {
+        "label": "Read 1 MiB \u00b7 base data \u00b7 depth 16",
+        "phase": "planning"
+      },
+      "chain_disk/query_base_1m_depth16": {
+        "label": "Query 1 MiB \u00b7 base data \u00b7 depth 16",
+        "phase": "planning"
+      },
+      "chain_disk/read_leaf_1m": {
+        "label": "Read 1 MiB \u00b7 leaf data",
+        "phase": "planning"
+      },
+      "chain_disk/read_alternating_1m": {
+        "label": "Read 1 MiB \u00b7 alternating ownership",
+        "phase": "planning"
+      },
+      "chain_disk/read_fragmented_1m": {
+        "label": "Read 1 MiB \u00b7 fragmented child",
+        "phase": "planning"
+      },
+      "chain_disk/read_zero_1m": {
+        "label": "Read 1 MiB \u00b7 all zero",
+        "phase": "planning"
+      }
+    },
+    "repeat_sampling": "3 adjacent pairs \u00b7 40 flat samples/run \u00b7 0.5 s warmup \u00b7 4 s target"
+  },
+  "input_sha256": {
+    "plot-config.json": "347b5a4e3951418e6b8fae3a4a18b144ac1fcdc7c297a7e362c2178a9b664b41",
+    "environment.json": "ff599653ebd65ea8a021aa2baeb846d9062dc46581ba3aaba562e6b926b841c0",
+    "measurements.json": "f265cebc7926b71ea993301ec22fa75d2958ba9ba94af7420cf3a97ebc665628",
+    "summary.json": "564f0a8730e51fb7b953dae4fbd77f8bfd468f05952eeb7d305cbd2d5babd2bc",
+    "followup-measurements.json": "76c1ffc89395db6696c9704583e16cfc2e054a9f534fa949387831cd08216deb",
+    "followup-summary.json": "bad0c5ae5da2aff55a9c7b78c361547a16291953775f2ffb9dedef46428ee614",
+    "candidate-only-measurements.json": "556b3122194ea2adcdd437b6fbbb9beb1b6862cef135cdea169bd0e6e651f08e"
+  },
+  "generator_sha256": "6c98fa02c85c2aa112a08e79ff10dcda51c538921f45c03f9ab517106acdc139",
+  "python": "3.14.7",
+  "packages": {
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "fonttools": "4.66.0",
+    "kiwisolver": "1.5.1",
+    "matplotlib": "3.10.9",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pillow": "12.3.0",
+    "pip": "26.0.1",
+    "pyparsing": "3.3.3",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0"
+  },
+  "output_sha256": {
+    "planning-latency.svg": "2fca4325df8b33de8650942bf4246d9cc1d1e4ddf7768b21f4fe91481a7ae34d",
+    "planning-latency.png": "3bac2369d0f683458daca983315ed9596ff7269a7228e8d372cd02e184298f17",
+    "copy-latency.svg": "0524f3fa926f5c6d2ed65a27523e260edb8239e1c67424c8239f28cfebe8d299",
+    "copy-latency.png": "5fef94b99b5f3b51c36903b9e212a2ce40e7a52298291ecda9b8bb8377eafcb0",
+    "relative-change.svg": "8310d3f1b0039818808f2ec511955e78d9c134f6e38edeefd12952bbf26ac225",
+    "relative-change.png": "b270076cdc0959a7722da40aaee99f3c8280ee69fc34afcb7557959215b9f722",
+    "sample-distributions.svg": "839b9bb950cb3301ec27465d1c76feb6c14c2a381679699609f09e138bf18dc2",
+    "sample-distributions.png": "0ce310ac94014772c947de044b03b624c86cf2047cfd992f8b5c5370a2ab023d",
+    "followup-change.svg": "363f1c91c98a764d454e6bf7ccc9abc36695357a2ea0a7c764369deda73d141f",
+    "followup-change.png": "aaccafa6dc30d9267d2b047b607d5065666f416bd8bc2ef68d94625b9bc638df",
+    "candidate-only.svg": "8e7d06c923f6f008cfef3db6483dcc8c7a142238069e476485d5ba330f71ecd1",
+    "candidate-only.png": "b0b75dc6de49fa9ca7eecd33424b9dca10e83b2731d0ddd26d3a14ed5b48fe40",
+    "computed.json": "39d1abf639bddf1a77f23772f4ef870d9213263a38af9f0349d47106952c5903"
+  }
+}

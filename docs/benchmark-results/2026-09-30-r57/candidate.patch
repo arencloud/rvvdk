@@ -1,0 +1,1068 @@
+diff --git a/crates/rvvdk-vmdk/Cargo.toml b/crates/rvvdk-vmdk/Cargo.toml
+index b8a35b6..1ed744c 100644
+--- a/crates/rvvdk-vmdk/Cargo.toml
++++ b/crates/rvvdk-vmdk/Cargo.toml
+@@ -52,3 +52,7 @@ harness = false
+ [[bench]]
+ name = "chain"
+ harness = false
++
++[[bench]]
++name = "chain_disk"
++harness = false
+diff --git a/crates/rvvdk-vmdk/examples/inspect_chain.rs b/crates/rvvdk-vmdk/examples/inspect_chain.rs
+index d21d6d4..16733e6 100644
+--- a/crates/rvvdk-vmdk/examples/inspect_chain.rs
++++ b/crates/rvvdk-vmdk/examples/inspect_chain.rs
+@@ -1,63 +1,14 @@
+ //! Local qualification helper, not public CLI parent support. All layers must
+ //! live in one explicitly selected directory; parent hints must be basenames.
++#[path = "support/chain.rs"]
++mod support;
+ #[cfg(target_os = "linux")]
+ fn main() -> Result<(), Box<dyn std::error::Error>> {
+-    use rvvdk_core::{BlockDevice, EndpointIdentity};
+-    use rvvdk_local::LocalFileBlockDevice;
+-    use rvvdk_vmdk::{
+-        BackingError, ChainEntry, LocalResolver, ParentResolver, SparseChain, SparseChainLimits,
+-        SparseChainSource,
+-    };
+-    use std::{fs::File, path::Path, sync::Arc};
+-    struct Policy(Arc<LocalResolver>);
+-    impl Policy {
+-        fn source(&self, file: File) -> Result<SparseChainSource, BackingError> {
+-            let descriptor = Arc::new(
+-                LocalFileBlockDevice::from_buffered_file(file).map_err(BackingError::Adopt)?,
+-            );
+-            let mut magic = [0; 4];
+-            descriptor
+-                .read_exact_at(0, &mut magic)
+-                .map_err(BackingError::Adopt)?;
+-            Ok(SparseChainSource {
+-                descriptor,
+-                backings: self.0.clone(),
+-                entry: if magic == *b"KDMV" {
+-                    ChainEntry::Embedded
+-                } else {
+-                    ChainEntry::External
+-                },
+-            })
+-        }
+-    }
+-    impl ParentResolver for Policy {
+-        fn resolve_parent(
+-            &self,
+-            _: EndpointIdentity,
+-            hint: &str,
+-        ) -> Result<Option<SparseChainSource>, BackingError> {
+-            if hint.contains('/') {
+-                return Err(BackingError::UnsafeReference);
+-            }
+-            let file = match self.0.open_regular(hint) {
+-                Ok(file) => file,
+-                Err(BackingError::Io { source, .. })
+-                    if source.kind() == std::io::ErrorKind::NotFound =>
+-                {
+-                    return Ok(None);
+-                }
+-                Err(e) => return Err(e),
+-            };
+-            self.source(file).map(Some)
+-        }
+-    }
+     let args: Vec<_> = std::env::args_os().skip(1).collect();
+     if args.len() != 1 {
+         return Err("usage: inspect_chain LEAF_DESCRIPTOR_OR_CONTAINER".into());
+     }
+-    let (file, resolver) = LocalResolver::open_descriptor_file(Path::new(&args[0]))?;
+-    let policy = Policy(Arc::new(resolver));
+-    let chain = SparseChain::load(policy.source(file)?, &policy, SparseChainLimits::default())?;
++    let chain = support::load(&args[0])?;
+     println!("{{\"layers\":[");
+     for (i, l) in chain.layers().iter().enumerate() {
+         if i != 0 {
+diff --git a/crates/rvvdk-vmdk/src/lib.rs b/crates/rvvdk-vmdk/src/lib.rs
+index 7ac3b75..0f61506 100644
+--- a/crates/rvvdk-vmdk/src/lib.rs
++++ b/crates/rvvdk-vmdk/src/lib.rs
+@@ -41,3 +41,6 @@ pub use chain::{
+     ChainEntry, ParentResolver, SparseChain, SparseChainError, SparseChainLayer, SparseChainLimits,
+     SparseChainSource,
+ };
++
++mod chain_disk;
++pub use chain_disk::{SparseChainDisk, SparseChainDiskLimits};
+diff --git a/crates/rvvdk-vmdk/tests/fixtures/README.md b/crates/rvvdk-vmdk/tests/fixtures/README.md
+index 48b160f..1c5cfdd 100644
+--- a/crates/rvvdk-vmdk/tests/fixtures/README.md
++++ b/crates/rvvdk-vmdk/tests/fixtures/README.md
+@@ -85,3 +85,14 @@ SDK or producer implementation code. The `chain` benchmark reuses these fixtures
+ with read counters disabled; atomic fault flags and in-memory reads remain timed.
+ QEMU-created chains are generated separately by `scripts/vmdk/compare_chain.py`;
+ only commands, metadata reports and hashes are committed, not virtual disk files.
++
++R5.7 `tests/support/chain_disk.rs` independently builds each sparse layer from
++allocation masks, grain sizes, extent lengths and reversible physical placements.
++Byte values depend on logical position and a layer salt; the oracle selects the
++first allocated layer without consulting production maps. Fixtures use separate
++memory-backed descriptors and extents, optional read counters and injected faults.
++The `chain_disk` benchmark disables counters but retains wrapper flag atomics and
++memory-device synchronization. `scripts/vmdk/compare_chain_reads.py` separately
++creates QEMU chains, applies sector-aligned writes (including allocated zero bytes),
++and compares production logical reads with independently edited RAW overlays and
++QEMU decoding. Generated disk images remain in ignored storage.
+diff --git a/crates/rvvdk-vmdk/benches/chain_disk.rs b/crates/rvvdk-vmdk/benches/chain_disk.rs
+new file mode 100644
+index 0000000..16f4d92
+--- /dev/null
++++ b/crates/rvvdk-vmdk/benches/chain_disk.rs
+@@ -0,0 +1,56 @@
++#[path = "../tests/support/chain_disk.rs"]
++#[allow(dead_code)]
++mod f;
++use criterion::{Criterion, SamplingMode, criterion_group, criterion_main};
++use f::{Fixture, Spec};
++use rvvdk_core::VirtualDisk;
++use std::hint::black_box;
++fn bench(c: &mut Criterion) {
++    let mut group = c.benchmark_group("chain_disk");
++    group.sampling_mode(SamplingMode::Flat);
++    const SIZE: u64 = 1 << 20;
++    for depth in [1, 4, 16] {
++        let mut specs = vec![Spec::new(vec![SIZE], 8192, 0, 0, 1); depth];
++        specs[depth - 1] = Spec::new(vec![SIZE], 65536, 1, 0, 71);
++        let f = Fixture::new(specs, false);
++        let disk = f.disk();
++        let mut buffer = vec![0; SIZE as usize];
++        disk.read_exact_at(0, &mut buffer).unwrap();
++        assert_eq!(buffer, f.oracle(0, buffer.len()));
++        group.bench_function(format!("read_base_1m_depth{depth}"), |b| {
++            b.iter(|| {
++                disk.read_exact_at(black_box(0), black_box(&mut buffer))
++                    .unwrap();
++                black_box(&buffer);
++            })
++        });
++        group.bench_function(format!("query_base_1m_depth{depth}"), |b| {
++            b.iter(|| black_box(disk.extents(black_box(0), black_box(SIZE)).unwrap()))
++        });
++    }
++    for (name, step, reverse) in [
++        ("leaf", 1, false),
++        ("alternating", 2, false),
++        ("fragmented", 2, true),
++        ("zero", 0, false),
++    ] {
++        let mut child = Spec::new(vec![SIZE], 8192, step, 0, 11);
++        child.reverse = reverse;
++        let parent = Spec::new(vec![SIZE], 65536, if step == 0 { 0 } else { 1 }, 0, 99);
++        let f = Fixture::new(vec![child, parent], false);
++        let disk = f.disk();
++        let mut buffer = vec![0; SIZE as usize];
++        disk.read_exact_at(0, &mut buffer).unwrap();
++        assert_eq!(buffer, f.oracle(0, buffer.len()));
++        group.bench_function(format!("read_{name}_1m"), |b| {
++            b.iter(|| {
++                disk.read_exact_at(black_box(0), black_box(&mut buffer))
++                    .unwrap();
++                black_box(&buffer);
++            })
++        });
++    }
++    group.finish();
++}
++criterion_group!(benches, bench);
++criterion_main!(benches);
+diff --git a/crates/rvvdk-vmdk/examples/dump_chain.rs b/crates/rvvdk-vmdk/examples/dump_chain.rs
+new file mode 100644
+index 0000000..db5f36d
+--- /dev/null
++++ b/crates/rvvdk-vmdk/examples/dump_chain.rs
+@@ -0,0 +1,45 @@
++//! Full logical-byte reference helper; public CLI parent support is separate.
++#[path = "support/chain.rs"]
++mod support;
++#[cfg(target_os = "linux")]
++fn main() -> Result<(), Box<dyn std::error::Error>> {
++    use rvvdk_core::VirtualDisk;
++    use rvvdk_vmdk::SparseChainDisk;
++    use std::io::{Seek, SeekFrom, Write};
++    let args: Vec<_> = std::env::args_os().skip(1).collect();
++    if args.len() != 2 {
++        return Err("usage: dump_chain LEAF_DESCRIPTOR_OR_CONTAINER NEW_RAW_OUTPUT".into());
++    }
++    let disk = SparseChainDisk::new(support::load(&args[0])?);
++    disk.revalidate()?;
++    let mut output = std::fs::File::options()
++        .write(true)
++        .create_new(true)
++        .open(&args[1])?;
++    output.set_len(disk.size())?;
++    let mut bytes = vec![0; 65537];
++    let mut offset = 0;
++    while offset < disk.size() {
++        let n = (disk.size() - offset).min(bytes.len() as u64) as usize;
++        disk.read_exact_at(offset, &mut bytes[..n])?;
++        if bytes[..n].iter().any(|&b| b != 0) {
++            output.seek(SeekFrom::Start(offset))?;
++            output.write_all(&bytes[..n])?;
++        }
++        offset += n as u64;
++    }
++    disk.revalidate()?;
++    output.sync_all()?;
++    println!(
++        "{{\"size_bytes\":{},\"layers\":{},\"logical_extents\":{}}}",
++        disk.size(),
++        disk.chain().layers().len(),
++        disk.extents(0, disk.size())?.len()
++    );
++    Ok(())
++}
++#[cfg(not(target_os = "linux"))]
++fn main() {
++    eprintln!("local chain qualification requires Linux");
++    std::process::exit(1);
++}
+diff --git a/crates/rvvdk-vmdk/examples/support/chain.rs b/crates/rvvdk-vmdk/examples/support/chain.rs
+new file mode 100644
+index 0000000..afb3135
+--- /dev/null
++++ b/crates/rvvdk-vmdk/examples/support/chain.rs
+@@ -0,0 +1,62 @@
++//! Confined, same-directory fixture acquisition; not public CLI policy.
++#[cfg(target_os = "linux")]
++pub fn load(
++    path: impl AsRef<std::path::Path>,
++) -> Result<rvvdk_vmdk::SparseChain, Box<dyn std::error::Error>> {
++    use rvvdk_core::{BlockDevice, EndpointIdentity};
++    use rvvdk_local::LocalFileBlockDevice;
++    use rvvdk_vmdk::{
++        BackingError, ChainEntry, LocalResolver, ParentResolver, SparseChain, SparseChainLimits,
++        SparseChainSource,
++    };
++    use std::{fs::File, path::Path, sync::Arc};
++    struct Policy(Arc<LocalResolver>);
++    impl Policy {
++        fn source(&self, file: File) -> Result<SparseChainSource, BackingError> {
++            let descriptor = Arc::new(
++                LocalFileBlockDevice::from_buffered_file(file).map_err(BackingError::Adopt)?,
++            );
++            let mut magic = [0; 4];
++            descriptor
++                .read_exact_at(0, &mut magic)
++                .map_err(BackingError::Adopt)?;
++            Ok(SparseChainSource {
++                descriptor,
++                backings: self.0.clone(),
++                entry: if magic == *b"KDMV" {
++                    ChainEntry::Embedded
++                } else {
++                    ChainEntry::External
++                },
++            })
++        }
++    }
++    impl ParentResolver for Policy {
++        fn resolve_parent(
++            &self,
++            _: EndpointIdentity,
++            hint: &str,
++        ) -> Result<Option<SparseChainSource>, BackingError> {
++            if hint.contains('/') {
++                return Err(BackingError::UnsafeReference);
++            }
++            let file = match self.0.open_regular(hint) {
++                Ok(file) => file,
++                Err(BackingError::Io { source, .. })
++                    if source.kind() == std::io::ErrorKind::NotFound =>
++                {
++                    return Ok(None);
++                }
++                Err(e) => return Err(e),
++            };
++            self.source(file).map(Some)
++        }
++    }
++    let (file, resolver) = LocalResolver::open_descriptor_file(Path::new(path.as_ref()))?;
++    let policy = Policy(Arc::new(resolver));
++    Ok(SparseChain::load(
++        policy.source(file)?,
++        &policy,
++        SparseChainLimits::default(),
++    )?)
++}
+diff --git a/crates/rvvdk-vmdk/src/chain_disk.rs b/crates/rvvdk-vmdk/src/chain_disk.rs
+new file mode 100644
+index 0000000..d93ea03
+--- /dev/null
++++ b/crates/rvvdk-vmdk/src/chain_disk.rs
+@@ -0,0 +1,218 @@
++//! Logical reads from a validated, quiescent sparse chain.
++use crate::{SparseChain, SparseChainError, SparseMetadata};
++use rvvdk_core::{
++    Capabilities, CopyEndpoint, DiskGeometry, DiskRange, Error, Extent, ExtentKind, Result,
++    VirtualDisk,
++};
++
++#[derive(Clone, Copy, Debug)]
++pub struct SparseChainDiskLimits {
++    /// Maximum coalesced logical entries returned by one extents() query.
++    pub output_extents: usize,
++}
++impl Default for SparseChainDiskLimits {
++    fn default() -> Self {
++        Self {
++            output_extents: 65536,
++        }
++    }
++}
++/// Read-only sparse chain. Keep every source quiescent and revalidate before read
++/// sessions. Endpoint observations do not provide snapshot consistency.
++pub struct SparseChainDisk {
++    chain: SparseChain,
++    limits: SparseChainDiskLimits,
++}
++#[derive(Clone, Copy)]
++struct Run<'a> {
++    offset: u64,
++    length: u64,
++    data: Option<(&'a SparseMetadata, u64)>,
++}
++impl SparseChainDisk {
++    pub fn new(chain: SparseChain) -> Self {
++        Self::with_limits(chain, SparseChainDiskLimits::default())
++    }
++    pub fn with_limits(chain: SparseChain, limits: SparseChainDiskLimits) -> Self {
++        Self { chain, limits }
++    }
++    pub fn chain(&self) -> &SparseChain {
++        &self.chain
++    }
++    pub fn revalidate(&self) -> std::result::Result<(), SparseChainError> {
++        self.chain.revalidate()
++    }
++    fn range(&self, offset: u64, length: u64) -> Result<DiskRange> {
++        let range = DiskRange::new(offset, length)?;
++        if range.end() > self.size() {
++            return Err(Error::OutOfBounds {
++                offset,
++                length,
++                size: self.size(),
++            });
++        }
++        Ok(range)
++    }
++    /// Clip at every consulted child/ancestor boundary. A larger parent grain
++    /// must never hide an allocated child grain just beyond the current position.
++    fn resolve(&self, pos: u64, end: u64) -> Run<'_> {
++        let mut stop = end;
++        for layer in self.chain.layers() {
++            let maps = layer.metadata();
++            let index =
++                maps.partition_point(|m| m.logical_offset() + m.header().capacity_bytes() <= pos);
++            let m = &maps[index]; // validated layers cover the same nonempty capacity
++            let local = pos - m.logical_offset();
++            let grain = m.header().grain_bytes();
++            let index = (local / grain) as usize;
++            stop = stop.min(m.logical_offset() + (index as u64 + 1) * grain);
++            let entry = m.grain_sectors()[index];
++            if entry != 0 {
++                return Run {
++                    offset: pos,
++                    length: stop - pos,
++                    data: Some((m, u64::from(entry) * 512 + local % grain)),
++                };
++            }
++        }
++        Run {
++            offset: pos,
++            length: stop - pos,
++            data: None,
++        }
++    }
++    /// Constant auxiliary space; coalesce only the same retained map and adjacent
++    /// physical bytes, or adjacent fully resolved zero ranges.
++    fn runs(&self, range: DiskRange, mut visit: impl FnMut(Run<'_>) -> Result<()>) -> Result<()> {
++        let mut pos = range.offset();
++        let mut pending: Option<Run<'_>> = None;
++        while pos < range.end() {
++            let next = self.resolve(pos, range.end());
++            pos += next.length;
++            if let Some(previous) = pending.as_mut() {
++                let adjacent = match (previous.data, next.data) {
++                    (None, None) => true,
++                    (Some((a, offset)), Some((b, next_offset))) => {
++                        std::ptr::eq(a, b) && offset + previous.length == next_offset
++                    }
++                    _ => false,
++                };
++                if adjacent {
++                    previous.length += next.length;
++                    continue;
++                }
++                visit(*previous)?;
++            }
++            pending = Some(next);
++        }
++        if let Some(run) = pending {
++            visit(run)?;
++        }
++        Ok(())
++    }
++}
++impl VirtualDisk for SparseChainDisk {
++    fn geometry(&self) -> DiskGeometry {
++        DiskGeometry::new(self.chain.layers()[0].size_bytes(), 512, 512)
++            .expect("validated sector geometry")
++    }
++    fn capabilities(&self) -> Capabilities {
++        Capabilities::READ | Capabilities::EXTENTS | Capabilities::SPARSE
++    }
++    fn copy_endpoint(&self) -> Result<CopyEndpoint> {
++        self.revalidate()
++            .map_err(|e| Error::EndpointChanged(e.to_string()))?;
++        Ok(CopyEndpoint {
++            size: self.size(),
++            capabilities: self.capabilities(),
++            identity: None,
++        })
++    }
++    fn validate_destination_identity(&self, destination: CopyEndpoint) -> Result<()> {
++        self.revalidate()
++            .map_err(|e| Error::EndpointChanged(e.to_string()))?;
++        let id = destination.identity.ok_or(Error::InvalidEndpoint {
++            reason: "chain destination identity is unknown",
++        })?;
++        for layer in self.chain.layers() {
++            if layer.descriptor_endpoint().identity == Some(id)
++                || layer
++                    .metadata()
++                    .iter()
++                    .any(|m| m.initial_endpoint().identity == Some(id))
++            {
++                return Err(Error::AliasedEndpoints);
++            }
++        }
++        Ok(())
++    }
++    fn read_at(&self, offset: u64, buffer: &mut [u8]) -> Result<usize> {
++        let length = u64::try_from(buffer.len()).map_err(|_| Error::RangeOverflow {
++            offset,
++            length: u64::MAX,
++        })?;
++        self.runs(self.range(offset, length)?, |run| {
++            let start = (run.offset - offset) as usize;
++            let out = &mut buffer[start..start + run.length as usize];
++            match run.data {
++                Some((map, physical)) => map.read_physical(physical, out)?,
++                None => out.fill(0),
++            };
++            Ok(())
++        })?;
++        Ok(buffer.len())
++    }
++    fn extents(&self, offset: u64, length: u64) -> Result<Vec<Extent>> {
++        let range = self.range(offset, length)?;
++        let mut previous = None;
++        let mut count = 0usize;
++        self.runs(range, |run| {
++            let data = run.data.is_some();
++            if previous != Some(data) {
++                if count == self.limits.output_extents {
++                    return Err(Error::InvalidEndpoint {
++                        reason: "chain output extent limit",
++                    });
++                }
++                count += 1;
++                previous = Some(data);
++            }
++            Ok(())
++        })?;
++        let bytes = count
++            .checked_mul(std::mem::size_of::<Extent>())
++            .ok_or(Error::MemoryAccountingOverflow)?;
++        let mut out: Vec<Extent> = Vec::new();
++        out.try_reserve_exact(count)
++            .map_err(|_| Error::BufferAllocation {
++                size: bytes,
++                alignment: std::mem::align_of::<Extent>(),
++            })?;
++        self.runs(range, |run| {
++            let kind = if run.data.is_some() {
++                ExtentKind::Data
++            } else {
++                ExtentKind::Zero
++            };
++            if let Some(last) = out.last_mut().filter(|last| last.kind() == kind) {
++                *last = Extent::new(last.offset(), run.offset + run.length - last.offset(), kind)?;
++            } else {
++                out.push(Extent::new(run.offset, run.length, kind)?);
++            }
++            Ok(())
++        })?;
++        Ok(out)
++    }
++    fn write_at(&self, _: u64, _: &[u8]) -> Result<usize> {
++        Err(Error::Unsupported)
++    }
++    fn write_zero_at(&self, _: u64, _: u64) -> Result<()> {
++        Err(Error::Unsupported)
++    }
++    fn discard(&self, _: u64, _: u64) -> Result<()> {
++        Err(Error::Unsupported)
++    }
++    fn flush(&self) -> Result<()> {
++        Err(Error::Unsupported)
++    }
++}
+diff --git a/crates/rvvdk-vmdk/tests/chain_disk.rs b/crates/rvvdk-vmdk/tests/chain_disk.rs
+new file mode 100644
+index 0000000..2280341
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/chain_disk.rs
+@@ -0,0 +1,296 @@
++#[path = "support/chain_disk.rs"]
++#[allow(dead_code)]
++mod f;
++use f::{Fixture, Spec};
++use rvvdk_core::{
++    BlockDevice, Capabilities, Error, ExtentKind, MemoryBlockDevice, RawDisk, VirtualDisk,
++};
++use rvvdk_datamover::{CopyOptions, DataMover, Verifier};
++use rvvdk_vmdk::{SparseChainDisk, SparseChainDiskLimits};
++use std::sync::atomic::Ordering;
++const SIZE: u64 = 262144;
++fn mixed() -> Fixture {
++    Fixture::new(
++        vec![
++            Spec::new(vec![SIZE / 2, SIZE / 2], 8192, 3, 1, 11),
++            Spec::new(vec![SIZE], 65536, 2, 0, 71),
++            Spec::new(vec![SIZE], 16384, 2, 1, 131),
++        ],
++        true,
++    )
++}
++#[test]
++fn different_grains_and_extent_boundaries_match_independent_oracle() {
++    for child in [8192, 16384, 65536] {
++        for parent in [8192, 32768, 65536] {
++            let mut b = Spec::new(vec![SIZE], parent, 2, 1, 173);
++            b.reverse = true;
++            let f = Fixture::new(
++                vec![Spec::new(vec![SIZE / 2, SIZE / 2], child, 3, 1, 13), b],
++                true,
++            );
++            let d = f.disk();
++            let mut seed = 0x525637u64;
++            for offset in [0, 1, child - 1, parent - 1, SIZE / 2 - 1, SIZE - 1]
++                .into_iter()
++                .chain((0..32).map(|_| {
++                    seed ^= seed << 13;
++                    seed ^= seed >> 7;
++                    seed ^= seed << 17;
++                    seed % SIZE
++                }))
++            {
++                let len = (SIZE - offset).min(65537) as usize;
++                let mut bytes = vec![0; len];
++                d.read_exact_at(offset, &mut bytes).unwrap();
++                assert_eq!(bytes, f.oracle(offset, len));
++                let e = d.extents(offset, len as u64).unwrap();
++                let mut next = offset;
++                for entry in e {
++                    assert_eq!(entry.offset(), next);
++                    assert!(entry.length() > 0);
++                    for pos in entry.offset()..entry.end() {
++                        let data = f
++                            .specs
++                            .iter()
++                            .any(|s| s.allocated[(pos / s.grain) as usize]);
++                        assert_eq!(
++                            entry.kind(),
++                            if data {
++                                ExtentKind::Data
++                            } else {
++                                ExtentKind::Zero
++                            }
++                        );
++                    }
++                    next = entry.end();
++                }
++                assert_eq!(next, offset + len as u64);
++            }
++        }
++    }
++}
++#[test]
++fn leaf_overrides_parent_and_zero_allocated_bytes_do_not_fall_through() {
++    let f = Fixture::new(
++        vec![
++            Spec::new(vec![SIZE], 8192, 2, 1, 1),
++            Spec::new(vec![SIZE], 65536, 1, 0, 99),
++        ],
++        true,
++    );
++    let d = f.disk();
++    let map = &d.chain().layers()[0].metadata()[0];
++    let physical = u64::from(map.grain_sectors()[1]) * 512;
++    f.layers[0].backings[0]
++        .inner
++        .write_all_at(physical, &[0; 8192])
++        .unwrap();
++    let mut b = vec![9; 16384];
++    d.read_exact_at(0, &mut b).unwrap();
++    assert_eq!(&b[..8192], &f.oracle(0, 8192));
++    assert_eq!(&b[8192..], &[0; 8192]);
++    assert_eq!(d.extents(0, 16384).unwrap()[0].kind(), ExtentKind::Data);
++}
++#[test]
++fn sixteen_layer_fallback_zero_and_leaf_short_circuit() {
++    for depth in [1, 4, 16] {
++        for base in [false, true] {
++            let mut specs = vec![Spec::new(vec![SIZE], 8192, 0, 0, 1); depth];
++            if base {
++                specs[depth - 1] = Spec::new(vec![SIZE], 65536, 1, 0, 101);
++            }
++            let f = Fixture::new(specs, true);
++            let d = f.disk();
++            f.reset();
++            let mut bytes = vec![9; SIZE as usize];
++            d.read_exact_at(0, &mut bytes).unwrap();
++            assert_eq!(bytes, f.oracle(0, bytes.len()));
++            assert_eq!(f.reads(), usize::from(base));
++        }
++    }
++    let f = Fixture::new(
++        vec![
++            Spec::new(vec![SIZE], 8192, 1, 0, 1),
++            Spec::new(vec![SIZE], 65536, 1, 0, 99),
++        ],
++        true,
++    );
++    let d = f.disk();
++    f.reset();
++    f.layers[1].backings[0].mode.store(2, Ordering::Relaxed);
++    d.read_exact_at(0, &mut [0; 8192]).unwrap();
++    assert_eq!(f.layers[1].backings[0].calls.load(Ordering::Relaxed), 0);
++}
++#[test]
++fn coalesces_only_physically_adjacent_runs_in_one_backing() {
++    for reverse in [false, true] {
++        let mut s = Spec::new(vec![SIZE], 8192, 1, 0, 10);
++        s.reverse = reverse;
++        let f = Fixture::new(vec![s], true);
++        let d = f.disk();
++        f.reset();
++        let mut b = vec![0; SIZE as usize];
++        d.read_exact_at(0, &mut b).unwrap();
++        assert_eq!(b, f.oracle(0, b.len()));
++        assert_eq!(f.reads(), if reverse { 32 } else { 1 });
++        assert_eq!(d.extents(0, SIZE).unwrap().len(), 1);
++    }
++    let f = Fixture::new(
++        vec![Spec::new(vec![SIZE / 2, SIZE / 2], 8192, 1, 0, 1)],
++        true,
++    );
++    let d = f.disk();
++    f.reset();
++    d.read_exact_at(0, &mut vec![0; SIZE as usize]).unwrap();
++    assert_eq!(f.reads(), 2);
++    assert_eq!(d.extents(0, SIZE).unwrap().len(), 1);
++}
++#[test]
++fn range_errors_and_empty_operations_do_not_touch_backings() {
++    let f = mixed();
++    let d = f.disk();
++    f.reset();
++    assert_eq!(d.read_at(SIZE, &mut []).unwrap(), 0);
++    assert!(d.extents(SIZE, 0).unwrap().is_empty());
++    assert!(d.read_at(SIZE, &mut [0]).is_err());
++    assert!(d.read_at(SIZE + 1, &mut []).is_err());
++    assert!(d.extents(u64::MAX, 2).is_err());
++    assert_eq!(f.reads(), 0);
++}
++#[test]
++fn output_limit_counts_resolved_kinds_not_layer_switches() {
++    let f = Fixture::new(
++        vec![
++            Spec::new(vec![SIZE], 8192, 2, 0, 1),
++            Spec::new(vec![SIZE], 8192, 2, 1, 2),
++        ],
++        true,
++    );
++    let d = SparseChainDisk::with_limits(f.chain(), SparseChainDiskLimits { output_extents: 1 });
++    f.reset();
++    assert_eq!(d.extents(0, SIZE).unwrap().len(), 1);
++    assert_eq!(f.reads(), 0);
++    let f = Fixture::new(vec![Spec::new(vec![SIZE], 8192, 2, 0, 1)], true);
++    let d = SparseChainDisk::with_limits(f.chain(), SparseChainDiskLimits { output_extents: 31 });
++    assert!(d.extents(0, SIZE).is_err());
++    assert_eq!(d.extents(0, 8192).unwrap().len(), 1);
++    assert!(d.read_at(0, &mut [0; 9]).is_ok());
++    let d = SparseChainDisk::with_limits(f.chain(), SparseChainDiskLimits { output_extents: 32 });
++    assert_eq!(d.extents(0, SIZE).unwrap().len(), 32);
++    let d = SparseChainDisk::with_limits(f.chain(), SparseChainDiskLimits { output_extents: 0 });
++    assert!(d.extents(0, 0).unwrap().is_empty());
++    assert!(d.extents(0, 1).is_err());
++}
++#[test]
++fn all_descriptors_and_backings_reject_destination_aliases() {
++    let f = mixed();
++    let d = f.disk();
++    for layer in &f.layers {
++        for source in std::iter::once(&layer.descriptor).chain(&layer.backings) {
++            assert!(matches!(
++                d.validate_destination_identity(source.copy_endpoint().unwrap()),
++                Err(Error::AliasedEndpoints)
++            ));
++        }
++    }
++    let dst = MemoryBlockDevice::new(SIZE as usize).unwrap();
++    d.validate_destination_identity(dst.copy_endpoint().unwrap())
++        .unwrap();
++    let mut endpoint = dst.copy_endpoint().unwrap();
++    endpoint.identity = None;
++    assert!(d.validate_destination_identity(endpoint).is_err());
++}
++#[test]
++fn endpoint_changes_reject_copy_preflight() {
++    for mode in [8, 16] {
++        let f = mixed();
++        let d = f.disk();
++        f.layers[2].backings[0].mode.store(mode, Ordering::Relaxed);
++        assert!(d.copy_endpoint().is_err());
++        assert!(
++            d.validate_destination_identity(
++                MemoryBlockDevice::new(1).unwrap().copy_endpoint().unwrap()
++            )
++            .is_err()
++        );
++    }
++    let f = mixed();
++    let d = f.disk();
++    f.layers[1].descriptor.mode.store(16, Ordering::Relaxed);
++    assert!(d.revalidate().is_err());
++}
++#[test]
++fn short_reads_retry_and_parent_errors_propagate() {
++    for mode in [1, 2, 4] {
++        let f = Fixture::new(
++            vec![
++                Spec::new(vec![SIZE], 8192, 0, 0, 1),
++                Spec::new(vec![SIZE], 65536, 1, 0, 33),
++            ],
++            true,
++        );
++        let d = f.disk();
++        f.layers[1].backings[0].mode.store(mode, Ordering::Relaxed);
++        let mut b = [0; 97];
++        let result = d.read_exact_at(3, &mut b);
++        if mode == 4 {
++            result.unwrap();
++            assert_eq!(b.as_slice(), f.oracle(3, 97));
++        } else {
++            assert!(result.is_err());
++        }
++    }
++}
++#[test]
++fn readonly_capabilities_and_retained_handles() {
++    let f = mixed();
++    let d = f.disk();
++    let expected = f.oracle(0, 97);
++    drop(f);
++    d.revalidate().unwrap();
++    let mut b = [0; 97];
++    d.read_exact_at(0, &mut b).unwrap();
++    assert_eq!(b.as_slice(), expected);
++    assert_eq!(
++        d.capabilities(),
++        Capabilities::READ | Capabilities::SPARSE | Capabilities::EXTENTS
++    );
++    assert!(d.copy_endpoint().unwrap().identity.is_none());
++    assert!(d.write_at(0, &[1]).is_err());
++    assert!(d.write_zero_at(0, 1).is_err());
++    assert!(d.discard(0, 1).is_err());
++    assert!(d.flush().is_err());
++}
++#[test]
++fn threaded_copy_and_verification_match_resolved_oracle() {
++    let f = mixed();
++    let d = f.disk();
++    let dst = RawDisk::new(MemoryBlockDevice::new(SIZE as usize).unwrap());
++    let mover = DataMover::new(CopyOptions::with_concurrency(65536, 4096, 4).unwrap());
++    mover.copy(&d, &dst).unwrap();
++    Verifier::new(SIZE, 65537, 131074)
++        .unwrap()
++        .verify(&d, &dst)
++        .unwrap();
++    let mut b = vec![0; SIZE as usize];
++    dst.read_exact_at(0, &mut b).unwrap();
++    assert_eq!(b, f.oracle(0, b.len()));
++}
++
++#[test]
++fn read_error_can_leave_a_completed_prefix_without_fallback_to_older_data() {
++    let f = Fixture::new(
++        vec![
++            Spec::new(vec![SIZE], 8192, 2, 0, 11),
++            Spec::new(vec![SIZE], 65536, 1, 0, 71),
++        ],
++        true,
++    );
++    let d = f.disk();
++    f.layers[1].backings[0].mode.store(2, Ordering::Relaxed);
++    let mut b = [0xcc; 16384];
++    assert!(d.read_at(0, &mut b).is_err());
++    assert_eq!(&b[..8192], f.oracle(0, 8192));
++    assert_eq!(&b[8192..], &[0xcc; 8192]);
++}
+diff --git a/crates/rvvdk-vmdk/tests/support/chain_disk.rs b/crates/rvvdk-vmdk/tests/support/chain_disk.rs
+new file mode 100644
+index 0000000..8af4eb1
+--- /dev/null
++++ b/crates/rvvdk-vmdk/tests/support/chain_disk.rs
+@@ -0,0 +1,242 @@
++//! Authored layered byte oracle, independent of production map traversal.
++#[path = "sparse_scale.rs"]
++mod layout;
++use rvvdk_core::{
++    BlockDevice, Capabilities, CopyEndpoint, DiskGeometry, EndpointIdentity, MemoryBlockDevice,
++    Result,
++};
++use rvvdk_vmdk::{
++    BackingError, BackingResolver, ChainEntry, ParentResolver, SparseChain, SparseChainDisk,
++    SparseChainLimits, SparseChainSource,
++};
++use std::sync::{
++    Arc,
++    atomic::{AtomicUsize, Ordering},
++};
++pub struct Device {
++    pub inner: MemoryBlockDevice,
++    pub calls: AtomicUsize,
++    pub mode: AtomicUsize,
++    pub track: bool,
++}
++impl Device {
++    pub fn new(bytes: &[u8], track: bool) -> Arc<Self> {
++        let inner = MemoryBlockDevice::new(bytes.len()).unwrap();
++        inner.write_all_at(0, bytes).unwrap();
++        Arc::new(Self {
++            inner,
++            calls: AtomicUsize::new(0),
++            mode: AtomicUsize::new(0),
++            track,
++        })
++    }
++}
++impl BlockDevice for Device {
++    fn geometry(&self) -> DiskGeometry {
++        self.inner.geometry()
++    }
++    fn capabilities(&self) -> Capabilities {
++        Capabilities::READ
++    }
++    fn copy_endpoint(&self) -> Result<CopyEndpoint> {
++        let mut e = self.inner.copy_endpoint()?;
++        e.capabilities = self.capabilities();
++        let m = self.mode.load(Ordering::Relaxed);
++        if m & 8 != 0 {
++            e.identity = None;
++        }
++        if m & 16 != 0 {
++            e.size += 512;
++        }
++        Ok(e)
++    }
++    fn read_at(&self, o: u64, b: &mut [u8]) -> Result<usize> {
++        if self.track {
++            self.calls.fetch_add(1, Ordering::Relaxed);
++        }
++        let mode = self.mode.load(Ordering::Relaxed);
++        if mode & 1 != 0 {
++            return Ok(0);
++        }
++        if mode & 2 != 0 {
++            return Err(rvvdk_core::Error::Unsupported);
++        }
++        let n = if mode & 4 != 0 {
++            b.len().min(7)
++        } else {
++            b.len()
++        };
++        self.inner.read_at(o, &mut b[..n])
++    }
++    fn write_at(&self, _: u64, _: &[u8]) -> Result<usize> {
++        panic!("source write")
++    }
++    fn flush(&self) -> Result<()> {
++        panic!("source flush")
++    }
++}
++#[derive(Clone)]
++pub struct Spec {
++    pub lengths: Vec<u64>,
++    pub grain: u64,
++    pub allocated: Vec<bool>,
++    pub reverse: bool,
++    pub salt: u8,
++}
++impl Spec {
++    pub fn new(lengths: Vec<u64>, grain: u64, step: usize, phase: usize, salt: u8) -> Self {
++        let n = lengths.iter().sum::<u64>() / grain;
++        Self {
++            lengths,
++            grain,
++            allocated: (0..n as usize)
++                .map(|i| step != 0 && i % step == phase)
++                .collect(),
++            reverse: false,
++            salt,
++        }
++    }
++    pub fn byte(&self, pos: u64) -> u8 {
++        self.salt.wrapping_add((pos % 251) as u8)
++    }
++}
++struct Backings(Vec<Arc<Device>>);
++impl BackingResolver for Backings {
++    fn resolve(&self, n: &str) -> std::result::Result<Arc<dyn BlockDevice>, BackingError> {
++        let i = n
++            .strip_prefix("extent")
++            .unwrap()
++            .strip_suffix(".vmdk")
++            .unwrap()
++            .parse::<usize>()
++            .unwrap();
++        Ok(self.0[i].clone())
++    }
++}
++pub struct Layer {
++    pub source: SparseChainSource,
++    pub descriptor: Arc<Device>,
++    pub backings: Vec<Arc<Device>>,
++}
++pub struct Fixture {
++    pub specs: Vec<Spec>,
++    pub layers: Vec<Layer>,
++}
++impl Fixture {
++    pub fn new(specs: Vec<Spec>, track: bool) -> Self {
++        let layers = specs
++            .iter()
++            .enumerate()
++            .map(|(depth, spec)| {
++                let parent = if depth + 1 == specs.len() {
++                    "parentCID=ffffffff\n".to_owned()
++                } else {
++                    format!(
++                        "parentCID={:08x}\nparentFileNameHint=\"parent.vmdk\"\n",
++                        depth + 2
++                    )
++                };
++                let mut text = format!(
++                    "version=1\nCID={:08x}\n{parent}createType=\"twoGbMaxExtentSparse\"\n",
++                    depth + 1
++                );
++                for (i, len) in spec.lengths.iter().enumerate() {
++                    text += &format!("RW {} SPARSE \"extent{i}.vmdk\"\n", len / 512);
++                }
++                let mut logical = 0;
++                let backings = spec
++                    .lengths
++                    .iter()
++                    .map(|&length| {
++                        let l = layout::Layout::new(length, spec.grain);
++                        let mut bytes = l.metadata(layout::Pattern::Zero);
++                        bytes.resize((l.overhead + length) as usize, 0);
++                        // Split sparse permits an empty embedded descriptor region.
++                        bytes[512..21 * 512].fill(0);
++                        for i in 0..l.grains {
++                            if spec.allocated[((logical + i * spec.grain) / spec.grain) as usize] {
++                                let slot = if spec.reverse { l.grains - i - 1 } else { i };
++                                let physical = l.overhead + slot * spec.grain;
++                                for start in [l.gt, l.rgt] {
++                                    layout::put32(
++                                        &mut bytes,
++                                        start + i as usize * 4,
++                                        (physical / 512) as u32,
++                                    );
++                                }
++                                for j in 0..spec.grain {
++                                    bytes[(physical + j) as usize] =
++                                        spec.byte(logical + i * spec.grain + j);
++                                }
++                            }
++                        }
++                        logical += length;
++                        Device::new(&bytes, track)
++                    })
++                    .collect::<Vec<_>>();
++                let descriptor = Device::new(text.as_bytes(), track);
++                Layer {
++                    source: SparseChainSource {
++                        descriptor: descriptor.clone(),
++                        backings: Arc::new(Backings(backings.clone())),
++                        entry: ChainEntry::External,
++                    },
++                    descriptor,
++                    backings,
++                }
++            })
++            .collect();
++        Self { specs, layers }
++    }
++    pub fn chain(&self) -> SparseChain {
++        SparseChain::load(
++            self.layers[0].source.clone(),
++            self,
++            SparseChainLimits::default(),
++        )
++        .unwrap()
++    }
++    pub fn disk(&self) -> SparseChainDisk {
++        SparseChainDisk::new(self.chain())
++    }
++    pub fn oracle(&self, offset: u64, len: usize) -> Vec<u8> {
++        (offset..offset + len as u64)
++            .map(|pos| {
++                self.specs
++                    .iter()
++                    .find(|s| s.allocated[(pos / s.grain) as usize])
++                    .map_or(0, |s| s.byte(pos))
++            })
++            .collect()
++    }
++    pub fn reset(&self) {
++        for l in &self.layers {
++            l.descriptor.calls.store(0, Ordering::Relaxed);
++            for b in &l.backings {
++                b.calls.store(0, Ordering::Relaxed);
++            }
++        }
++    }
++    pub fn reads(&self) -> usize {
++        self.layers
++            .iter()
++            .flat_map(|l| &l.backings)
++            .map(|d| d.calls.load(Ordering::Relaxed))
++            .sum()
++    }
++}
++impl ParentResolver for Fixture {
++    fn resolve_parent(
++        &self,
++        c: EndpointIdentity,
++        h: &str,
++    ) -> std::result::Result<Option<SparseChainSource>, BackingError> {
++        assert_eq!(h, "parent.vmdk");
++        let i = self
++            .layers
++            .iter()
++            .position(|l| l.descriptor.copy_endpoint().unwrap().identity == Some(c))
++            .unwrap();
++        Ok(self.layers.get(i + 1).map(|l| l.source.clone()))
++    }
++}

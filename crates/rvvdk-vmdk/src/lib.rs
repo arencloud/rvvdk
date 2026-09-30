@@ -41,3 +41,6 @@ pub use chain::{
     ChainEntry, ParentResolver, SparseChain, SparseChainError, SparseChainLayer, SparseChainLimits,
     SparseChainSource,
 };
+
+mod chain_disk;
+pub use chain_disk::{SparseChainDisk, SparseChainDiskLimits};

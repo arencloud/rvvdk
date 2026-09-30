@@ -1,0 +1,1059 @@
+{
+  "directory": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified",
+  "helper_sha256": "7b631172bea07c5ce5a0b77d4e47b8b9294b268f8c9e9bfd423ca100051328d0",
+  "cli_sha256": "536a1b73425c639194ed8fe3d139ed1b9d72cfa4bb7ec7fcd6fdf7061e375877",
+  "qemu_sha256": "4362e911c13bb90e39b69479462cd4adb840749b582f4892ca114eb7e94dcf2e",
+  "qemu_io_sha256": "628a2c8566346bc9bc9fa9610d7245f3f18ef2a80f54caf2c3ad501b3576da11",
+  "generator_sha256": "46d3a4b00bc468a44834b89db5e90677590cfa3b1a701b0f93b46916e31eacae",
+  "cases": [
+    {
+      "name": "mono",
+      "report": {
+        "size_bytes": 1048576,
+        "layers": 3,
+        "logical_extents": 3
+      },
+      "raw_sha256": "ef21e0a5ced0251b774a4cd8b7108786de7fc352b09638117ffa45b19f788c52",
+      "writes": [
+        [
+          [
+            32768,
+            512,
+            119
+          ],
+          [
+            65024,
+            1024,
+            136
+          ]
+        ],
+        [
+          [
+            32768,
+            512,
+            0
+          ],
+          [
+            131072,
+            512,
+            153
+          ]
+        ]
+      ],
+      "source_unchanged": true,
+      "public_cli_rejects_parent": true
+    },
+    {
+      "name": "split",
+      "report": {
+        "size_bytes": 1048576,
+        "layers": 3,
+        "logical_extents": 3
+      },
+      "raw_sha256": "ef21e0a5ced0251b774a4cd8b7108786de7fc352b09638117ffa45b19f788c52",
+      "writes": [
+        [
+          [
+            32768,
+            512,
+            119
+          ],
+          [
+            65024,
+            1024,
+            136
+          ]
+        ],
+        [
+          [
+            32768,
+            512,
+            0
+          ],
+          [
+            131072,
+            512,
+            153
+          ]
+        ]
+      ],
+      "source_unchanged": true,
+      "public_cli_rejects_parent": true
+    },
+    {
+      "name": "mixed",
+      "report": {
+        "size_bytes": 4194304,
+        "layers": 3,
+        "logical_extents": 3
+      },
+      "raw_sha256": "014d6ba95852f6bc8fc6195e5fca606f1aba227032b63fa6142887f623342242",
+      "writes": [
+        [
+          [
+            32768,
+            512,
+            119
+          ],
+          [
+            65024,
+            1024,
+            136
+          ]
+        ],
+        [
+          [
+            32768,
+            512,
+            0
+          ],
+          [
+            131072,
+            512,
+            153
+          ]
+        ]
+      ],
+      "source_unchanged": true,
+      "public_cli_rejects_parent": true
+    },
+    {
+      "name": "multi-split",
+      "report": {
+        "size_bytes": 2147549184,
+        "layers": 3,
+        "logical_extents": 3
+      },
+      "raw_sha256": "2a7d265f1b5c7d89dc107b3f653ceb40af5ab93027fea0d81d99d501c46076ce",
+      "writes": [
+        [
+          [
+            32768,
+            512,
+            119
+          ],
+          [
+            65024,
+            1024,
+            136
+          ],
+          [
+            2147417600,
+            1024,
+            161
+          ]
+        ],
+        [
+          [
+            32768,
+            512,
+            0
+          ],
+          [
+            131072,
+            512,
+            153
+          ],
+          [
+            2147483136,
+            1024,
+            178
+          ],
+          [
+            2147483648,
+            65536,
+            178
+          ]
+        ]
+      ],
+      "source_unchanged": true,
+      "public_cli_rejects_parent": true
+    }
+  ],
+  "files": {
+    "mixed/layer0.vmdk": {
+      "bytes": 262144,
+      "sha256": "df89e972ad67813379a18e4f839ee73ebb28f4ce8e2fc7fd7d61876a0ac1ca9e"
+    },
+    "mixed/layer1-s001.vmdk": {
+      "bytes": 196608,
+      "sha256": "e17a0057237edd829beaa764b07c89221353646d35dbfd8093aa0dd011580463"
+    },
+    "mixed/layer1.vmdk": {
+      "bytes": 512,
+      "sha256": "84e478e83f441d07ab384287ce38f7bc6dfd2d05a4b4d2d3c6dc617effeb8908"
+    },
+    "mixed/layer2.vmdk": {
+      "bytes": 196608,
+      "sha256": "c696a15e449b33e316e9b761005a35af65f7d3af2bc2cbf1005655fcd180b874"
+    },
+    "mixed/oracle.raw": {
+      "bytes": 4194304,
+      "sha256": "014d6ba95852f6bc8fc6195e5fca606f1aba227032b63fa6142887f623342242"
+    },
+    "mixed/qemu.raw": {
+      "bytes": 4194304,
+      "sha256": "014d6ba95852f6bc8fc6195e5fca606f1aba227032b63fa6142887f623342242"
+    },
+    "mixed/rvddk.raw": {
+      "bytes": 4194304,
+      "sha256": "014d6ba95852f6bc8fc6195e5fca606f1aba227032b63fa6142887f623342242"
+    },
+    "mono/layer0.vmdk": {
+      "bytes": 262144,
+      "sha256": "efaafd927ee6fde7230d9336a18b4f61d65be67b97bec47bded7b8f2c45a5641"
+    },
+    "mono/layer1.vmdk": {
+      "bytes": 196608,
+      "sha256": "d086af40d9f3e8069a96b68bb6e36cede2278a195ca8555e41eae2a21e750591"
+    },
+    "mono/layer2.vmdk": {
+      "bytes": 196608,
+      "sha256": "6f3cc4bcec0ff1bdbb5fb53941cef184c34faf47014bf8bd5359ed78d63ff7eb"
+    },
+    "mono/oracle.raw": {
+      "bytes": 1048576,
+      "sha256": "ef21e0a5ced0251b774a4cd8b7108786de7fc352b09638117ffa45b19f788c52"
+    },
+    "mono/qemu.raw": {
+      "bytes": 1048576,
+      "sha256": "ef21e0a5ced0251b774a4cd8b7108786de7fc352b09638117ffa45b19f788c52"
+    },
+    "mono/rvddk.raw": {
+      "bytes": 1048576,
+      "sha256": "ef21e0a5ced0251b774a4cd8b7108786de7fc352b09638117ffa45b19f788c52"
+    },
+    "multi-split/layer0-s001.vmdk": {
+      "bytes": 589824,
+      "sha256": "c1d2621b5e3f3dec3309eff63180adad313bb48e096c1f78d1c3f62dfea8a02e"
+    },
+    "multi-split/layer0-s002.vmdk": {
+      "bytes": 131072,
+      "sha256": "8691b268bdde76b273ff27b84c05f187dc1c8bab3c4a63f352552426f575a51c"
+    },
+    "multi-split/layer0.vmdk": {
+      "bytes": 512,
+      "sha256": "771d9b9addd1b0127b0dc4b6a575fb6b8b53ef1eca917d395b06d5232711ef04"
+    },
+    "multi-split/layer1-s001.vmdk": {
+      "bytes": 589824,
+      "sha256": "45fdb066a348808a31d00e3a49b5dfcecf8081256bc34d9aeaca42db6cfbf080"
+    },
+    "multi-split/layer1-s002.vmdk": {
+      "bytes": 65536,
+      "sha256": "f37812426ad7bd1e2b3d397e6c395de667d639db3afe69412e92a2f1e72a1e40"
+    },
+    "multi-split/layer1.vmdk": {
+      "bytes": 512,
+      "sha256": "c9d009a7fd9835ab60af398ccf0ded32a23ae9fec6d0f2716bee3d15677c2f87"
+    },
+    "multi-split/layer2-s001.vmdk": {
+      "bytes": 524288,
+      "sha256": "c97813a3f2bb5d95ba5a35b97c54efca3ad10913b99d624da7ac35e6e8917d9f"
+    },
+    "multi-split/layer2-s002.vmdk": {
+      "bytes": 131072,
+      "sha256": "ad8a939a605f39c84de12e95a5e3d06d0b033f45d127e0edadbd757a6de9868f"
+    },
+    "multi-split/layer2.vmdk": {
+      "bytes": 512,
+      "sha256": "81cc90675038b6cd61cebb42b7981f500d26b403854a7ac950fd396c6cb07d62"
+    },
+    "multi-split/oracle.raw": {
+      "bytes": 2147549184,
+      "sha256": "2a7d265f1b5c7d89dc107b3f653ceb40af5ab93027fea0d81d99d501c46076ce"
+    },
+    "multi-split/qemu.raw": {
+      "bytes": 2147549184,
+      "sha256": "2a7d265f1b5c7d89dc107b3f653ceb40af5ab93027fea0d81d99d501c46076ce"
+    },
+    "multi-split/rvddk.raw": {
+      "bytes": 2147549184,
+      "sha256": "2a7d265f1b5c7d89dc107b3f653ceb40af5ab93027fea0d81d99d501c46076ce"
+    },
+    "split/layer0-s001.vmdk": {
+      "bytes": 262144,
+      "sha256": "ca90c76d5144b5b3f17c4f13aea92f78d806c6247241dd5a4d52f445e15c6031"
+    },
+    "split/layer0.vmdk": {
+      "bytes": 512,
+      "sha256": "f6ec0dab4a4c5e3007a5d4261e7f123430baf7dacfed278a3769d8fd24528375"
+    },
+    "split/layer1-s001.vmdk": {
+      "bytes": 196608,
+      "sha256": "dc5a58df2935e9d14b5327b66128786d2f8c88cddf5cadc7273116b1e09ed8da"
+    },
+    "split/layer1.vmdk": {
+      "bytes": 512,
+      "sha256": "47f1dfd5f301c5f0b3303680411072bd5c39a08ce219903e8eee84e36c0c6e6b"
+    },
+    "split/layer2-s001.vmdk": {
+      "bytes": 196608,
+      "sha256": "ae08621e71ff4c9c5227e8a9e6bd8f4d4669931c292886e11fc16d9d1ca1083e"
+    },
+    "split/layer2.vmdk": {
+      "bytes": 512,
+      "sha256": "7d5dd7bcb33602bdb4604e744aeaae5f5a8f541b6f4bb4dc3a139255c6d52650"
+    },
+    "split/oracle.raw": {
+      "bytes": 1048576,
+      "sha256": "ef21e0a5ced0251b774a4cd8b7108786de7fc352b09638117ffa45b19f788c52"
+    },
+    "split/qemu.raw": {
+      "bytes": 1048576,
+      "sha256": "ef21e0a5ced0251b774a4cd8b7108786de7fc352b09638117ffa45b19f788c52"
+    },
+    "split/rvddk.raw": {
+      "bytes": 1048576,
+      "sha256": "ef21e0a5ced0251b774a4cd8b7108786de7fc352b09638117ffa45b19f788c52"
+    }
+  },
+  "commands": [
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "--version"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified",
+      "exit_code": 0,
+      "stdout": "qemu-img version 10.2.2 (qemu-10.2.2-1.fc44)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "--version"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified",
+      "exit_code": 0,
+      "stdout": "qemu-io version 10.2.2 (qemu-10.2.2-1.fc44)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mono/oracle.raw",
+        "layer0.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mono",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "-b",
+        "layer0.vmdk",
+        "-F",
+        "vmdk",
+        "layer1.vmdk",
+        "1048576"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mono",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer1.vmdk', fmt=vmdk size=1048576 backing_file=layer0.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=monolithicSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 119 32768 512",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mono",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 32768\n512 bytes, 1 ops; 00.02 sec (24.651 KiB/sec and 49.3026 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 136 65024 1024",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mono",
+      "exit_code": 0,
+      "stdout": "wrote 1024/1024 bytes at offset 65024\n1 KiB, 1 ops; 00.02 sec (52.191 KiB/sec and 52.1911 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "-b",
+        "layer1.vmdk",
+        "-F",
+        "vmdk",
+        "layer2.vmdk",
+        "1048576"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mono",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer2.vmdk', fmt=vmdk size=1048576 backing_file=layer1.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=monolithicSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 0 32768 512",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mono",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 32768\n512 bytes, 1 ops; 00.01 sec (39.603 KiB/sec and 79.2059 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 153 131072 512",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mono",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 131072\n512 bytes, 1 ops; 00.01 sec (38.624 KiB/sec and 77.2482 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/examples/dump_chain",
+        "layer2.vmdk",
+        "rvddk.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mono",
+      "exit_code": 0,
+      "stdout": "{\"size_bytes\":1048576,\"layers\":3,\"logical_extents\":3}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "vmdk",
+        "-O",
+        "raw",
+        "layer2.vmdk",
+        "qemu.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mono",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "layer2.vmdk",
+        "rvddk.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mono",
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "inspect",
+        "layer2.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mono",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 4: unsupported feature: parent chain\"},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/split/oracle.raw",
+        "layer0.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/split",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "-b",
+        "layer0.vmdk",
+        "-F",
+        "vmdk",
+        "layer1.vmdk",
+        "1048576"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/split",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer1.vmdk', fmt=vmdk size=1048576 backing_file=layer0.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=twoGbMaxExtentSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 119 32768 512",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/split",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 32768\n512 bytes, 1 ops; 00.01 sec (39.307 KiB/sec and 78.6139 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 136 65024 1024",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/split",
+      "exit_code": 0,
+      "stdout": "wrote 1024/1024 bytes at offset 65024\n1 KiB, 1 ops; 00.01 sec (77.895 KiB/sec and 77.8946 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "-b",
+        "layer1.vmdk",
+        "-F",
+        "vmdk",
+        "layer2.vmdk",
+        "1048576"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/split",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer2.vmdk', fmt=vmdk size=1048576 backing_file=layer1.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=twoGbMaxExtentSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 0 32768 512",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/split",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 32768\n512 bytes, 1 ops; 00.01 sec (39.621 KiB/sec and 79.2418 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 153 131072 512",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/split",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 131072\n512 bytes, 1 ops; 00.01 sec (39.299 KiB/sec and 78.5986 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/examples/dump_chain",
+        "layer2.vmdk",
+        "rvddk.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/split",
+      "exit_code": 0,
+      "stdout": "{\"size_bytes\":1048576,\"layers\":3,\"logical_extents\":3}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "vmdk",
+        "-O",
+        "raw",
+        "layer2.vmdk",
+        "qemu.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/split",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "layer2.vmdk",
+        "rvddk.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/split",
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "inspect",
+        "layer2.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/split",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 4: unsupported feature: parent chain\"},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mixed/oracle.raw",
+        "layer0.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mixed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "-b",
+        "layer0.vmdk",
+        "-F",
+        "vmdk",
+        "layer1.vmdk",
+        "4194304"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mixed",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer1.vmdk', fmt=vmdk size=4194304 backing_file=layer0.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=twoGbMaxExtentSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 119 32768 512",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mixed",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 32768\n512 bytes, 1 ops; 00.01 sec (39.945 KiB/sec and 79.8892 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 136 65024 1024",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mixed",
+      "exit_code": 0,
+      "stdout": "wrote 1024/1024 bytes at offset 65024\n1 KiB, 1 ops; 00.01 sec (79.049 KiB/sec and 79.0491 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "-b",
+        "layer1.vmdk",
+        "-F",
+        "vmdk",
+        "layer2.vmdk",
+        "4194304"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mixed",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer2.vmdk', fmt=vmdk size=4194304 backing_file=layer1.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=monolithicSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 0 32768 512",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mixed",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 32768\n512 bytes, 1 ops; 00.01 sec (39.368 KiB/sec and 78.7365 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 153 131072 512",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mixed",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 131072\n512 bytes, 1 ops; 00.01 sec (39.443 KiB/sec and 78.8855 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/examples/dump_chain",
+        "layer2.vmdk",
+        "rvddk.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mixed",
+      "exit_code": 0,
+      "stdout": "{\"size_bytes\":4194304,\"layers\":3,\"logical_extents\":3}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "vmdk",
+        "-O",
+        "raw",
+        "layer2.vmdk",
+        "qemu.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mixed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "layer2.vmdk",
+        "rvddk.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mixed",
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "inspect",
+        "layer2.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/mixed",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 4: unsupported feature: parent chain\"},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/multi-split/oracle.raw",
+        "layer0.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/multi-split",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "-b",
+        "layer0.vmdk",
+        "-F",
+        "vmdk",
+        "layer1.vmdk",
+        "2147549184"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/multi-split",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer1.vmdk', fmt=vmdk size=2147549184 backing_file=layer0.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=twoGbMaxExtentSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 119 32768 512",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/multi-split",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 32768\n512 bytes, 1 ops; 00.01 sec (38.862 KiB/sec and 77.7243 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 136 65024 1024",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/multi-split",
+      "exit_code": 0,
+      "stdout": "wrote 1024/1024 bytes at offset 65024\n1 KiB, 1 ops; 00.01 sec (77.771 KiB/sec and 77.7706 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 161 2147417600 1024",
+        "layer1.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/multi-split",
+      "exit_code": 0,
+      "stdout": "wrote 1024/1024 bytes at offset 2147417600\n1 KiB, 1 ops; 00.02 sec (52.019 KiB/sec and 52.0195 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "create",
+        "-f",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "-b",
+        "layer1.vmdk",
+        "-F",
+        "vmdk",
+        "layer2.vmdk",
+        "2147549184"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/multi-split",
+      "exit_code": 0,
+      "stdout": "Formatting 'layer2.vmdk', fmt=vmdk size=2147549184 backing_file=layer1.vmdk backing_fmt=vmdk compat6=off hwversion=undefined subformat=twoGbMaxExtentSparse\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 0 32768 512",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/multi-split",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 32768\n512 bytes, 1 ops; 00.01 sec (39.581 KiB/sec and 79.1620 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 153 131072 512",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/multi-split",
+      "exit_code": 0,
+      "stdout": "wrote 512/512 bytes at offset 131072\n512 bytes, 1 ops; 00.01 sec (39.171 KiB/sec and 78.3419 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 178 2147483136 1024",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/multi-split",
+      "exit_code": 0,
+      "stdout": "wrote 1024/1024 bytes at offset 2147483136\n1 KiB, 1 ops; 00.02 sec (52.381 KiB/sec and 52.3807 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-io",
+        "-f",
+        "vmdk",
+        "-c",
+        "write -P 178 2147483648 65536",
+        "layer2.vmdk"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/multi-split",
+      "exit_code": 0,
+      "stdout": "wrote 65536/65536 bytes at offset 2147483648\n64 KiB, 1 ops; 00.01 sec (4.905 MiB/sec and 78.4808 ops/sec)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/examples/dump_chain",
+        "layer2.vmdk",
+        "rvddk.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/multi-split",
+      "exit_code": 0,
+      "stdout": "{\"size_bytes\":2147549184,\"layers\":3,\"logical_extents\":3}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "vmdk",
+        "-O",
+        "raw",
+        "layer2.vmdk",
+        "qemu.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/multi-split",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "layer2.vmdk",
+        "rvddk.raw"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/multi-split",
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "inspect",
+        "layer2.vmdk",
+        "--format",
+        "vmdk",
+        "--json"
+      ],
+      "cwd": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-reads-qualified/multi-split",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"vmdk\",\"message\":\"VMDK descriptor line 4: unsupported feature: parent chain\"},\"schema_version\":1}\n"
+    }
+  ]
+}

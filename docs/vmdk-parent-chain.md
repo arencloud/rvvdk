@@ -3,7 +3,8 @@
 `SparseChain` validates and retains hosted-sparse metadata from leaf to base. It
 has no logical read/write or extent-query interface and is not a `VirtualDisk`.
 `SparseDescriptor`/`SparseDisk` and the public CLI continue to reject parents.
-R5.7 will define logical parent fallback and alias checks before CLI exposure.
+[R5.7 SparseChainDisk](vmdk-chain-disk.md) now wraps it with logical parent fallback
+and whole-chain alias checks; CLI parent exposure remains R5.8.
 [Evidence and plots](benchmark-results/2026-09-30-r56/README.md) record qualification.
 
 ## Format and admission policy
@@ -114,7 +115,7 @@ outside timing; acquisition includes parser/metadata validation, allocation and
 drop. Memory fixtures are not filesystem or storage-throughput measurements.
 Existing metadata/read/CLI controls retain paired comparisons and adverse repeats.
 
-Next R5.7 adds read-only logical parent fallback, range mapping, differing grain/
+R5.7 now adds [read-only logical parent fallback](vmdk-chain-disk.md), range mapping, differing grain/
 extent boundaries, whole-chain destination alias protection and independent byte
 oracles. An unallocated child grain falls through until allocated data or the base
 is reached. Only a fully resolved zero range can become logical Zero. Public CLI

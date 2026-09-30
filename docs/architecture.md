@@ -1276,3 +1276,15 @@ No VirtualDisk interface is exposed yet. Metadata zero entries remain unallocate
 R5.7 will add logical fallback and whole-chain alias protection. Parent CLI support
 follows separately. [Contract](vmdk-parent-chain.md);
 [ADR-0042](adr/0042-bounded-parent-chain-metadata.md).
+
+## Logical sparse parent fallback (R5.7)
+
+`SparseChainDisk` owns admitted `SparseChain` metadata and implements read-only
+VirtualDisk. Iterative lookup clips at every consulted child/ancestor grain
+boundary, resolving the nearest allocated layer or base-confirmed zero. Reads
+use constant auxiliary space and coalesce adjacent physical bytes within a backing.
+Two-pass Data/Zero queries bound output separately from loader resources.
+Copy preflight revalidates and rejects all descriptor/backing destination aliases,
+including hidden ancestors. Quiescence remains the caller's responsibility.
+[Contract](vmdk-chain-disk.md); [ADR-0043](adr/0043-read-only-sparse-parent-fallback.md).
+CLI parent acquisition/lifecycle integration is R5.8.

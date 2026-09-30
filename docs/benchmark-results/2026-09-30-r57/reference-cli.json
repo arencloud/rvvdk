@@ -1,0 +1,1202 @@
+{
+  "qemu_version": "qemu-img version 10.2.2 (qemu-10.2.2-1.fc44)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+  "qemu_sha256": "4362e911c13bb90e39b69479462cd4adb840749b582f4892ca114eb7e94dcf2e",
+  "cli_sha256": "536a1b73425c639194ed8fe3d139ed1b9d72cfa4bb7ec7fcd6fdf7061e375877",
+  "generator_sha256": "e79d3aa3369e9e55bcb5084b4f69a4dd6b4fd68cafcca05a70cf8e4fb860f0b7",
+  "directory": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli",
+  "cases": [
+    {
+      "name": "mono",
+      "subformat": "monolithicSparse",
+      "inspected": {
+        "schema_version": 1,
+        "command": "inspect",
+        "format": "vmdk",
+        "status": "inspected",
+        "source": {
+          "path": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.vmdk"
+          },
+          "logical_bytes": 1048576,
+          "logical_block_size": 512,
+          "physical_block_size": 512,
+          "vmdk": {
+            "backing_file_count": 1,
+            "backing_identities": [
+              {
+                "device": 38,
+                "inode": 122370786
+              }
+            ],
+            "cid": "f9329711",
+            "descriptor_extent_count": 1,
+            "descriptor_identity": {
+              "device": 38,
+              "inode": 122370786
+            },
+            "layout": "hosted_sparse",
+            "metadata_memory_reservation_bytes": 11720,
+            "metadata_read_bytes": 16384
+          }
+        },
+        "summary": {
+          "logical_bytes": 1048576,
+          "data_bytes": 196608,
+          "zero_bytes": 851968,
+          "hole_bytes": 0,
+          "extent_count": 3
+        },
+        "extents": [
+          {
+            "offset": 0,
+            "length": 65536,
+            "kind": "data"
+          },
+          {
+            "offset": 65536,
+            "length": 851968,
+            "kind": "zero"
+          },
+          {
+            "offset": 917504,
+            "length": 131072,
+            "kind": "data"
+          }
+        ]
+      },
+      "planned": {
+        "schema_version": 1,
+        "command": "plan",
+        "format": "vmdk",
+        "status": "preview",
+        "source": {
+          "path": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.vmdk"
+          },
+          "logical_bytes": 1048576,
+          "logical_block_size": 512,
+          "physical_block_size": 512,
+          "vmdk": {
+            "backing_file_count": 1,
+            "backing_identities": [
+              {
+                "device": 38,
+                "inode": 122370786
+              }
+            ],
+            "cid": "f9329711",
+            "descriptor_extent_count": 1,
+            "descriptor_identity": {
+              "device": 38,
+              "inode": 122370786
+            },
+            "layout": "hosted_sparse",
+            "metadata_memory_reservation_bytes": 11720,
+            "metadata_read_bytes": 16384
+          }
+        },
+        "summary": {
+          "logical_bytes": 1048576,
+          "data_bytes": 196608,
+          "zero_bytes": 851968,
+          "hole_bytes": 0,
+          "extent_count": 3
+        },
+        "destination": {
+          "path": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.decoded.raw"
+          },
+          "state": "new",
+          "policy": "create_new_no_clobber",
+          "existing_bytes": null,
+          "copy_range_bytes": 1048576,
+          "preserved_tail_bytes": 0,
+          "write_access_checked": false
+        },
+        "execution": {
+          "requested_backend": "auto",
+          "selected_backend": "threaded",
+          "selection_reason": "portable_api",
+          "runtime_prepared": false,
+          "block_size": 1048576,
+          "buffer_alignment": 4096,
+          "workers": 1,
+          "work_queue_capacity": 4,
+          "native_queue_depth": 8,
+          "native_read_window": 4,
+          "memory_budget_bytes": 268435456,
+          "threaded_payload_estimate_bytes": 1048672,
+          "threaded_payload_fits_budget": true
+        }
+      },
+      "copied": {
+        "backend": "threaded",
+        "command": "copy",
+        "copy_memory_budget_bytes": 268304382,
+        "destination": {
+          "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.decoded.raw"
+        },
+        "destination_policy": "create_new_no_clobber",
+        "destination_tail_bytes": 0,
+        "durability": "file_and_directory_synced",
+        "elapsed_seconds": 0.019806672,
+        "format": "vmdk",
+        "logical_bytes": 1048576,
+        "planned_backend": "threaded",
+        "requested_backend": "auto",
+        "runtime_fallback": null,
+        "schema_version": 1,
+        "selection_reason": "portable_api",
+        "source": {
+          "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.vmdk"
+        },
+        "stats": {
+          "blocks_copied": 3,
+          "bytes_discarded": 0,
+          "bytes_read": 196608,
+          "bytes_written": 196608,
+          "bytes_zeroed": 851968,
+          "extents_processed": 3
+        },
+        "status": "completed",
+        "verification": {
+          "bytes_verified": 1048576,
+          "elapsed_seconds": 0.000303592
+        },
+        "verification_payload_bytes": 131074
+      },
+      "verified": {
+        "command": "verify",
+        "destination": {
+          "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.decoded.raw"
+        },
+        "destination_tail_bytes": 0,
+        "elapsed_seconds": 0.000361285,
+        "format": "vmdk",
+        "logical_bytes": 1048576,
+        "schema_version": 1,
+        "source": {
+          "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.vmdk"
+        },
+        "status": "verified",
+        "verification_payload_bytes": 131074
+      },
+      "output_sha256": "947283b81440a8ab6eafc9c567b362c35c3c1af67554eaed796a9bca9f05a8ff",
+      "source_unchanged": true
+    },
+    {
+      "name": "two-tables",
+      "subformat": "monolithicSparse",
+      "inspected": {
+        "schema_version": 1,
+        "command": "inspect",
+        "format": "vmdk",
+        "status": "inspected",
+        "source": {
+          "path": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.vmdk"
+          },
+          "logical_bytes": 67108864,
+          "logical_block_size": 512,
+          "physical_block_size": 512,
+          "vmdk": {
+            "backing_file_count": 1,
+            "backing_identities": [
+              {
+                "device": 38,
+                "inode": 122370789
+              }
+            ],
+            "cid": "88cdf762",
+            "descriptor_extent_count": 1,
+            "descriptor_identity": {
+              "device": 38,
+              "inode": 122370789
+            },
+            "layout": "hosted_sparse",
+            "metadata_memory_reservation_bytes": 19816,
+            "metadata_read_bytes": 20480
+          }
+        },
+        "summary": {
+          "logical_bytes": 67108864,
+          "data_bytes": 196608,
+          "zero_bytes": 66912256,
+          "hole_bytes": 0,
+          "extent_count": 3
+        },
+        "extents": [
+          {
+            "offset": 0,
+            "length": 65536,
+            "kind": "data"
+          },
+          {
+            "offset": 65536,
+            "length": 66912256,
+            "kind": "zero"
+          },
+          {
+            "offset": 66977792,
+            "length": 131072,
+            "kind": "data"
+          }
+        ]
+      },
+      "planned": {
+        "schema_version": 1,
+        "command": "plan",
+        "format": "vmdk",
+        "status": "preview",
+        "source": {
+          "path": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.vmdk"
+          },
+          "logical_bytes": 67108864,
+          "logical_block_size": 512,
+          "physical_block_size": 512,
+          "vmdk": {
+            "backing_file_count": 1,
+            "backing_identities": [
+              {
+                "device": 38,
+                "inode": 122370789
+              }
+            ],
+            "cid": "88cdf762",
+            "descriptor_extent_count": 1,
+            "descriptor_identity": {
+              "device": 38,
+              "inode": 122370789
+            },
+            "layout": "hosted_sparse",
+            "metadata_memory_reservation_bytes": 19816,
+            "metadata_read_bytes": 20480
+          }
+        },
+        "summary": {
+          "logical_bytes": 67108864,
+          "data_bytes": 196608,
+          "zero_bytes": 66912256,
+          "hole_bytes": 0,
+          "extent_count": 3
+        },
+        "destination": {
+          "path": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.decoded.raw"
+          },
+          "state": "new",
+          "policy": "create_new_no_clobber",
+          "existing_bytes": null,
+          "copy_range_bytes": 67108864,
+          "preserved_tail_bytes": 0,
+          "write_access_checked": false
+        },
+        "execution": {
+          "requested_backend": "auto",
+          "selected_backend": "threaded",
+          "selection_reason": "portable_api",
+          "runtime_prepared": false,
+          "block_size": 1048576,
+          "buffer_alignment": 4096,
+          "workers": 1,
+          "work_queue_capacity": 4,
+          "native_queue_depth": 8,
+          "native_read_window": 4,
+          "memory_budget_bytes": 268435456,
+          "threaded_payload_estimate_bytes": 1048672,
+          "threaded_payload_fits_budget": true
+        }
+      },
+      "copied": {
+        "backend": "threaded",
+        "command": "copy",
+        "copy_memory_budget_bytes": 268304382,
+        "destination": {
+          "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.decoded.raw"
+        },
+        "destination_policy": "create_new_no_clobber",
+        "destination_tail_bytes": 0,
+        "durability": "file_and_directory_synced",
+        "elapsed_seconds": 0.045553596,
+        "format": "vmdk",
+        "logical_bytes": 67108864,
+        "planned_backend": "threaded",
+        "requested_backend": "auto",
+        "runtime_fallback": null,
+        "schema_version": 1,
+        "selection_reason": "portable_api",
+        "source": {
+          "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.vmdk"
+        },
+        "stats": {
+          "blocks_copied": 3,
+          "bytes_discarded": 0,
+          "bytes_read": 196608,
+          "bytes_written": 196608,
+          "bytes_zeroed": 66912256,
+          "extents_processed": 3
+        },
+        "status": "completed",
+        "verification": {
+          "bytes_verified": 67108864,
+          "elapsed_seconds": 0.015720055
+        },
+        "verification_payload_bytes": 131074
+      },
+      "verified": {
+        "command": "verify",
+        "destination": {
+          "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.decoded.raw"
+        },
+        "destination_tail_bytes": 0,
+        "elapsed_seconds": 0.008718401,
+        "format": "vmdk",
+        "logical_bytes": 67108864,
+        "schema_version": 1,
+        "source": {
+          "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.vmdk"
+        },
+        "status": "verified",
+        "verification_payload_bytes": 131074
+      },
+      "output_sha256": "2adc4e73229c00d99419442d1eafacde9a35c6981ba3517dc200a3cc7b09b1ad",
+      "source_unchanged": true
+    },
+    {
+      "name": "split",
+      "subformat": "twoGbMaxExtentSparse",
+      "inspected": {
+        "schema_version": 1,
+        "command": "inspect",
+        "format": "vmdk",
+        "status": "inspected",
+        "source": {
+          "path": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.vmdk"
+          },
+          "logical_bytes": 1048576,
+          "logical_block_size": 512,
+          "physical_block_size": 512,
+          "vmdk": {
+            "backing_file_count": 1,
+            "backing_identities": [
+              {
+                "device": 38,
+                "inode": 122370793
+              }
+            ],
+            "cid": "979a3da9",
+            "descriptor_extent_count": 1,
+            "descriptor_identity": {
+              "device": 38,
+              "inode": 122370792
+            },
+            "layout": "hosted_sparse",
+            "metadata_memory_reservation_bytes": 11720,
+            "metadata_read_bytes": 16384
+          }
+        },
+        "summary": {
+          "logical_bytes": 1048576,
+          "data_bytes": 196608,
+          "zero_bytes": 851968,
+          "hole_bytes": 0,
+          "extent_count": 3
+        },
+        "extents": [
+          {
+            "offset": 0,
+            "length": 65536,
+            "kind": "data"
+          },
+          {
+            "offset": 65536,
+            "length": 851968,
+            "kind": "zero"
+          },
+          {
+            "offset": 917504,
+            "length": 131072,
+            "kind": "data"
+          }
+        ]
+      },
+      "planned": {
+        "schema_version": 1,
+        "command": "plan",
+        "format": "vmdk",
+        "status": "preview",
+        "source": {
+          "path": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.vmdk"
+          },
+          "logical_bytes": 1048576,
+          "logical_block_size": 512,
+          "physical_block_size": 512,
+          "vmdk": {
+            "backing_file_count": 1,
+            "backing_identities": [
+              {
+                "device": 38,
+                "inode": 122370793
+              }
+            ],
+            "cid": "979a3da9",
+            "descriptor_extent_count": 1,
+            "descriptor_identity": {
+              "device": 38,
+              "inode": 122370792
+            },
+            "layout": "hosted_sparse",
+            "metadata_memory_reservation_bytes": 11720,
+            "metadata_read_bytes": 16384
+          }
+        },
+        "summary": {
+          "logical_bytes": 1048576,
+          "data_bytes": 196608,
+          "zero_bytes": 851968,
+          "hole_bytes": 0,
+          "extent_count": 3
+        },
+        "destination": {
+          "path": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.decoded.raw"
+          },
+          "state": "new",
+          "policy": "create_new_no_clobber",
+          "existing_bytes": null,
+          "copy_range_bytes": 1048576,
+          "preserved_tail_bytes": 0,
+          "write_access_checked": false
+        },
+        "execution": {
+          "requested_backend": "auto",
+          "selected_backend": "threaded",
+          "selection_reason": "portable_api",
+          "runtime_prepared": false,
+          "block_size": 1048576,
+          "buffer_alignment": 4096,
+          "workers": 1,
+          "work_queue_capacity": 4,
+          "native_queue_depth": 8,
+          "native_read_window": 4,
+          "memory_budget_bytes": 268435456,
+          "threaded_payload_estimate_bytes": 1048672,
+          "threaded_payload_fits_budget": true
+        }
+      },
+      "copied": {
+        "backend": "threaded",
+        "command": "copy",
+        "copy_memory_budget_bytes": 268304382,
+        "destination": {
+          "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.decoded.raw"
+        },
+        "destination_policy": "create_new_no_clobber",
+        "destination_tail_bytes": 0,
+        "durability": "file_and_directory_synced",
+        "elapsed_seconds": 0.019582229,
+        "format": "vmdk",
+        "logical_bytes": 1048576,
+        "planned_backend": "threaded",
+        "requested_backend": "auto",
+        "runtime_fallback": null,
+        "schema_version": 1,
+        "selection_reason": "portable_api",
+        "source": {
+          "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.vmdk"
+        },
+        "stats": {
+          "blocks_copied": 3,
+          "bytes_discarded": 0,
+          "bytes_read": 196608,
+          "bytes_written": 196608,
+          "bytes_zeroed": 851968,
+          "extents_processed": 3
+        },
+        "status": "completed",
+        "verification": {
+          "bytes_verified": 1048576,
+          "elapsed_seconds": 0.000247575
+        },
+        "verification_payload_bytes": 131074
+      },
+      "verified": {
+        "command": "verify",
+        "destination": {
+          "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.decoded.raw"
+        },
+        "destination_tail_bytes": 0,
+        "elapsed_seconds": 0.000391289,
+        "format": "vmdk",
+        "logical_bytes": 1048576,
+        "schema_version": 1,
+        "source": {
+          "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.vmdk"
+        },
+        "status": "verified",
+        "verification_payload_bytes": 131074
+      },
+      "output_sha256": "947283b81440a8ab6eafc9c567b362c35c3c1af67554eaed796a9bca9f05a8ff",
+      "source_unchanged": true
+    },
+    {
+      "name": "multi-split",
+      "subformat": "twoGbMaxExtentSparse",
+      "inspected": {
+        "schema_version": 1,
+        "command": "inspect",
+        "format": "vmdk",
+        "status": "inspected",
+        "source": {
+          "path": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.vmdk"
+          },
+          "logical_bytes": 2147549184,
+          "logical_block_size": 512,
+          "physical_block_size": 512,
+          "vmdk": {
+            "backing_file_count": 2,
+            "backing_identities": [
+              {
+                "device": 38,
+                "inode": 122370797
+              },
+              {
+                "device": 38,
+                "inode": 122370798
+              }
+            ],
+            "cid": "a5194466",
+            "descriptor_extent_count": 2,
+            "descriptor_identity": {
+              "device": 38,
+              "inode": 122370796
+            },
+            "layout": "hosted_sparse",
+            "metadata_memory_reservation_bytes": 287352,
+            "metadata_read_bytes": 290816
+          }
+        },
+        "summary": {
+          "logical_bytes": 2147549184,
+          "data_bytes": 196608,
+          "zero_bytes": 2147352576,
+          "hole_bytes": 0,
+          "extent_count": 3
+        },
+        "extents": [
+          {
+            "offset": 0,
+            "length": 65536,
+            "kind": "data"
+          },
+          {
+            "offset": 65536,
+            "length": 2147352576,
+            "kind": "zero"
+          },
+          {
+            "offset": 2147418112,
+            "length": 131072,
+            "kind": "data"
+          }
+        ]
+      },
+      "planned": {
+        "schema_version": 1,
+        "command": "plan",
+        "format": "vmdk",
+        "status": "preview",
+        "source": {
+          "path": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.vmdk"
+          },
+          "logical_bytes": 2147549184,
+          "logical_block_size": 512,
+          "physical_block_size": 512,
+          "vmdk": {
+            "backing_file_count": 2,
+            "backing_identities": [
+              {
+                "device": 38,
+                "inode": 122370797
+              },
+              {
+                "device": 38,
+                "inode": 122370798
+              }
+            ],
+            "cid": "a5194466",
+            "descriptor_extent_count": 2,
+            "descriptor_identity": {
+              "device": 38,
+              "inode": 122370796
+            },
+            "layout": "hosted_sparse",
+            "metadata_memory_reservation_bytes": 287352,
+            "metadata_read_bytes": 290816
+          }
+        },
+        "summary": {
+          "logical_bytes": 2147549184,
+          "data_bytes": 196608,
+          "zero_bytes": 2147352576,
+          "hole_bytes": 0,
+          "extent_count": 3
+        },
+        "destination": {
+          "path": {
+            "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.decoded.raw"
+          },
+          "state": "new",
+          "policy": "create_new_no_clobber",
+          "existing_bytes": null,
+          "copy_range_bytes": 2147549184,
+          "preserved_tail_bytes": 0,
+          "write_access_checked": false
+        },
+        "execution": {
+          "requested_backend": "auto",
+          "selected_backend": "threaded",
+          "selection_reason": "portable_api",
+          "runtime_prepared": false,
+          "block_size": 1048576,
+          "buffer_alignment": 4096,
+          "workers": 1,
+          "work_queue_capacity": 4,
+          "native_queue_depth": 8,
+          "native_read_window": 4,
+          "memory_budget_bytes": 268435456,
+          "threaded_payload_estimate_bytes": 1048672,
+          "threaded_payload_fits_budget": true
+        }
+      },
+      "copied": {
+        "backend": "threaded",
+        "command": "copy",
+        "copy_memory_budget_bytes": 268304382,
+        "destination": {
+          "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.decoded.raw"
+        },
+        "destination_policy": "create_new_no_clobber",
+        "destination_tail_bytes": 0,
+        "durability": "file_and_directory_synced",
+        "elapsed_seconds": 0.869518953,
+        "format": "vmdk",
+        "logical_bytes": 2147549184,
+        "planned_backend": "threaded",
+        "requested_backend": "auto",
+        "runtime_fallback": null,
+        "schema_version": 1,
+        "selection_reason": "portable_api",
+        "source": {
+          "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.vmdk"
+        },
+        "stats": {
+          "blocks_copied": 3,
+          "bytes_discarded": 0,
+          "bytes_read": 196608,
+          "bytes_written": 196608,
+          "bytes_zeroed": 2147352576,
+          "extents_processed": 3
+        },
+        "status": "completed",
+        "verification": {
+          "bytes_verified": 2147549184,
+          "elapsed_seconds": 0.487090565
+        },
+        "verification_payload_bytes": 131074
+      },
+      "verified": {
+        "command": "verify",
+        "destination": {
+          "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.decoded.raw"
+        },
+        "destination_tail_bytes": 0,
+        "elapsed_seconds": 0.268877943,
+        "format": "vmdk",
+        "logical_bytes": 2147549184,
+        "schema_version": 1,
+        "source": {
+          "display": "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.vmdk"
+        },
+        "status": "verified",
+        "verification_payload_bytes": 131074
+      },
+      "output_sha256": "e042e91ce6e5ddbe7a4b6d8113f9641f6e490de8031a2cf423a04df15bca7f6b",
+      "source_unchanged": true
+    }
+  ],
+  "commands": [
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "qemu-img version 10.2.2 (qemu-10.2.2-1.fc44)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "inspect",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.vmdk",
+        "--format",
+        "vmdk",
+        "--extents",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"inspect\",\n  \"format\": \"vmdk\",\n  \"status\": \"inspected\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.vmdk\"\n    },\n    \"logical_bytes\": 1048576,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 1,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122370786\n        }\n      ],\n      \"cid\": \"f9329711\",\n      \"descriptor_extent_count\": 1,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122370786\n      },\n      \"layout\": \"hosted_sparse\",\n      \"metadata_memory_reservation_bytes\": 11720,\n      \"metadata_read_bytes\": 16384\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 1048576,\n    \"data_bytes\": 196608,\n    \"zero_bytes\": 851968,\n    \"hole_bytes\": 0,\n    \"extent_count\": 3\n  },\n  \"extents\": [\n    {\n      \"offset\": 0,\n      \"length\": 65536,\n      \"kind\": \"data\"\n    },\n    {\n      \"offset\": 65536,\n      \"length\": 851968,\n      \"kind\": \"zero\"\n    },\n    {\n      \"offset\": 917504,\n      \"length\": 131072,\n      \"kind\": \"data\"\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "plan",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.decoded.raw",
+        "--format",
+        "vmdk",
+        "--backend",
+        "auto",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"plan\",\n  \"format\": \"vmdk\",\n  \"status\": \"preview\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.vmdk\"\n    },\n    \"logical_bytes\": 1048576,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 1,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122370786\n        }\n      ],\n      \"cid\": \"f9329711\",\n      \"descriptor_extent_count\": 1,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122370786\n      },\n      \"layout\": \"hosted_sparse\",\n      \"metadata_memory_reservation_bytes\": 11720,\n      \"metadata_read_bytes\": 16384\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 1048576,\n    \"data_bytes\": 196608,\n    \"zero_bytes\": 851968,\n    \"hole_bytes\": 0,\n    \"extent_count\": 3\n  },\n  \"destination\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.decoded.raw\"\n    },\n    \"state\": \"new\",\n    \"policy\": \"create_new_no_clobber\",\n    \"existing_bytes\": null,\n    \"copy_range_bytes\": 1048576,\n    \"preserved_tail_bytes\": 0,\n    \"write_access_checked\": false\n  },\n  \"execution\": {\n    \"requested_backend\": \"auto\",\n    \"selected_backend\": \"threaded\",\n    \"selection_reason\": \"portable_api\",\n    \"runtime_prepared\": false,\n    \"block_size\": 1048576,\n    \"buffer_alignment\": 4096,\n    \"workers\": 1,\n    \"work_queue_capacity\": 4,\n    \"native_queue_depth\": 8,\n    \"native_read_window\": 4,\n    \"memory_budget_bytes\": 268435456,\n    \"threaded_payload_estimate_bytes\": 1048672,\n    \"threaded_payload_fits_budget\": true\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "copy",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.decoded.raw",
+        "--format",
+        "vmdk",
+        "--backend",
+        "auto",
+        "--workers",
+        "4",
+        "--block-size",
+        "65537",
+        "--verify",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"backend\": \"threaded\",\n  \"command\": \"copy\",\n  \"copy_memory_budget_bytes\": 268304382,\n  \"destination\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.decoded.raw\"\n  },\n  \"destination_policy\": \"create_new_no_clobber\",\n  \"destination_tail_bytes\": 0,\n  \"durability\": \"file_and_directory_synced\",\n  \"elapsed_seconds\": 0.019806672,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 1048576,\n  \"planned_backend\": \"threaded\",\n  \"requested_backend\": \"auto\",\n  \"runtime_fallback\": null,\n  \"schema_version\": 1,\n  \"selection_reason\": \"portable_api\",\n  \"source\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.vmdk\"\n  },\n  \"stats\": {\n    \"blocks_copied\": 3,\n    \"bytes_discarded\": 0,\n    \"bytes_read\": 196608,\n    \"bytes_written\": 196608,\n    \"bytes_zeroed\": 851968,\n    \"extents_processed\": 3\n  },\n  \"status\": \"completed\",\n  \"verification\": {\n    \"bytes_verified\": 1048576,\n    \"elapsed_seconds\": 0.000303592\n  },\n  \"verification_payload_bytes\": 131074\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "verify",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.decoded.raw",
+        "--format",
+        "vmdk",
+        "--block-size",
+        "65537",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"command\": \"verify\",\n  \"destination\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.decoded.raw\"\n  },\n  \"destination_tail_bytes\": 0,\n  \"elapsed_seconds\": 0.000361285,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 1048576,\n  \"schema_version\": 1,\n  \"source\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.vmdk\"\n  },\n  \"status\": \"verified\",\n  \"verification_payload_bytes\": 131074\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/mono.decoded.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=monolithicSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "inspect",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.vmdk",
+        "--format",
+        "vmdk",
+        "--extents",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"inspect\",\n  \"format\": \"vmdk\",\n  \"status\": \"inspected\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.vmdk\"\n    },\n    \"logical_bytes\": 67108864,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 1,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122370789\n        }\n      ],\n      \"cid\": \"88cdf762\",\n      \"descriptor_extent_count\": 1,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122370789\n      },\n      \"layout\": \"hosted_sparse\",\n      \"metadata_memory_reservation_bytes\": 19816,\n      \"metadata_read_bytes\": 20480\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 67108864,\n    \"data_bytes\": 196608,\n    \"zero_bytes\": 66912256,\n    \"hole_bytes\": 0,\n    \"extent_count\": 3\n  },\n  \"extents\": [\n    {\n      \"offset\": 0,\n      \"length\": 65536,\n      \"kind\": \"data\"\n    },\n    {\n      \"offset\": 65536,\n      \"length\": 66912256,\n      \"kind\": \"zero\"\n    },\n    {\n      \"offset\": 66977792,\n      \"length\": 131072,\n      \"kind\": \"data\"\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "plan",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.decoded.raw",
+        "--format",
+        "vmdk",
+        "--backend",
+        "auto",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"plan\",\n  \"format\": \"vmdk\",\n  \"status\": \"preview\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.vmdk\"\n    },\n    \"logical_bytes\": 67108864,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 1,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122370789\n        }\n      ],\n      \"cid\": \"88cdf762\",\n      \"descriptor_extent_count\": 1,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122370789\n      },\n      \"layout\": \"hosted_sparse\",\n      \"metadata_memory_reservation_bytes\": 19816,\n      \"metadata_read_bytes\": 20480\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 67108864,\n    \"data_bytes\": 196608,\n    \"zero_bytes\": 66912256,\n    \"hole_bytes\": 0,\n    \"extent_count\": 3\n  },\n  \"destination\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.decoded.raw\"\n    },\n    \"state\": \"new\",\n    \"policy\": \"create_new_no_clobber\",\n    \"existing_bytes\": null,\n    \"copy_range_bytes\": 67108864,\n    \"preserved_tail_bytes\": 0,\n    \"write_access_checked\": false\n  },\n  \"execution\": {\n    \"requested_backend\": \"auto\",\n    \"selected_backend\": \"threaded\",\n    \"selection_reason\": \"portable_api\",\n    \"runtime_prepared\": false,\n    \"block_size\": 1048576,\n    \"buffer_alignment\": 4096,\n    \"workers\": 1,\n    \"work_queue_capacity\": 4,\n    \"native_queue_depth\": 8,\n    \"native_read_window\": 4,\n    \"memory_budget_bytes\": 268435456,\n    \"threaded_payload_estimate_bytes\": 1048672,\n    \"threaded_payload_fits_budget\": true\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "copy",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.decoded.raw",
+        "--format",
+        "vmdk",
+        "--backend",
+        "auto",
+        "--workers",
+        "4",
+        "--block-size",
+        "65537",
+        "--verify",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"backend\": \"threaded\",\n  \"command\": \"copy\",\n  \"copy_memory_budget_bytes\": 268304382,\n  \"destination\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.decoded.raw\"\n  },\n  \"destination_policy\": \"create_new_no_clobber\",\n  \"destination_tail_bytes\": 0,\n  \"durability\": \"file_and_directory_synced\",\n  \"elapsed_seconds\": 0.045553596,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 67108864,\n  \"planned_backend\": \"threaded\",\n  \"requested_backend\": \"auto\",\n  \"runtime_fallback\": null,\n  \"schema_version\": 1,\n  \"selection_reason\": \"portable_api\",\n  \"source\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.vmdk\"\n  },\n  \"stats\": {\n    \"blocks_copied\": 3,\n    \"bytes_discarded\": 0,\n    \"bytes_read\": 196608,\n    \"bytes_written\": 196608,\n    \"bytes_zeroed\": 66912256,\n    \"extents_processed\": 3\n  },\n  \"status\": \"completed\",\n  \"verification\": {\n    \"bytes_verified\": 67108864,\n    \"elapsed_seconds\": 0.015720055\n  },\n  \"verification_payload_bytes\": 131074\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "verify",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.decoded.raw",
+        "--format",
+        "vmdk",
+        "--block-size",
+        "65537",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"command\": \"verify\",\n  \"destination\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.decoded.raw\"\n  },\n  \"destination_tail_bytes\": 0,\n  \"elapsed_seconds\": 0.008718401,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 67108864,\n  \"schema_version\": 1,\n  \"source\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.vmdk\"\n  },\n  \"status\": \"verified\",\n  \"verification_payload_bytes\": 131074\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/two-tables.decoded.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "inspect",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.vmdk",
+        "--format",
+        "vmdk",
+        "--extents",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"inspect\",\n  \"format\": \"vmdk\",\n  \"status\": \"inspected\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.vmdk\"\n    },\n    \"logical_bytes\": 1048576,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 1,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122370793\n        }\n      ],\n      \"cid\": \"979a3da9\",\n      \"descriptor_extent_count\": 1,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122370792\n      },\n      \"layout\": \"hosted_sparse\",\n      \"metadata_memory_reservation_bytes\": 11720,\n      \"metadata_read_bytes\": 16384\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 1048576,\n    \"data_bytes\": 196608,\n    \"zero_bytes\": 851968,\n    \"hole_bytes\": 0,\n    \"extent_count\": 3\n  },\n  \"extents\": [\n    {\n      \"offset\": 0,\n      \"length\": 65536,\n      \"kind\": \"data\"\n    },\n    {\n      \"offset\": 65536,\n      \"length\": 851968,\n      \"kind\": \"zero\"\n    },\n    {\n      \"offset\": 917504,\n      \"length\": 131072,\n      \"kind\": \"data\"\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "plan",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.decoded.raw",
+        "--format",
+        "vmdk",
+        "--backend",
+        "auto",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"plan\",\n  \"format\": \"vmdk\",\n  \"status\": \"preview\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.vmdk\"\n    },\n    \"logical_bytes\": 1048576,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 1,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122370793\n        }\n      ],\n      \"cid\": \"979a3da9\",\n      \"descriptor_extent_count\": 1,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122370792\n      },\n      \"layout\": \"hosted_sparse\",\n      \"metadata_memory_reservation_bytes\": 11720,\n      \"metadata_read_bytes\": 16384\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 1048576,\n    \"data_bytes\": 196608,\n    \"zero_bytes\": 851968,\n    \"hole_bytes\": 0,\n    \"extent_count\": 3\n  },\n  \"destination\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.decoded.raw\"\n    },\n    \"state\": \"new\",\n    \"policy\": \"create_new_no_clobber\",\n    \"existing_bytes\": null,\n    \"copy_range_bytes\": 1048576,\n    \"preserved_tail_bytes\": 0,\n    \"write_access_checked\": false\n  },\n  \"execution\": {\n    \"requested_backend\": \"auto\",\n    \"selected_backend\": \"threaded\",\n    \"selection_reason\": \"portable_api\",\n    \"runtime_prepared\": false,\n    \"block_size\": 1048576,\n    \"buffer_alignment\": 4096,\n    \"workers\": 1,\n    \"work_queue_capacity\": 4,\n    \"native_queue_depth\": 8,\n    \"native_read_window\": 4,\n    \"memory_budget_bytes\": 268435456,\n    \"threaded_payload_estimate_bytes\": 1048672,\n    \"threaded_payload_fits_budget\": true\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "copy",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.decoded.raw",
+        "--format",
+        "vmdk",
+        "--backend",
+        "auto",
+        "--workers",
+        "4",
+        "--block-size",
+        "65537",
+        "--verify",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"backend\": \"threaded\",\n  \"command\": \"copy\",\n  \"copy_memory_budget_bytes\": 268304382,\n  \"destination\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.decoded.raw\"\n  },\n  \"destination_policy\": \"create_new_no_clobber\",\n  \"destination_tail_bytes\": 0,\n  \"durability\": \"file_and_directory_synced\",\n  \"elapsed_seconds\": 0.019582229,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 1048576,\n  \"planned_backend\": \"threaded\",\n  \"requested_backend\": \"auto\",\n  \"runtime_fallback\": null,\n  \"schema_version\": 1,\n  \"selection_reason\": \"portable_api\",\n  \"source\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.vmdk\"\n  },\n  \"stats\": {\n    \"blocks_copied\": 3,\n    \"bytes_discarded\": 0,\n    \"bytes_read\": 196608,\n    \"bytes_written\": 196608,\n    \"bytes_zeroed\": 851968,\n    \"extents_processed\": 3\n  },\n  \"status\": \"completed\",\n  \"verification\": {\n    \"bytes_verified\": 1048576,\n    \"elapsed_seconds\": 0.000247575\n  },\n  \"verification_payload_bytes\": 131074\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "verify",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.decoded.raw",
+        "--format",
+        "vmdk",
+        "--block-size",
+        "65537",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"command\": \"verify\",\n  \"destination\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.decoded.raw\"\n  },\n  \"destination_tail_bytes\": 0,\n  \"elapsed_seconds\": 0.000391289,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 1048576,\n  \"schema_version\": 1,\n  \"source\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.vmdk\"\n  },\n  \"status\": \"verified\",\n  \"verification_payload_bytes\": 131074\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/split.decoded.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "convert",
+        "-f",
+        "raw",
+        "-O",
+        "vmdk",
+        "-o",
+        "subformat=twoGbMaxExtentSparse",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.vmdk"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "inspect",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.vmdk",
+        "--format",
+        "vmdk",
+        "--extents",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"inspect\",\n  \"format\": \"vmdk\",\n  \"status\": \"inspected\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.vmdk\"\n    },\n    \"logical_bytes\": 2147549184,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 2,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122370797\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122370798\n        }\n      ],\n      \"cid\": \"a5194466\",\n      \"descriptor_extent_count\": 2,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122370796\n      },\n      \"layout\": \"hosted_sparse\",\n      \"metadata_memory_reservation_bytes\": 287352,\n      \"metadata_read_bytes\": 290816\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 2147549184,\n    \"data_bytes\": 196608,\n    \"zero_bytes\": 2147352576,\n    \"hole_bytes\": 0,\n    \"extent_count\": 3\n  },\n  \"extents\": [\n    {\n      \"offset\": 0,\n      \"length\": 65536,\n      \"kind\": \"data\"\n    },\n    {\n      \"offset\": 65536,\n      \"length\": 2147352576,\n      \"kind\": \"zero\"\n    },\n    {\n      \"offset\": 2147418112,\n      \"length\": 131072,\n      \"kind\": \"data\"\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "plan",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.decoded.raw",
+        "--format",
+        "vmdk",
+        "--backend",
+        "auto",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"command\": \"plan\",\n  \"format\": \"vmdk\",\n  \"status\": \"preview\",\n  \"source\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.vmdk\"\n    },\n    \"logical_bytes\": 2147549184,\n    \"logical_block_size\": 512,\n    \"physical_block_size\": 512,\n    \"vmdk\": {\n      \"backing_file_count\": 2,\n      \"backing_identities\": [\n        {\n          \"device\": 38,\n          \"inode\": 122370797\n        },\n        {\n          \"device\": 38,\n          \"inode\": 122370798\n        }\n      ],\n      \"cid\": \"a5194466\",\n      \"descriptor_extent_count\": 2,\n      \"descriptor_identity\": {\n        \"device\": 38,\n        \"inode\": 122370796\n      },\n      \"layout\": \"hosted_sparse\",\n      \"metadata_memory_reservation_bytes\": 287352,\n      \"metadata_read_bytes\": 290816\n    }\n  },\n  \"summary\": {\n    \"logical_bytes\": 2147549184,\n    \"data_bytes\": 196608,\n    \"zero_bytes\": 2147352576,\n    \"hole_bytes\": 0,\n    \"extent_count\": 3\n  },\n  \"destination\": {\n    \"path\": {\n      \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.decoded.raw\"\n    },\n    \"state\": \"new\",\n    \"policy\": \"create_new_no_clobber\",\n    \"existing_bytes\": null,\n    \"copy_range_bytes\": 2147549184,\n    \"preserved_tail_bytes\": 0,\n    \"write_access_checked\": false\n  },\n  \"execution\": {\n    \"requested_backend\": \"auto\",\n    \"selected_backend\": \"threaded\",\n    \"selection_reason\": \"portable_api\",\n    \"runtime_prepared\": false,\n    \"block_size\": 1048576,\n    \"buffer_alignment\": 4096,\n    \"workers\": 1,\n    \"work_queue_capacity\": 4,\n    \"native_queue_depth\": 8,\n    \"native_read_window\": 4,\n    \"memory_budget_bytes\": 268435456,\n    \"threaded_payload_estimate_bytes\": 1048672,\n    \"threaded_payload_fits_budget\": true\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "copy",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.decoded.raw",
+        "--format",
+        "vmdk",
+        "--backend",
+        "auto",
+        "--workers",
+        "4",
+        "--block-size",
+        "65537",
+        "--verify",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"backend\": \"threaded\",\n  \"command\": \"copy\",\n  \"copy_memory_budget_bytes\": 268304382,\n  \"destination\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.decoded.raw\"\n  },\n  \"destination_policy\": \"create_new_no_clobber\",\n  \"destination_tail_bytes\": 0,\n  \"durability\": \"file_and_directory_synced\",\n  \"elapsed_seconds\": 0.869518953,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 2147549184,\n  \"planned_backend\": \"threaded\",\n  \"requested_backend\": \"auto\",\n  \"runtime_fallback\": null,\n  \"schema_version\": 1,\n  \"selection_reason\": \"portable_api\",\n  \"source\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.vmdk\"\n  },\n  \"stats\": {\n    \"blocks_copied\": 3,\n    \"bytes_discarded\": 0,\n    \"bytes_read\": 196608,\n    \"bytes_written\": 196608,\n    \"bytes_zeroed\": 2147352576,\n    \"extents_processed\": 3\n  },\n  \"status\": \"completed\",\n  \"verification\": {\n    \"bytes_verified\": 2147549184,\n    \"elapsed_seconds\": 0.487090565\n  },\n  \"verification_payload_bytes\": 131074\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/rvvdk-r57-xxjld7a0/candidate-target/release/rvddk",
+        "verify",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.decoded.raw",
+        "--format",
+        "vmdk",
+        "--block-size",
+        "65537",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"command\": \"verify\",\n  \"destination\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.decoded.raw\"\n  },\n  \"destination_tail_bytes\": 0,\n  \"elapsed_seconds\": 0.268877943,\n  \"format\": \"vmdk\",\n  \"logical_bytes\": 2147549184,\n  \"schema_version\": 1,\n  \"source\": {\n    \"display\": \"/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.vmdk\"\n  },\n  \"status\": \"verified\",\n  \"verification_payload_bytes\": 131074\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-img",
+        "compare",
+        "-f",
+        "vmdk",
+        "-F",
+        "raw",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.vmdk",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r57-benchmark-storage/reference-cli/multi-split.decoded.raw"
+      ],
+      "exit_code": 0,
+      "stdout": "Images are identical.\n",
+      "stderr": ""
+    }
+  ],
+  "files": {
+    "mono.decoded.raw": {
+      "bytes": 1048576,
+      "sha256": "947283b81440a8ab6eafc9c567b362c35c3c1af67554eaed796a9bca9f05a8ff"
+    },
+    "mono.raw": {
+      "bytes": 1048576,
+      "sha256": "947283b81440a8ab6eafc9c567b362c35c3c1af67554eaed796a9bca9f05a8ff"
+    },
+    "mono.vmdk": {
+      "bytes": 262144,
+      "sha256": "4d09cba4859f24adf9011e45bf8e7937f3471fabcfd2a09da5c20dafc2045cf5"
+    },
+    "multi-split-s001.vmdk": {
+      "bytes": 458752,
+      "sha256": "b91693f7e1998d31727c093e0c27a78d113366015138df8599e165c088b38172"
+    },
+    "multi-split-s002.vmdk": {
+      "bytes": 131072,
+      "sha256": "21e505539afff5ff0a1fdaaabfe67bf5ce935acf67685db5f75188ad9f736d83"
+    },
+    "multi-split.decoded.raw": {
+      "bytes": 2147549184,
+      "sha256": "e042e91ce6e5ddbe7a4b6d8113f9641f6e490de8031a2cf423a04df15bca7f6b"
+    },
+    "multi-split.raw": {
+      "bytes": 2147549184,
+      "sha256": "e042e91ce6e5ddbe7a4b6d8113f9641f6e490de8031a2cf423a04df15bca7f6b"
+    },
+    "multi-split.vmdk": {
+      "bytes": 512,
+      "sha256": "b708b9b48132373057bfd7f132c71859a4b78514d19ddf218935bddeea2022c2"
+    },
+    "split-s001.vmdk": {
+      "bytes": 262144,
+      "sha256": "d875bf5d760b8a39cfbde761736d2c0cf1b869323ba9ed3442c39e1a47a786ad"
+    },
+    "split.decoded.raw": {
+      "bytes": 1048576,
+      "sha256": "947283b81440a8ab6eafc9c567b362c35c3c1af67554eaed796a9bca9f05a8ff"
+    },
+    "split.raw": {
+      "bytes": 1048576,
+      "sha256": "947283b81440a8ab6eafc9c567b362c35c3c1af67554eaed796a9bca9f05a8ff"
+    },
+    "split.vmdk": {
+      "bytes": 512,
+      "sha256": "429edfc2ca6cfc7e2d92677fb58c5f364ba3236d7cdb132ebfdc093cec4cea83"
+    },
+    "two-tables.decoded.raw": {
+      "bytes": 67108864,
+      "sha256": "2adc4e73229c00d99419442d1eafacde9a35c6981ba3517dc200a3cc7b09b1ad"
+    },
+    "two-tables.raw": {
+      "bytes": 67108864,
+      "sha256": "2adc4e73229c00d99419442d1eafacde9a35c6981ba3517dc200a3cc7b09b1ad"
+    },
+    "two-tables.vmdk": {
+      "bytes": 262144,
+      "sha256": "f0b074b76293050b848651ceb729d404aa46defcf2bb6362622d072b6375092f"
+    }
+  }
+}

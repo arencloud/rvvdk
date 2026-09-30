@@ -85,3 +85,14 @@ SDK or producer implementation code. The `chain` benchmark reuses these fixtures
 with read counters disabled; atomic fault flags and in-memory reads remain timed.
 QEMU-created chains are generated separately by `scripts/vmdk/compare_chain.py`;
 only commands, metadata reports and hashes are committed, not virtual disk files.
+
+R5.7 `tests/support/chain_disk.rs` independently builds each sparse layer from
+allocation masks, grain sizes, extent lengths and reversible physical placements.
+Byte values depend on logical position and a layer salt; the oracle selects the
+first allocated layer without consulting production maps. Fixtures use separate
+memory-backed descriptors and extents, optional read counters and injected faults.
+The `chain_disk` benchmark disables counters but retains wrapper flag atomics and
+memory-device synchronization. `scripts/vmdk/compare_chain_reads.py` separately
+creates QEMU chains, applies sector-aligned writes (including allocated zero bytes),
+and compares production logical reads with independently edited RAW overlays and
+QEMU decoding. Generated disk images remain in ignored storage.

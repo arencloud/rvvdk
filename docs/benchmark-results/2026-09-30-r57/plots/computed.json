@@ -1,0 +1,294 @@
+{
+  "main": [
+    {
+      "benchmark": "sparse_metadata/monolithic",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          5415.320720502901,
+          5578.675530205655,
+          5592.790383460582
+        ],
+        "candidate": [
+          5437.406794221008,
+          5902.625596349305,
+          5529.487667963225
+        ]
+      },
+      "baseline_ns": 5578.675530205655,
+      "candidate_ns": 5529.487667963225,
+      "change_percent": -0.8817121909331926,
+      "paired_changes_percent": [
+        0.4078442415143879,
+        5.806935076070063,
+        -1.1318628297702804
+      ]
+    },
+    {
+      "benchmark": "sparse_disk/read_contiguous_128k",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          2324.352129063629,
+          2616.5009050842123,
+          2588.8057809990887
+        ],
+        "candidate": [
+          2311.230875126337,
+          2619.7596091205214,
+          3217.029882956799
+        ]
+      },
+      "baseline_ns": 2588.8057809990887,
+      "candidate_ns": 2619.7596091205214,
+      "change_percent": 1.1956798130096313,
+      "paired_changes_percent": [
+        -0.564512311763099,
+        0.12454434966855388,
+        24.266946040087344
+      ]
+    },
+    {
+      "benchmark": "cli_vmdk/copy_mixed_verify",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          20496577.5,
+          20396945.25,
+          20353131.75
+        ],
+        "candidate": [
+          20667646.5,
+          20501037.25,
+          20571852.375
+        ]
+      },
+      "baseline_ns": 20396945.25,
+      "candidate_ns": 20571852.375,
+      "change_percent": 0.8575162744038911,
+      "paired_changes_percent": [
+        0.8346222680347459,
+        0.5103313203235649,
+        1.0746288467375464
+      ]
+    },
+    {
+      "benchmark": "cli_transfer/verify_only",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          3312117.277777778,
+          3704000.95,
+          3761301.833333333
+        ],
+        "candidate": [
+          3766187.4444444445,
+          3748417.777777778,
+          3684859.5555555555
+        ]
+      },
+      "baseline_ns": 3704000.95,
+      "candidate_ns": 3748417.777777778,
+      "change_percent": 1.1991581097671622,
+      "paired_changes_percent": [
+        13.70936257943496,
+        1.1991581097671622,
+        -2.0323356424186034
+      ]
+    }
+  ],
+  "followup": [
+    {
+      "benchmark": "sparse_metadata/monolithic",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          5937.559798818644,
+          5432.698463910461,
+          5730.07930549038
+        ],
+        "candidate": [
+          5540.6575799802595,
+          5853.60411049194,
+          5694.623329637627
+        ]
+      },
+      "baseline_ns": 5730.07930549038,
+      "candidate_ns": 5694.623329637627,
+      "change_percent": -0.6187693740779543,
+      "paired_changes_percent": [
+        -6.684601625693998,
+        7.747634980619034,
+        -0.6187693740779543
+      ]
+    },
+    {
+      "benchmark": "sparse_disk/read_contiguous_128k",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          2582.7194577310324,
+          2655.2982586795215,
+          2504.8762177724084
+        ],
+        "candidate": [
+          2621.677791666667,
+          2533.5232868280673,
+          2853.9766625420853
+        ]
+      },
+      "baseline_ns": 2582.7194577310324,
+      "candidate_ns": 2621.677791666667,
+      "change_percent": 1.5084229848897346,
+      "paired_changes_percent": [
+        1.5084229848897346,
+        -4.586112744713389,
+        13.936834175388224
+      ]
+    },
+    {
+      "benchmark": "cli_transfer/verify_only",
+      "pair_ids": [
+        1,
+        2,
+        3
+      ],
+      "run_medians_ns": {
+        "baseline": [
+          3749061.6071428573,
+          3768185.923076923,
+          3910558.4166666665
+        ],
+        "candidate": [
+          3824463.269230769,
+          3775687.9615384615,
+          3882429.5833333335
+        ]
+      },
+      "baseline_ns": 3768185.923076923,
+      "candidate_ns": 3824463.269230769,
+      "change_percent": 1.4934864495192546,
+      "paired_changes_percent": [
+        2.0112142714393766,
+        0.19908886171446927,
+        -0.7193047727774404
+      ]
+    }
+  ],
+  "candidate_only": [
+    {
+      "benchmark": "chain_disk/read_base_1m_depth1",
+      "candidate_ns": 52004.84504792332,
+      "run_medians_ns": [
+        52004.84504792332,
+        54209.11026463512,
+        48054.512720848055
+      ]
+    },
+    {
+      "benchmark": "chain_disk/query_base_1m_depth1",
+      "candidate_ns": 292.2252740384615,
+      "run_medians_ns": [
+        294.6854608744487,
+        292.2252740384615,
+        268.5767694868092
+      ]
+    },
+    {
+      "benchmark": "chain_disk/read_base_1m_depth4",
+      "candidate_ns": 54607.85583796664,
+      "run_medians_ns": [
+        54607.85583796664,
+        60118.1118587048,
+        53971.64150227618
+      ]
+    },
+    {
+      "benchmark": "chain_disk/query_base_1m_depth4",
+      "candidate_ns": 3712.987126956947,
+      "run_medians_ns": [
+        3712.987126956947,
+        3831.423581313833,
+        3680.037497035807
+      ]
+    },
+    {
+      "benchmark": "chain_disk/read_base_1m_depth16",
+      "candidate_ns": 58973.854414261456,
+      "run_medians_ns": [
+        58028.16824034335,
+        60360.458370635635,
+        58973.854414261456
+      ]
+    },
+    {
+      "benchmark": "chain_disk/query_base_1m_depth16",
+      "candidate_ns": 14946.549928673323,
+      "run_medians_ns": [
+        14542.52731142114,
+        14946.549928673323,
+        15900.983965793694
+      ]
+    },
+    {
+      "benchmark": "chain_disk/read_leaf_1m",
+      "candidate_ns": 51461.981412639405,
+      "run_medians_ns": [
+        50149.58339566193,
+        51600.48705882353,
+        51461.981412639405
+      ]
+    },
+    {
+      "benchmark": "chain_disk/read_alternating_1m",
+      "candidate_ns": 55163.003722084366,
+      "run_medians_ns": [
+        68722.36238136324,
+        54825.910981697176,
+        55163.003722084366
+      ]
+    },
+    {
+      "benchmark": "chain_disk/read_fragmented_1m",
+      "candidate_ns": 56304.25728559534,
+      "run_medians_ns": [
+        56304.25728559534,
+        54447.087242798356,
+        57300.841065292094
+      ]
+    },
+    {
+      "benchmark": "chain_disk/read_zero_1m",
+      "candidate_ns": 16787.274152898346,
+      "run_medians_ns": [
+        16787.274152898346,
+        17930.929524152845,
+        14585.528374591311
+      ]
+    }
+  ]
+}

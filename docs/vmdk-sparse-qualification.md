@@ -67,6 +67,6 @@ PERF.0 and earlier shared-host performance investigations remain open.
 explicit resolver policy, CID/identity validation, missing-parent errors, cycle
 and depth limits, and aggregate resource accounting. Keep it separate from base
 loading and from logical fallback reads; zero child entries cannot mean logical
-zero once a parent is involved. R5.7 parent reads and subsequent CLI exposure follow as separately
-qualified steps. Coverage-guided fuzzing remains planned. No ESXi is needed until
+zero once a parent is involved. R5.7 now provides [logical parent reads](vmdk-chain-disk.md); CLI exposure follows
+as a separately qualified step. Coverage-guided fuzzing remains planned. No ESXi is needed until
 the V0 live-access proof is ready for the user's 60-day trial.
