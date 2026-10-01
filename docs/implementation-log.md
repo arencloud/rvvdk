@@ -2062,7 +2062,16 @@ PERF.0/R4.4, prior investigations and the QEMU partial second-extent discrepancy
 ## Next session
 
 Continue **V0.3.2** using the [saved licensed qualification plan](vmware-access-plan.md#v032--licensed-live-qualification).
-After user-provisioned supported licensing, repeat the probe, establish an independent
+The user will replace the lab with **vSphere 9 and new VMs**, rather than preserve
+the previous guests. This planning update records explicit API/version and lease
+certificate compatibility as the first implementation prerequisite. The current
+8.0.3 version guard remains unchanged; no vSphere 9 support is claimed yet. Obtain
+fresh host/VM identities and a new performance baseline; retain old evidence.
+The documented API 9 certificate field and potentially empty thumbprint need tests
+under the existing pinned TLS policy. No live connection or VM changes were made
+for this documentation-only update; no new Rust test/benchmark run is claimed.
+
+After compatibility work and user-provisioned supported licensing, repeat the probe, establish an independent
 logical-byte oracle, gracefully shut down only the selected VM if needed, and prove
 live export/format, Complete/Abort/Logout and repeated transfer performance. Retain
 all failure evidence. Do not declare V0/R6 complete from synthetic fixtures or a

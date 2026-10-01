@@ -330,8 +330,10 @@ unresolved; neither VM was stopped and no export was attempted.
 fixtures are ready. A live `ExportVm` probe returned a license restriction and
 confirmed Logout without shutting down either VM. [Evidence and plots](benchmark-results/2026-10-01-v031/README.md).
 
-**Next bounded package — V0.3.2:** obtain user-provisioned supported trial/commercial
-access, then qualify real export bytes/format, complete/abort/logout, independent
+**Next bounded package — V0.3.2:** the user will provision a new vSphere 9 trial lab
+and new VMs. First implement/test explicit version and certificate-field compatibility;
+the current executable admits only ESXi 8.0.3. Establish fresh identities and a new
+benchmark baseline, then qualify real export bytes/format, complete/abort/logout, independent
 logical-byte equivalence and repeated transfer performance. The user has been told
 that licensing is needed now. [Continuation plan](vmware-access-plan.md#v032--licensed-live-qualification).
 Export remains a sequential container stream; logical decoding is a separate gate.
@@ -340,6 +342,7 @@ V0 remains open.
 - [x] V0.1 workflow feasibility, capability matrix, acceptance plan and authorized read-only lab discovery.
 - [x] V0.2 Rust session/discovery foundation and failure/logout qualification.
 - [x] V0.3.1 Rust export foundation, local cleanup fixtures and actual license gate.
+- [ ] V0.3.2 prerequisite: explicit vSphere 9 API/version and lease-certificate compatibility.
 - [ ] V0.3.2 Licensed live transfer, independent byte oracle, cleanup and performance.
 - [ ] V0.3 disposable-lab independent Rust export proof and failure/lease-cleanup evidence.
 

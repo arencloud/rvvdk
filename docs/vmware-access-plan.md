@@ -14,6 +14,12 @@ been acquired. V0 remains open until licensed transfer and failure/cleanup evide
 
 ## Observed lab, 2026-10-01
 
+**Replacement lab planned:** the user will install vSphere 9 with supported trial
+access and deploy new VMs. The observations below describe the old ESXi 8 lab;
+they do not establish the replacement host's identity, license or capabilities.
+The current executable rejects servers outside 8.0.3 / HostAgent API 8.0.3.0.
+Implement and test explicit vSphere 9 compatibility before its live export proof.
+
 [Sanitized observations and timings](benchmark-results/2026-10-01-v01/README.md)
 retain three complete inventory sessions; each logged out successfully.
 
@@ -229,13 +235,52 @@ all prior performance follow-ups remain open.
 
 ### V0.3.2 — Licensed live qualification
 
-1. After the user provisions legitimate evaluation/commercial access, rediscover the
-   same admitted host and record active licensing/expiry when visible. Do not change
+The next lab is a **new vSphere 9 installation with new VMs**, as directed by the
+user after V0.3.1. Exact product/API version, build, licensing and host certificate
+are not yet observed. This changes the target; it does not retroactively qualify
+vSphere 9 or invalidate the retained ESXi 8 results.
+
+Before live transfer, complete the following compatibility work:
+
+- Inspect the replacement host's reported product/API version and advertised SOAP
+  versions without sending credentials to an unverified endpoint. Add an explicit,
+  tested version policy and SOAP request version for the supported combination;
+  retain rejection of unknown versions and the ESXi 8 regression fixtures. Do not
+  simply remove the current version guard or assume all 9.x builds are equivalent.
+- Test discovery and export lease responses for the selected version. The documented
+  device URL adds optional `sslCertificate` in API 9.0.0.0; `sslThumbprint` may be
+  empty. Decide and test bounded PEM/thumbprint handling under the existing exact
+  SHA-256 TLS trust policy, including conflicts, malformed input and missing fields.
+  The current downloader requires a matching nonempty thumbprint; do not silently
+  weaken that check. Record which representation the new host actually supplies.
+- Retest authentication, version rejection before Login, redaction, endpoint policy,
+  manifest parsing, cancellation and complete/abort/logout. Preserve `Send` futures.
+- Establish a new performance baseline on the replacement host and guests. Do not
+  label comparisons with the old ESXi 8 lab as matched implementation speedups;
+  software, guest content and possibly hardware/storage have changed.
+
+References: [server/API identity](https://developer.broadcom.com/xapis/vsphere-web-services-api/latest/vim.AboutInfo.html),
+[lease certificate fields](https://developer.broadcom.com/xapis/vsphere-web-services-api/latest/vim.HttpNfcLease.DeviceUrl.html),
+[ExportVm contract](https://developer.broadcom.com/xapis/vsphere-web-services-api/latest/vim.VirtualMachine.html#exportVm).
+These API contracts guide implementation; live vSphere 9 behavior remains unqualified.
+
+Suggested disposable fixture: two Fedora VMs, each with one persistent, unencrypted
+disk, 30 GiB on the selected VM and 60 GiB on the untouched control VM. Use no
+snapshots/backing parents and have VMware Tools/open-vm-tools running for graceful
+shutdown. These are our proof's fixture choices, not vSphere minimum requirements.
+One VM suffices for basic export, but a second permits unchanged-control checks.
+Keep direct host access as the initial scope; vCenter integration remains later work.
+
+1. After the user provisions legitimate evaluation/commercial access, validate the
+   replacement host's certificate through a trusted channel, discover fresh host/VM
+   identities and record active licensing/expiry when visible. Do not reuse the old
+   pin, managed references, UUIDs or disk paths, even if the network address is reused.
+   Do not change
    keys, reset evaluation, bypass API restrictions or assume the free installation
    can be converted. Retain the observed restriction and prior evidence.
 2. Repeat the eligibility probe. An invalid-power-state response only resolves that
    precondition; it does not prove all later operations are permitted. Revalidate
-   the selected 30 GiB VM and the untouched 60 GiB VM. Passwords remain terminal-only.
+   the newly selected 30 GiB VM and the new untouched 60 GiB VM. Passwords remain terminal-only.
 3. Establish an independent logical-byte oracle: deterministic guest content when
    guest access is available, or an agreed independent offline reference. Server
    manifest checksums alone do not satisfy this. Record any missing prerequisite.
