@@ -14,11 +14,12 @@ been acquired. V0 remains open until licensed transfer and failure/cleanup evide
 
 ## Observed lab, 2026-10-01
 
-**Replacement lab planned:** the user will install vSphere 9 with supported trial
-access and deploy new VMs. The observations below describe the old ESXi 8 lab;
-they do not establish the replacement host's identity, license or capabilities.
-The current executable rejects servers outside 8.0.3 / HostAgent API 8.0.3.0.
-Implement and test explicit vSphere 9 compatibility before its live export proof.
+**Recommended replacement lab:** ESXi 8.0 Update 3 (8.0.3), with supported active
+evaluation/commercial licensing and new VMs. The user offered either version 8 or 9;
+8 U3 matches the implemented 8.0.3 / HostAgent API 8.0.3.0 path and avoids adding a
+version port before the first live export proof. vSphere 9 compatibility is deferred.
+The observations below describe the old lab; the replacement host's certificate,
+exact build, license and VM identities still require fresh qualification.
 
 [Sanitized observations and timings](benchmark-results/2026-10-01-v01/README.md)
 retain three complete inventory sessions; each logged out successfully.
@@ -235,34 +236,24 @@ all prior performance follow-ups remain open.
 
 ### V0.3.2 — Licensed live qualification
 
-The next lab is a **new vSphere 9 installation with new VMs**, as directed by the
-user after V0.3.1. Exact product/API version, build, licensing and host certificate
-are not yet observed. This changes the target; it does not retroactively qualify
-vSphere 9 or invalidate the retained ESXi 8 results.
+Prefer **ESXi 8.0 Update 3 (8.0.3) with an active supported trial/commercial
+license** for this proof. The existing Rust version policy admits product 8.0.3 and
+HostAgent API 8.0.3.0; the old free installation's export rejection was a licensing
+gate. An appropriately licensed replacement lets us qualify the existing workflow
+before expanding to vSphere 9. Eligibility is still confirmed by the actual server;
+no installer name alone proves licensing, and no evaluation conversion is assumed.
 
-Before live transfer, complete the following compatibility work:
+Record the exact replacement build/API version before running the export example.
+If they do not match the admitted combination, stop for explicit compatibility work.
+Use a supported, appropriately patched 8 U3 image available under the user's
+entitlement; this is not a requirement to reproduce the old free installer/build.
+Broadcom describes vSphere 8 support through October 2027 in its
+[published lifecycle guidance](https://blogs.vmware.com/cloud-foundation/2025/08/01/sap-customers-running-on-vmware-vsphere-7-call-to-action/).
 
-- Inspect the replacement host's reported product/API version and advertised SOAP
-  versions without sending credentials to an unverified endpoint. Add an explicit,
-  tested version policy and SOAP request version for the supported combination;
-  retain rejection of unknown versions and the ESXi 8 regression fixtures. Do not
-  simply remove the current version guard or assume all 9.x builds are equivalent.
-- Test discovery and export lease responses for the selected version. The documented
-  device URL adds optional `sslCertificate` in API 9.0.0.0; `sslThumbprint` may be
-  empty. Decide and test bounded PEM/thumbprint handling under the existing exact
-  SHA-256 TLS trust policy, including conflicts, malformed input and missing fields.
-  The current downloader requires a matching nonempty thumbprint; do not silently
-  weaken that check. Record which representation the new host actually supplies.
-- Retest authentication, version rejection before Login, redaction, endpoint policy,
-  manifest parsing, cancellation and complete/abort/logout. Preserve `Send` futures.
-- Establish a new performance baseline on the replacement host and guests. Do not
-  label comparisons with the old ESXi 8 lab as matched implementation speedups;
-  software, guest content and possibly hardware/storage have changed.
-
-References: [server/API identity](https://developer.broadcom.com/xapis/vsphere-web-services-api/latest/vim.AboutInfo.html),
-[lease certificate fields](https://developer.broadcom.com/xapis/vsphere-web-services-api/latest/vim.HttpNfcLease.DeviceUrl.html),
-[ExportVm contract](https://developer.broadcom.com/xapis/vsphere-web-services-api/latest/vim.VirtualMachine.html#exportVm).
-These API contracts guide implementation; live vSphere 9 behavior remains unqualified.
+New VMs or a replacement host require fresh identity/certificate checks and a new
+benchmark baseline. Preserve old timings as historical evidence, not matched
+before/after results across changed guests, software or hardware. vSphere 9 remains
+later compatibility work, rather than a prerequisite for this 8 U3 proof.
 
 Suggested disposable fixture: two Fedora VMs, each with one persistent, unencrypted
 disk, 30 GiB on the selected VM and 60 GiB on the untouched control VM. Use no
@@ -302,3 +293,30 @@ Keep direct host access as the initial scope; vCenter integration remains later 
    all recorded sessions; do not claim the individual regression gate passed.
 9. Update this checklist, architecture, roadmap and implementation log; commit the
    qualified bounded step locally. V0/R6 remain open until their stated gates pass.
+
+### Later — vSphere 9 compatibility (deferred)
+
+The previous vSphere 9 preparation plan is retained for a later qualification.
+The current executable does not admit or claim support for vSphere 9.
+
+- Inspect the replacement host's reported product/API version and advertised SOAP
+  versions without sending credentials to an unverified endpoint. Add an explicit,
+  tested version policy and SOAP request version for the supported combination;
+  retain rejection of unknown versions and the ESXi 8 regression fixtures. Do not
+  simply remove the current version guard or assume all 9.x builds are equivalent.
+- Test discovery and export lease responses for the selected version. The documented
+  device URL adds optional `sslCertificate` in API 9.0.0.0; `sslThumbprint` may be
+  empty. Decide and test bounded PEM/thumbprint handling under the existing exact
+  SHA-256 TLS trust policy, including conflicts, malformed input and missing fields.
+  The current downloader requires a matching nonempty thumbprint; do not silently
+  weaken that check. Record which representation the new host actually supplies.
+- Retest authentication, version rejection before Login, redaction, endpoint policy,
+  manifest parsing, cancellation and complete/abort/logout. Preserve `Send` futures.
+- Establish a new performance baseline on the replacement host and guests. Do not
+  label comparisons with the old ESXi 8 lab as matched implementation speedups;
+  software, guest content and possibly hardware/storage have changed.
+
+References: [server/API identity](https://developer.broadcom.com/xapis/vsphere-web-services-api/latest/vim.AboutInfo.html),
+[lease certificate fields](https://developer.broadcom.com/xapis/vsphere-web-services-api/latest/vim.HttpNfcLease.DeviceUrl.html),
+[ExportVm contract](https://developer.broadcom.com/xapis/vsphere-web-services-api/latest/vim.VirtualMachine.html#exportVm).
+These API contracts guide implementation; live vSphere 9 behavior remains unqualified.

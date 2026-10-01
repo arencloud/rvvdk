@@ -6,9 +6,11 @@ not a VMware SDK or VDDK. V0.3.1 adds a Linux export-lease proof, including expl
 graceful shutdown when requested. Live export remains license-blocked. Local disk crates
 and the public `rvddk` CLI do not depend on this crate.
 
-The next lab will use vSphere 9 and newly deployed VMs. That version is **not yet
-admitted or qualified**: explicit version/API and lease certificate compatibility
-must be implemented and tested first. See the [replacement-lab plan](../../docs/vmware-access-plan.md#v032--licensed-live-qualification).
+The recommended next lab is an appropriately licensed ESXi 8.0 Update 3 (8.0.3)
+installation with new VMs, matching the existing version policy. Verify the actual
+build/API, license and fresh host/VM identities before live export. vSphere 9 is
+**not yet admitted or qualified** and remains later compatibility work. See the
+[replacement-lab plan](../../docs/vmware-access-plan.md#v032--licensed-live-qualification).
 
 ## API and trust
 
