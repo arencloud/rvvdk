@@ -1,11 +1,14 @@
 # rvvdk Benchmarks
 
-Latest step: [V0.1 live discovery observations](benchmark-results/2026-10-01-v01/README.md).
-Three sanitized sessions retain all 42 request timings with reproducible SVG/PNG
-plots. Each request opens a fresh TLS connection. No disk transfer or production
-Rust changes occurred, so these are control-plane observations, not a speedup or
-matched runtime comparison. The next Rust step must measure connection reuse
-and bounded session behavior independently.
+Latest step: [V0.2 Rust ESXi discovery](benchmark-results/2026-10-01-v02/README.md).
+Three alternating pairs compare fresh/reused TLS with the same release binary,
+14 SOAP requests and confirmed Logout per session. Reuse reduces median complete
+session time by 68.51% in this lab; every pair improves, so no >5% adverse elapsed
+trigger fires. CPU, process high-water RSS, per-request timings, the initial failed
+namespace-discovery run and a successful bounded-error cleanup proof are retained.
+These results qualify connection reuse for discovery, not disk throughput or a
+Python/Rust speedup. [V0.1 probe observations](benchmark-results/2026-10-01-v01/README.md)
+remain historical evidence. Local disk runtime source is unchanged.
 
 Previous step: [R5.9 bounded admission fuzz qualification](benchmark-results/2026-09-30-r59/README.md).
 Twelve independent sanitizer campaigns execute 62,446,303 inputs with peak RSS

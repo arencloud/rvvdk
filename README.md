@@ -62,7 +62,7 @@ VMware disk access and migration, extensible to other platforms.
 | **Hosted sparse reads** | [Read-only base monolithic/split sparse](docs/vmdk-sparse-disk.md), bounded metadata and [CLI inspect/plan/copy/verify](docs/cli-vmdk.md) |
 | **Parent chains** | [Read-only sparse parent fallback](docs/vmdk-chain-disk.md) with bounded metadata, whole-chain alias checks and [opt-in CLI support](docs/cli-vmdk-parents.md) |
 | **Admission fuzzing** | [Four bounded libFuzzer targets](fuzz/README.md), authored seeds, sanitizer campaigns and retained corpora |
-| **VMware access** | [Discovery verified with an isolated probe](docs/vmware-access-plan.md); export designed, Rust transport pending; no VMware VDDK dependency |
+| **VMware access** | [Independent Rust authentication and inventory](crates/rvvdk-vsphere/README.md) qualified on ESXi 8.0.3; export proof pending; no VMware SDK/VDDK dependency |
 
 The [endpoint contract](docs/architecture.md#copy-endpoint-preflight-r05) describes
 preflight guarantees and custom-backend requirements. DataMover native request
@@ -228,8 +228,9 @@ workloads. Measurements depend on the filesystem, page cache, hardware, and
 flush policy. See the [benchmark notes](docs/benchmarks.md) for historical results
 and the [review](docs/project-review-2026-09-28.md) for measurement gaps.
 
-See the [V0.1 live discovery plots](docs/benchmark-results/2026-10-01-v01/README.md)
-for API latency observations; these are not disk-throughput benchmarks.
+See the [V0.2 Rust discovery plots](docs/benchmark-results/2026-10-01-v02/README.md)
+for matched TLS connection-reuse latency, CPU and memory observations; these are
+not disk-throughput benchmarks.
 Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
 for sanitizer execution rates, memory and feedback across repeated campaigns.
 The [R5.8 CLI parent-chain timings](docs/benchmark-results/2026-09-30-r58/README.md)

@@ -94,5 +94,6 @@ Local format support makes no live VMware compatibility claim. ESXi is unnecessa
 R5.9 now adds [bounded coverage-guided admission fuzzing](../fuzz/README.md),
 with retained seeds, resource limits and reproducible evidence. V0.1 records
 the [independent-access workflow and lab acceptance plan](vmware-access-plan.md);
-V0.2 next implements Rust session/inventory support.
+V0.2 qualifies [Rust session/inventory support](../crates/rvvdk-vsphere/README.md);
+V0.3 next proves export and lease cleanup.
 Broader parent path policies and formats require separate qualification.

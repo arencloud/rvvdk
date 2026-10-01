@@ -1,0 +1,4201 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 7aa44c5..0c88146 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -32,24 +32,99 @@ version = "1.0.14"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "940b3a0ca603d1eade50a4846a2afffd5ef57a9feac2c0e2ec2e14f9ead76000"
+ 
++[[package]]
++name = "asn1-rs"
++version = "0.7.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "b7f43a50ac4fdca5df8e885c21b835997f0a1cdee65494a6847694a98652d9d8"
++dependencies = [
++ "asn1-rs-derive",
++ "asn1-rs-impl",
++ "displaydoc",
++ "nom",
++ "num-traits",
++ "rusticata-macros",
++ "thiserror",
++ "time",
++]
++
++[[package]]
++name = "asn1-rs-derive"
++version = "0.6.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "3109e49b1e4909e9db6515a30c633684d68cdeaa252f215214cb4fa1a5bfee2c"
++dependencies = [
++ "proc-macro2",
++ "quote",
++ "syn 2.0.119",
++ "synstructure 0.13.2",
++]
++
++[[package]]
++name = "asn1-rs-impl"
++version = "0.2.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "7b18050c2cd6fe86c3a76584ef5e0baf286d038cda203eb6223df2cc413565f7"
++dependencies = [
++ "proc-macro2",
++ "quote",
++ "syn 2.0.119",
++]
++
++[[package]]
++name = "atomic-waker"
++version = "1.1.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
++
+ [[package]]
+ name = "autocfg"
+ version = "1.5.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
+ 
++[[package]]
++name = "base64"
++version = "0.23.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "ac07cdecf99051d9a5238b80f35af32cdeba5b336e55d957b318b50137e18da5"
++
++[[package]]
++name = "bit-vec"
++version = "0.9.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "b71798fca2c1fe1086445a7258a4bc81e6e49dcd24c8d0dd9a1e57395b603f51"
++dependencies = [
++ "serde",
++]
++
+ [[package]]
+ name = "bitflags"
+ version = "2.13.2"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "3ded4057c258ba199e2d26386d3af3780957ecaee6c4ef4041c6b4b8b97c0b06"
+ 
++[[package]]
++name = "block-buffer"
++version = "0.12.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "d2f6c7dbe95a6ed67ad9f18e57daf93a2f034c524b99fd2b76d18fdfeb6660aa"
++dependencies = [
++ "hybrid-array",
++]
++
+ [[package]]
+ name = "bumpalo"
+ version = "3.20.3"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
+ 
++[[package]]
++name = "bytes"
++version = "1.12.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04"
++
+ [[package]]
+ name = "cast"
+ version = "0.3.0"
+@@ -124,6 +199,47 @@ version = "1.1.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "1c133bc6a41be0d194c306b5506d15e6feeea7b1d6604bd3f8310dfb2ca96486"
+ 
++[[package]]
++name = "combine"
++version = "4.6.8"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "cfc320937d09e6de266b31b9afb480f197d7a861be86be7cb2ea7e5d1bfffc5e"
++dependencies = [
++ "bytes",
++ "memchr",
++]
++
++[[package]]
++name = "const-oid"
++version = "0.10.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
++
++[[package]]
++name = "core-foundation"
++version = "0.10.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "b2a6cd9ae233e7f62ba4e9353e81a88df7fc8a5987b8d445b4d90c879bd156f6"
++dependencies = [
++ "core-foundation-sys",
++ "libc",
++]
++
++[[package]]
++name = "core-foundation-sys"
++version = "0.8.7"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
++
++[[package]]
++name = "cpufeatures"
++version = "0.3.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "5ca28b0ae3115b884660db4118d803791fd6756b6e88f39c0f3f7859060d7566"
++dependencies = [
++ "libc",
++]
++
+ [[package]]
+ name = "criterion"
+ version = "0.8.2"
+@@ -190,6 +306,63 @@ version = "0.2.4"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
+ 
++[[package]]
++name = "crypto-common"
++version = "0.2.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "ce6e4c961d6cd6c9a86db418387425e8bdeaf05b3c8bc1411e6dca4c252f1453"
++dependencies = [
++ "hybrid-array",
++]
++
++[[package]]
++name = "data-encoding"
++version = "2.11.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "4583a4551df46e2792f82ceeac45e850d2e2d5debba0b91f102385cda5b11f06"
++
++[[package]]
++name = "der-parser"
++version = "10.0.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "07da5016415d5a3c4dd39b11ed26f915f52fc4e0dc197d87908bc916e51bc1a6"
++dependencies = [
++ "asn1-rs",
++ "displaydoc",
++ "nom",
++ "num-bigint",
++ "num-traits",
++ "rusticata-macros",
++]
++
++[[package]]
++name = "deranged"
++version = "0.5.8"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "7cd812cc2bc1d69d4764bd80df88b4317eaef9e773c75226407d9bc0876b211c"
++
++[[package]]
++name = "digest"
++version = "0.11.3"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "f1dd6dbb5841937940781866fa1281a1ff7bd3bf827091440879f9994983d5c2"
++dependencies = [
++ "block-buffer",
++ "const-oid",
++ "crypto-common",
++]
++
++[[package]]
++name = "displaydoc"
++version = "0.2.7"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "c6232dd377dcc64799954cbd3a9bb882e9cdc1308ccd87b1c098f1fb2eaf82a8"
++dependencies = [
++ "proc-macro2",
++ "quote",
++ "syn 3.0.5",
++]
++
+ [[package]]
+ name = "either"
+ version = "1.18.0"
+@@ -202,6 +375,24 @@ version = "0.1.12"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "3e0f1c7c3a72c66fd80abe965175f7523475c0489a87d3ff9d6e8c87d87a9d2d"
+ 
++[[package]]
++name = "form_urlencoded"
++version = "1.2.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "cb4cb245038516f5f85277875cdaa4f7d2c9a0fa0468de06ed190163b1581fcf"
++dependencies = [
++ "percent-encoding",
++]
++
++[[package]]
++name = "futures-channel"
++version = "0.3.34"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "b1f9e3d69d39e4862ffed03ed071a76f9a13ba1d9109d355b0f0aa6b15e393c4"
++dependencies = [
++ "futures-core",
++]
++
+ [[package]]
+ name = "futures-core"
+ version = "0.3.34"
+@@ -226,6 +417,17 @@ dependencies = [
+  "slab",
+ ]
+ 
++[[package]]
++name = "getrandom"
++version = "0.2.17"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "ff2abc00be7fca6ebc474524697ae276ad847ad0a6b3faa4bcb027e9a4614ad0"
++dependencies = [
++ "cfg-if",
++ "libc",
++ "wasi",
++]
++
+ [[package]]
+ name = "half"
+ version = "2.7.1"
+@@ -238,195 +440,760 @@ dependencies = [
+ ]
+ 
+ [[package]]
+-name = "io-uring"
+-version = "0.7.15"
++name = "http"
++version = "1.5.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "ed3bd0ecfbb87805f538bb7b32e5239ca0763890c623e349860ecba69469f2bb"
++checksum = "918d3568bebf352712bc2ef3d46a8bcf1a75b373be6539de198e9105cbbf9ce0"
+ dependencies = [
+- "bitflags",
+- "cfg-if",
+- "libc",
++ "bytes",
++ "itoa",
+ ]
+ 
+ [[package]]
+-name = "itertools"
+-version = "0.13.0"
++name = "http-body"
++version = "1.1.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
++checksum = "ca2a8f2913ee65f60facd6a5905613afaa448497a0230cc41ce022d93290bc2c"
+ dependencies = [
+- "either",
++ "bytes",
++ "http",
+ ]
+ 
+ [[package]]
+-name = "itoa"
+-version = "1.0.18"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
+-
+-[[package]]
+-name = "js-sys"
+-version = "0.3.105"
++name = "http-body-util"
++version = "0.1.5"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "ce57d20d1ea864ce2ac172ab472d409214f4fd359f0b2a2775abdf522e2af99e"
++checksum = "23169fe34a5fbcdd3f3862e78fb9b6fccd5f02a6dc6f732547005d45631ce71c"
+ dependencies = [
+- "cfg-if",
+- "futures-util",
+- "wasm-bindgen",
++ "bytes",
++ "futures-core",
++ "http",
++ "http-body",
++ "pin-project-lite",
+ ]
+ 
+ [[package]]
+-name = "libc"
+-version = "0.2.189"
++name = "httparse"
++version = "1.10.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
++checksum = "6dbf3de79e51f3d586ab4cb9d5c3e2c14aa28ed23d180cf89b4df0454a69cc87"
+ 
+ [[package]]
+-name = "memchr"
+-version = "2.8.3"
++name = "hybrid-array"
++version = "0.4.15"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
++checksum = "27f864f10dfb56725ce5ce5472bc52252c8f93a4ab86327122cebf62c5f59a17"
++dependencies = [
++ "typenum",
++]
+ 
+ [[package]]
+-name = "num-traits"
+-version = "0.2.19"
++name = "hyper"
++version = "1.11.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
++checksum = "27b501faa50e7a26c3d3560ca625132f4078a17771f4810baf70475ae48cbe43"
+ dependencies = [
+- "autocfg",
++ "atomic-waker",
++ "bytes",
++ "futures-channel",
++ "futures-core",
++ "http",
++ "http-body",
++ "httparse",
++ "itoa",
++ "pin-project-lite",
++ "smallvec",
++ "tokio",
++ "want",
+ ]
+ 
+ [[package]]
+-name = "once_cell"
+-version = "1.21.4"
++name = "hyper-rustls"
++version = "0.27.10"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
++checksum = "dfa8e654703247911e29c23fbeaa261834bd9bb74efba2f9acddc37bfb127f53"
++dependencies = [
++ "http",
++ "hyper",
++ "hyper-util",
++ "rustls",
++ "tokio",
++ "tokio-rustls",
++ "tower-service",
++]
+ 
+ [[package]]
+-name = "oorandom"
+-version = "11.1.5"
++name = "hyper-util"
++version = "0.1.21"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "d6790f58c7ff633d8771f42965289203411a5e5c68388703c06e14f24770b41e"
++checksum = "ddc03d96684f9226b8a787cdb71488417b53ab5ea8fdb1dac946cb9431cc8bff"
++dependencies = [
++ "base64",
++ "bytes",
++ "futures-channel",
++ "futures-util",
++ "http",
++ "http-body",
++ "httparse",
++ "hyper",
++ "ipnet",
++ "libc",
++ "percent-encoding",
++ "pin-project-lite",
++ "socket2",
++ "tokio",
++ "tower-service",
++ "tracing",
++]
+ 
+ [[package]]
+-name = "page_size"
+-version = "0.6.0"
++name = "icu_collections"
++version = "2.3.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "30d5b2194ed13191c1999ae0704b7839fb18384fa22e49b57eeaa97d79ce40da"
++checksum = "fa68d21081c4a05d5a901a1c62add574c77048b6a1c67be3b50ce0b60d4ca513"
+ dependencies = [
+- "libc",
+- "winapi",
++ "displaydoc",
++ "potential_utf",
++ "utf8_iter",
++ "yoke",
++ "zerofrom",
++ "zerovec",
+ ]
+ 
+ [[package]]
+-name = "pin-project-lite"
+-version = "0.2.17"
++name = "icu_locale_core"
++version = "2.3.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
++checksum = "d56e28588da92eee5c3201a6eff33fabdd49b62269c8938d4ff050ce4d900deb"
++dependencies = [
++ "displaydoc",
++ "litemap",
++ "tinystr",
++ "writeable",
++ "zerovec",
++]
+ 
+ [[package]]
+-name = "plotters"
+-version = "0.3.7"
++name = "icu_normalizer"
++version = "2.3.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "5aeb6f403d7a4911efb1e33402027fc44f29b5bf6def3effcc22d7bb75f2b747"
++checksum = "12f9cf5f235641ed274641dd81c3f28d870e276763d0797aeeab72317b1c646f"
+ dependencies = [
+- "num-traits",
+- "plotters-backend",
+- "plotters-svg",
+- "wasm-bindgen",
+- "web-sys",
++ "icu_collections",
++ "icu_normalizer_data",
++ "icu_properties",
++ "icu_provider",
++ "smallvec",
++ "zerovec",
+ ]
+ 
+ [[package]]
+-name = "plotters-backend"
+-version = "0.3.7"
++name = "icu_normalizer_data"
++version = "2.3.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "df42e13c12958a16b3f7f4386b9ab1f3e7933914ecea48da7139435263a4172a"
++checksum = "1563da1ed3e0b3bf3d74c9b85917ac9c56464d2f57242270c09c9e752f8021a0"
+ 
+ [[package]]
+-name = "plotters-svg"
+-version = "0.3.7"
++name = "icu_properties"
++version = "2.3.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "51bae2ac328883f7acdfea3d66a7c35751187f870bc81f94563733a154d7a670"
++checksum = "7e7ca276ad3145661a65914e6daf131ca5120cd3dcee8f8f3214b8875184a148"
+ dependencies = [
+- "plotters-backend",
++ "displaydoc",
++ "icu_collections",
++ "icu_locale_core",
++ "icu_properties_data",
++ "icu_provider",
++ "zerotrie",
++ "zerovec",
+ ]
+ 
+ [[package]]
+-name = "proc-macro2"
+-version = "1.0.107"
++name = "icu_properties_data"
++version = "2.3.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9"
+-dependencies = [
+- "unicode-ident",
+-]
++checksum = "e590f038c1464a96894fd6d10127e90a8be4509f56ff7ecef851b15cee0b7caa"
+ 
+ [[package]]
+-name = "quote"
+-version = "1.0.47"
++name = "icu_provider"
++version = "2.3.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001"
++checksum = "d27bbb9d3abbefac45d55f647c9de1d44aafcd1186eb91879afef17c396c3e73"
+ dependencies = [
+- "proc-macro2",
++ "displaydoc",
++ "icu_locale_core",
++ "writeable",
++ "yoke",
++ "zerofrom",
++ "zerotrie",
++ "zerovec",
+ ]
+ 
+ [[package]]
+-name = "rayon"
+-version = "1.12.0"
++name = "idna"
++version = "1.1.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "fb39b166781f92d482534ef4b4b1b2568f42613b53e5b6c160e24cfbfa30926d"
++checksum = "3b0875f23caa03898994f6ddc501886a45c7d3d62d04d2d90788d47be1b1e4de"
+ dependencies = [
+- "either",
+- "rayon-core",
++ "idna_adapter",
++ "smallvec",
++ "utf8_iter",
+ ]
+ 
+ [[package]]
+-name = "rayon-core"
+-version = "1.13.0"
++name = "idna_adapter"
++version = "1.2.2"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "22e18b0f0062d30d4230b2e85ff77fdfe4326feb054b9783a3460d8435c8ab91"
++checksum = "cb68373c0d6620ef8105e855e7745e18b0d00d3bdb07fb532e434244cdb9a714"
+ dependencies = [
+- "crossbeam-deque",
+- "crossbeam-utils",
++ "icu_normalizer",
++ "icu_properties",
+ ]
+ 
+ [[package]]
+-name = "regex"
+-version = "1.13.1"
++name = "io-uring"
++version = "0.7.15"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "f020237b6c8eed93db2e2cb53c00c60a8e1bc73da7d073199a1180401450218d"
++checksum = "ed3bd0ecfbb87805f538bb7b32e5239ca0763890c623e349860ecba69469f2bb"
+ dependencies = [
+- "aho-corasick",
+- "memchr",
+- "regex-automata",
+- "regex-syntax",
++ "bitflags",
++ "cfg-if",
++ "libc",
+ ]
+ 
+ [[package]]
+-name = "regex-automata"
+-version = "0.4.18"
++name = "ipnet"
++version = "2.12.2"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "ad8553b9b26413251cbf30e620595c7a41b3887f03da04579c0e6b0d6a06b4b2"
+-dependencies = [
+- "aho-corasick",
+- "memchr",
+- "regex-syntax",
+-]
++checksum = "791930b43c0d5973160d90a8f3894509f2b273430f5c5c73b668636d0287c5c0"
+ 
+ [[package]]
+-name = "regex-syntax"
+-version = "0.8.11"
++name = "itertools"
++version = "0.13.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
++checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
++dependencies = [
++ "either",
++]
+ 
+ [[package]]
+-name = "rustversion"
+-version = "1.0.23"
++name = "itoa"
++version = "1.0.18"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
++checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
+ 
+ [[package]]
+-name = "rvvdk-cli"
+-version = "0.1.0"
++name = "jni"
++version = "0.22.4"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "5efd9a482cf3a427f00d6b35f14332adc7902ce91efb778580e180ff90fa3498"
++dependencies = [
++ "cfg-if",
++ "combine",
++ "jni-macros",
++ "jni-sys",
++ "log",
++ "simd_cesu8",
++ "thiserror",
++ "walkdir",
++ "windows-link",
++]
++
++[[package]]
++name = "jni-macros"
++version = "0.22.4"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "a00109accc170f0bdb141fed3e393c565b6f5e072365c3bd58f5b062591560a3"
++dependencies = [
++ "proc-macro2",
++ "quote",
++ "rustc_version",
++ "simd_cesu8",
++ "syn 2.0.119",
++]
++
++[[package]]
++name = "jni-sys"
++version = "0.4.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "c6377a88cb3910bee9b0fa88d4f42e1d2da8e79915598f65fb0c7ee14c878af2"
++dependencies = [
++ "jni-sys-macros",
++]
++
++[[package]]
++name = "jni-sys-macros"
++version = "0.4.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "38c0b942f458fe50cdac086d2f946512305e5631e720728f2a61aabcd47a6264"
++dependencies = [
++ "quote",
++ "syn 2.0.119",
++]
++
++[[package]]
++name = "js-sys"
++version = "0.3.105"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "ce57d20d1ea864ce2ac172ab472d409214f4fd359f0b2a2775abdf522e2af99e"
++dependencies = [
++ "cfg-if",
++ "futures-util",
++ "wasm-bindgen",
++]
++
++[[package]]
++name = "lazy_static"
++version = "1.5.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "20870f649af7073d53e38067b2a84312175d56ea15217e1b15bc83506ec50afb"
++
++[[package]]
++name = "libc"
++version = "0.2.189"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
++
++[[package]]
++name = "litemap"
++version = "0.8.3"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "47d9d19d1d6efa0109d2f65ff4c85cddd50bd572e5a00127ab10987290bcefae"
++
++[[package]]
++name = "log"
++version = "0.4.34"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
++
++[[package]]
++name = "memchr"
++version = "2.8.3"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
++
++[[package]]
++name = "minimal-lexical"
++version = "0.2.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
++
++[[package]]
++name = "mio"
++version = "1.2.3"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "4b18443e9c262bfe8fa82f51666e2642c53393f7e5c27b3e1aeab922cff5b9d8"
++dependencies = [
++ "libc",
++ "wasi",
++ "windows-sys 0.61.2",
++]
++
++[[package]]
++name = "nom"
++version = "7.1.3"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a"
++dependencies = [
++ "memchr",
++ "minimal-lexical",
++]
++
++[[package]]
++name = "num-bigint"
++version = "0.4.8"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "c89e69e7e0f03bea5ef08013795c25018e101932225a656383bd384495ecc367"
++dependencies = [
++ "num-integer",
++ "num-traits",
++]
++
++[[package]]
++name = "num-conv"
++version = "0.2.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "521739c6d2bac4aa25192232afe6841231376b2b26d4d9fae5ecf8ca5772e441"
++
++[[package]]
++name = "num-integer"
++version = "0.1.47"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "7ce2d95d4b3734dc35aa2f45e1aa22cd416814592a4f9d9205e11affd5b8e10b"
++dependencies = [
++ "num-traits",
++]
++
++[[package]]
++name = "num-traits"
++version = "0.2.19"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
++dependencies = [
++ "autocfg",
++]
++
++[[package]]
++name = "oid-registry"
++version = "0.8.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "12f40cff3dde1b6087cc5d5f5d4d65712f34016a03ed60e9c08dcc392736b5b7"
++dependencies = [
++ "asn1-rs",
++]
++
++[[package]]
++name = "once_cell"
++version = "1.21.4"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
++
++[[package]]
++name = "oorandom"
++version = "11.1.5"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "d6790f58c7ff633d8771f42965289203411a5e5c68388703c06e14f24770b41e"
++
++[[package]]
++name = "openssl-probe"
++version = "0.2.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "7c87def4c32ab89d880effc9e097653c8da5d6ef28e6b539d313baaacfbafcbe"
++
++[[package]]
++name = "page_size"
++version = "0.6.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "30d5b2194ed13191c1999ae0704b7839fb18384fa22e49b57eeaa97d79ce40da"
++dependencies = [
++ "libc",
++ "winapi",
++]
++
++[[package]]
++name = "pem"
++version = "4.0.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "d354a98a3d1251555de99e8fdd8afda05573c31b82f59063a7b0a29b5527f120"
++dependencies = [
++ "base64",
++ "serde_core",
++]
++
++[[package]]
++name = "percent-encoding"
++version = "2.3.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
++
++[[package]]
++name = "pin-project-lite"
++version = "0.2.17"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
++
++[[package]]
++name = "plotters"
++version = "0.3.7"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "5aeb6f403d7a4911efb1e33402027fc44f29b5bf6def3effcc22d7bb75f2b747"
++dependencies = [
++ "num-traits",
++ "plotters-backend",
++ "plotters-svg",
++ "wasm-bindgen",
++ "web-sys",
++]
++
++[[package]]
++name = "plotters-backend"
++version = "0.3.7"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "df42e13c12958a16b3f7f4386b9ab1f3e7933914ecea48da7139435263a4172a"
++
++[[package]]
++name = "plotters-svg"
++version = "0.3.7"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "51bae2ac328883f7acdfea3d66a7c35751187f870bc81f94563733a154d7a670"
++dependencies = [
++ "plotters-backend",
++]
++
++[[package]]
++name = "potential_utf"
++version = "0.1.6"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "d83eb9bc6d8e5cf568e7a1101d60ee05e81ed50ea106026f3d18deeb046d7661"
++dependencies = [
++ "zerovec",
++]
++
++[[package]]
++name = "powerfmt"
++version = "0.2.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "439ee305def115ba05938db6eb1644ff94165c5ab5e9420d1c1bcedbba909391"
++
++[[package]]
++name = "proc-macro2"
++version = "1.0.107"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9"
++dependencies = [
++ "unicode-ident",
++]
++
++[[package]]
++name = "quote"
++version = "1.0.47"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001"
++dependencies = [
++ "proc-macro2",
++]
++
++[[package]]
++name = "rayon"
++version = "1.12.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "fb39b166781f92d482534ef4b4b1b2568f42613b53e5b6c160e24cfbfa30926d"
++dependencies = [
++ "either",
++ "rayon-core",
++]
++
++[[package]]
++name = "rayon-core"
++version = "1.13.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "22e18b0f0062d30d4230b2e85ff77fdfe4326feb054b9783a3460d8435c8ab91"
++dependencies = [
++ "crossbeam-deque",
++ "crossbeam-utils",
++]
++
++[[package]]
++name = "rcgen"
++version = "0.14.10"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "8774e05a7d0de114588e6a28fe7e71694b82614ed569d86d8b389dfbc98b8ad8"
++dependencies = [
++ "pem",
++ "ring",
++ "rustls-pki-types",
++ "time",
++ "x509-parser",
++ "yasna",
++]
++
++[[package]]
++name = "regex"
++version = "1.13.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "f020237b6c8eed93db2e2cb53c00c60a8e1bc73da7d073199a1180401450218d"
++dependencies = [
++ "aho-corasick",
++ "memchr",
++ "regex-automata",
++ "regex-syntax",
++]
++
++[[package]]
++name = "regex-automata"
++version = "0.4.18"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "ad8553b9b26413251cbf30e620595c7a41b3887f03da04579c0e6b0d6a06b4b2"
++dependencies = [
++ "aho-corasick",
++ "memchr",
++ "regex-syntax",
++]
++
++[[package]]
++name = "regex-syntax"
++version = "0.8.11"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
++
++[[package]]
++name = "reqwest"
++version = "0.13.5"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "16a1cfa75cc186dd73d5818e510e042e40927bccc9c236b061cea97e1eb08029"
++dependencies = [
++ "base64",
++ "bytes",
++ "futures-core",
++ "http",
++ "http-body",
++ "http-body-util",
++ "hyper",
++ "hyper-rustls",
++ "hyper-util",
++ "js-sys",
++ "log",
++ "percent-encoding",
++ "pin-project-lite",
++ "rustls",
++ "rustls-pki-types",
++ "rustls-platform-verifier",
++ "sync_wrapper",
++ "tokio",
++ "tokio-rustls",
++ "tower",
++ "tower-http",
++ "tower-service",
++ "url",
++ "wasm-bindgen",
++ "wasm-bindgen-futures",
++ "web-sys",
++]
++
++[[package]]
++name = "ring"
++version = "0.17.14"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "a4689e6c2294d81e88dc6261c768b63bc4fcdb852be6d1352498b114f61383b7"
++dependencies = [
++ "cc",
++ "cfg-if",
++ "getrandom",
++ "libc",
++ "untrusted",
++ "windows-sys 0.52.0",
++]
++
++[[package]]
++name = "roxmltree"
++version = "0.21.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "f1964b10c76125c36f8afe190065a4bf9a87bf324842c05701330bba9f1cacbb"
++dependencies = [
++ "memchr",
++]
++
++[[package]]
++name = "rpassword"
++version = "7.5.4"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "2da316a15f47e3d053de9cb2c439650bd8fa4aaeb9365f2e5f27f492ff73c196"
++dependencies = [
++ "libc",
++ "rtoolbox",
++ "windows-sys 0.61.2",
++]
++
++[[package]]
++name = "rtoolbox"
++version = "0.0.6"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "9a1efe12a1469752d0e6ff5ebec0b6ef4924cc5c4c71046b0ec730040535819d"
++dependencies = [
++ "libc",
++ "windows-sys 0.61.2",
++]
++
++[[package]]
++name = "rustc_version"
++version = "0.4.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92"
++dependencies = [
++ "semver",
++]
++
++[[package]]
++name = "rusticata-macros"
++version = "4.1.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "faf0c4a6ece9950b9abdb62b1cfcf2a68b3b67a10ba445b3bb85be2a293d0632"
++dependencies = [
++ "nom",
++]
++
++[[package]]
++name = "rustls"
++version = "0.23.44"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "6725596c3f2c3a0aef021139e145d4eafe314a6623e4680ca83852b2c67ab2ba"
++dependencies = [
++ "once_cell",
++ "ring",
++ "rustls-pki-types",
++ "rustls-webpki",
++ "subtle",
++ "zeroize",
++]
++
++[[package]]
++name = "rustls-native-certs"
++version = "0.8.4"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "dab5152771c58876a2146916e53e35057e1a4dfa2b9df0f0305b07f611fdea4d"
++dependencies = [
++ "openssl-probe",
++ "rustls-pki-types",
++ "schannel",
++ "security-framework",
++]
++
++[[package]]
++name = "rustls-pki-types"
++version = "1.15.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "2f4925028c7eb5d1fcdaf196971378ed9d2c1c4efc7dc5d011256f76c99c0a96"
++dependencies = [
++ "zeroize",
++]
++
++[[package]]
++name = "rustls-platform-verifier"
++version = "0.7.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "1167586491e2b18b8bfbb293e8180ec17c201c4f076d7cb3070ca964e7598f98"
++dependencies = [
++ "core-foundation",
++ "core-foundation-sys",
++ "jni",
++ "log",
++ "once_cell",
++ "rustls",
++ "rustls-native-certs",
++ "rustls-platform-verifier-android",
++ "rustls-webpki",
++ "security-framework",
++ "security-framework-sys",
++ "webpki-root-certs",
++ "windows-sys 0.61.2",
++]
++
++[[package]]
++name = "rustls-platform-verifier-android"
++version = "0.2.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "eec689c0bc40ff2458a5977b6619cb718087084a18e02a131c599b62d05e1a5f"
++
++[[package]]
++name = "rustls-webpki"
++version = "0.103.15"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "f3c3cf1d8b1e7d4927e2d154c3fcb02979afb9939629c62cd9048d4f07b60ac2"
++dependencies = [
++ "ring",
++ "rustls-pki-types",
++ "untrusted",
++]
++
++[[package]]
++name = "rustversion"
++version = "1.0.23"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
++
++[[package]]
++name = "rvvdk-cli"
++version = "0.1.0"
+ dependencies = [
+  "clap",
+  "criterion",
+@@ -440,175 +1207,493 @@ dependencies = [
+ ]
+ 
+ [[package]]
+-name = "rvvdk-core"
+-version = "0.1.0"
++name = "rvvdk-core"
++version = "0.1.0"
++dependencies = [
++ "bitflags",
++ "thiserror",
++]
++
++[[package]]
++name = "rvvdk-datamover"
++version = "0.1.0"
++dependencies = [
++ "criterion",
++ "io-uring",
++ "libc",
++ "rvvdk-core",
++ "rvvdk-local",
++ "rvvdk-platform",
++]
++
++[[package]]
++name = "rvvdk-local"
++version = "0.1.0"
++dependencies = [
++ "libc",
++ "rvvdk-core",
++ "rvvdk-platform",
++]
++
++[[package]]
++name = "rvvdk-platform"
++version = "0.1.0"
++dependencies = [
++ "libc",
++ "rvvdk-core",
++]
++
++[[package]]
++name = "rvvdk-vmdk"
++version = "0.1.0"
++dependencies = [
++ "criterion",
++ "libc",
++ "rvvdk-core",
++ "rvvdk-datamover",
++ "rvvdk-local",
++ "thiserror",
++]
++
++[[package]]
++name = "rvvdk-vsphere"
++version = "0.1.0"
++dependencies = [
++ "libc",
++ "rcgen",
++ "reqwest",
++ "roxmltree",
++ "rpassword",
++ "rustls",
++ "serde",
++ "serde_json",
++ "sha2",
++ "thiserror",
++ "tokio",
++ "zeroize",
++]
++
++[[package]]
++name = "same-file"
++version = "1.0.6"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
++dependencies = [
++ "winapi-util",
++]
++
++[[package]]
++name = "schannel"
++version = "0.1.29"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "91c1b7e4904c873ef0710c1f407dde2e6287de2bebc1bbbf7d430bb7cbffd939"
++dependencies = [
++ "windows-sys 0.61.2",
++]
++
++[[package]]
++name = "security-framework"
++version = "3.7.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "b7f4bc775c73d9a02cde8bf7b2ec4c9d12743edf609006c7facc23998404cd1d"
++dependencies = [
++ "bitflags",
++ "core-foundation",
++ "core-foundation-sys",
++ "libc",
++ "security-framework-sys",
++]
++
++[[package]]
++name = "security-framework-sys"
++version = "2.17.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "6ce2691df843ecc5d231c0b14ece2acc3efb62c0a398c7e1d875f3983ce020e3"
++dependencies = [
++ "core-foundation-sys",
++ "libc",
++]
++
++[[package]]
++name = "semver"
++version = "1.0.28"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "8a7852d02fc848982e0c167ef163aaff9cd91dc640ba85e263cb1ce46fae51cd"
++
++[[package]]
++name = "serde"
++version = "1.0.229"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "4148590afebada386688f18773da617792bf2ef03ffc1e4cbd2b1d45b023e0ba"
++dependencies = [
++ "serde_core",
++ "serde_derive",
++]
++
++[[package]]
++name = "serde_core"
++version = "1.0.229"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "67dca2c9c51e58a4791a4b1ed58308b39c64224d349a935ab5039aa360942a48"
++dependencies = [
++ "serde_derive",
++]
++
++[[package]]
++name = "serde_derive"
++version = "1.0.229"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348"
++dependencies = [
++ "proc-macro2",
++ "quote",
++ "syn 3.0.5",
++]
++
++[[package]]
++name = "serde_json"
++version = "1.0.151"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14"
++dependencies = [
++ "itoa",
++ "memchr",
++ "serde",
++ "serde_core",
++ "zmij",
++]
++
++[[package]]
++name = "sha2"
++version = "0.11.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "446ba717509524cb3f22f17ecc096f10f4822d76ab5c0b9822c5f9c284e825f4"
++dependencies = [
++ "cfg-if",
++ "cpufeatures",
++ "digest",
++]
++
++[[package]]
++name = "shlex"
++version = "2.0.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
++
++[[package]]
++name = "simd_cesu8"
++version = "1.2.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "11031e251abf8611c80f460e19dbdeb54a66db918e49c65a7065b46ac7aec520"
++dependencies = [
++ "rustc_version",
++ "simdutf8",
++]
++
++[[package]]
++name = "simdutf8"
++version = "0.1.5"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e"
++
++[[package]]
++name = "slab"
++version = "0.4.12"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
++
++[[package]]
++name = "smallvec"
++version = "1.16.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "f9395f0f0eee849a9b707b2f06bb92a6a422090e2123bb2ef8e87a0e61892a8e"
++
++[[package]]
++name = "socket2"
++version = "0.6.5"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "c3d1e2c7f27f8d4cb10542a02c49005dbd6e93095799d6f3be745fae9f8fedd4"
++dependencies = [
++ "libc",
++ "windows-sys 0.61.2",
++]
++
++[[package]]
++name = "stable_deref_trait"
++version = "1.2.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
++
++[[package]]
++name = "subtle"
++version = "2.6.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
++
++[[package]]
++name = "syn"
++version = "2.0.119"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "872831b642d1a07999a962a351ed35b955ea2cfc8f3862091e2a240a84f17297"
++dependencies = [
++ "proc-macro2",
++ "quote",
++ "unicode-ident",
++]
++
++[[package]]
++name = "syn"
++version = "3.0.5"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "12df2e0110f65b775f769bb17ef989067a1d931b2eb822bd4346631eeada89f9"
++dependencies = [
++ "proc-macro2",
++ "quote",
++ "unicode-ident",
++]
++
++[[package]]
++name = "sync_wrapper"
++version = "1.0.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "0bf256ce5efdfa370213c1dabab5935a12e49f2c58d15e9eac2870d3b4f27263"
++dependencies = [
++ "futures-core",
++]
++
++[[package]]
++name = "synstructure"
++version = "0.13.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "728a70f3dbaf5bab7f0c4b1ac8d7ae5ea60a4b5549c8a5914361c99147a709d2"
++dependencies = [
++ "proc-macro2",
++ "quote",
++ "syn 2.0.119",
++]
++
++[[package]]
++name = "synstructure"
++version = "0.14.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "901704edd0dfe137f1987838ee4f259e4e063c31371bdb423f7ae38ec6f77f02"
++dependencies = [
++ "proc-macro2",
++ "quote",
++ "syn 3.0.5",
++]
++
++[[package]]
++name = "thiserror"
++version = "2.0.20"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "ec86235f5fcc2a73650310756d2ac5b138a5780bbbdfae3eeccec992c435ba4f"
++dependencies = [
++ "thiserror-impl",
++]
++
++[[package]]
++name = "thiserror-impl"
++version = "2.0.20"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "bc04cd3e1236dd4a98afca4569f2deb3f120e5422a4023be2cb683f8486292af"
+ dependencies = [
+- "bitflags",
+- "thiserror",
++ "proc-macro2",
++ "quote",
++ "syn 3.0.5",
+ ]
+ 
+ [[package]]
+-name = "rvvdk-datamover"
+-version = "0.1.0"
++name = "time"
++version = "0.3.55"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "cdb87b95ec50ddfa440816d227a17b2ccbdda963a316a727fda0fc4334f7d134"
+ dependencies = [
+- "criterion",
+- "io-uring",
+- "libc",
+- "rvvdk-core",
+- "rvvdk-local",
+- "rvvdk-platform",
++ "deranged",
++ "num-conv",
++ "powerfmt",
++ "serde_core",
++ "time-core",
++ "time-macros",
+ ]
+ 
+ [[package]]
+-name = "rvvdk-local"
+-version = "0.1.0"
++name = "time-core"
++version = "0.1.9"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "9e1c906769ad99c88eaa54e728060edef082f8e358ff32030cb7c7d315e81109"
++
++[[package]]
++name = "time-macros"
++version = "0.2.32"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "7e689342a48d2ea927c87ea50cabf8594854bf940e9310208848d680d668ed85"
+ dependencies = [
+- "libc",
+- "rvvdk-core",
+- "rvvdk-platform",
++ "num-conv",
++ "time-core",
+ ]
+ 
+ [[package]]
+-name = "rvvdk-platform"
+-version = "0.1.0"
++name = "tinystr"
++version = "0.8.4"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "b1e27c91459209c2986af3dcf603a5a74a4368754ce37414f59acc971167f643"
+ dependencies = [
+- "libc",
+- "rvvdk-core",
++ "displaydoc",
++ "zerovec",
+ ]
+ 
+ [[package]]
+-name = "rvvdk-vmdk"
+-version = "0.1.0"
++name = "tinytemplate"
++version = "1.2.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "be4d6b5f19ff7664e8c98d03e2139cb510db9b0a60b55f8e8709b689d939b6bc"
+ dependencies = [
+- "criterion",
+- "libc",
+- "rvvdk-core",
+- "rvvdk-datamover",
+- "rvvdk-local",
+- "thiserror",
++ "serde",
++ "serde_json",
+ ]
+ 
+ [[package]]
+-name = "same-file"
+-version = "1.0.6"
++name = "tokio"
++version = "1.53.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
++checksum = "202caea871b69668250d242070849eb495be178ed697a3e98aebce5bc81a0bed"
+ dependencies = [
+- "winapi-util",
++ "bytes",
++ "libc",
++ "mio",
++ "pin-project-lite",
++ "socket2",
++ "tokio-macros",
++ "windows-sys 0.61.2",
+ ]
+ 
+ [[package]]
+-name = "serde"
+-version = "1.0.229"
++name = "tokio-macros"
++version = "2.7.2"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "4148590afebada386688f18773da617792bf2ef03ffc1e4cbd2b1d45b023e0ba"
++checksum = "78773a2a397f451582ce068015985c33193cf6dea8b74d2a639fe457b2f07b0e"
+ dependencies = [
+- "serde_core",
+- "serde_derive",
++ "proc-macro2",
++ "quote",
++ "syn 3.0.5",
+ ]
+ 
+ [[package]]
+-name = "serde_core"
+-version = "1.0.229"
++name = "tokio-rustls"
++version = "0.26.6"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "67dca2c9c51e58a4791a4b1ed58308b39c64224d349a935ab5039aa360942a48"
++checksum = "c9cc2678c2cdd569ef8215e2afd7954ada2ae20b4fdd2c5fe6139a3b02d105db"
+ dependencies = [
+- "serde_derive",
++ "rustls",
++ "tokio",
+ ]
+ 
+ [[package]]
+-name = "serde_derive"
+-version = "1.0.229"
++name = "tower"
++version = "0.5.3"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348"
++checksum = "ebe5ef63511595f1344e2d5cfa636d973292adc0eec1f0ad45fae9f0851ab1d4"
+ dependencies = [
+- "proc-macro2",
+- "quote",
+- "syn 3.0.5",
++ "futures-core",
++ "futures-util",
++ "pin-project-lite",
++ "sync_wrapper",
++ "tokio",
++ "tower-layer",
++ "tower-service",
+ ]
+ 
+ [[package]]
+-name = "serde_json"
+-version = "1.0.151"
++name = "tower-http"
++version = "0.6.11"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14"
++checksum = "4cfcf7e2740e6fc6d4d688b4ef00650406bb94adf4731e43c096c3a19fe40840"
+ dependencies = [
+- "itoa",
+- "memchr",
+- "serde",
+- "serde_core",
+- "zmij",
++ "bitflags",
++ "bytes",
++ "futures-util",
++ "http",
++ "http-body",
++ "pin-project-lite",
++ "tower",
++ "tower-layer",
++ "tower-service",
++ "url",
+ ]
+ 
+ [[package]]
+-name = "shlex"
+-version = "2.0.1"
++name = "tower-layer"
++version = "0.3.3"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
++checksum = "121c2a6cda46980bb0fcd1647ffaf6cd3fc79a013de288782836f6df9c48780e"
+ 
+ [[package]]
+-name = "slab"
+-version = "0.4.12"
++name = "tower-service"
++version = "0.3.3"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
++checksum = "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3"
+ 
+ [[package]]
+-name = "syn"
+-version = "2.0.119"
++name = "tracing"
++version = "0.1.44"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "872831b642d1a07999a962a351ed35b955ea2cfc8f3862091e2a240a84f17297"
++checksum = "63e71662fa4b2a2c3a26f570f037eb95bb1f85397f3cd8076caed2f026a6d100"
+ dependencies = [
+- "proc-macro2",
+- "quote",
+- "unicode-ident",
++ "pin-project-lite",
++ "tracing-core",
+ ]
+ 
+ [[package]]
+-name = "syn"
+-version = "3.0.5"
++name = "tracing-core"
++version = "0.1.36"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "12df2e0110f65b775f769bb17ef989067a1d931b2eb822bd4346631eeada89f9"
++checksum = "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a"
+ dependencies = [
+- "proc-macro2",
+- "quote",
+- "unicode-ident",
++ "once_cell",
+ ]
+ 
+ [[package]]
+-name = "thiserror"
+-version = "2.0.20"
++name = "try-lock"
++version = "0.2.5"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "ec86235f5fcc2a73650310756d2ac5b138a5780bbbdfae3eeccec992c435ba4f"
+-dependencies = [
+- "thiserror-impl",
+-]
++checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
+ 
+ [[package]]
+-name = "thiserror-impl"
+-version = "2.0.20"
++name = "typenum"
++version = "1.20.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "bc04cd3e1236dd4a98afca4569f2deb3f120e5422a4023be2cb683f8486292af"
+-dependencies = [
+- "proc-macro2",
+- "quote",
+- "syn 3.0.5",
+-]
++checksum = "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20"
+ 
+ [[package]]
+-name = "tinytemplate"
+-version = "1.2.1"
++name = "unicode-ident"
++version = "1.0.24"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "be4d6b5f19ff7664e8c98d03e2139cb510db9b0a60b55f8e8709b689d939b6bc"
++checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
++
++[[package]]
++name = "untrusted"
++version = "0.9.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
++
++[[package]]
++name = "url"
++version = "2.5.8"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed"
+ dependencies = [
++ "form_urlencoded",
++ "idna",
++ "percent-encoding",
+  "serde",
+- "serde_json",
+ ]
+ 
+ [[package]]
+-name = "unicode-ident"
+-version = "1.0.24"
++name = "utf8_iter"
++version = "1.0.4"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
++checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
+ 
+ [[package]]
+ name = "walkdir"
+@@ -620,6 +1705,21 @@ dependencies = [
+  "winapi-util",
+ ]
+ 
++[[package]]
++name = "want"
++version = "0.3.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "bfa7760aed19e106de2c7c0b581b509f2f25d3dacaf737cb82ac61bc6d760b0e"
++dependencies = [
++ "try-lock",
++]
++
++[[package]]
++name = "wasi"
++version = "0.11.1+wasi-snapshot-preview1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
++
+ [[package]]
+ name = "wasm-bindgen"
+ version = "0.2.128"
+@@ -633,6 +1733,16 @@ dependencies = [
+  "wasm-bindgen-shared",
+ ]
+ 
++[[package]]
++name = "wasm-bindgen-futures"
++version = "0.4.78"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "6ef4c5d3d2cdf5c54f4231181768f5510842e350db025faf1f7163b1030ed928"
++dependencies = [
++ "js-sys",
++ "wasm-bindgen",
++]
++
+ [[package]]
+ name = "wasm-bindgen-macro"
+ version = "0.2.128"
+@@ -675,6 +1785,15 @@ dependencies = [
+  "wasm-bindgen",
+ ]
+ 
++[[package]]
++name = "webpki-root-certs"
++version = "1.0.9"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "b96554aa2acc8ccdb7e1c9a58a7a68dd5d13bccc69cd124cb09406db612a1c9b"
++dependencies = [
++ "rustls-pki-types",
++]
++
+ [[package]]
+ name = "winapi"
+ version = "0.3.9"
+@@ -697,7 +1816,7 @@ version = "0.1.11"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
+ dependencies = [
+- "windows-sys",
++ "windows-sys 0.61.2",
+ ]
+ 
+ [[package]]
+@@ -712,6 +1831,15 @@ version = "0.2.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
+ 
++[[package]]
++name = "windows-sys"
++version = "0.52.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "282be5f36a8ce781fad8c8ae18fa3f9beff57ec1b52cb3de0789201425d9a33d"
++dependencies = [
++ "windows-targets",
++]
++
+ [[package]]
+ name = "windows-sys"
+ version = "0.61.2"
+@@ -721,6 +1849,127 @@ dependencies = [
+  "windows-link",
+ ]
+ 
++[[package]]
++name = "windows-targets"
++version = "0.52.6"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "9b724f72796e036ab90c1021d4780d4d3d648aca59e491e6b98e725b84e99973"
++dependencies = [
++ "windows_aarch64_gnullvm",
++ "windows_aarch64_msvc",
++ "windows_i686_gnu",
++ "windows_i686_gnullvm",
++ "windows_i686_msvc",
++ "windows_x86_64_gnu",
++ "windows_x86_64_gnullvm",
++ "windows_x86_64_msvc",
++]
++
++[[package]]
++name = "windows_aarch64_gnullvm"
++version = "0.52.6"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "32a4622180e7a0ec044bb555404c800bc9fd9ec262ec147edd5989ccd0c02cd3"
++
++[[package]]
++name = "windows_aarch64_msvc"
++version = "0.52.6"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "09ec2a7bb152e2252b53fa7803150007879548bc709c039df7627cabbd05d469"
++
++[[package]]
++name = "windows_i686_gnu"
++version = "0.52.6"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "8e9b5ad5ab802e97eb8e295ac6720e509ee4c243f69d781394014ebfe8bbfa0b"
++
++[[package]]
++name = "windows_i686_gnullvm"
++version = "0.52.6"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "0eee52d38c090b3caa76c563b86c3a4bd71ef1a819287c19d586d7334ae8ed66"
++
++[[package]]
++name = "windows_i686_msvc"
++version = "0.52.6"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "240948bc05c5e7c6dabba28bf89d89ffce3e303022809e73deaefe4f6ec56c66"
++
++[[package]]
++name = "windows_x86_64_gnu"
++version = "0.52.6"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "147a5c80aabfbf0c7d901cb5895d1de30ef2907eb21fbbab29ca94c5b08b1a78"
++
++[[package]]
++name = "windows_x86_64_gnullvm"
++version = "0.52.6"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "24d5b23dc417412679681396f2b49f3de8c1473deb516bd34410872eff51ed0d"
++
++[[package]]
++name = "windows_x86_64_msvc"
++version = "0.52.6"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
++
++[[package]]
++name = "writeable"
++version = "0.6.4"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "3ad82d2a33cdc9674dc7465672f271e096168fcdbe0f799d9e6db8c5892679dc"
++
++[[package]]
++name = "x509-parser"
++version = "0.18.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "d43b0f71ce057da06bc0851b23ee24f3f86190b07203dd8f567d0b706a185202"
++dependencies = [
++ "asn1-rs",
++ "data-encoding",
++ "der-parser",
++ "lazy_static",
++ "nom",
++ "oid-registry",
++ "ring",
++ "rusticata-macros",
++ "thiserror",
++ "time",
++]
++
++[[package]]
++name = "yasna"
++version = "0.6.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "b5f6765e852b9b4dc8e2a76843e4d64d1cea8e79bcde0b6901aea8e7c7f08282"
++dependencies = [
++ "bit-vec",
++ "time",
++]
++
++[[package]]
++name = "yoke"
++version = "0.8.3"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "709fe23a0424b6a435d82152b1bd3fdfb0833487d5fa90d05d42762a9891fef5"
++dependencies = [
++ "stable_deref_trait",
++ "yoke-derive",
++ "zerofrom",
++]
++
++[[package]]
++name = "yoke-derive"
++version = "0.8.4"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "ec8ebde2db3681e8c9980cc27822030e68752690ddfa9473e739aeb4dbde6d71"
++dependencies = [
++ "proc-macro2",
++ "quote",
++ "syn 3.0.5",
++ "synstructure 0.14.0",
++]
++
+ [[package]]
+ name = "zerocopy"
+ version = "0.8.57"
+@@ -741,6 +1990,66 @@ dependencies = [
+  "syn 2.0.119",
+ ]
+ 
++[[package]]
++name = "zerofrom"
++version = "0.1.8"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "0ec05a11813ea801ff6d75110ad09cd0824ddba17dfe17128ea0d5f68e6c5272"
++dependencies = [
++ "zerofrom-derive",
++]
++
++[[package]]
++name = "zerofrom-derive"
++version = "0.1.8"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "f75b4683f6c7f45248d4d64056a24298c6281e0993356d7d1b4a1a962ef10d4a"
++dependencies = [
++ "proc-macro2",
++ "quote",
++ "syn 3.0.5",
++ "synstructure 0.14.0",
++]
++
++[[package]]
++name = "zeroize"
++version = "1.9.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "e13c156562582aa81c60cb29407084cdb54c4164760106ab78e6c5b0858cf64e"
++
++[[package]]
++name = "zerotrie"
++version = "0.2.5"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "4ea269c3bd32f0a32c321907a2ae912ba6f4649bb0fc764a15627e99a7095a3f"
++dependencies = [
++ "displaydoc",
++ "yoke",
++ "zerofrom",
++]
++
++[[package]]
++name = "zerovec"
++version = "0.11.8"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "bb0464e17806c1d976d5cba29399c7f08e516e279e2ba493f63123b5fca67dd8"
++dependencies = [
++ "yoke",
++ "zerofrom",
++ "zerovec-derive",
++]
++
++[[package]]
++name = "zerovec-derive"
++version = "0.11.6"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "34df6fc39dbd26ddc9c10e6a2984476e13acce22e64e4487636ef494369225da"
++dependencies = [
++ "proc-macro2",
++ "quote",
++ "syn 3.0.5",
++]
++
+ [[package]]
+ name = "zmij"
+ version = "1.0.23"
+diff --git a/Cargo.toml b/Cargo.toml
+index bbce599..876e15e 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -8,6 +8,7 @@ members = [
+     "crates/rvvdk-local",
+     "crates/rvvdk-platform",
+     "crates/rvvdk-vmdk",
++    "crates/rvvdk-vsphere",
+ ]
+ 
+ [workspace.package]
+diff --git a/crates/rvvdk-vsphere/Cargo.toml b/crates/rvvdk-vsphere/Cargo.toml
+new file mode 100644
+index 0000000..86c316a
+--- /dev/null
++++ b/crates/rvvdk-vsphere/Cargo.toml
+@@ -0,0 +1,23 @@
++[package]
++name = "rvvdk-vsphere"
++version.workspace = true
++edition.workspace = true
++license.workspace = true
++repository.workspace = true
++
++[dependencies]
++reqwest = { version = "=0.13.5", default-features = false, features = ["rustls-no-provider"] }
++rustls = { version = "=0.23.44", default-features = false, features = ["std", "ring", "tls12"] }
++roxmltree = "=0.21.1"
++sha2 = "=0.11.0"
++zeroize = "=1.9.0"
++tokio = { version = "=1.53.1", features = ["rt", "time"] }
++serde = { version = "1.0.229", features = ["derive"] }
++thiserror = "2"
++
++[dev-dependencies]
++rcgen = "=0.14.10"
++rpassword = "=7.5.4"
++serde_json = "1.0.151"
++tokio = { version = "=1.53.1", features = ["macros", "rt", "time"] }
++libc = "0.2.189"
+diff --git a/crates/rvvdk-vsphere/examples/discover.rs b/crates/rvvdk-vsphere/examples/discover.rs
+new file mode 100644
+index 0000000..bd22cd3
+--- /dev/null
++++ b/crates/rvvdk-vsphere/examples/discover.rs
+@@ -0,0 +1,142 @@
++//! Internal qualification entry point. Never accepts a password argument or env var.
++use rvvdk_vsphere::{
++    Cleanup, ConnectionPolicy, ConnectionReuse, Credentials, DiscoveryReport, Error,
++    InventoryLimits, discover,
++};
++use serde::Serialize;
++
++#[derive(Serialize)]
++struct Run {
++    index: usize,
++    report: DiscoveryReport,
++    cpu_seconds: Option<f64>,
++    process_peak_rss_kib: Option<i64>,
++}
++#[derive(Serialize)]
++struct Evidence {
++    schema: u32,
++    scope: &'static str,
++    expected_inventory_limit: bool,
++    runs: Vec<Run>,
++}
++
++#[cfg(target_os = "linux")]
++fn usage() -> (Option<f64>, Option<i64>) {
++    let mut value = std::mem::MaybeUninit::<libc::rusage>::uninit();
++    // SAFETY: valid writable storage; only read after getrusage reports success.
++    if unsafe { libc::getrusage(libc::RUSAGE_SELF, value.as_mut_ptr()) } != 0 {
++        return (None, None);
++    }
++    let value = unsafe { value.assume_init() };
++    let cpu = value.ru_utime.tv_sec as f64
++        + value.ru_utime.tv_usec as f64 / 1e6
++        + value.ru_stime.tv_sec as f64
++        + value.ru_stime.tv_usec as f64 / 1e6;
++    (Some(cpu), Some(value.ru_maxrss))
++}
++#[cfg(not(target_os = "linux"))]
++fn usage() -> (Option<f64>, Option<i64>) {
++    (None, None)
++}
++
++fn main() {
++    if let Err(error) = run() {
++        eprintln!("qualification failed: {error}");
++        std::process::exit(1);
++    }
++}
++fn run() -> Result<(), Error> {
++    let mut args = std::env::args().skip(1);
++    let mut endpoint = None;
++    let mut pin = None;
++    let mut user = "root".to_owned();
++    let mut paired = false;
++    let mut fail_inventory = false;
++    while let Some(arg) = args.next() {
++        match arg.as_str() {
++            "--endpoint" => endpoint = args.next(),
++            "--certificate-sha256" => pin = args.next(),
++            "--user" => user = args.next().ok_or(Error::InvalidInput)?,
++            "--paired" => paired = true,
++            "--fail-inventory" => fail_inventory = true,
++            "--help" => {
++                println!(
++                    "discover --endpoint HTTPS_URL --certificate-sha256 SHA256 [--user USER] [--paired | --fail-inventory]\nPassword is read from the terminal without echo. Default: three reused-connection sessions; paired: three alternating fresh/reuse pairs; fail-inventory: one bounded failure and logout."
++                );
++                return Ok(());
++            }
++            _ => return Err(Error::InvalidInput),
++        }
++    }
++    if paired && fail_inventory {
++        return Err(Error::InvalidInput);
++    }
++    let policy = ConnectionPolicy::pinned(
++        &endpoint.ok_or(Error::InvalidInput)?,
++        &pin.ok_or(Error::InvalidInput)?,
++    )?;
++    let password = rpassword::prompt_password("ESXi password (memory only): ")
++        .map_err(|_| Error::InvalidInput)?;
++    let credentials = Credentials::new(user, password)?;
++    let runtime = tokio::runtime::Builder::new_current_thread()
++        .enable_all()
++        .build()
++        .map_err(|_| Error::Transport)?;
++    let sequence = if paired {
++        vec![
++            ConnectionReuse::Fresh,
++            ConnectionReuse::Reuse,
++            ConnectionReuse::Reuse,
++            ConnectionReuse::Fresh,
++            ConnectionReuse::Fresh,
++            ConnectionReuse::Reuse,
++        ]
++    } else if fail_inventory {
++        vec![ConnectionReuse::Reuse]
++    } else {
++        vec![ConnectionReuse::Reuse; 3]
++    };
++    let limits = InventoryLimits {
++        max_objects: if fail_inventory { 1 } else { 128 },
++        ..InventoryLimits::default()
++    };
++    let mut runs = Vec::new();
++    let mut passed = true;
++    for (index, reuse) in sequence.into_iter().enumerate() {
++        let before = usage();
++        let report = runtime.block_on(discover(
++            policy.clone().with_connection_reuse(reuse),
++            &credentials,
++            limits,
++        ))?;
++        let after = usage();
++        passed &= if fail_inventory {
++            report.primary_error == Some(Error::InventoryLimit)
++                && report.cleanup == Cleanup::LoggedOut
++                && report.pagination_cleanup_error.is_none()
++        } else {
++            report.is_success()
++        };
++        runs.push(Run {
++            index: index + 1,
++            report,
++            cpu_seconds: before.0.zip(after.0).map(|(b, a)| a - b),
++            process_peak_rss_kib: after.1,
++        });
++        // Stop after any unexpected failure to avoid repeated authentication attempts.
++        if !passed {
++            break;
++        }
++    }
++    println!(
++        "{}",
++        serde_json::to_string_pretty(&Evidence {
++            schema: 1,
++            scope: "rust_read_only_inventory",
++            expected_inventory_limit: fail_inventory,
++            runs
++        })
++        .map_err(|_| Error::Schema)?
++    );
++    if passed { Ok(()) } else { Err(Error::Schema) }
++}
+diff --git a/crates/rvvdk-vsphere/src/error.rs b/crates/rvvdk-vsphere/src/error.rs
+new file mode 100644
+index 0000000..b2355e5
+--- /dev/null
++++ b/crates/rvvdk-vsphere/src/error.rs
+@@ -0,0 +1,43 @@
++use serde::Serialize;
++
++/// Closed diagnostic vocabulary: never retains URLs, XML, cookies or server text.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, thiserror::Error)]
++#[serde(rename_all = "snake_case")]
++pub enum Error {
++    #[error("invalid connection policy or input")]
++    InvalidInput,
++    #[error("transport or TLS verification failed")]
++    Transport,
++    #[error("operation deadline exceeded")]
++    Deadline,
++    #[error("unexpected HTTP status or encoding")]
++    Http,
++    #[error("response size limit exceeded")]
++    ResponseLimit,
++    #[error("invalid or over-budget XML")]
++    Xml,
++    #[error("unexpected SOAP shape or property type")]
++    Schema,
++    #[error("server family or API version is not qualified")]
++    UnsupportedServer,
++    #[error("authentication rejected")]
++    InvalidLogin,
++    #[error("session not authenticated")]
++    NotAuthenticated,
++    #[error("permission denied")]
++    NoPermission,
++    #[error("server operation unsupported or restricted")]
++    Restricted,
++    #[error("server SOAP fault")]
++    SoapFault,
++    #[error("session cookie absent or invalid")]
++    Cookie,
++    #[error("requested property unavailable")]
++    MissingProperty,
++    #[error("inventory budget exceeded")]
++    InventoryLimit,
++    #[error("unexpected continuation page; cancellation attempted")]
++    Pagination,
++}
++
++pub type Result<T> = std::result::Result<T, Error>;
+diff --git a/crates/rvvdk-vsphere/src/inventory.rs b/crates/rvvdk-vsphere/src/inventory.rs
+new file mode 100644
+index 0000000..38337d2
+--- /dev/null
++++ b/crates/rvvdk-vsphere/src/inventory.rs
+@@ -0,0 +1,383 @@
++use crate::{Error, Result, xml};
++use roxmltree::Node;
++use serde::Serialize;
++use std::{collections::BTreeMap, fmt};
++
++#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
++pub(crate) enum Kind {
++    Folder,
++    Datacenter,
++    ComputeResource,
++    ClusterComputeResource,
++    ResourcePool,
++    HostSystem,
++    Datastore,
++    VirtualMachine,
++    SessionManager,
++    PropertyCollector,
++    LicenseManager,
++}
++impl Kind {
++    pub(crate) fn name(self) -> &'static str {
++        match self {
++            Self::Folder => "Folder",
++            Self::Datacenter => "Datacenter",
++            Self::ComputeResource => "ComputeResource",
++            Self::ClusterComputeResource => "ClusterComputeResource",
++            Self::ResourcePool => "ResourcePool",
++            Self::HostSystem => "HostSystem",
++            Self::Datastore => "Datastore",
++            Self::VirtualMachine => "VirtualMachine",
++            Self::SessionManager => "SessionManager",
++            Self::PropertyCollector => "PropertyCollector",
++            Self::LicenseManager => "LicenseManager",
++        }
++    }
++    fn parse(s: &str) -> Result<Self> {
++        [
++            Self::Folder,
++            Self::Datacenter,
++            Self::ComputeResource,
++            Self::ClusterComputeResource,
++            Self::ResourcePool,
++            Self::HostSystem,
++            Self::Datastore,
++            Self::VirtualMachine,
++            Self::SessionManager,
++            Self::PropertyCollector,
++            Self::LicenseManager,
++        ]
++        .into_iter()
++        .find(|k| k.name() == s)
++        .ok_or(Error::Schema)
++    }
++    pub(crate) fn paths(self) -> &'static [&'static str] {
++        match self {
++            Self::Folder => &["childEntity"],
++            Self::Datacenter => &["vmFolder", "hostFolder", "datastore"],
++            Self::ComputeResource | Self::ClusterComputeResource => &["host", "resourcePool"],
++            Self::ResourcePool => &["vm", "resourcePool"],
++            Self::HostSystem => &["summary.hardware", "runtime.connectionState"],
++            Self::Datastore => &["summary", "info"],
++            Self::VirtualMachine => &[
++                "runtime.powerState",
++                "config.guestId",
++                "config.uuid",
++                "config.hardware.device",
++                "config.template",
++                "guest.toolsRunningStatus",
++                "snapshot",
++                "disabledMethod",
++            ],
++            Self::LicenseManager => &["licenses", "licensedEdition"],
++            _ => &[],
++        }
++    }
++}
++/// Managed references are intentionally absent from serialized discovery evidence.
++#[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
++pub(crate) struct Reference {
++    pub(crate) kind: Kind,
++    value: String,
++}
++impl fmt::Debug for Reference {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        f.debug_struct("Reference")
++            .field("kind", &self.kind)
++            .finish_non_exhaustive()
++    }
++}
++impl Reference {
++    pub(crate) fn parse(node: Node<'_, '_>) -> Result<Self> {
++        let kind = Kind::parse(xml::reference_type(node).ok_or(Error::Schema)?)?;
++        let value = xml::text(node)?;
++        if value.is_empty()
++            || value.len() > 256
++            || !value
++                .bytes()
++                .all(|b| b.is_ascii_alphanumeric() || b"_.:-".contains(&b))
++        {
++            return Err(Error::Schema);
++        }
++        Ok(Self {
++            kind,
++            value: value.to_owned(),
++        })
++    }
++    pub(crate) fn element(&self, name: &str) -> String {
++        format!(
++            "<{name} type='{}'>{}</{name}>",
++            self.kind.name(),
++            self.value
++        )
++    }
++}
++#[derive(Clone, Copy, Debug)]
++pub struct InventoryLimits {
++    pub max_objects: usize,
++    pub max_disks_per_vm: usize,
++}
++impl Default for InventoryLimits {
++    fn default() -> Self {
++        Self {
++            max_objects: 128,
++            max_disks_per_vm: 16,
++        }
++    }
++}
++impl InventoryLimits {
++    pub(crate) fn validate(self) -> Result<()> {
++        if self.max_objects == 0
++            || self.max_objects > 128
++            || self.max_disks_per_vm == 0
++            || self.max_disks_per_vm > 16
++        {
++            Err(Error::InvalidInput)
++        } else {
++            Ok(())
++        }
++    }
++}
++#[derive(Debug, Serialize)]
++pub struct About {
++    pub version: String,
++    pub build: u64,
++    pub api_version: String,
++    pub api_type: &'static str,
++}
++#[derive(Debug, Serialize)]
++pub struct Inventory {
++    pub about: About,
++    pub hosts: Vec<Host>,
++    pub datastores: Vec<Datastore>,
++    pub vms: Vec<Vm>,
++    pub license: License,
++}
++#[derive(Debug, Serialize)]
++pub struct Host {
++    pub connection: String,
++    pub cpu_threads: u64,
++    pub memory_bytes: u64,
++}
++#[derive(Debug, Serialize)]
++pub struct Datastore {
++    pub label: String,
++    pub kind: String,
++    pub capacity_bytes: u64,
++    pub free_bytes: u64,
++    pub accessible: bool,
++    pub vmfs_version: Option<String>,
++}
++#[derive(Debug, Serialize)]
++pub struct License {
++    pub available_editions: Vec<String>,
++    pub active_assignment: &'static str,
++}
++/// Private identity is available explicitly to callers, never via Debug or serde.
++/// Revalidate it on the same admitted host before future mutating operations.
++pub struct VmIdentity {
++    reference: Reference,
++    bios_uuid: String,
++}
++impl fmt::Debug for VmIdentity {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        f.write_str("VmIdentity([redacted])")
++    }
++}
++impl VmIdentity {
++    pub fn managed_reference(&self) -> &str {
++        &self.reference.value
++    }
++    pub fn bios_uuid(&self) -> &str {
++        &self.bios_uuid
++    }
++}
++#[derive(Debug, Serialize)]
++pub struct Vm {
++    pub label: String,
++    pub guest_id: String,
++    pub power_state: String,
++    pub tools: String,
++    pub template: bool,
++    pub snapshot_present: bool,
++    pub export_disabled_method_list: bool,
++    pub disks: Vec<Disk>,
++    #[serde(skip)]
++    pub identity: VmIdentity,
++}
++#[derive(Debug, Serialize)]
++pub struct Disk {
++    pub capacity_bytes: u64,
++    pub backing_type: String,
++    pub disk_mode: String,
++    pub thin: Option<bool>,
++    pub encrypted: bool,
++    pub parent_present: bool,
++}
++
++pub(crate) struct Properties<'a, 'i>(BTreeMap<&'a str, Node<'a, 'i>>);
++impl<'a, 'i> Properties<'a, 'i> {
++    pub(crate) fn parse(response: Node<'a, 'i>, reference: &Reference) -> Result<Self> {
++        let result = xml::required(response, "returnval")?;
++        let object = xml::required(result, "objects")?;
++        if Reference::parse(xml::required(object, "obj")?)? != *reference {
++            return Err(Error::Schema);
++        }
++        let mut props = BTreeMap::new();
++        for entry in object.children().filter(Node::is_element) {
++            if entry.has_tag_name((xml::VIM, "missingSet")) {
++                return Err(Error::MissingProperty);
++            }
++            if !entry.has_tag_name((xml::VIM, "propSet")) {
++                continue;
++            }
++            let name = xml::text(xml::required(entry, "name")?)?;
++            if !reference.kind.paths().contains(&name) {
++                return Err(Error::Schema);
++            }
++            if props.insert(name, xml::required(entry, "val")?).is_some() {
++                return Err(Error::Schema);
++            }
++        }
++        Ok(Self(props))
++    }
++    pub(crate) fn get(&self, name: &str) -> Result<Node<'a, 'i>> {
++        self.0.get(name).copied().ok_or(Error::MissingProperty)
++    }
++    pub(crate) fn optional(&self, name: &str) -> Option<Node<'a, 'i>> {
++        self.0
++            .get(name)
++            .copied()
++            .filter(|n| !matches!(n.attribute((xml::XSI, "nil")), Some("true" | "1")))
++    }
++    pub(crate) fn references(&self, name: &str) -> Result<Vec<Reference>> {
++        let node = self.get(name)?;
++        if matches!(node.attribute((xml::XSI, "nil")), Some("true" | "1")) {
++            return Err(Error::MissingProperty);
++        }
++        if xml::reference_type(node).is_some() {
++            return Ok(vec![Reference::parse(node)?]);
++        }
++        let mut references = Vec::new();
++        for child in node.children().filter(Node::is_element) {
++            if references.len() == 128 {
++                return Err(Error::InventoryLimit);
++            }
++            references.push(Reference::parse(child)?);
++        }
++        Ok(references)
++    }
++    pub(crate) fn host(&self) -> Result<Host> {
++        let hardware = self.get("summary.hardware")?;
++        Ok(Host {
++            connection: xml::scalar(self.get("runtime.connectionState")?)?,
++            cpu_threads: xml::number(xml::required(hardware, "numCpuThreads")?)?,
++            memory_bytes: xml::number(xml::required(hardware, "memorySize")?)?,
++        })
++    }
++    pub(crate) fn datastore(&self, index: usize) -> Result<Datastore> {
++        let summary = self.get("summary")?;
++        let vmfs = xml::child(self.get("info")?, "vmfs")?;
++        let capacity_bytes = xml::number(xml::required(summary, "capacity")?)?;
++        let free_bytes = xml::number(xml::required(summary, "freeSpace")?)?;
++        if free_bytes > capacity_bytes {
++            return Err(Error::Schema);
++        }
++        Ok(Datastore {
++            label: format!("datastore-{index}"),
++            kind: xml::scalar(xml::required(summary, "type")?)?,
++            capacity_bytes,
++            free_bytes,
++            accessible: xml::boolean(xml::required(summary, "accessible")?)?,
++            vmfs_version: vmfs
++                .map(|v| xml::scalar(xml::required(v, "version")?))
++                .transpose()?,
++        })
++    }
++    pub(crate) fn license(&self) -> Result<License> {
++        let mut editions = Vec::new();
++        for license in self.get("licenses")?.children().filter(Node::is_element) {
++            if editions.len() == 128 {
++                return Err(Error::InventoryLimit);
++            }
++            editions.push(xml::scalar(xml::required(license, "editionKey")?)?);
++        }
++        Ok(License {
++            available_editions: editions,
++            active_assignment: "unresolved",
++        })
++    }
++    pub(crate) fn vm(&self, reference: Reference, index: usize, limit: usize) -> Result<Vm> {
++        let uuid = xml::text(self.get("config.uuid")?)?;
++        if uuid.len() != 36 || !uuid.bytes().all(|b| b.is_ascii_hexdigit() || b == b'-') {
++            return Err(Error::Schema);
++        }
++        let mut disks = Vec::new();
++        for device in self
++            .get("config.hardware.device")?
++            .children()
++            .filter(Node::is_element)
++        {
++            if xsi_type(device)? != "VirtualDisk" {
++                continue;
++            }
++            if disks.len() == limit {
++                return Err(Error::InventoryLimit);
++            }
++            let backing = xml::required(device, "backing")?;
++            let capacity_kib = xml::number(xml::required(device, "capacityInKB")?)?;
++            let capacity = xml::child(device, "capacityInBytes")?
++                .map(xml::number)
++                .transpose()?
++                .unwrap_or(capacity_kib.checked_mul(1024).ok_or(Error::Schema)?);
++            if capacity == 0 || capacity / 1024 != capacity_kib || capacity % 512 != 0 {
++                return Err(Error::Schema);
++            }
++            disks.push(Disk {
++                capacity_bytes: capacity,
++                backing_type: xsi_type(backing)?.to_owned(),
++                disk_mode: xml::scalar(xml::required(backing, "diskMode")?)?,
++                thin: xml::child(backing, "thinProvisioned")?
++                    .map(xml::boolean)
++                    .transpose()?,
++                encrypted: xml::child(backing, "keyId")?.is_some(),
++                parent_present: xml::child(backing, "parent")?.is_some(),
++            });
++        }
++        let export_disabled_method_list = self
++            .optional("disabledMethod")
++            .map(|n| {
++                n.children()
++                    .filter(Node::is_element)
++                    .any(|n| matches!(n.text(), Some("ExportVm" | "exportVm")))
++            })
++            .unwrap_or(false);
++        Ok(Vm {
++            label: format!("vm-{index}"),
++            guest_id: xml::scalar(self.get("config.guestId")?)?,
++            power_state: xml::scalar(self.get("runtime.powerState")?)?,
++            tools: xml::scalar(self.get("guest.toolsRunningStatus")?)?,
++            template: xml::boolean(self.get("config.template")?)?,
++            snapshot_present: self.optional("snapshot").is_some(),
++            export_disabled_method_list,
++            disks,
++            identity: VmIdentity {
++                reference,
++                bios_uuid: uuid.to_owned(),
++            },
++        })
++    }
++}
++fn xsi_type<'a>(node: Node<'a, '_>) -> Result<&'a str> {
++    let value = node.attribute((xml::XSI, "type")).ok_or(Error::Schema)?;
++    let (prefix, local) = value
++        .split_once(':')
++        .map_or((None, value), |(p, l)| (Some(p), l));
++    if node.lookup_namespace_uri(prefix) != Some(xml::VIM)
++        || local.len() > 100
++        || !local.bytes().all(|b| b.is_ascii_alphanumeric())
++    {
++        return Err(Error::Schema);
++    }
++    Ok(local)
++}
+diff --git a/crates/rvvdk-vsphere/src/lib.rs b/crates/rvvdk-vsphere/src/lib.rs
+new file mode 100644
+index 0000000..560b2b3
+--- /dev/null
++++ b/crates/rvvdk-vsphere/src/lib.rs
+@@ -0,0 +1,333 @@
++//! Independent, bounded standalone ESXi 8.0.3 SOAP discovery.
++//!
++//! This crate does not export disks, modify VMs or use a VMware SDK. Await
++//! [`discover`] to completion: dropping its future (or killing the process) cannot
++//! guarantee remote logout. Internally enforced deadlines still attempt cleanup
++//! with a separate bounded budget. Debug/errors/reports omit operational secrets.
++mod error;
++mod inventory;
++mod transport;
++mod xml;
++
++pub use error::{Error, Result};
++pub use inventory::{
++    About, Datastore, Disk, Host, Inventory, InventoryLimits, License, Vm, VmIdentity,
++};
++use inventory::{Kind, Properties, Reference};
++use serde::Serialize;
++use std::{
++    collections::{BTreeSet, VecDeque},
++    fmt,
++    time::Instant,
++};
++pub use transport::{ConnectionPolicy, ConnectionReuse, RequestMeasurement, Timeouts};
++use transport::{Method, Transport};
++use zeroize::Zeroizing;
++
++/// Owned credentials are wiped on drop; HTTP/TLS library copies are not guaranteed
++/// to be erased. No password environment variables, files or command arguments are
++/// required by the qualification example.
++pub struct Credentials {
++    user: Zeroizing<String>,
++    password: Zeroizing<String>,
++}
++impl fmt::Debug for Credentials {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        f.write_str("Credentials([redacted])")
++    }
++}
++impl Credentials {
++    pub fn new(user: String, password: String) -> Result<Self> {
++        let value = Self {
++            user: Zeroizing::new(user),
++            password: Zeroizing::new(password),
++        };
++        if value.user.is_empty()
++            || value.password.is_empty()
++            || value.user.len() > 1024
++            || value.password.len() > 1024
++        {
++            return Err(Error::InvalidInput);
++        }
++        xml::escape(&value.user)?;
++        xml::escape(&value.password)?;
++        Ok(value)
++    }
++}
++#[derive(Debug, Serialize, PartialEq, Eq)]
++#[serde(rename_all = "snake_case")]
++pub enum Cleanup {
++    NotNeeded,
++    LoggedOut,
++    Unconfirmed(Error),
++}
++#[derive(Debug, Serialize)]
++pub struct DiscoveryReport {
++    pub inventory: Option<Inventory>,
++    pub primary_error: Option<Error>,
++    pub cleanup: Cleanup,
++    pub pagination_cleanup_error: Option<Error>,
++    pub requests: Vec<RequestMeasurement>,
++    /// Successful certificate-pin checks; completed TLS handshakes may be fewer on failures.
++    pub certificate_checks: usize,
++    pub connection_policy: ConnectionReuse,
++    pub elapsed_ms: f64,
++}
++impl DiscoveryReport {
++    pub fn is_success(&self) -> bool {
++        self.inventory.is_some()
++            && self.primary_error.is_none()
++            && self.pagination_cleanup_error.is_none()
++            && self.cleanup == Cleanup::LoggedOut
++    }
++}
++struct Session {
++    transport: Transport,
++    collector: Reference,
++    manager: Reference,
++    root: Reference,
++    license: Reference,
++    deadline: Instant,
++    cleanup_timeout: std::time::Duration,
++    pagination_cleanup_error: Option<Error>,
++}
++
++/// Perform one scoped discovery and explicitly report primary and cleanup errors.
++/// Only pinned HTTPS /sdk is admitted. No automatic retry, proxy, redirect or
++/// mutation methods are exposed. Requires a Tokio runtime with I/O and time enabled.
++pub async fn discover(
++    policy: ConnectionPolicy,
++    credentials: &Credentials,
++    limits: InventoryLimits,
++) -> Result<DiscoveryReport> {
++    limits.validate()?;
++    let started = Instant::now();
++    let deadline = started + policy.timeouts.discovery;
++    let cleanup_timeout = policy.timeouts.cleanup;
++    let connection_policy = policy.reuse;
++    let mut transport = Transport::new(policy)?;
++    let service = transport
++        .call(
++            Method::RetrieveServiceContent,
++            "<_this type='ServiceInstance'>ServiceInstance</_this>".to_owned(),
++            deadline,
++        )
++        .await;
++    let setup = service.and_then(|raw| {
++        let doc = xml::parse(&raw)?;
++        let content = xml::required(xml::response(&doc, "RetrieveServiceContent")?, "returnval")?;
++        let about = xml::required(content, "about")?;
++        let version = xml::scalar(xml::required(about, "version")?)?;
++        let api_version = xml::scalar(xml::required(about, "apiVersion")?)?;
++        if xml::text(xml::required(about, "apiType")?)? != "HostAgent"
++            || version != "8.0.3"
++            || api_version != "8.0.3.0"
++        {
++            return Err(Error::UnsupportedServer);
++        }
++        let get = |name, kind| {
++            let reference = Reference::parse(xml::required(content, name)?)?;
++            if reference.kind != kind {
++                Err(Error::Schema)
++            } else {
++                Ok(reference)
++            }
++        };
++        Ok((
++            About {
++                version,
++                api_version,
++                build: xml::number(xml::required(about, "build")?)?,
++                api_type: "HostAgent",
++            },
++            get("sessionManager", Kind::SessionManager)?,
++            get("propertyCollector", Kind::PropertyCollector)?,
++            get("rootFolder", Kind::Folder)?,
++            get("licenseManager", Kind::LicenseManager)?,
++        ))
++    });
++    let (about, manager, collector, root, license) = match setup {
++        Ok(setup) => setup,
++        Err(error) => {
++            return Ok(DiscoveryReport {
++                inventory: None,
++                primary_error: Some(error),
++                cleanup: Cleanup::NotNeeded,
++                pagination_cleanup_error: None,
++                certificate_checks: transport.handshakes(),
++                requests: transport.measurements,
++                connection_policy,
++                elapsed_ms: started.elapsed().as_secs_f64() * 1000.,
++            });
++        }
++    };
++    let mut session = Session {
++        transport,
++        manager,
++        collector,
++        root,
++        license,
++        deadline,
++        cleanup_timeout,
++        pagination_cleanup_error: None,
++    };
++    let body = format!(
++        "{}<userName>{}</userName><password>{}</password>",
++        session.manager.element("_this"),
++        xml::escape(&credentials.user)?,
++        xml::escape(&credentials.password)?
++    );
++    // Once Login is attempted, cleanup is always attempted, including ambiguity.
++    let login = session
++        .transport
++        .call(Method::Login, body, deadline)
++        .await
++        .and_then(|_| {
++            if session.transport.has_cookie() {
++                Ok(())
++            } else {
++                Err(Error::Cookie)
++            }
++        });
++    let result = match login {
++        Ok(()) => session.inventory(about, limits).await,
++        Err(error) => Err(error),
++    };
++    let logout = session
++        .transport
++        .call(
++            Method::Logout,
++            session.manager.element("_this"),
++            Instant::now() + cleanup_timeout,
++        )
++        .await;
++    session.transport.clear_cookie();
++    let cleanup = match logout {
++        Ok(_) => Cleanup::LoggedOut,
++        Err(error) => Cleanup::Unconfirmed(error),
++    };
++    let (inventory, primary_error) = match result {
++        Ok(inventory) => (Some(inventory), None),
++        Err(error) => (None, Some(error)),
++    };
++    Ok(DiscoveryReport {
++        inventory,
++        primary_error,
++        cleanup,
++        pagination_cleanup_error: session.pagination_cleanup_error,
++        certificate_checks: session.transport.handshakes(),
++        requests: session.transport.measurements,
++        connection_policy,
++        elapsed_ms: started.elapsed().as_secs_f64() * 1000.,
++    })
++}
++impl Session {
++    async fn properties(&mut self, reference: &Reference) -> Result<Zeroizing<String>> {
++        let paths = reference
++            .kind
++            .paths()
++            .iter()
++            .map(|p| format!("<pathSet>{p}</pathSet>"))
++            .collect::<String>();
++        let body = format!(
++            "{}<specSet><propSet><type>{}</type><all>false</all>{paths}</propSet><objectSet>{}<skip>false</skip></objectSet></specSet><options><maxObjects>1</maxObjects></options>",
++            self.collector.element("_this"),
++            reference.kind.name(),
++            reference.element("obj")
++        );
++        let raw = self
++            .transport
++            .call(Method::RetrievePropertiesEx, body, self.deadline)
++            .await?;
++        let token = {
++            let doc = xml::parse(&raw)?;
++            let response = xml::response(&doc, "RetrievePropertiesEx")?;
++            let result = xml::required(response, "returnval")?;
++            xml::child(result, "token")?
++                .map(|n| xml::text(n).map(str::to_owned))
++                .transpose()?
++        };
++        if let Some(token) = token {
++            // A one-object retrieval must fit one page. Never silently accept a
++            // partial inventory; release any returned server continuation cursor.
++            let cleanup = match xml::escape(&token) {
++                Ok(token) => self
++                    .transport
++                    .call(
++                        Method::CancelRetrievePropertiesEx,
++                        format!("{}<token>{token}</token>", self.collector.element("_this")),
++                        Instant::now() + self.cleanup_timeout,
++                    )
++                    .await
++                    .map(|_| ()),
++                Err(error) => Err(error),
++            };
++            self.pagination_cleanup_error = cleanup.err();
++            return Err(Error::Pagination);
++        }
++        Ok(raw)
++    }
++    async fn inventory(&mut self, about: About, limits: InventoryLimits) -> Result<Inventory> {
++        let license_raw = self.properties(&self.license.clone()).await?;
++        let doc = xml::parse(&license_raw)?;
++        let license =
++            Properties::parse(xml::response(&doc, "RetrievePropertiesEx")?, &self.license)?
++                .license()?;
++        let mut inventory = Inventory {
++            about,
++            hosts: Vec::new(),
++            datastores: Vec::new(),
++            vms: Vec::new(),
++            license,
++        };
++        let mut queue = VecDeque::from([self.root.clone()]);
++        let mut seen = BTreeSet::new();
++        while let Some(reference) = queue.pop_front() {
++            if seen.contains(&reference) {
++                continue;
++            }
++            if seen.len() == limits.max_objects {
++                return Err(Error::InventoryLimit);
++            }
++            seen.insert(reference.clone());
++            let raw = self.properties(&reference).await?;
++            let doc = xml::parse(&raw)?;
++            let props =
++                Properties::parse(xml::response(&doc, "RetrievePropertiesEx")?, &reference)?;
++            let keys: &[&str] = match reference.kind {
++                Kind::Folder => &["childEntity"],
++                Kind::Datacenter => &["vmFolder", "hostFolder", "datastore"],
++                Kind::ComputeResource | Kind::ClusterComputeResource => &["host", "resourcePool"],
++                Kind::ResourcePool => &["vm", "resourcePool"],
++                Kind::HostSystem => {
++                    inventory.hosts.push(props.host()?);
++                    &[]
++                }
++                Kind::Datastore => {
++                    inventory
++                        .datastores
++                        .push(props.datastore(inventory.datastores.len() + 1)?);
++                    &[]
++                }
++                Kind::VirtualMachine => {
++                    inventory.vms.push(props.vm(
++                        reference.clone(),
++                        inventory.vms.len() + 1,
++                        limits.max_disks_per_vm,
++                    )?);
++                    &[]
++                }
++                _ => return Err(Error::Schema),
++            };
++            for key in keys {
++                for next in props.references(key)? {
++                    if queue.len() == limits.max_objects {
++                        return Err(Error::InventoryLimit);
++                    }
++                    queue.push_back(next);
++                }
++            }
++        }
++        Ok(inventory)
++    }
++}
+diff --git a/crates/rvvdk-vsphere/src/transport.rs b/crates/rvvdk-vsphere/src/transport.rs
+new file mode 100644
+index 0000000..0cb3cbc
+--- /dev/null
++++ b/crates/rvvdk-vsphere/src/transport.rs
+@@ -0,0 +1,420 @@
++use crate::{Error, Result, xml};
++use reqwest::{Client, Url, header};
++use rustls::{
++    DigitallySignedStruct, SignatureScheme,
++    client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
++    pki_types::{CertificateDer, ServerName, UnixTime},
++};
++use serde::Serialize;
++use sha2::{Digest, Sha256};
++use std::{
++    fmt,
++    sync::{
++        Arc,
++        atomic::{AtomicUsize, Ordering},
++    },
++    time::{Duration, Instant},
++};
++use zeroize::Zeroizing;
++
++/// No implicit trust or fallback: the exact leaf DER SHA-256 is the trust anchor.
++/// Pin mode intentionally replaces CA/hostname/expiry validation; obtain the pin
++/// independently. TLS handshake signatures still prove possession of its key.
++#[derive(Clone)]
++pub struct ConnectionPolicy {
++    pub(crate) endpoint: Url,
++    pin: [u8; 32],
++    pub(crate) timeouts: Timeouts,
++    pub(crate) reuse: ConnectionReuse,
++}
++impl fmt::Debug for ConnectionPolicy {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        f.write_str("ConnectionPolicy([redacted endpoint and pin])")
++    }
++}
++#[derive(Clone, Copy, Debug, Serialize)]
++#[serde(rename_all = "snake_case")]
++pub enum ConnectionReuse {
++    Reuse,
++    Fresh,
++}
++#[derive(Clone, Copy, Debug)]
++pub struct Timeouts {
++    pub connect: Duration,
++    pub inactivity: Duration,
++    pub request: Duration,
++    pub discovery: Duration,
++    pub cleanup: Duration,
++}
++impl Default for Timeouts {
++    fn default() -> Self {
++        Self {
++            connect: Duration::from_secs(5),
++            inactivity: Duration::from_secs(5),
++            request: Duration::from_secs(15),
++            discovery: Duration::from_secs(120),
++            cleanup: Duration::from_secs(15),
++        }
++    }
++}
++impl ConnectionPolicy {
++    pub fn pinned(endpoint: &str, sha256: &str) -> Result<Self> {
++        if endpoint.len() > 2048 || sha256.len() != 64 {
++            return Err(Error::InvalidInput);
++        }
++        let mut endpoint = Url::parse(endpoint).map_err(|_| Error::InvalidInput)?;
++        if endpoint.scheme() != "https"
++            || endpoint.host_str().is_none()
++            || !endpoint.username().is_empty()
++            || endpoint.password().is_some()
++            || endpoint.query().is_some()
++            || endpoint.fragment().is_some()
++            || !matches!(endpoint.path(), "/" | "/sdk")
++        {
++            return Err(Error::InvalidInput);
++        }
++        endpoint.set_path("/sdk");
++        let mut pin = [0; 32];
++        for (i, pair) in sha256.as_bytes().chunks_exact(2).enumerate() {
++            let s = std::str::from_utf8(pair).map_err(|_| Error::InvalidInput)?;
++            pin[i] = u8::from_str_radix(s, 16).map_err(|_| Error::InvalidInput)?;
++        }
++        Ok(Self {
++            endpoint,
++            pin,
++            timeouts: Timeouts::default(),
++            reuse: ConnectionReuse::Reuse,
++        })
++    }
++    pub fn with_timeouts(mut self, timeouts: Timeouts) -> Result<Self> {
++        if [
++            timeouts.connect,
++            timeouts.inactivity,
++            timeouts.request,
++            timeouts.discovery,
++            timeouts.cleanup,
++        ]
++        .iter()
++        .any(|d| d.is_zero() || *d > Duration::from_secs(600))
++        {
++            return Err(Error::InvalidInput);
++        }
++        self.timeouts = timeouts;
++        Ok(self)
++    }
++    /// Fresh connections exist for qualification of the reuse policy, not disk tuning.
++    pub fn with_connection_reuse(mut self, reuse: ConnectionReuse) -> Self {
++        self.reuse = reuse;
++        self
++    }
++}
++
++struct PinVerifier {
++    pin: [u8; 32],
++    provider: Arc<rustls::crypto::CryptoProvider>,
++    handshakes: Arc<AtomicUsize>,
++}
++impl fmt::Debug for PinVerifier {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        f.write_str("PinVerifier([redacted])")
++    }
++}
++impl ServerCertVerifier for PinVerifier {
++    fn verify_server_cert(
++        &self,
++        cert: &CertificateDer<'_>,
++        _: &[CertificateDer<'_>],
++        _: &ServerName<'_>,
++        _: &[u8],
++        _: UnixTime,
++    ) -> std::result::Result<ServerCertVerified, rustls::Error> {
++        let actual: [u8; 32] = Sha256::digest(cert.as_ref()).into();
++        if actual != self.pin {
++            return Err(rustls::Error::InvalidCertificate(
++                rustls::CertificateError::ApplicationVerificationFailure,
++            ));
++        }
++        self.handshakes.fetch_add(1, Ordering::Relaxed);
++        Ok(ServerCertVerified::assertion())
++    }
++    fn verify_tls12_signature(
++        &self,
++        message: &[u8],
++        cert: &CertificateDer<'_>,
++        dss: &DigitallySignedStruct,
++    ) -> std::result::Result<HandshakeSignatureValid, rustls::Error> {
++        rustls::crypto::verify_tls12_signature(
++            message,
++            cert,
++            dss,
++            &self.provider.signature_verification_algorithms,
++        )
++    }
++    fn verify_tls13_signature(
++        &self,
++        message: &[u8],
++        cert: &CertificateDer<'_>,
++        dss: &DigitallySignedStruct,
++    ) -> std::result::Result<HandshakeSignatureValid, rustls::Error> {
++        rustls::crypto::verify_tls13_signature(
++            message,
++            cert,
++            dss,
++            &self.provider.signature_verification_algorithms,
++        )
++    }
++    fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
++        self.provider
++            .signature_verification_algorithms
++            .supported_schemes()
++    }
++}
++#[derive(Clone, Copy, Debug, Serialize)]
++pub(crate) enum Method {
++    RetrieveServiceContent,
++    Login,
++    Logout,
++    RetrievePropertiesEx,
++    CancelRetrievePropertiesEx,
++}
++impl Method {
++    pub(crate) fn name(self) -> &'static str {
++        match self {
++            Self::RetrieveServiceContent => "RetrieveServiceContent",
++            Self::Login => "Login",
++            Self::Logout => "Logout",
++            Self::RetrievePropertiesEx => "RetrievePropertiesEx",
++            Self::CancelRetrievePropertiesEx => "CancelRetrievePropertiesEx",
++        }
++    }
++}
++#[derive(Debug, Serialize)]
++pub struct RequestMeasurement {
++    pub method: &'static str,
++    pub elapsed_ms: f64,
++    pub response_bytes: usize,
++    pub error: Option<Error>,
++}
++
++pub(crate) struct Transport {
++    client: Client,
++    policy: ConnectionPolicy,
++    cookie: Option<Zeroizing<String>>,
++    pub(crate) measurements: Vec<RequestMeasurement>,
++    handshakes: Arc<AtomicUsize>,
++}
++impl Transport {
++    pub(crate) fn new(policy: ConnectionPolicy) -> Result<Self> {
++        let provider = Arc::new(rustls::crypto::ring::default_provider());
++        let handshakes = Arc::new(AtomicUsize::new(0));
++        let mut tls = rustls::ClientConfig::builder_with_provider(provider.clone())
++            .with_safe_default_protocol_versions()
++            .map_err(|_| Error::Transport)?
++            .dangerous()
++            .with_custom_certificate_verifier(Arc::new(PinVerifier {
++                pin: policy.pin,
++                provider,
++                handshakes: handshakes.clone(),
++            }))
++            .with_no_client_auth();
++        tls.resumption = rustls::client::Resumption::disabled();
++        tls.enable_early_data = false;
++        let client = Client::builder()
++            .tls_backend_preconfigured(tls)
++            .https_only(true)
++            .http1_only()
++            .no_proxy()
++            .redirect(reqwest::redirect::Policy::none())
++            .retry(reqwest::retry::never())
++            .no_gzip()
++            .no_brotli()
++            .no_deflate()
++            .no_zstd()
++            .connect_timeout(policy.timeouts.connect)
++            .read_timeout(policy.timeouts.inactivity)
++            .timeout(policy.timeouts.request)
++            .pool_max_idle_per_host(if matches!(policy.reuse, ConnectionReuse::Reuse) {
++                1
++            } else {
++                0
++            })
++            .http1_max_headers(64)
++            .build()
++            .map_err(|_| Error::Transport)?;
++        Ok(Self {
++            client,
++            policy,
++            cookie: None,
++            measurements: Vec::new(),
++            handshakes,
++        })
++    }
++    pub(crate) fn handshakes(&self) -> usize {
++        self.handshakes.load(Ordering::Relaxed)
++    }
++    pub(crate) fn has_cookie(&self) -> bool {
++        self.cookie.is_some()
++    }
++    pub(crate) fn clear_cookie(&mut self) {
++        self.cookie = None;
++    }
++    pub(crate) async fn call(
++        &mut self,
++        method: Method,
++        body: String,
++        deadline: Instant,
++    ) -> Result<Zeroizing<String>> {
++        let started = Instant::now();
++        let mut bytes = 0;
++        let result = match deadline.checked_duration_since(started) {
++            None => Err(Error::Deadline),
++            Some(remaining) => match tokio::time::timeout(
++                remaining.min(self.policy.timeouts.request),
++                self.exchange(method, Zeroizing::new(body), &mut bytes),
++            )
++            .await
++            {
++                Ok(result) => result,
++                Err(_) => Err(Error::Deadline),
++            },
++        };
++        self.measurements.push(RequestMeasurement {
++            method: method.name(),
++            elapsed_ms: started.elapsed().as_secs_f64() * 1000.,
++            response_bytes: bytes,
++            error: result.as_ref().err().copied(),
++        });
++        result
++    }
++    async fn exchange(
++        &mut self,
++        method: Method,
++        body: Zeroizing<String>,
++        bytes: &mut usize,
++    ) -> Result<Zeroizing<String>> {
++        let payload = format!(
++            "<s:Envelope xmlns:s='http://schemas.xmlsoap.org/soap/envelope/' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'><s:Body><{name} xmlns='urn:vim25'>{body}</{name}></s:Body></s:Envelope>",
++            name = method.name(),
++            body = body.as_str()
++        );
++        let mut request = self
++            .client
++            .post(self.policy.endpoint.clone())
++            .header(header::CONTENT_TYPE, "text/xml; charset=utf-8")
++            .header("SOAPAction", "\"urn:vim25/8.0\"")
++            .header(header::ACCEPT_ENCODING, "identity")
++            .body(payload);
++        if let Some(cookie) = &self.cookie {
++            let mut value = header::HeaderValue::from_str(cookie).map_err(|_| Error::Cookie)?;
++            value.set_sensitive(true);
++            request = request.header(header::COOKIE, value);
++        }
++        if matches!(self.policy.reuse, ConnectionReuse::Fresh) {
++            request = request.header(header::CONNECTION, "close");
++        }
++        let mut response = request.send().await.map_err(map_http)?;
++        let status = response.status().as_u16();
++        if status != 200 && status != 500 {
++            return Err(Error::Http);
++        }
++        // Capture the login cookie before body validation, so malformed/truncated
++        // successful-login responses can still be followed by authenticated Logout.
++        if matches!(method, Method::Login) {
++            let mut candidate = None;
++            for value in response.headers().get_all(header::SET_COOKIE) {
++                let value = value.to_str().map_err(|_| Error::Cookie)?;
++                if value.starts_with("vmware_soap_session=") {
++                    if candidate.is_some() {
++                        return Err(Error::Cookie);
++                    }
++                    let pair = value.split(';').next().ok_or(Error::Cookie)?;
++                    let token = pair
++                        .strip_prefix("vmware_soap_session=")
++                        .ok_or(Error::Cookie)?;
++                    if token.is_empty()
++                        || token.len() > 1024
++                        || token == "\"\""
++                        || !token
++                            .bytes()
++                            .all(|b| b.is_ascii_graphic() && b != b';' && b != b',')
++                    {
++                        return Err(Error::Cookie);
++                    }
++                    candidate = Some(Zeroizing::new(pair.to_owned()));
++                }
++            }
++            if candidate.is_some() {
++                self.cookie = candidate;
++            }
++        }
++        if response
++            .headers()
++            .get(header::CONTENT_ENCODING)
++            .is_some_and(|h| h != "identity")
++        {
++            return Err(Error::Http);
++        }
++        if response
++            .content_length()
++            .is_some_and(|n| n > xml::RESPONSE_LIMIT as u64)
++        {
++            return Err(Error::ResponseLimit);
++        }
++        // Reserve from the admitted length, or the fixed cap for streaming
++        // bodies, so capacity growth cannot overshoot the response budget.
++        let capacity = response
++            .content_length()
++            .unwrap_or(xml::RESPONSE_LIMIT as u64) as usize;
++        let mut raw = Zeroizing::new(Vec::with_capacity(capacity));
++        while let Some(chunk) = response.chunk().await.map_err(map_http)? {
++            *bytes = bytes.saturating_add(chunk.len());
++            if *bytes > xml::RESPONSE_LIMIT {
++                return Err(Error::ResponseLimit);
++            }
++            raw.extend_from_slice(&chunk);
++        }
++        let raw = Zeroizing::new(
++            std::str::from_utf8(&raw)
++                .map_err(|_| Error::Xml)?
++                .to_owned(),
++        );
++        let doc = xml::parse(&raw)?;
++        xml::response(&doc, method.name())?;
++        if status != 200 {
++            return Err(Error::Http);
++        }
++        Ok(raw)
++    }
++}
++fn map_http(error: reqwest::Error) -> Error {
++    if error.is_timeout() {
++        Error::Deadline
++    } else {
++        Error::Transport
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    #[test]
++    fn exact_authority_and_secret_safe_debug() {
++        for endpoint in [
++            "http://example.invalid",
++            "https://user:SECRET@example.invalid",
++            "https://example.invalid/sdk?ticket=SECRET",
++            "https://example.invalid/other",
++            "https://example.invalid/#SECRET",
++        ] {
++            assert_eq!(
++                ConnectionPolicy::pinned(endpoint, &"a".repeat(64)).unwrap_err(),
++                Error::InvalidInput
++            );
++        }
++        let policy =
++            ConnectionPolicy::pinned("https://private.invalid:8443", &"a".repeat(64)).unwrap();
++        assert_eq!(policy.endpoint.as_str(), "https://private.invalid:8443/sdk");
++        assert!(!format!("{policy:?}").contains("private.invalid"));
++        assert!(ConnectionPolicy::pinned("https://example.invalid", &"z".repeat(64)).is_err());
++    }
++}
+diff --git a/crates/rvvdk-vsphere/src/xml.rs b/crates/rvvdk-vsphere/src/xml.rs
+new file mode 100644
+index 0000000..de1de54
+--- /dev/null
++++ b/crates/rvvdk-vsphere/src/xml.rs
+@@ -0,0 +1,188 @@
++use crate::{Error, Result};
++use roxmltree::{Document, Node, ParsingOptions};
++
++pub(crate) const VIM: &str = "urn:vim25";
++const SOAP: &str = "http://schemas.xmlsoap.org/soap/envelope/";
++pub(crate) const XSI: &str = "http://www.w3.org/2001/XMLSchema-instance";
++pub(crate) const RESPONSE_LIMIT: usize = 2 * 1024 * 1024;
++
++pub(crate) fn escape(value: &str) -> Result<String> {
++    if value.len() > 4096 || value.chars().any(|c| !matches!(c, '\t' | '\n' | '\r' | '\u{20}'..='\u{d7ff}' | '\u{e000}'..='\u{fffd}' | '\u{10000}'..='\u{10ffff}')) {
++        return Err(Error::InvalidInput);
++    }
++    Ok(value
++        .replace('&', "&amp;")
++        .replace('<', "&lt;")
++        .replace('>', "&gt;")
++        .replace('"', "&quot;")
++        .replace('\'', "&apos;"))
++}
++
++pub(crate) fn parse(raw: &str) -> Result<Document<'_>> {
++    if raw.len() > RESPONSE_LIMIT {
++        return Err(Error::ResponseLimit);
++    }
++    // Reject even empty DTDs (which roxmltree otherwise accepts). UTF-8 only.
++    if raw.contains("<!DOCTYPE") || raw.contains("<!ENTITY") {
++        return Err(Error::Xml);
++    }
++    let doc = Document::parse_with_options(
++        raw,
++        ParsingOptions {
++            allow_dtd: false,
++            nodes_limit: 16_384,
++            ..Default::default()
++        },
++    )
++    .map_err(|_| Error::Xml)?;
++    for node in doc.descendants() {
++        if node.ancestors().take(66).count() > 64
++            || node.text().is_some_and(|s| s.len() > 64 * 1024)
++        {
++            return Err(Error::Xml);
++        }
++    }
++    Ok(doc)
++}
++
++pub(crate) fn response<'a, 'i>(doc: &'a Document<'i>, method: &str) -> Result<Node<'a, 'i>> {
++    let envelope = doc.root_element();
++    if !envelope.has_tag_name((SOAP, "Envelope")) {
++        return Err(Error::Schema);
++    }
++    let mut bodies = envelope
++        .children()
++        .filter(|n| n.has_tag_name((SOAP, "Body")));
++    let body = bodies.next().ok_or(Error::Schema)?;
++    if bodies.next().is_some() {
++        return Err(Error::Schema);
++    }
++    let mut children = body.children().filter(Node::is_element);
++    let result = children.next().ok_or(Error::Schema)?;
++    if children.next().is_some() {
++        return Err(Error::Schema);
++    }
++    if result.has_tag_name((SOAP, "Fault")) {
++        let kind = result
++            .children()
++            .find(|n| n.tag_name().name() == "detail")
++            .and_then(|n| n.children().find(Node::is_element));
++        return Err(match kind.map(|n| n.tag_name().name()) {
++            Some("InvalidLoginFault") => Error::InvalidLogin,
++            Some("NotAuthenticatedFault") => Error::NotAuthenticated,
++            Some("NoPermissionFault") => Error::NoPermission,
++            Some("RestrictedVersionFault" | "NotSupportedFault") => Error::Restricted,
++            _ => Error::SoapFault,
++        });
++    }
++    if !result.has_tag_name((VIM, format!("{method}Response").as_str())) {
++        return Err(Error::Schema);
++    }
++    Ok(result)
++}
++
++pub(crate) fn child<'a, 'i>(node: Node<'a, 'i>, name: &str) -> Result<Option<Node<'a, 'i>>> {
++    let mut nodes = node.children().filter(|n| n.has_tag_name((VIM, name)));
++    let first = nodes.next();
++    if nodes.next().is_some() {
++        return Err(Error::Schema);
++    }
++    Ok(first)
++}
++
++pub(crate) fn required<'a, 'i>(node: Node<'a, 'i>, name: &str) -> Result<Node<'a, 'i>> {
++    child(node, name)?.ok_or(Error::Schema)
++}
++
++pub(crate) fn text<'a>(node: Node<'a, '_>) -> Result<&'a str> {
++    if node.children().any(|n| n.is_element()) {
++        return Err(Error::Schema);
++    }
++    node.text().ok_or(Error::Schema)
++}
++
++pub(crate) fn scalar(node: Node<'_, '_>) -> Result<String> {
++    let value = text(node)?;
++    if value.len() > 100
++        || !value
++            .bytes()
++            .all(|b| b.is_ascii_alphanumeric() || b"_. -".contains(&b))
++    {
++        return Err(Error::Schema);
++    }
++    Ok(value.to_owned())
++}
++
++pub(crate) fn number(node: Node<'_, '_>) -> Result<u64> {
++    text(node)?.parse().map_err(|_| Error::Schema)
++}
++
++pub(crate) fn boolean(node: Node<'_, '_>) -> Result<bool> {
++    match text(node)? {
++        "true" | "1" => Ok(true),
++        "false" | "0" => Ok(false),
++        _ => Err(Error::Schema),
++    }
++}
++
++// roxmltree's attribute("type") matches by local name across namespaces.
++// ManagedObjectReference.type must specifically be the unqualified attribute.
++pub(crate) fn reference_type<'a>(node: Node<'a, '_>) -> Option<&'a str> {
++    node.attributes()
++        .find(|a| a.namespace().is_none() && a.name() == "type")
++        .map(|a| a.value())
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    #[test]
++    fn escaping_and_invalid_characters() {
++        assert_eq!(escape("a<&\"'>").unwrap(), "a&lt;&amp;&quot;&apos;&gt;");
++        assert_eq!(escape("\0"), Err(Error::InvalidInput));
++        assert!(escape(&"x".repeat(4097)).is_err());
++    }
++    #[test]
++    fn hostile_xml_is_bounded() {
++        for xml in [
++            "<!DOCTYPE a><a/>".to_owned(),
++            "<!DOCTYPE a [<!ENTITY x 'x'>]><a>&x;</a>".to_owned(),
++            "<a>".repeat(65) + &"</a>".repeat(65),
++            "<a>".to_owned() + &"x".repeat(65537) + "</a>",
++            "<a>".to_owned() + &"<b/>".repeat(16384) + "</a>",
++            "<a/>junk".to_owned(),
++        ] {
++            assert!(parse(&xml).is_err());
++        }
++        assert!(matches!(
++            parse(&"x".repeat(RESPONSE_LIMIT + 1)),
++            Err(Error::ResponseLimit)
++        ));
++    }
++    #[test]
++    fn namespaces_shape_and_faults() {
++        let wrap = |body: &str| {
++            format!(
++                "<s:Envelope xmlns:s='{SOAP}' xmlns:v='{VIM}'><s:Body>{body}</s:Body></s:Envelope>"
++            )
++        };
++        for body in [
++            "<LoginResponse/>",
++            "<v:LogoutResponse/>",
++            "<v:LoginResponse/><v:LoginResponse/>",
++        ] {
++            assert_eq!(
++                response(&parse(&wrap(body)).unwrap(), "Login"),
++                Err(Error::Schema)
++            );
++        }
++        let raw = wrap(
++            "<s:Fault><faultstring>SECRET</faultstring><detail><v:InvalidLoginFault/></detail></s:Fault>",
++        );
++        assert_eq!(
++            response(&parse(&raw).unwrap(), "Login"),
++            Err(Error::InvalidLogin)
++        );
++        assert!(!format!("{:?}", response(&parse(&raw).unwrap(), "Login")).contains("SECRET"));
++    }
++}
+diff --git a/crates/rvvdk-vsphere/tests/discovery.rs b/crates/rvvdk-vsphere/tests/discovery.rs
+new file mode 100644
+index 0000000..8113c1a
+--- /dev/null
++++ b/crates/rvvdk-vsphere/tests/discovery.rs
+@@ -0,0 +1,621 @@
++use rustls::{ServerConfig, ServerConnection, StreamOwned, pki_types::PrivatePkcs8KeyDer};
++use rvvdk_vsphere::{
++    Cleanup, ConnectionPolicy, ConnectionReuse, Credentials, Error, InventoryLimits, Timeouts,
++    discover,
++};
++use sha2::{Digest, Sha256};
++use std::{
++    io::{Read, Write},
++    net::TcpListener,
++    sync::{
++        Arc, Mutex,
++        atomic::{AtomicBool, Ordering},
++    },
++    thread,
++    time::Duration,
++};
++
++struct Reply {
++    status: u16,
++    body: String,
++    headers: String,
++    delay: Duration,
++    declared: Option<usize>,
++    chunked: bool,
++}
++impl Reply {
++    fn soap(method: &str, body: &str) -> Self {
++        Self {
++            status: 200,
++            body: envelope(&format!(
++                "<{method}Response xmlns='urn:vim25'>{body}</{method}Response>"
++            )),
++            headers: String::new(),
++            delay: Duration::ZERO,
++            declared: None,
++            chunked: false,
++        }
++    }
++    fn fault(kind: &str) -> Self {
++        Self {
++            status: 500,
++            body: envelope(&format!(
++                "<s:Fault><faultstring>PRIVATE fault text</faultstring><detail><{kind} xmlns='urn:vim25'/></detail></s:Fault>"
++            )),
++            headers: String::new(),
++            delay: Duration::ZERO,
++            declared: None,
++            chunked: false,
++        }
++    }
++}
++fn envelope(body: &str) -> String {
++    format!(
++        "<s:Envelope xmlns:s='http://schemas.xmlsoap.org/soap/envelope/' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'><s:Body>{body}</s:Body></s:Envelope>"
++    )
++}
++fn service() -> Reply {
++    Reply::soap(
++        "RetrieveServiceContent",
++        "<returnval><about><version>8.0.3</version><build>24677879</build><apiVersion>8.0.3.0</apiVersion><apiType>HostAgent</apiType></about><sessionManager type='SessionManager'>SessionManager</sessionManager><propertyCollector type='PropertyCollector'>propertyCollector</propertyCollector><rootFolder type='Folder'>root</rootFolder><licenseManager type='LicenseManager'>license</licenseManager></returnval>",
++    )
++}
++fn login() -> Reply {
++    let mut reply = Reply::soap("Login", "<returnval/>");
++    reply.headers =
++        "Set-Cookie: vmware_soap_session=\"PRIVATE-session\"; Path=/sdk; Secure; HttpOnly\r\n"
++            .to_owned();
++    reply
++}
++fn logout() -> Reply {
++    Reply::soap("Logout", "")
++}
++fn properties(kind: &str, id: &str, props: &str) -> Reply {
++    Reply::soap(
++        "RetrievePropertiesEx",
++        &format!("<returnval><objects><obj type='{kind}'>{id}</obj>{props}</objects></returnval>"),
++    )
++}
++fn property(name: &str, value: &str) -> String {
++    let array_type = if name == "childEntity" {
++        " xsi:type='ArrayOfManagedObjectReference'"
++    } else {
++        ""
++    };
++    format!("<propSet><name>{name}</name><val{array_type}>{value}</val></propSet>")
++}
++fn license() -> Reply {
++    properties(
++        "LicenseManager",
++        "license",
++        &property(
++            "licenses",
++            "<LicenseInfo><licenseKey>PRIVATE-license</licenseKey><editionKey>esx.hypervisor.cpuPackageCoreLimited</editionKey></LicenseInfo>",
++        ),
++    )
++}
++fn root() -> Reply {
++    properties("Folder", "root", &property("childEntity", ""))
++}
++fn minimal() -> Vec<Reply> {
++    vec![service(), login(), license(), root(), logout()]
++}
++fn full() -> Vec<Reply> {
++    let root = properties(
++        "Folder",
++        "root",
++        &property(
++            "childEntity",
++            "<ManagedObjectReference type='HostSystem'>host</ManagedObjectReference><ManagedObjectReference type='Datastore'>store</ManagedObjectReference><ManagedObjectReference xsi:type='ManagedObjectReference' type='VirtualMachine'>vm-private</ManagedObjectReference>",
++        ),
++    );
++    let host = properties(
++        "HostSystem",
++        "host",
++        &(property(
++            "summary.hardware",
++            "<numCpuThreads>10</numCpuThreads><memorySize>33545613312</memorySize>",
++        ) + &property("runtime.connectionState", "connected")),
++    );
++    let store = properties(
++        "Datastore",
++        "store",
++        &(property(
++            "summary",
++            "<type>VMFS</type><capacity>1099243192320</capacity><freeSpace>994927706112</freeSpace><accessible>true</accessible>",
++        ) + &property("info", "<vmfs><version>6.82</version></vmfs>")),
++    );
++    let vm=properties("VirtualMachine","vm-private",&[
++        property("config.uuid","01234567-89ab-cdef-0123-456789abcdef"),property("runtime.powerState","poweredOn"),property("config.guestId","fedora64Guest"),property("config.template","false"),property("guest.toolsRunningStatus","guestToolsRunning"),property("disabledMethod","<string>ExportVm</string>"),
++        property("config.hardware.device","<VirtualDevice xsi:type='VirtualDisk'><capacityInKB>31457280</capacityInKB><capacityInBytes>32212254720</capacityInBytes><backing xsi:type='VirtualDiskFlatVer2BackingInfo'><fileName>PRIVATE-path</fileName><diskMode>persistent</diskMode><thinProvisioned>false</thinProvisioned></backing></VirtualDevice>")
++    ].concat());
++    vec![
++        service(),
++        login(),
++        license(),
++        root,
++        host,
++        store,
++        vm,
++        logout(),
++    ]
++}
++struct Server {
++    endpoint: String,
++    pin: String,
++    requests: Arc<Mutex<Vec<String>>>,
++    stop: Arc<AtomicBool>,
++    worker: Option<thread::JoinHandle<()>>,
++}
++impl Server {
++    fn start(replies: Vec<Reply>) -> Self {
++        let cert = rcgen::generate_simple_self_signed(vec!["localhost".to_owned()]).unwrap();
++        let pin = Sha256::digest(cert.cert.der())
++            .iter()
++            .map(|b| format!("{b:02x}"))
++            .collect::<String>();
++        let config =
++            ServerConfig::builder_with_provider(Arc::new(rustls::crypto::ring::default_provider()))
++                .with_safe_default_protocol_versions()
++                .unwrap()
++                .with_no_client_auth()
++                .with_single_cert(
++                    vec![cert.cert.der().clone()],
++                    PrivatePkcs8KeyDer::from(cert.signing_key.serialize_der()).into(),
++                )
++                .unwrap();
++        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
++        let endpoint = format!("https://{}", listener.local_addr().unwrap());
++        listener.set_nonblocking(true).unwrap();
++        let requests = Arc::new(Mutex::new(Vec::new()));
++        let observed = requests.clone();
++        let stop = Arc::new(AtomicBool::new(false));
++        let halted = stop.clone();
++        let worker = thread::spawn(move || {
++            let config = Arc::new(config);
++            let mut replies = replies.into_iter().peekable();
++            while !halted.load(Ordering::Relaxed) && replies.peek().is_some() {
++                let (stream, _) = match listener.accept() {
++                    Ok(v) => v,
++                    Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
++                        thread::sleep(Duration::from_millis(2));
++                        continue;
++                    }
++                    Err(e) => panic!("{e}"),
++                };
++                stream
++                    .set_read_timeout(Some(Duration::from_millis(300)))
++                    .unwrap();
++                stream
++                    .set_write_timeout(Some(Duration::from_millis(300)))
++                    .unwrap();
++                let mut stream =
++                    StreamOwned::new(ServerConnection::new(config.clone()).unwrap(), stream);
++                while !halted.load(Ordering::Relaxed) && replies.peek().is_some() {
++                    let mut headers = Vec::new();
++                    while !headers.ends_with(b"\r\n\r\n") && headers.len() < 16384 {
++                        let mut b = [0];
++                        if stream.read_exact(&mut b).is_err() {
++                            break;
++                        }
++                        headers.push(b[0]);
++                    }
++                    if !headers.ends_with(b"\r\n\r\n") {
++                        break;
++                    }
++                    let headers = String::from_utf8(headers).unwrap();
++                    let length: usize = headers
++                        .lines()
++                        .find_map(|l| {
++                            l.to_ascii_lowercase()
++                                .strip_prefix("content-length: ")
++                                .map(str::to_owned)
++                        })
++                        .unwrap()
++                        .parse()
++                        .unwrap();
++                    assert!(length < 65536);
++                    let mut body = vec![0; length];
++                    if stream.read_exact(&mut body).is_err() {
++                        break;
++                    }
++                    let body = String::from_utf8(body).unwrap();
++                    observed.lock().unwrap().push(format!("{headers}{body}"));
++                    let reply = replies.next().unwrap();
++                    thread::sleep(reply.delay);
++                    let out = if reply.chunked {
++                        let mut encoded = String::new();
++                        for chunk in reply.body.as_bytes().chunks(8192) {
++                            encoded.push_str(&format!(
++                                "{:x}\r\n{}\r\n",
++                                chunk.len(),
++                                std::str::from_utf8(chunk).unwrap()
++                            ));
++                        }
++                        format!(
++                            "HTTP/1.1 {} status\r\nContent-Type: text/xml\r\nTransfer-Encoding: chunked\r\n{}\r\n{}0\r\n\r\n",
++                            reply.status, reply.headers, encoded
++                        )
++                    } else {
++                        format!(
++                            "HTTP/1.1 {} status\r\nContent-Type: text/xml\r\nContent-Length: {}\r\n{}\r\n{}",
++                            reply.status,
++                            reply.declared.unwrap_or(reply.body.len()),
++                            reply.headers,
++                            reply.body
++                        )
++                    };
++                    if stream
++                        .write_all(out.as_bytes())
++                        .and_then(|_| stream.flush())
++                        .is_err()
++                    {
++                        break;
++                    }
++                    if headers.to_ascii_lowercase().contains("connection: close") {
++                        break;
++                    }
++                }
++            }
++        });
++        Self {
++            endpoint,
++            pin,
++            requests,
++            stop,
++            worker: Some(worker),
++        }
++    }
++    fn policy(&self) -> ConnectionPolicy {
++        ConnectionPolicy::pinned(&self.endpoint, &self.pin).unwrap()
++    }
++    fn requests(&self) -> Vec<String> {
++        self.requests.lock().unwrap().clone()
++    }
++}
++impl Drop for Server {
++    fn drop(&mut self) {
++        self.stop.store(true, Ordering::Relaxed);
++        self.worker.take().unwrap().join().unwrap();
++    }
++}
++fn credentials() -> Credentials {
++    Credentials::new("private-user<&".to_owned(), "PRIVATE-password<&".to_owned()).unwrap()
++}
++
++#[tokio::test]
++async fn tls_inventory_identity_redaction_and_reuse() {
++    let server = Server::start(full());
++    let report = discover(server.policy(), &credentials(), InventoryLimits::default())
++        .await
++        .unwrap();
++    assert!(report.is_success(), "{report:?}");
++    assert_eq!(report.certificate_checks, 1);
++    let inventory = report.inventory.as_ref().unwrap();
++    assert_eq!(
++        inventory.vms[0].disks[0].capacity_bytes,
++        30 * 1024 * 1024 * 1024
++    );
++    assert_eq!(inventory.vms[0].identity.managed_reference(), "vm-private");
++    assert_eq!(
++        inventory.vms[0].identity.bios_uuid(),
++        "01234567-89ab-cdef-0123-456789abcdef"
++    );
++    let json = serde_json::to_string(&report).unwrap();
++    for private in [
++        "PRIVATE",
++        "vm-private",
++        "01234567-89ab-cdef-0123-456789abcdef",
++        &server.endpoint,
++    ] {
++        assert!(!json.contains(private));
++        assert!(!format!("{report:?}").contains(private));
++    }
++    let requests = server.requests();
++    assert_eq!(requests.len(), 8);
++    assert!(requests[1].contains("PRIVATE-password&lt;&amp;"));
++    assert!(!requests[0].to_ascii_lowercase().contains("cookie:"));
++    assert!(requests[2..].iter().all(|r| {
++        r.to_ascii_lowercase()
++            .contains("cookie: vmware_soap_session=\"private-session\"")
++    }));
++}
++#[tokio::test]
++async fn fresh_policy_rechecks_pin_for_each_request() {
++    let server = Server::start(minimal());
++    let report = discover(
++        server
++            .policy()
++            .with_connection_reuse(ConnectionReuse::Fresh),
++        &credentials(),
++        InventoryLimits::default(),
++    )
++    .await
++    .unwrap();
++    assert!(report.is_success(), "{report:?}");
++    assert_eq!(report.certificate_checks, 5);
++}
++#[tokio::test]
++async fn wrong_pin_sends_no_http_or_credentials() {
++    let server = Server::start(minimal());
++    let policy = ConnectionPolicy::pinned(&server.endpoint, &"0".repeat(64)).unwrap();
++    let report = discover(policy, &credentials(), InventoryLimits::default())
++        .await
++        .unwrap();
++    assert_eq!(report.primary_error, Some(Error::Transport));
++    assert_eq!(report.cleanup, Cleanup::NotNeeded);
++    assert!(server.requests().is_empty());
++}
++#[tokio::test]
++async fn redirect_is_never_followed() {
++    let mut redirect = service();
++    redirect.status = 302;
++    redirect.headers = "Location: https://example.invalid/PRIVATE\r\n".to_owned();
++    let server = Server::start(vec![redirect]);
++    let report = discover(server.policy(), &credentials(), InventoryLimits::default())
++        .await
++        .unwrap();
++    assert_eq!(report.primary_error, Some(Error::Http));
++    assert_eq!(server.requests().len(), 1);
++}
++#[tokio::test]
++async fn authentication_and_cleanup_faults_remain_separate_and_redacted() {
++    let server = Server::start(vec![
++        service(),
++        Reply::fault("InvalidLoginFault"),
++        Reply::fault("NotAuthenticatedFault"),
++    ]);
++    let report = discover(server.policy(), &credentials(), InventoryLimits::default())
++        .await
++        .unwrap();
++    assert_eq!(report.primary_error, Some(Error::InvalidLogin));
++    assert_eq!(
++        report.cleanup,
++        Cleanup::Unconfirmed(Error::NotAuthenticated)
++    );
++    assert!(!report.is_success());
++    assert!(!serde_json::to_string(&report).unwrap().contains("PRIVATE"));
++}
++#[tokio::test]
++async fn malformed_login_still_uses_received_cookie_for_logout() {
++    let mut invalid = login();
++    invalid.body = "<broken>".to_owned();
++    let server = Server::start(vec![service(), invalid, logout()]);
++    let report = discover(server.policy(), &credentials(), InventoryLimits::default())
++        .await
++        .unwrap();
++    assert_eq!(report.primary_error, Some(Error::Xml));
++    assert_eq!(report.cleanup, Cleanup::LoggedOut);
++    assert!(server.requests()[2].contains("PRIVATE-session"));
++}
++#[tokio::test]
++async fn missing_cookie_is_not_reported_as_authenticated() {
++    let server = Server::start(vec![
++        service(),
++        Reply::soap("Login", "<returnval/>"),
++        logout(),
++    ]);
++    let report = discover(server.policy(), &credentials(), InventoryLimits::default())
++        .await
++        .unwrap();
++    assert_eq!(report.primary_error, Some(Error::Cookie));
++    assert_eq!(report.cleanup, Cleanup::LoggedOut);
++}
++#[tokio::test]
++async fn missing_property_reports_primary_and_logout_failure() {
++    let missing = properties(
++        "LicenseManager",
++        "license",
++        "<missingSet><path>licenses</path><fault>PRIVATE</fault></missingSet>",
++    );
++    let server = Server::start(vec![
++        service(),
++        login(),
++        missing,
++        Reply::fault("RuntimeFault"),
++    ]);
++    let report = discover(server.policy(), &credentials(), InventoryLimits::default())
++        .await
++        .unwrap();
++    assert_eq!(report.primary_error, Some(Error::MissingProperty));
++    assert_eq!(report.cleanup, Cleanup::Unconfirmed(Error::SoapFault));
++}
++#[tokio::test]
++async fn pagination_cancels_cursor_and_preserves_cleanup_error() {
++    for cancel_fails in [false, true] {
++        let page = Reply::soap(
++            "RetrievePropertiesEx",
++            "<returnval><token>PRIVATE-cursor&lt;&amp;</token></returnval>",
++        );
++        let cancel = if cancel_fails {
++            Reply::fault("RuntimeFault")
++        } else {
++            Reply::soap("CancelRetrievePropertiesEx", "")
++        };
++        let server = Server::start(vec![service(), login(), page, cancel, logout()]);
++        let report = discover(server.policy(), &credentials(), InventoryLimits::default())
++            .await
++            .unwrap();
++        assert_eq!(report.primary_error, Some(Error::Pagination));
++        assert_eq!(report.cleanup, Cleanup::LoggedOut);
++        assert_eq!(
++            report.pagination_cleanup_error,
++            if cancel_fails {
++                Some(Error::SoapFault)
++            } else {
++                None
++            }
++        );
++        assert!(server.requests()[3].contains("<token>PRIVATE-cursor&lt;&amp;</token>"));
++    }
++}
++#[tokio::test]
++async fn size_encoding_and_truncated_responses_fail_closed() {
++    for (index, expected) in [Error::ResponseLimit, Error::Http, Error::Transport]
++        .into_iter()
++        .enumerate()
++    {
++        let mut reply = service();
++        match index {
++            0 => reply.declared = Some(2 * 1024 * 1024 + 1),
++            1 => reply.headers = "Content-Encoding: gzip\r\n".to_owned(),
++            _ => reply.declared = Some(reply.body.len() + 100),
++        }
++        let server = Server::start(vec![reply]);
++        let report = discover(server.policy(), &credentials(), InventoryLimits::default())
++            .await
++            .unwrap();
++        assert_eq!(report.primary_error, Some(expected));
++        assert_eq!(report.cleanup, Cleanup::NotNeeded);
++    }
++}
++#[tokio::test]
++async fn deadlines_expire_and_still_allow_logout() {
++    let mut slow = license();
++    slow.delay = Duration::from_millis(180);
++    let server = Server::start(vec![service(), login(), slow, logout()]);
++    let timeouts = Timeouts {
++        request: Duration::from_millis(100),
++        inactivity: Duration::from_millis(100),
++        discovery: Duration::from_secs(2),
++        cleanup: Duration::from_secs(2),
++        ..Timeouts::default()
++    };
++    let report = discover(
++        server.policy().with_timeouts(timeouts).unwrap(),
++        &credentials(),
++        InventoryLimits::default(),
++    )
++    .await
++    .unwrap();
++    assert_eq!(report.primary_error, Some(Error::Deadline));
++    assert_eq!(report.cleanup, Cleanup::LoggedOut);
++}
++#[tokio::test]
++async fn inventory_and_disk_limits_logout_without_partial_success() {
++    let mut replies = full();
++    replies.drain(4..7);
++    let server = Server::start(replies);
++    let report = discover(
++        server.policy(),
++        &credentials(),
++        InventoryLimits {
++            max_objects: 1,
++            max_disks_per_vm: 16,
++        },
++    )
++    .await
++    .unwrap();
++    assert_eq!(report.primary_error, Some(Error::InventoryLimit));
++    assert_eq!(report.cleanup, Cleanup::LoggedOut);
++    assert!(report.inventory.is_none());
++    let mut replies = full();
++    let start = replies[6].body.find("<VirtualDevice").unwrap();
++    let end = replies[6].body.find("</VirtualDevice>").unwrap() + "</VirtualDevice>".len();
++    let disk = replies[6].body[start..end].to_owned();
++    replies[6].body.insert_str(end, &disk);
++    let server = Server::start(replies);
++    let report = discover(
++        server.policy(),
++        &credentials(),
++        InventoryLimits {
++            max_objects: 128,
++            max_disks_per_vm: 1,
++        },
++    )
++    .await
++    .unwrap();
++    assert_eq!(report.primary_error, Some(Error::InventoryLimit));
++    assert_eq!(report.cleanup, Cleanup::LoggedOut);
++}
++#[tokio::test]
++async fn unsupported_server_is_rejected_before_login() {
++    let mut service = service();
++    service.body = service.body.replace("HostAgent", "VirtualCenter");
++    let server = Server::start(vec![service]);
++    let report = discover(server.policy(), &credentials(), InventoryLimits::default())
++        .await
++        .unwrap();
++    assert_eq!(report.primary_error, Some(Error::UnsupportedServer));
++    assert_eq!(server.requests().len(), 1);
++}
++
++#[tokio::test]
++async fn whole_discovery_deadline_has_an_independent_cleanup_budget() {
++    let mut replies = minimal();
++    // The first two replies return promptly; only the inventory request is slow.
++    replies[2].delay = Duration::from_millis(250);
++    let server = Server::start(vec![
++        replies.remove(0),
++        replies.remove(0),
++        replies.remove(0),
++        logout(),
++    ]);
++    let timeouts = Timeouts {
++        request: Duration::from_secs(2),
++        inactivity: Duration::from_secs(2),
++        discovery: Duration::from_millis(150),
++        cleanup: Duration::from_secs(2),
++        ..Timeouts::default()
++    };
++    let report = discover(
++        server.policy().with_timeouts(timeouts).unwrap(),
++        &credentials(),
++        InventoryLimits::default(),
++    )
++    .await
++    .unwrap();
++    assert_eq!(report.primary_error, Some(Error::Deadline));
++    assert_eq!(report.cleanup, Cleanup::LoggedOut);
++    assert!(report.elapsed_ms < 1500.);
++}
++#[tokio::test]
++async fn a_successful_inventory_with_failed_logout_is_not_success() {
++    let mut replies = minimal();
++    *replies.last_mut().unwrap() = Reply::fault("RuntimeFault");
++    let server = Server::start(replies);
++    let report = discover(server.policy(), &credentials(), InventoryLimits::default())
++        .await
++        .unwrap();
++    assert!(report.inventory.is_some());
++    assert_eq!(report.primary_error, None);
++    assert_eq!(report.cleanup, Cleanup::Unconfirmed(Error::SoapFault));
++    assert!(!report.is_success());
++}
++#[tokio::test]
++async fn duplicate_wrong_object_and_missing_traversal_fail() {
++    for (reply, expected) in [
++        (
++            properties(
++                "Folder",
++                "root",
++                &(property("childEntity", "") + &property("childEntity", "")),
++            ),
++            Error::Schema,
++        ),
++        (
++            properties("Folder", "wrong-object", &property("childEntity", "")),
++            Error::Schema,
++        ),
++        (properties("Folder", "root", ""), Error::MissingProperty),
++    ] {
++        let server = Server::start(vec![service(), login(), license(), reply, logout()]);
++        let report = discover(server.policy(), &credentials(), InventoryLimits::default())
++            .await
++            .unwrap();
++        assert_eq!(report.primary_error, Some(expected));
++        assert_eq!(report.cleanup, Cleanup::LoggedOut);
++    }
++}
++#[tokio::test]
++async fn actual_body_limit_does_not_trust_content_length() {
++    let mut reply = service();
++    reply.body = " ".repeat(2 * 1024 * 1024 + 1);
++    reply.declared = None;
++    reply.chunked = true;
++    let server = Server::start(vec![reply]);
++    let report = discover(server.policy(), &credentials(), InventoryLimits::default())
++        .await
++        .unwrap();
++    assert_eq!(report.primary_error, Some(Error::ResponseLimit));
++}

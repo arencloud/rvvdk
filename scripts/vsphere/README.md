@@ -57,3 +57,12 @@ requests per session; this generator deliberately validates that dataset shape.
 Run it with the existing `target/benchmark-plots/bin/python` environment. SVG/PNG
 and computed provenance are deterministic with the recorded Python/Matplotlib
 versions. [Evidence and reproduction](../../docs/benchmark-results/2026-10-01-v01/README.md).
+
+## V0.2 Rust qualification
+
+New VMware sessions use [rvvdk-vsphere](../../crates/rvvdk-vsphere/README.md).
+The Python probe above remains V0.1 historical evidence.
+`plot_rust_discovery.py INPUT_JSON OUTPUT_DIRECTORY` plots the six recorded Rust
+fresh/reuse sessions, CPU and process high-water RSS, and computes each paired
+elapsed change plus the >5% investigation trigger. It performs no VMware access.
+[Results and reproduction](../../docs/benchmark-results/2026-10-01-v02/README.md).

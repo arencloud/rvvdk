@@ -1332,3 +1332,22 @@ policy, buffer limits, checksums and publication. It does not implement position
 logical-block reads. Compressed streamOptimized decoding remains a separate gate.
 The local DataMover and portable format crates do not acquire network dependencies.
 See the [component contracts, lifecycle and lab checklist](vmware-access-plan.md).
+
+
+## Bounded Rust vSphere discovery (V0.2)
+
+`rvvdk-vsphere` now provides direct-host authentication and inventory through a
+scoped async `discover` API. Pinned Rustls verification precedes HTTP, endpoint
+policy rejects redirects/proxies, and response/XML/object/deadline budgets bound
+control work. Default persistent HTTP/1.1 is qualified against matched fresh-TLS
+sessions. No network dependency enters the existing disk crates or public CLI.
+
+Primary failure, pagination cursor cleanup and explicit Logout are independent
+outcomes. Even malformed Login content retains a received cookie for cleanup.
+Dropping the future or process termination cannot promise remote release; callers
+must await completion. License availability is reported separately from unresolved
+active assignment/operation eligibility. Private VM identities are omitted from
+serialized reports. Export leases, artifacts and compressed decoding remain V0.3
+and later gates. [Contract](../crates/rvvdk-vsphere/README.md),
+[ADR-0047](adr/0047-bounded-rust-vsphere-discovery.md),
+[qualification](benchmark-results/2026-10-01-v02/README.md).

@@ -3,9 +3,10 @@
 V0.1 selects **powered-off HTTP NFC export as the first candidate workflow**.
 This is a sequential VMDK-container export proof. Random guest-block access,
 online backup, CBT, restore and VDDK transport compatibility remain separate gates.
-The Rust data plane is unchanged. A separate SDK-free qualification probe has
-successfully authenticated to the authorized standalone ESXi lab and read its
-inventory. That establishes discovery only; no disk bytes or export lease have
+The local Rust data plane is unchanged. V0.2 now qualifies the independent
+[Rust session/inventory crate](../crates/rvvdk-vsphere/README.md), including live
+error cleanup and [matched connection-policy measurements](benchmark-results/2026-10-01-v02/README.md).
+The earlier SDK-free Python probe remains V0.1 evidence. This establishes discovery only; no disk bytes or export lease have
 been acquired. V0 remains open until the Rust proof and failure/cleanup evidence pass.
 
 ## Observed lab, 2026-10-01
@@ -44,8 +45,8 @@ when the Rust export proof is ready. [Free-license policy](https://knowledge.bro
 
 | Operation | Documented interface / prerequisites | Current evidence and decision |
 |---|---|---|
-| Discover and authenticate | SOAP `/sdk`, ServiceInstance, SessionManager; TLS and valid account | Passed through the isolated probe; implement typed Rust session next |
-| Read inventory | PropertyCollector, object visibility/System.View | Passed for this lab account; least-privilege role still unqualified |
+| Discover and authenticate | SOAP `/sdk`, ServiceInstance, SessionManager; TLS and valid account | Passed in independent Rust (V0.2), with exact certificate pin and bounded session |
+| Read inventory | PropertyCollector, object visibility/System.View | Passed in Rust for this lab account, including bounded failure/Logout; least-privilege role still unqualified |
 | Discover active license | QueryAssignedLicenses when assignment manager is available; account visibility | Available-license metadata read only; active assignment/evaluation expiry still needs confirmation |
 | Shut down selected guest | ShutdownGuest; VirtualMachine.Interact.PowerOff; running Tools | Tools running; no call made. Select only one VM when shutdown is necessary |
 | Export powered-off VM | ExportVm, VApp.Export, powered-off VM, eligible licensing | First candidate; method and data access not exercised |
@@ -95,11 +96,11 @@ retain the bytes and diagnostics without declaring the migration successful.
 
 ## Rust implementation boundaries
 
-Add a small `rvvdk-vsphere` control-plane crate in V0.2, keeping network dependencies
+V0.2 adds the `rvvdk-vsphere` control-plane crate, keeping network dependencies
 out of portable `rvvdk-core`, the local format parsers and the DataMover. Start with
 an internal qualification example, then define a user-facing command only after
-contracts stabilize. HTTP/TLS/XML crates are infrastructure choices, not VMware SDKs;
-review/pin them in that implementation step. The Python discovery probe is a
+contracts stabilize. Pinned reqwest/Rustls/roxmltree/Tokio dependencies supply
+infrastructure; they are not VMware SDKs. The Python discovery probe is a
 retained V0.1 qualification artifact, not a production dependency. Subsequent
 VMware implementation and live qualification move to Rust; Python may continue
 to generate benchmark plots.
@@ -176,14 +177,18 @@ content/reference decoding for the byte-equivalence gate.
 
 ### V0.2 — Rust session and discovery foundation
 
-- [ ] Build typed, bounded session/inventory APIs with no VMware SDK dependency.
-- [ ] Unit-test XML escaping/limits, SOAP faults, redacted errors, authority/pin mismatch,
+- [x] Build typed, bounded session/inventory APIs with no VMware SDK dependency.
+- [x] Unit-test XML escaping/limits, SOAP faults, redacted errors, authority/pin mismatch,
   forbidden redirects, response truncation, pagination bounds and cleanup failures.
-- [ ] Match this lab's version, inventory, backing and power-state observations in Rust.
-- [ ] Confirm active license/capabilities or record explicit unresolved status.
-- [ ] Exercise a local mocked authentication failure; avoid repeated bad-password
+- [x] Match this lab's version, inventory, backing and power-state observations in Rust.
+- [x] Confirm active license/capabilities or record explicit unresolved status.
+- [x] Exercise a local mocked authentication failure; avoid repeated bad-password
   attempts against the real host. Demonstrate logout on normal and failed discovery.
-- [ ] Record control-plane request counts, timings and memory separately from copy benchmarks.
+- [x] Record control-plane request counts, timings and memory separately from copy benchmarks.
+
+Completed with [V0.2 evidence](benchmark-results/2026-10-01-v02/README.md).
+Active license assignment remains explicitly unresolved; available-license metadata
+is not export permission. No trial or VM power change was needed.
 
 ### V0.3 — Powered-off export and cleanup proof
 

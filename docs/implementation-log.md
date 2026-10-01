@@ -1969,13 +1969,60 @@ these initial observations. All runs are plotted and reproducibly regenerated.
 No new workspace Rust test run is claimed for this documentation/probe step.
 PERF.0, prior adverse timings and the QEMU partial second-extent discrepancy remain open.
 
+## V0.2 — Bounded independent Rust vSphere discovery (2026-10-01)
+
+Completed in this step's commit; baseline `b5c5cc9`.
+[Contract](../crates/rvvdk-vsphere/README.md),
+[ADR-0047](adr/0047-bounded-rust-vsphere-discovery.md),
+[evidence and plots](benchmark-results/2026-10-01-v02/README.md).
+
+The new `rvvdk-vsphere` crate authenticates to direct ESXi 8.0.3 / HostAgent API
+8.0.3.0 and reads typed, bounded inventory. Pinned TLS verifies certificate and
+handshake signatures before HTTP. No redirects, proxies, compression or request
+retry policy; no SDK/VDDK or Python runtime. Existing local disk crate source and
+package versions are unchanged. The isolated qualification example keeps password
+input in the terminal and operational identities out of serialized evidence.
+
+The first live session exposed roxmltree's namespace-insensitive attribute shorthand:
+`attribute("type")` also matched schema `xsi:type` on an array. Discovery failed
+closed and logged out. The retained failed-source archive/result identifies that
+attempt; exact unqualified-attribute matching and realistic array/reference fixtures
+fix it. No raw server XML or credentials were retained.
+
+Validation: **558 workspace tests pass**, one existing ignored test; formatting and
+workspace Clippy with warnings denied pass. **21 new tests** include actual local
+TLS, wrong pin before HTTP, redaction, escaping/namespaces, XML/response/object/disk
+limits, forbidden redirects, truncation, authentication and cleanup errors,
+continuation cancellation, deadlines and failed Logout after successful inventory.
+The seven doctest suites contain no examples executed by cargo; no doctest count
+is added. Child-process test summaries are excluded from the unique test total.
+
+Final-source live qualification records six complete discovery sessions (84 calls)
+and one deliberate inventory-limit failure (5 calls), all with confirmed Logout.
+Including the retained initial failure, all eight attempted sessions confirmed
+Logout. Both Fedora VMs remain running with Tools active and unchanged 30/60 GiB
+disk topology. License availability is consistent with the free edition; active
+assignment and export eligibility remain unresolved. No power, snapshot, export,
+guest-file or license changes occurred, and no trial was requested.
+
+Performance disposition: three alternating same-binary fresh/reuse pairs measure
+identical complete discovery work. Median elapsed time falls from **7.696 s to
+2.424 s (-68.51%)**; individual changes are -75.07%, -66.51%, -69.68%. No adverse
+elapsed pair/aggregate exceeds +5%, so longer repeats are not triggered. Certificate
+checks fall from 14 to one per successful session. CPU and process lifetime RSS
+are retained; peak paired-process RSS is 5,152 KiB. This supports connection reuse
+for this control workload, not disk throughput or a Python/Rust speedup. Network
+and host/guest load are uncontrolled; all samples remain visible. The failed first
+contact is correctness evidence, not a comparable completed benchmark.
+
 ## Next session
 
-Start **V0.2**: implement the bounded Rust control-plane session/inventory foundation
-in [the acceptance plan](vmware-access-plan.md#v02--rust-session-and-discovery-foundation).
-Validate locally first, then repeat authorized read-only discovery with explicit
-logout and secret-safe errors. Keep the VMs running unless the selected next test
-requires a state change. Request trial activation only when the executable export
-proof is ready and licensing requirements are resolved. V0 remains open until
-V0.3 proves actual independent Rust export, byte validation and lease cleanup.
-Preserve all prior benchmark and producer discrepancy evidence.
+Start **V0.3**: implement the bounded Rust export lease/artifact proof in
+[the acceptance plan](vmware-access-plan.md#v03--powered-off-export-and-cleanup-proof).
+Build local fixture/failure tests before requesting trial activation or shutting
+down the selected VM. Resolve active licensing and actual export format; validate
+known bytes with an independent oracle. Keep sequential encoded export separate
+from random logical-block reads and compressed decoding. V0 stays open until bytes
+and complete/abort/logout evidence pass. Preserve all prior performance evidence,
+PERF.0/R4.4 investigations and the QEMU partial second-extent producer discrepancy.
+Commit each completed implementation step locally.

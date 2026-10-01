@@ -1,0 +1,33 @@
+{
+  "os": "Linux",
+  "kernel": "7.2.5-200.fc44.x86_64",
+  "architecture": "x86_64",
+  "cpu_model": "11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz",
+  "logical_cpus": 16,
+  "memory_kib": 65527436,
+  "versions": {
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)"
+  },
+  "profile": "release; default workspace settings",
+  "workload": "14 sequential SOAP requests; initial connection, login, typed inventory and logout",
+  "concurrency": 1,
+  "connection_policy_order": [
+    "fresh",
+    "reuse",
+    "reuse",
+    "fresh",
+    "fresh",
+    "reuse"
+  ],
+  "request_bound_bytes": 2097152,
+  "xml_nodes": 16384,
+  "object_limit": 128,
+  "disk_limit": 16,
+  "timed": "client construction through explicit logout; excludes password entry and final JSON",
+  "cache_policy": "no cache drop; no disk payload or destination",
+  "host_network_load": "uncontrolled; no concurrent assistant builds/tests during final paired run",
+  "initial_failure_load": "workspace tests/build checks overlapped first failed discovery; it is not a completed timing comparison",
+  "process_peak_rss": "Linux getrusage high-water across the paired process; not per-session peak",
+  "tls_pin_bootstrap": "previous first-contact observation (TOFU), not independent validation"
+}

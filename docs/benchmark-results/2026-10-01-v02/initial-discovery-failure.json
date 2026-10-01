@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "scope": "rust_read_only_inventory",
+  "expected_inventory_limit": false,
+  "runs": [
+    {
+      "index": 1,
+      "report": {
+        "inventory": null,
+        "primary_error": "schema",
+        "cleanup": "logged_out",
+        "pagination_cleanup_error": null,
+        "requests": [
+          {
+            "method": "RetrieveServiceContent",
+            "elapsed_ms": 490.327825,
+            "response_bytes": 2831,
+            "error": null
+          },
+          {
+            "method": "Login",
+            "elapsed_ms": 544.7721049999999,
+            "response_bytes": 791,
+            "error": null
+          },
+          {
+            "method": "RetrievePropertiesEx",
+            "elapsed_ms": 642.022117,
+            "response_bytes": 14759,
+            "error": null
+          },
+          {
+            "method": "RetrievePropertiesEx",
+            "elapsed_ms": 478.50780199999997,
+            "response_bytes": 696,
+            "error": null
+          },
+          {
+            "method": "Logout",
+            "elapsed_ms": 548.05264,
+            "response_bytes": 378,
+            "error": null
+          }
+        ],
+        "certificate_checks": 5,
+        "connection_policy": "fresh",
+        "elapsed_ms": 2704.059269
+      },
+      "cpu_seconds": 0.005719,
+      "process_peak_rss_kib": 5028
+    }
+  ]
+}
