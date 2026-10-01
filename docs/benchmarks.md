@@ -1,6 +1,13 @@
 # rvvdk Benchmarks
 
-Latest step: [R5.9 bounded admission fuzz qualification](benchmark-results/2026-09-30-r59/README.md).
+Latest step: [V0.1 live discovery observations](benchmark-results/2026-10-01-v01/README.md).
+Three sanitized sessions retain all 42 request timings with reproducible SVG/PNG
+plots. Each request opens a fresh TLS connection. No disk transfer or production
+Rust changes occurred, so these are control-plane observations, not a speedup or
+matched runtime comparison. The next Rust step must measure connection reuse
+and bounded session behavior independently.
+
+Previous step: [R5.9 bounded admission fuzz qualification](benchmark-results/2026-09-30-r59/README.md).
 Twelve independent sanitizer campaigns execute 62,446,303 inputs with peak RSS
 186 MiB and no reported failures. All runs, learned corpora, execution rates,
 resource logs and feedback are retained with reproducible SVG/PNG plots.

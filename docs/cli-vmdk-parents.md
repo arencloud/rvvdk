@@ -92,6 +92,7 @@ remains unqualified; the large reference case fully overwrites the affected grai
 Local format support makes no live VMware compatibility claim. ESXi is unnecessary.
 
 R5.9 now adds [bounded coverage-guided admission fuzzing](../fuzz/README.md),
-with retained seeds, resource limits and reproducible evidence. Next V0.1 prepares
-the independent-access workflow and lab acceptance plan.
+with retained seeds, resource limits and reproducible evidence. V0.1 records
+the [independent-access workflow and lab acceptance plan](vmware-access-plan.md);
+V0.2 next implements Rust session/inventory support.
 Broader parent path policies and formats require separate qualification.

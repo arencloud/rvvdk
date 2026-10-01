@@ -1299,7 +1299,7 @@ whole-chain aliases with existing threaded copy, verification and publication.
 Default base-only acquisition is unchanged. Successful chain reports expose
 leaf-to-base identities/CIDs, aggregate loader counts and separate entry probes.
 See [ADR-0044](adr/0044-confined-cli-parent-chains.md), [contract](cli-vmdk-parents.md)
-and [qualification](benchmark-results/2026-09-30-r58/README.md). R5.9 will add
+and [qualification](benchmark-results/2026-09-30-r58/README.md). R5.9 adds
 coverage-guided fuzzing; live VMware access remains gated by V0 lab qualification.
 
 ## Bounded admission fuzz qualification (R5.9)
@@ -1316,5 +1316,19 @@ Sanitizer execution rates, peak RSS and whole-target feedback are recorded with
 separate corpus archives for every campaign; no source coverage percentage or
 runtime disk speedup is inferred. See [ADR-0045](adr/0045-bounded-admission-fuzzing.md),
 [harness contract](../fuzz/README.md) and [R5.9 evidence](benchmark-results/2026-09-30-r59/README.md).
-Next V0.1 defines the independently implemented remote workflow and lab proof;
+V0.1 defines the independently implemented remote workflow and lab proof;
 local hosted-sparse support does not establish VMware transport compatibility.
+
+## Independent VMware access candidate (V0.1)
+
+Read-only standalone ESXi discovery is qualified with an isolated SDK-free Python
+probe. Shipping Rust crates are unchanged. [ADR-0046](adr/0046-independent-export-feasibility.md)
+selects powered-off HTTP NFC export as a candidate, pending actual Rust bytes and
+lease-cleanup evidence. V0.2 introduces a bounded `rvvdk-vsphere` session/inventory
+foundation; V0.3 adds owned export leases and sequential artifact transfer.
+
+An `ExportStream` carries encoded container bytes, with explicit endpoint/TLS
+policy, buffer limits, checksums and publication. It does not implement positional
+logical-block reads. Compressed streamOptimized decoding remains a separate gate.
+The local DataMover and portable format crates do not acquire network dependencies.
+See the [component contracts, lifecycle and lab checklist](vmware-access-plan.md).

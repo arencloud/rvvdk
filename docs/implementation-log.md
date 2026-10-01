@@ -1934,17 +1934,48 @@ storage throughput or comparable-workload speedups. Source/archive/sample audits
 and byte-identical seed/plot regeneration pass. Prior adverse timing evidence,
 PERF.0 and R4.4 controlled-runner work remain open.
 
+## V0.1 — Independent export design and live discovery (2026-10-01)
+
+Completed in this step's commit; baseline `134ffdf`.
+[Design](vmware-access-plan.md),
+[ADR-0046](adr/0046-independent-export-feasibility.md),
+[evidence and plots](benchmark-results/2026-10-01-v01/README.md).
+
+The authorized read-only probe confirms standalone ESXi 8.0.3 build 24677879,
+VMFS 6 and two running Fedora VMs with 30/60 GiB persistent disks. Tools run on
+both guests; no snapshots, backing parents or encryption keys are reported.
+Available free-license metadata does not establish active assignment or export
+permission. No guest power, files, snapshots, leases or licensing were changed.
+Credentials/cookies remain in process memory; private host and inventory identities
+are omitted from artifacts. The observed first-contact certificate pin provides
+TOFU, not independently verified host identity.
+
+Seven probe tests pass, covering response bounds/encoding, secret-safe faults,
+pin-before-HTTP, forbidden methods/redirects, pagination/missing properties and
+logout after discovery failure. Three recorded final-source sessions make 42
+successful requests and all log out. An earlier exploratory discovery session
+also logged out; it is not part of the recorded timing dataset.
+
+ADR-0046 selects powered-off HTTP NFC export as the first candidate. It separates
+sequential encoded artifacts from random logical-block access and keeps compressed
+streamOptimized decoding, snapshots, CBT, restore and vCenter as distinct gates.
+V0.2 implements the Rust session foundation; V0.3 proves export bytes and cleanup.
+The user authorized VM shutdown if needed, but V0.1 required none.
+
+Performance disposition: production Rust code/dependencies are unchanged. Retained
+request timings include fresh TLS per request and parsing; they are not disk
+throughput or a matched speedup. No before/after regression threshold applies to
+these initial observations. All runs are plotted and reproducibly regenerated.
+No new workspace Rust test run is claimed for this documentation/probe step.
+PERF.0, prior adverse timings and the QEMU partial second-extent discrepancy remain open.
+
 ## Next session
 
-Start **V0.1**: prepare the independently implemented VMware access workflow before
-activating the lab. Review current primary documentation, separate export-stream
-semantics from random logical-block access, record version/capability/privilege/
-TLS/cleanup requirements and unresolved protocol questions, and save a disposable
-lab acceptance checklist with a minimal Rust proof design. Actual V0 completion
-requires a subsequent lab proof and failure/resource-cleanup evidence.
-
-Do not activate the user's 60-day ESXi trial yet; request it when the concrete
-lab proof is ready. Local support and bounded fuzzing do not establish VMware
-transport compatibility. Preserve the original QEMU partial second-extent producer
-discrepancy and all prior benchmark evidence. Sustained/larger-budget fuzzing and
-logical-read differential fuzzing remain follow-ups. Commit each completed step.
+Start **V0.2**: implement the bounded Rust control-plane session/inventory foundation
+in [the acceptance plan](vmware-access-plan.md#v02--rust-session-and-discovery-foundation).
+Validate locally first, then repeat authorized read-only discovery with explicit
+logout and secret-safe errors. Keep the VMs running unless the selected next test
+requires a state change. Request trial activation only when the executable export
+proof is ready and licensing requirements are resolved. V0 remains open until
+V0.3 proves actual independent Rust export, byte validation and lease cleanup.
+Preserve all prior benchmark and producer discrepancy evidence.
