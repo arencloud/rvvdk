@@ -38,6 +38,30 @@ pub enum Error {
     InventoryLimit,
     #[error("unexpected continuation page; cancellation attempted")]
     Pagination,
+    #[error("operation restricted by the server license")]
+    LicenseRestricted,
+    #[error("virtual machine must be powered off")]
+    InvalidPowerState,
+    #[error("selected virtual machine identity or topology changed")]
+    Identity,
+    #[error("unsupported export scope or backing")]
+    ExportScope,
+    #[error("export lease is in an unexpected state")]
+    LeaseState,
+    #[error("export lease acquisition is unconfirmed; do not retry automatically")]
+    LeaseUnconfirmed,
+    #[error("data endpoint or certificate is not admitted")]
+    DataEndpoint,
+    #[error("export transfer size or buffer limit exceeded")]
+    TransferLimit,
+    #[error("export canceled")]
+    Cancelled,
+    #[error("artifact I/O or publication failed")]
+    Artifact,
+    #[error("manifest does not match downloaded bytes")]
+    Manifest,
+    #[error("operation count limit exceeded")]
+    RequestLimit,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

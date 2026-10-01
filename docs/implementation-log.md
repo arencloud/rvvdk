@@ -1343,7 +1343,7 @@ is reused. No weaker fallback; no snapshot guarantee. See the
 [contract](vmdk-backing.md) and [ADR-0034](adr/0034-confined-vmdk-backing-resolution.md).
 
 Validation: **420 distinct passed, one existing gated allocation test** (421 total).
-Fifteen new tests cover portable resource/ownership/live-state contracts and Linux
+Sixteen new tests cover portable resource/ownership/live-state contracts and Linux
 path/object/reopen/truncation behavior. All 27 VMDK tests pass on Btrfs. Formatting,
 strict all-target Clippy and core/datamover/VMDK wasm32 checks pass (unchanged
 control::sum warning). Dependency versions, parser implementation and RAW execution
@@ -2015,14 +2015,55 @@ for this control workload, not disk throughput or a Python/Rust speedup. Network
 and host/guest load are uncontrolled; all samples remain visible. The failed first
 contact is correctness evidence, not a comparable completed benchmark.
 
+## V0.3.1 — Rust export foundation and license gate (2026-10-01)
+
+Completed in this step's commit; baseline `192489b`.
+[Contract](../crates/rvvdk-vsphere/README.md),
+[ADR-0048](adr/0048-bounded-export-lease-proof.md),
+[evidence and plots](benchmark-results/2026-10-01-v031/README.md).
+
+The Linux qualification executable implements bounded single-disk lease acquisition,
+progress, manifest-verified streaming, Complete/Abort, Logout and durable no-replace
+artifact publication. A shared session driver retains the discovery report schema.
+VM/disk identities are revalidated; optional shutdown is graceful only. No SDK/VDDK,
+new Python VMware code, local disk engine changes or public CLI integration.
+
+Validation: **574 unique workspace tests pass**, one existing ignored test; format
+and workspace Clippy with warnings denied pass. Sixteen new tests cover eligibility,
+owned-lease abort, streamed bytes, manifest and endpoint rejection, shutdown identity
+changes/failure, transfer bounds/truncation/redirects, cancellation, heartbeat renewal,
+legacy SHA-1 with SHA-256 TLS trust, ambiguous acquisition, cleanup failures and
+publication collision/race. The crate totals 37 tests. Final review also restores `Send` after shared-driver
+type erasure, with a compile-contract test. Timings retain the preceding build;
+final machine instructions/read-only data/relocations match byte for byte, with
+only diagnostic line values and build ID differing in allocated sections. Fixture bytes are authored
+synthetic data, not a valid VM image or logical-byte equivalence proof.
+
+The live probe selects/revalidates the single 30 GiB VM and calls ExportVm without
+changing power. The server returns a license restriction; Logout succeeds. No lease
+was granted, no guest was shut down, and no disk bytes were transferred. The user
+was told that supported trial/commercial access is needed now that the executable
+and fixtures are ready. We did not change licensing. Both VMs remain powered on in
+subsequent discovery observations. Active license assignment/expiry remains unresolved.
+
+Performance evidence compares the previous committed release discovery binary with
+the new shared-session implementation, using identical 14-call reused-connection
+sessions. The initial aggregate improves by 7.14%, but one individual pair worsens
+by 10.41%, triggering three longer alternating pairs. All raw sessions, including
+adverse observations, remain in the evidence directory. Longer aggregate change is
++1.96%; pair medians +4.36%, +1.62%, -0.47%, but individual matches reach +18.35%.
+The individual adverse gate remains open; no regression clearance or speedup is
+claimed. All 54 discovery sessions (756 calls), plus the 16-call license probe,
+confirm Logout. A controlled TLS workload is the next performance diagnostic.
+This is a control-plane regression check. Live transfer throughput, CPU/RSS and
+sync-bound performance remain unqualified until licensed access is available.
+PERF.0/R4.4, prior investigations and the QEMU partial second-extent discrepancy stay open.
+
 ## Next session
 
-Start **V0.3**: implement the bounded Rust export lease/artifact proof in
-[the acceptance plan](vmware-access-plan.md#v03--powered-off-export-and-cleanup-proof).
-Build local fixture/failure tests before requesting trial activation or shutting
-down the selected VM. Resolve active licensing and actual export format; validate
-known bytes with an independent oracle. Keep sequential encoded export separate
-from random logical-block reads and compressed decoding. V0 stays open until bytes
-and complete/abort/logout evidence pass. Preserve all prior performance evidence,
-PERF.0/R4.4 investigations and the QEMU partial second-extent producer discrepancy.
-Commit each completed implementation step locally.
+Continue **V0.3.2** using the [saved licensed qualification plan](vmware-access-plan.md#v032--licensed-live-qualification).
+After user-provisioned supported licensing, repeat the probe, establish an independent
+logical-byte oracle, gracefully shut down only the selected VM if needed, and prove
+live export/format, Complete/Abort/Logout and repeated transfer performance. Retain
+all failure evidence. Do not declare V0/R6 complete from synthetic fixtures or a
+server manifest digest alone. Commit each completed implementation step locally.

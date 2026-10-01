@@ -237,7 +237,7 @@ inspect/plan/copy/verify; RAW destinations and existing publication contracts.
 **R4.5 complete**: [bounded terminal NUL acquisition](vmdk-padding.md), original
 byte preservation and unmodified generated hosted descriptor reference tests.
 Custom independent-decoder qualification remains separate and open.
-Next bounded package is **V0.3**, the independent Rust export proof below.
+Next bounded package is **V0.3.2**, licensed live export qualification; V0.3.1 supplies the tested executable and observed license gate.
 Each completed package records validation and performance evidence and is committed
 locally. No ESXi was needed for local R4 qualification.
 
@@ -326,14 +326,21 @@ host. The first namespace mismatch is retained and fixed with a regression fixtu
 Default connection reuse is measured against fresh TLS. Active licensing remains
 unresolved; neither VM was stopped and no export was attempted.
 
-**Next bounded package — V0.3:** build the independent Rust powered-off HTTP NFC
-export proof with bounded artifact transfer, bytes/format validation, progress and
-explicit lease complete/abort/logout. Confirm eligibility and request trial activation
-only when the executable proof is ready. Export remains a sequential container
-stream; logical decoding is a separate format gate. V0 remains open.
+**V0.3.1 complete:** the independent Rust lease/artifact executable and local failure
+fixtures are ready. A live `ExportVm` probe returned a license restriction and
+confirmed Logout without shutting down either VM. [Evidence and plots](benchmark-results/2026-10-01-v031/README.md).
+
+**Next bounded package — V0.3.2:** obtain user-provisioned supported trial/commercial
+access, then qualify real export bytes/format, complete/abort/logout, independent
+logical-byte equivalence and repeated transfer performance. The user has been told
+that licensing is needed now. [Continuation plan](vmware-access-plan.md#v032--licensed-live-qualification).
+Export remains a sequential container stream; logical decoding is a separate gate.
+V0 remains open.
 
 - [x] V0.1 workflow feasibility, capability matrix, acceptance plan and authorized read-only lab discovery.
 - [x] V0.2 Rust session/discovery foundation and failure/logout qualification.
+- [x] V0.3.1 Rust export foundation, local cleanup fixtures and actual license gate.
+- [ ] V0.3.2 Licensed live transfer, independent byte oracle, cleanup and performance.
 - [ ] V0.3 disposable-lab independent Rust export proof and failure/lease-cleanup evidence.
 
 **Lab timing:** no ESXi host is required for R0–R5 local development. Prepare a
@@ -450,7 +457,7 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 
 ## First implementation session — R0.1 completed
 
-The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete; R3.1 adds inspect/plan and R3.2 adds copy/verify; R3.3 adds lifecycle progress and cancellation; R4.1–R4.4 implement bounded local FLAT/ZERO VMDK sources; R4.5 qualifies bounded padded descriptor acquisition; R5.1 admits hosted sparse headers; R5.2 validates metadata and descriptor binding; R5.3 adds base sparse logical mapping; R5.4 integrates sparse CLI sources; R5.5 qualifies sparse bounds and scaling; R5.6 admits bounded sparse parent metadata; R5.7 resolves logical parent bytes; R5.8 integrates CLI parent commands; R5.9 qualifies bounded admission fuzzing; V0.1 completes feasibility planning and read-only lab discovery; V0.2 qualifies Rust session/inventory and cleanup; continue with V0.3 export proof.
+The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete; R3.1 adds inspect/plan and R3.2 adds copy/verify; R3.3 adds lifecycle progress and cancellation; R4.1–R4.4 implement bounded local FLAT/ZERO VMDK sources; R4.5 qualifies bounded padded descriptor acquisition; R5.1 admits hosted sparse headers; R5.2 validates metadata and descriptor binding; R5.3 adds base sparse logical mapping; R5.4 integrates sparse CLI sources; R5.5 qualifies sparse bounds and scaling; R5.6 admits bounded sparse parent metadata; R5.7 resolves logical parent bytes; R5.8 integrates CLI parent commands; R5.9 qualifies bounded admission fuzzing; V0.1 completes feasibility planning and read-only lab discovery; V0.2 qualifies Rust session/inventory and cleanup; V0.3.1 supplies the Rust export foundation and observed license gate; continue with V0.3.2 licensed live proof.
 
 R0.1 was the bounded change directly related to the observer work:
 
@@ -465,7 +472,7 @@ R0.1 was the bounded change directly related to the observer work:
    tradeoff in the implementation log. Update this checklist and ADR-0025 with
    the implemented behavior and remaining limitations.
 
-R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete. R3.1 inspect/plan and R3.2 copy/verify are complete. R3.3 progress and cancellation are complete. R4.1–R4.4 are complete within their documented subset. R4.5 bounded hosted descriptor acquisition compatibility is complete. R5.1 header admission, R5.2 metadata validation and R5.3 base sparse logical mapping are complete. R5.4 sparse CLI integration is complete. R5.5 deterministic adversarial validation and scaling benchmarks are complete. R5.6 bounded sparse parent metadata admission is complete. R5.7 read-only logical parent fallback is complete. R5.8 CLI parent integration is complete. R5.9 bounded admission fuzz qualification is complete. V0.1 feasibility planning and read-only lab discovery are complete. V0.2 Rust session/inventory and cleanup are complete. Start **V0.3** with the independent export proof. Keep PERF.0 and the prior performance follow-ups open.
+R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete. R3.1 inspect/plan and R3.2 copy/verify are complete. R3.3 progress and cancellation are complete. R4.1–R4.4 are complete within their documented subset. R4.5 bounded hosted descriptor acquisition compatibility is complete. R5.1 header admission, R5.2 metadata validation and R5.3 base sparse logical mapping are complete. R5.4 sparse CLI integration is complete. R5.5 deterministic adversarial validation and scaling benchmarks are complete. R5.6 bounded sparse parent metadata admission is complete. R5.7 read-only logical parent fallback is complete. R5.8 CLI parent integration is complete. R5.9 bounded admission fuzz qualification is complete. V0.1 feasibility planning and read-only lab discovery are complete. V0.2 Rust session/inventory and cleanup are complete. V0.3.1 export foundation and license probing are complete. Continue **V0.3.2** after supported licensing is provisioned. Keep PERF.0 and the prior performance follow-ups open.
 
 ## Decisions to record before their milestone
 

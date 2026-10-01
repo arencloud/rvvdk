@@ -1,0 +1,42 @@
+diff --git a/crates/rvvdk-vsphere/src/lib.rs b/crates/rvvdk-vsphere/src/lib.rs
+index 50d1a5b..1a9c061 100644
+--- a/crates/rvvdk-vsphere/src/lib.rs
++++ b/crates/rvvdk-vsphere/src/lib.rs
+@@ -133,7 +133,8 @@ struct SessionResult<T> {
+     connection_policy: ConnectionReuse,
+     elapsed_ms: f64,
+ }
+-type WorkFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = Result<T>> + 'a>>;
++type WorkFuture<'a, T> =
++    std::pin::Pin<Box<dyn std::future::Future<Output = Result<T>> + Send + 'a>>;
+ async fn session_work<T>(
+     policy: ConnectionPolicy,
+     credentials: &Credentials,
+diff --git a/crates/rvvdk-vsphere/tests/discovery.rs b/crates/rvvdk-vsphere/tests/discovery.rs
+index b00eccd..fc1fcee 100644
+--- a/crates/rvvdk-vsphere/tests/discovery.rs
++++ b/crates/rvvdk-vsphere/tests/discovery.rs
+@@ -315,6 +315,23 @@ fn credentials() -> Credentials {
+     Credentials::new("private-user<&".to_owned(), "PRIVATE-password<&".to_owned()).unwrap()
+ }
+ 
++#[test]
++fn scoped_operation_futures_remain_send() {
++    fn require_send(_: impl Send) {}
++    let policy = ConnectionPolicy::pinned("https://example.invalid", &"a".repeat(64)).unwrap();
++    let credentials = credentials();
++    require_send(discover(
++        policy.clone(),
++        &credentials,
++        InventoryLimits::default(),
++    ));
++    require_send(rvvdk_vsphere::export_vm(
++        policy,
++        &credentials,
++        rvvdk_vsphere::ExportOptions::probe(1024),
++    ));
++}
++
+ #[tokio::test]
+ async fn tls_inventory_identity_redaction_and_reuse() {
+     let server = Server::start(full());

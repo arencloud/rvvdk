@@ -111,6 +111,7 @@ impl ConnectionPolicy {
 
 struct PinVerifier {
     pin: [u8; 32],
+    peer_sha1: Arc<std::sync::Mutex<Option<[u8; 20]>>>,
     provider: Arc<rustls::crypto::CryptoProvider>,
     handshakes: Arc<AtomicUsize>,
 }
@@ -133,6 +134,9 @@ impl ServerCertVerifier for PinVerifier {
             return Err(rustls::Error::InvalidCertificate(
                 rustls::CertificateError::ApplicationVerificationFailure,
             ));
+        }
+        if let Ok(mut peer) = self.peer_sha1.lock() {
+            *peer = Some(sha1::Sha1::digest(cert.as_ref()).into());
         }
         self.handshakes.fetch_add(1, Ordering::Relaxed);
         Ok(ServerCertVerified::assertion())
@@ -176,6 +180,12 @@ pub(crate) enum Method {
     Logout,
     RetrievePropertiesEx,
     CancelRetrievePropertiesEx,
+    ExportVm,
+    ShutdownGuest,
+    HttpNfcLeaseAbort,
+    HttpNfcLeaseComplete,
+    HttpNfcLeaseProgress,
+    HttpNfcLeaseGetManifest,
 }
 impl Method {
     pub(crate) fn name(self) -> &'static str {
@@ -185,6 +195,12 @@ impl Method {
             Self::Logout => "Logout",
             Self::RetrievePropertiesEx => "RetrievePropertiesEx",
             Self::CancelRetrievePropertiesEx => "CancelRetrievePropertiesEx",
+            Self::ExportVm => "ExportVm",
+            Self::ShutdownGuest => "ShutdownGuest",
+            Self::HttpNfcLeaseAbort => "HttpNfcLeaseAbort",
+            Self::HttpNfcLeaseComplete => "HttpNfcLeaseComplete",
+            Self::HttpNfcLeaseProgress => "HttpNfcLeaseProgress",
+            Self::HttpNfcLeaseGetManifest => "HttpNfcLeaseGetManifest",
         }
     }
 }
@@ -202,17 +218,20 @@ pub(crate) struct Transport {
     cookie: Option<Zeroizing<String>>,
     pub(crate) measurements: Vec<RequestMeasurement>,
     handshakes: Arc<AtomicUsize>,
+    peer_sha1: Arc<std::sync::Mutex<Option<[u8; 20]>>>,
 }
 impl Transport {
     pub(crate) fn new(policy: ConnectionPolicy) -> Result<Self> {
         let provider = Arc::new(rustls::crypto::ring::default_provider());
         let handshakes = Arc::new(AtomicUsize::new(0));
+        let peer_sha1 = Arc::new(std::sync::Mutex::new(None));
         let mut tls = rustls::ClientConfig::builder_with_provider(provider.clone())
             .with_safe_default_protocol_versions()
             .map_err(|_| Error::Transport)?
             .dangerous()
             .with_custom_certificate_verifier(Arc::new(PinVerifier {
                 pin: policy.pin,
+                peer_sha1: peer_sha1.clone(),
                 provider,
                 handshakes: handshakes.clone(),
             }))
@@ -247,7 +266,57 @@ impl Transport {
             cookie: None,
             measurements: Vec::new(),
             handshakes,
+            peer_sha1,
         })
+    }
+    pub(crate) fn admit_data_url(&self, raw: &str, thumbprint: &str) -> Result<Url> {
+        if raw.len() > 4096 {
+            return Err(Error::InvalidInput);
+        }
+        let mut url = Url::parse(raw).map_err(|_| Error::InvalidInput)?;
+        if url.host_str() == Some("*") {
+            url.set_host(self.policy.endpoint.host_str())
+                .map_err(|_| Error::DataEndpoint)?;
+        }
+        if url.scheme() != "https"
+            || url.host_str() != self.policy.endpoint.host_str()
+            || url.port_or_known_default() != self.policy.endpoint.port_or_known_default()
+            || !url.username().is_empty()
+            || url.password().is_some()
+            || url.fragment().is_some()
+            || !(url.path().starts_with("/nfc/") || url.path().starts_with("/ha-nfc/"))
+        {
+            return Err(Error::DataEndpoint);
+        }
+        let hex = thumbprint.replace(':', "").to_ascii_lowercase();
+        let expected = if hex.len() == 64 {
+            hex_string(&self.policy.pin)
+        } else if hex.len() == 40 {
+            let peer = self.peer_sha1.lock().map_err(|_| Error::Transport)?;
+            hex_string(&peer.ok_or(Error::Transport)?)
+        } else {
+            return Err(Error::DataEndpoint);
+        };
+        if hex != expected {
+            return Err(Error::DataEndpoint);
+        }
+        Ok(url)
+    }
+    pub(crate) fn data_request(
+        &self,
+        url: Url,
+        deadline: Instant,
+    ) -> Result<reqwest::RequestBuilder> {
+        let remaining = deadline
+            .checked_duration_since(Instant::now())
+            .ok_or(Error::Deadline)?;
+        // The client has no cookie store/default authorization. API credentials
+        // are attached only by exchange(), never to this GET.
+        Ok(self
+            .client
+            .get(url)
+            .header(header::ACCEPT_ENCODING, "identity")
+            .timeout(remaining))
     }
     pub(crate) fn handshakes(&self) -> usize {
         self.handshakes.load(Ordering::Relaxed)
@@ -264,6 +333,11 @@ impl Transport {
         body: String,
         deadline: Instant,
     ) -> Result<Zeroizing<String>> {
+        if self.measurements.len() >= 4096
+            && !matches!(method, Method::Logout | Method::HttpNfcLeaseAbort)
+        {
+            return Err(Error::RequestLimit);
+        }
         let started = Instant::now();
         let mut bytes = 0;
         let result = match deadline.checked_duration_since(started) {
@@ -392,6 +466,10 @@ fn map_http(error: reqwest::Error) -> Error {
     } else {
         Error::Transport
     }
+}
+
+pub(crate) fn hex_string(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 #[cfg(test)]

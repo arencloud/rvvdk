@@ -71,7 +71,9 @@ pub(crate) fn response<'a, 'i>(doc: &'a Document<'i>, method: &str) -> Result<No
             Some("InvalidLoginFault") => Error::InvalidLogin,
             Some("NotAuthenticatedFault") => Error::NotAuthenticated,
             Some("NoPermissionFault") => Error::NoPermission,
-            Some("RestrictedVersionFault" | "NotSupportedFault") => Error::Restricted,
+            Some("RestrictedVersionFault") => Error::LicenseRestricted,
+            Some("InvalidPowerStateFault") => Error::InvalidPowerState,
+            Some("NotSupportedFault") => Error::Restricted,
             _ => Error::SoapFault,
         });
     }

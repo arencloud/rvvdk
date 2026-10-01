@@ -1347,7 +1347,29 @@ outcomes. Even malformed Login content retains a received cookie for cleanup.
 Dropping the future or process termination cannot promise remote release; callers
 must await completion. License availability is reported separately from unresolved
 active assignment/operation eligibility. Private VM identities are omitted from
-serialized reports. Export leases, artifacts and compressed decoding remain V0.3
+serialized reports. Live export leases, artifacts and compressed decoding remain V0.3
 and later gates. [Contract](../crates/rvvdk-vsphere/README.md),
 [ADR-0047](adr/0047-bounded-rust-vsphere-discovery.md),
 [qualification](benchmark-results/2026-10-01-v02/README.md).
+
+## Bounded Rust export foundation (V0.3.1)
+
+The shared scoped session driver now hosts discovery or a single owned export
+attempt. The Linux proof separates acquire-and-abort eligibility probing from
+full transfer with optional explicit graceful shutdown. Private VM/disk identities
+are revalidated before mutation and after power-off. No hard shutdown fallback,
+license changes, SDK dependencies or public CLI integration are introduced.
+
+One pinned-authority GET streams encoded bytes with bounded buffers/byte counts,
+incremental hashes and lease progress. A validated server manifest, durable file
+writes, acknowledged Complete and Logout precede descriptor-relative no-replace
+publication. Primary failure, lease/session uncertainty and staging cleanup are
+distinct outcomes. Cooperative cancellation must be awaited. A lost acquisition
+response can leave an unidentified lease; no retry hides that uncertainty.
+
+The real host rejects ExportVm by license before power changes. Local TLS fixtures
+qualify mechanics; actual format, guest-byte equivalence, remote lease release and
+throughput await supported trial/commercial access in V0.3.2. Sparse magic alone is
+not full format validation. [Contract](../crates/rvvdk-vsphere/README.md),
+[ADR-0048](adr/0048-bounded-export-lease-proof.md),
+[evidence](benchmark-results/2026-10-01-v031/README.md).

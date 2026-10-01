@@ -66,3 +66,12 @@ The Python probe above remains V0.1 historical evidence.
 fresh/reuse sessions, CPU and process high-water RSS, and computes each paired
 elapsed change plus the >5% investigation trigger. It performs no VMware access.
 [Results and reproduction](../../docs/benchmark-results/2026-10-01-v02/README.md).
+
+## V0.3.1 export foundation
+
+New export operations use the Rust `export` example in `rvvdk-vsphere`; the Python
+probe remains historical. `plot_export_foundation.py INPUT_DIRECTORY OUTPUT_DIRECTORY`
+validates and plots every baseline/candidate discovery session and computes the
+aggregate, pair-median and individual >5% adverse triggers. Initial blocks contain
+three sessions per arm; longer repeats contain six, in two three-session processes.
+It does not access VMware. [Evidence](../../docs/benchmark-results/2026-10-01-v031/README.md).

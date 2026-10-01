@@ -15,6 +15,7 @@ use std::{
     time::Duration,
 };
 
+#[derive(Clone)]
 struct Reply {
     status: u16,
     body: String,
@@ -127,7 +128,7 @@ fn full() -> Vec<Reply> {
     );
     let vm=properties("VirtualMachine","vm-private",&[
         property("config.uuid","01234567-89ab-cdef-0123-456789abcdef"),property("runtime.powerState","poweredOn"),property("config.guestId","fedora64Guest"),property("config.template","false"),property("guest.toolsRunningStatus","guestToolsRunning"),property("disabledMethod","<string>ExportVm</string>"),
-        property("config.hardware.device","<VirtualDevice xsi:type='VirtualDisk'><capacityInKB>31457280</capacityInKB><capacityInBytes>32212254720</capacityInBytes><backing xsi:type='VirtualDiskFlatVer2BackingInfo'><fileName>PRIVATE-path</fileName><diskMode>persistent</diskMode><thinProvisioned>false</thinProvisioned></backing></VirtualDevice>")
+        property("config.hardware.device","<VirtualDevice xsi:type='VirtualDisk'><key>2000</key><capacityInKB>31457280</capacityInKB><capacityInBytes>32212254720</capacityInBytes><backing xsi:type='VirtualDiskFlatVer2BackingInfo'><fileName>PRIVATE-path</fileName><diskMode>persistent</diskMode><thinProvisioned>false</thinProvisioned></backing></VirtualDevice>")
     ].concat());
     vec![
         service(),
@@ -154,6 +155,11 @@ impl Server {
             .iter()
             .map(|b| format!("{b:02x}"))
             .collect::<String>();
+        let legacy_pin = sha1::Sha1::digest(cert.cert.der())
+            .iter()
+            .map(|b| format!("{b:02X}"))
+            .collect::<Vec<_>>()
+            .join(":");
         let config =
             ServerConfig::builder_with_provider(Arc::new(rustls::crypto::ring::default_provider()))
                 .with_safe_default_protocol_versions()
@@ -166,6 +172,18 @@ impl Server {
                 .unwrap();
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let endpoint = format!("https://{}", listener.local_addr().unwrap());
+        let replies = replies
+            .into_iter()
+            .map(|mut r| {
+                r.body = r
+                    .body
+                    .replace("ENDPOINT", &endpoint)
+                    .replace("WILDCARD", &endpoint.replacen("127.0.0.1", "*", 1))
+                    .replace("LEGACY_PIN", &legacy_pin)
+                    .replace("THUMBPRINT", &pin);
+                r
+            })
+            .collect::<Vec<_>>();
         listener.set_nonblocking(true).unwrap();
         let requests = Arc::new(Mutex::new(Vec::new()));
         let observed = requests.clone();
@@ -173,8 +191,9 @@ impl Server {
         let halted = stop.clone();
         let worker = thread::spawn(move || {
             let config = Arc::new(config);
-            let mut replies = replies.into_iter().peekable();
-            while !halted.load(Ordering::Relaxed) && replies.peek().is_some() {
+            let replies = Arc::new(Mutex::new(std::collections::VecDeque::from(replies)));
+            let mut connections = Vec::new();
+            while !halted.load(Ordering::Relaxed) && !replies.lock().unwrap().is_empty() {
                 let (stream, _) = match listener.accept() {
                     Ok(v) => v,
                     Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
@@ -189,9 +208,14 @@ impl Server {
                 stream
                     .set_write_timeout(Some(Duration::from_millis(300)))
                     .unwrap();
+                let config = config.clone();
+                let halted = halted.clone();
+                let replies = replies.clone();
+                let observed = observed.clone();
+                connections.push(thread::spawn(move || {
                 let mut stream =
                     StreamOwned::new(ServerConnection::new(config.clone()).unwrap(), stream);
-                while !halted.load(Ordering::Relaxed) && replies.peek().is_some() {
+                while !halted.load(Ordering::Relaxed) && !replies.lock().unwrap().is_empty() {
                     let mut headers = Vec::new();
                     while !headers.ends_with(b"\r\n\r\n") && headers.len() < 16384 {
                         let mut b = [0];
@@ -211,7 +235,7 @@ impl Server {
                                 .strip_prefix("content-length: ")
                                 .map(str::to_owned)
                         })
-                        .unwrap()
+                        .unwrap_or_else(|| "0".to_owned())
                         .parse()
                         .unwrap();
                     assert!(length < 65536);
@@ -221,7 +245,11 @@ impl Server {
                     }
                     let body = String::from_utf8(body).unwrap();
                     observed.lock().unwrap().push(format!("{headers}{body}"));
-                    let reply = replies.next().unwrap();
+                    let reply = if body.contains("<HttpNfcLeaseProgress ") {
+                        Reply::soap("HttpNfcLeaseProgress", "")
+                    } else {
+                        replies.lock().unwrap().pop_front().unwrap()
+                    };
                     thread::sleep(reply.delay);
                     let out = if reply.chunked {
                         let mut encoded = String::new();
@@ -256,6 +284,10 @@ impl Server {
                         break;
                     }
                 }
+                }));
+            }
+            for connection in connections {
+                connection.join().unwrap();
             }
         });
         Self {
@@ -281,6 +313,23 @@ impl Drop for Server {
 }
 fn credentials() -> Credentials {
     Credentials::new("private-user<&".to_owned(), "PRIVATE-password<&".to_owned()).unwrap()
+}
+
+#[test]
+fn scoped_operation_futures_remain_send() {
+    fn require_send(_: impl Send) {}
+    let policy = ConnectionPolicy::pinned("https://example.invalid", &"a".repeat(64)).unwrap();
+    let credentials = credentials();
+    require_send(discover(
+        policy.clone(),
+        &credentials,
+        InventoryLimits::default(),
+    ));
+    require_send(rvvdk_vsphere::export_vm(
+        policy,
+        &credentials,
+        rvvdk_vsphere::ExportOptions::probe(1024),
+    ));
 }
 
 #[tokio::test]
@@ -618,4 +667,507 @@ async fn actual_body_limit_does_not_trust_content_length() {
         .await
         .unwrap();
     assert_eq!(report.primary_error, Some(Error::ResponseLimit));
+}
+
+#[cfg(target_os = "linux")]
+mod export_tests {
+    use super::*;
+    use rvvdk_vsphere::{ExportOptions, LeaseCleanup, export_vm};
+    use std::path::PathBuf;
+    static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+    struct Output(PathBuf);
+    impl Output {
+        fn new() -> Self {
+            let path = std::env::temp_dir().join(format!(
+                "rvddk-export-test-{}-{}",
+                std::process::id(),
+                NEXT.fetch_add(1, Ordering::Relaxed)
+            ));
+            std::fs::create_dir(&path).unwrap();
+            Self(path)
+        }
+        fn dest(&self) -> PathBuf {
+            self.0.join("artifact")
+        }
+    }
+    impl Drop for Output {
+        fn drop(&mut self) {
+            std::fs::remove_dir_all(&self.0).unwrap();
+        }
+    }
+    fn options(out: &Output) -> ExportOptions {
+        let mut options = ExportOptions::probe(30 * 1024 * 1024 * 1024);
+        options.probe_only = false;
+        options.output = out.dest();
+        options.max_encoded_bytes = 1024 * 1024;
+        options
+    }
+    fn selected(power: &str) -> Vec<Reply> {
+        let mut replies = full();
+        replies.pop();
+        replies[6].body = replies[6].body.replace("poweredOn", power);
+        replies.push(replies[6].clone());
+        replies
+    }
+    fn granted() -> Reply {
+        Reply::soap(
+            "ExportVm",
+            "<returnval type='HttpNfcLease'>lease-private</returnval>",
+        )
+    }
+    fn ready(url: &str, pin: &str) -> Reply {
+        properties(
+            "HttpNfcLease",
+            "lease-private",
+            &(property("state", "ready")
+                + &property(
+                    "info",
+                    &format!(
+                        "<lease type='HttpNfcLease'>lease-private</lease><entity type='VirtualMachine'>vm-private</entity><deviceUrl><key>private-disk</key><url>{url}</url><sslThumbprint>{pin}</sslThumbprint><disk>true</disk></deviceUrl><totalDiskCapacityInKB>31457280</totalDiskCapacityInKB><leaseTimeout>30</leaseTimeout>"
+                    ),
+                )),
+        )
+    }
+    fn payload() -> String {
+        "KDMV".to_owned() + &"x".repeat(64 * 1024 - 4)
+    }
+    fn data() -> Reply {
+        let mut reply = Reply::soap("unused", "");
+        reply.body = payload();
+        reply
+    }
+    fn manifest() -> Reply {
+        let digest = Sha256::digest(payload().as_bytes())
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>();
+        Reply::soap(
+            "HttpNfcLeaseGetManifest",
+            &format!(
+                "<returnval><key>private-disk</key><disk>true</disk><size>65536</size><capacity>32212254720</capacity><checksumType>sha256</checksumType><checksum>{digest}</checksum><sha1/></returnval>"
+            ),
+        )
+    }
+    fn complete() -> Reply {
+        Reply::soap("HttpNfcLeaseComplete", "")
+    }
+    fn abort() -> Reply {
+        Reply::soap("HttpNfcLeaseAbort", "")
+    }
+    #[tokio::test]
+    async fn probe_distinguishes_license_and_power_without_shutdown() {
+        for (fault, expected) in [
+            ("RestrictedVersionFault", Error::LicenseRestricted),
+            ("InvalidPowerStateFault", Error::InvalidPowerState),
+        ] {
+            let mut replies = selected("poweredOn");
+            replies.extend([Reply::fault(fault), logout()]);
+            let server = Server::start(replies);
+            let report = export_vm(
+                server.policy(),
+                &credentials(),
+                ExportOptions::probe(30 * 1024 * 1024 * 1024),
+            )
+            .await
+            .unwrap();
+            assert_eq!(report.primary_error, Some(expected));
+            assert_eq!(report.lease_cleanup, LeaseCleanup::Rejected);
+            assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+            assert!(!report.shutdown_requested);
+            assert!(
+                !server
+                    .requests()
+                    .iter()
+                    .any(|r| r.contains("<ShutdownGuest "))
+            );
+        }
+    }
+    #[tokio::test]
+    async fn probe_aborts_any_granted_lease() {
+        let mut replies = selected("poweredOff");
+        replies.extend([granted(), abort(), logout()]);
+        let server = Server::start(replies);
+        let report = export_vm(
+            server.policy(),
+            &credentials(),
+            ExportOptions::probe(30 * 1024 * 1024 * 1024),
+        )
+        .await
+        .unwrap();
+        assert_eq!(report.primary_error, None);
+        assert_eq!(report.lease_cleanup, LeaseCleanup::Aborted);
+        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+        assert!(!report.is_success());
+    }
+    #[tokio::test]
+    async fn full_transfer_verifies_manifest_completes_logs_out_and_publishes() {
+        let mut replies = selected("poweredOff");
+        replies.extend([
+            granted(),
+            ready("ENDPOINT/nfc/PRIVATE-ticket", "THUMBPRINT"),
+            data(),
+            manifest(),
+            complete(),
+            logout(),
+        ]);
+        let server = Server::start(replies);
+        let out = Output::new();
+        let report = export_vm(server.policy(), &credentials(), options(&out))
+            .await
+            .unwrap();
+        assert!(report.is_success(), "{report:?}");
+        assert_eq!(
+            std::fs::read(out.dest().join("disk-1.vmdk")).unwrap(),
+            payload().as_bytes()
+        );
+        assert!(!serde_json::to_string(&report).unwrap().contains("PRIVATE"));
+        let requests = server.requests();
+        let get = requests
+            .iter()
+            .find(|r| r.starts_with("GET "))
+            .unwrap()
+            .to_ascii_lowercase();
+        assert!(
+            !get.contains("cookie:")
+                && !get.contains("authorization:")
+                && !get.contains("password")
+        );
+        assert!(requests.last().unwrap().contains("<Logout "));
+    }
+    #[tokio::test]
+    async fn endpoint_or_pin_rejection_aborts_without_get() {
+        for (url, pin) in [
+            ("https://other.invalid/nfc/private", "THUMBPRINT"),
+            ("ENDPOINT/sdk", "THUMBPRINT"),
+            (
+                "ENDPOINT/nfc/private",
+                "0000000000000000000000000000000000000000000000000000000000000000",
+            ),
+        ] {
+            let mut replies = selected("poweredOff");
+            replies.extend([granted(), ready(url, pin), abort(), logout()]);
+            let server = Server::start(replies);
+            let out = Output::new();
+            let report = export_vm(server.policy(), &credentials(), options(&out))
+                .await
+                .unwrap();
+            assert_eq!(report.primary_error, Some(Error::DataEndpoint));
+            assert_eq!(report.lease_cleanup, LeaseCleanup::Aborted);
+            assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+            assert!(!out.dest().exists());
+            assert!(!server.requests().iter().any(|r| r.starts_with("GET ")));
+            assert_eq!(std::fs::read_dir(&out.0).unwrap().count(), 0);
+        }
+    }
+    #[tokio::test]
+    async fn digest_mismatch_retains_both_cleanup_outcomes_without_publication() {
+        let mut wrong = manifest();
+        wrong.body = wrong.body.replace("65536", "65535");
+        let mut replies = selected("poweredOff");
+        replies.extend([
+            granted(),
+            ready("ENDPOINT/nfc/private", "THUMBPRINT"),
+            data(),
+            wrong,
+            Reply::fault("RuntimeFault"),
+            Reply::fault("RuntimeFault"),
+        ]);
+        let server = Server::start(replies);
+        let out = Output::new();
+        let report = export_vm(server.policy(), &credentials(), options(&out))
+            .await
+            .unwrap();
+        assert_eq!(report.primary_error, Some(Error::Manifest));
+        assert_eq!(report.lease_cleanup, LeaseCleanup::Unconfirmed);
+        assert_eq!(report.lease_cleanup_error, Some(Error::SoapFault));
+        assert_eq!(
+            report.session_cleanup,
+            Cleanup::Unconfirmed(Error::SoapFault)
+        );
+        assert!(!out.dest().exists());
+        assert_eq!(std::fs::read_dir(&out.0).unwrap().count(), 0);
+    }
+    #[tokio::test]
+    async fn cancel_pending_download_aborts_and_removes_private_files() {
+        let mut slow = data();
+        slow.delay = Duration::from_millis(500);
+        let mut replies = selected("poweredOff");
+        replies.extend([
+            granted(),
+            ready("ENDPOINT/nfc/private", "THUMBPRINT"),
+            slow,
+            abort(),
+            logout(),
+        ]);
+        let server = Server::start(replies);
+        let out = Output::new();
+        let options = options(&out);
+        let token = options.cancellation.clone();
+        let worker = tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(150)).await;
+            token.cancel();
+        });
+        let report = export_vm(server.policy(), &credentials(), options)
+            .await
+            .unwrap();
+        worker.await.unwrap();
+        assert_eq!(report.primary_error, Some(Error::Cancelled));
+        assert_eq!(report.lease_cleanup, LeaseCleanup::Aborted);
+        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+        assert_eq!(std::fs::read_dir(&out.0).unwrap().count(), 0);
+    }
+    #[tokio::test]
+    async fn output_collision_precedes_power_and_lease_calls() {
+        let mut replies = selected("poweredOn");
+        replies.push(logout());
+        let server = Server::start(replies);
+        let out = Output::new();
+        std::fs::create_dir(out.dest()).unwrap();
+        std::fs::write(out.dest().join("sentinel"), b"keep").unwrap();
+        let mut options = options(&out);
+        options.allow_graceful_shutdown = true;
+        let report = export_vm(server.policy(), &credentials(), options)
+            .await
+            .unwrap();
+        assert_eq!(report.primary_error, Some(Error::Artifact));
+        assert!(!report.shutdown_requested);
+        assert_eq!(report.lease_cleanup, LeaseCleanup::NotAcquired);
+        assert_eq!(std::fs::read(out.dest().join("sentinel")).unwrap(), b"keep");
+    }
+    #[tokio::test]
+    async fn malformed_acquisition_is_uncertain_and_not_retried() {
+        let mut replies = selected("poweredOff");
+        replies.extend([
+            Reply::soap(
+                "ExportVm",
+                "<returnval type='VirtualMachine'>wrong</returnval>",
+            ),
+            logout(),
+        ]);
+        let server = Server::start(replies);
+        let report = export_vm(
+            server.policy(),
+            &credentials(),
+            ExportOptions::probe(30 * 1024 * 1024 * 1024),
+        )
+        .await
+        .unwrap();
+        assert_eq!(report.primary_error, Some(Error::LeaseUnconfirmed));
+        assert_eq!(report.lease_cleanup, LeaseCleanup::Unconfirmed);
+        assert_eq!(
+            server
+                .requests()
+                .iter()
+                .filter(|r| r.contains("<ExportVm "))
+                .count(),
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn graceful_shutdown_revalidates_disk_before_acquisition() {
+        for changed in [false, true] {
+            let mut replies = selected("poweredOn");
+            let mut off = selected("poweredOff").pop().unwrap();
+            if changed {
+                off.body = off.body.replace("PRIVATE-path", "PRIVATE-replaced");
+            }
+            replies.extend([Reply::soap("ShutdownGuest", ""), off]);
+            if !changed {
+                replies.push(Reply::fault("RestrictedVersionFault"));
+            }
+            replies.push(logout());
+            let server = Server::start(replies);
+            let out = Output::new();
+            let mut options = options(&out);
+            options.allow_graceful_shutdown = true;
+            let report = export_vm(server.policy(), &credentials(), options)
+                .await
+                .unwrap();
+            assert!(report.shutdown_requested);
+            assert_eq!(
+                report.last_observed_power_state.as_deref(),
+                Some("poweredOff")
+            );
+            assert_eq!(
+                report.primary_error,
+                Some(if changed {
+                    Error::Identity
+                } else {
+                    Error::LicenseRestricted
+                })
+            );
+            assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+            assert_eq!(
+                server
+                    .requests()
+                    .iter()
+                    .filter(|r| r.contains("<ExportVm "))
+                    .count(),
+                usize::from(!changed)
+            );
+            assert_eq!(std::fs::read_dir(&out.0).unwrap().count(), 0);
+        }
+    }
+
+    #[tokio::test]
+    async fn shutdown_failure_never_falls_back_to_hard_power_off() {
+        let mut replies = selected("poweredOn");
+        replies.extend([Reply::fault("ToolsUnavailableFault"), logout()]);
+        let server = Server::start(replies);
+        let out = Output::new();
+        let mut options = options(&out);
+        options.allow_graceful_shutdown = true;
+        let report = export_vm(server.policy(), &credentials(), options)
+            .await
+            .unwrap();
+        assert_eq!(report.primary_error, Some(Error::SoapFault));
+        assert_eq!(report.lease_cleanup, LeaseCleanup::NotAcquired);
+        assert!(server.requests().last().unwrap().contains("<Logout "));
+        assert!(
+            !server
+                .requests()
+                .iter()
+                .any(|r| r.contains("PowerOffVM") || r.contains("<ExportVm "))
+        );
+    }
+
+    #[tokio::test]
+    async fn transfer_limit_redirect_and_truncation_abort_without_publication() {
+        for case in 0..3 {
+            let mut bad = data();
+            let expected = match case {
+                0 => {
+                    bad.declared = Some(2 * 1024 * 1024);
+                    Error::TransferLimit
+                }
+                1 => {
+                    bad.status = 302;
+                    bad.headers = "Location: https://other.invalid/PRIVATE\r\n".to_owned();
+                    Error::Http
+                }
+                _ => {
+                    bad.declared = Some(65537);
+                    Error::Transport
+                }
+            };
+            let mut replies = selected("poweredOff");
+            replies.extend([
+                granted(),
+                ready("ENDPOINT/nfc/private", "THUMBPRINT"),
+                bad,
+                abort(),
+                logout(),
+            ]);
+            let server = Server::start(replies);
+            let out = Output::new();
+            let report = export_vm(server.policy(), &credentials(), options(&out))
+                .await
+                .unwrap();
+            assert_eq!(report.primary_error, Some(expected), "{report:?}");
+            assert_eq!(report.lease_cleanup, LeaseCleanup::Aborted);
+            assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+            assert_eq!(std::fs::read_dir(&out.0).unwrap().count(), 0);
+        }
+    }
+
+    #[tokio::test]
+    async fn complete_or_logout_failure_prevents_publication() {
+        for failed_complete in [false, true] {
+            let mut replies = selected("poweredOff");
+            replies.extend([
+                granted(),
+                ready("ENDPOINT/nfc/private", "THUMBPRINT"),
+                data(),
+                manifest(),
+            ]);
+            if failed_complete {
+                replies.extend([Reply::fault("RuntimeFault"), abort(), logout()]);
+            } else {
+                replies.extend([complete(), Reply::fault("RuntimeFault")]);
+            }
+            let server = Server::start(replies);
+            let out = Output::new();
+            let report = export_vm(server.policy(), &credentials(), options(&out))
+                .await
+                .unwrap();
+            assert!(!report.is_success());
+            assert_eq!(
+                report.lease_cleanup,
+                if failed_complete {
+                    LeaseCleanup::Aborted
+                } else {
+                    LeaseCleanup::Completed
+                }
+            );
+            assert_eq!(std::fs::read_dir(&out.0).unwrap().count(), 0);
+        }
+    }
+
+    #[tokio::test]
+    async fn heartbeats_renew_lease_while_data_response_is_pending() {
+        let mut slow = data();
+        slow.delay = Duration::from_millis(2300);
+        let mut short_lease = ready("ENDPOINT/nfc/private", "THUMBPRINT");
+        short_lease.body = short_lease
+            .body
+            .replace("<leaseTimeout>30", "<leaseTimeout>3");
+        let mut replies = selected("poweredOff");
+        replies.extend([
+            granted(),
+            short_lease,
+            slow,
+            manifest(),
+            complete(),
+            logout(),
+        ]);
+        let server = Server::start(replies);
+        let out = Output::new();
+        let report = export_vm(server.policy(), &credentials(), options(&out))
+            .await
+            .unwrap();
+        assert!(report.is_success(), "{report:?}");
+        let requests = server.requests();
+        let get = requests.iter().position(|r| r.starts_with("GET ")).unwrap();
+        let manifest = requests
+            .iter()
+            .position(|r| r.contains("<HttpNfcLeaseGetManifest "))
+            .unwrap();
+        assert!(
+            requests[get + 1..manifest]
+                .iter()
+                .filter(|r| r.contains("<HttpNfcLeaseProgress "))
+                .count()
+                >= 2
+        );
+    }
+
+    #[tokio::test]
+    async fn wildcard_and_legacy_sha1_are_bound_to_the_sha256_pinned_endpoint() {
+        let digest = sha1::Sha1::digest(payload().as_bytes())
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>();
+        let manifest = Reply::soap(
+            "HttpNfcLeaseGetManifest",
+            &format!(
+                "<returnval><key>private-disk</key><disk>true</disk><size>65536</size><sha1>{digest}</sha1></returnval>"
+            ),
+        );
+        let mut replies = selected("poweredOff");
+        replies.extend([
+            granted(),
+            ready("WILDCARD/ha-nfc/private", "LEGACY_PIN"),
+            data(),
+            manifest,
+            complete(),
+            logout(),
+        ]);
+        let server = Server::start(replies);
+        let out = Output::new();
+        let report = export_vm(server.policy(), &credentials(), options(&out))
+            .await
+            .unwrap();
+        assert!(report.is_success(), "{report:?}");
+    }
 }

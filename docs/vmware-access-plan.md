@@ -6,8 +6,11 @@ online backup, CBT, restore and VDDK transport compatibility remain separate gat
 The local Rust data plane is unchanged. V0.2 now qualifies the independent
 [Rust session/inventory crate](../crates/rvvdk-vsphere/README.md), including live
 error cleanup and [matched connection-policy measurements](benchmark-results/2026-10-01-v02/README.md).
-The earlier SDK-free Python probe remains V0.1 evidence. This establishes discovery only; no disk bytes or export lease have
-been acquired. V0 remains open until the Rust proof and failure/cleanup evidence pass.
+The earlier SDK-free Python probe remains V0.1 evidence. V0.3.1 now implements the
+Rust lease/artifact proof and local failure fixtures. A live `ExportVm` probe returned
+`license_restricted`, followed by confirmed Logout; no power change or lease was
+made. [Evidence](benchmark-results/2026-10-01-v031/README.md). No live disk bytes have
+been acquired. V0 remains open until licensed transfer and failure/cleanup evidence pass.
 
 ## Observed lab, 2026-10-01
 
@@ -49,8 +52,8 @@ when the Rust export proof is ready. [Free-license policy](https://knowledge.bro
 | Read inventory | PropertyCollector, object visibility/System.View | Passed in Rust for this lab account, including bounded failure/Logout; least-privilege role still unqualified |
 | Discover active license | QueryAssignedLicenses when assignment manager is available; account visibility | Available-license metadata read only; active assignment/evaluation expiry still needs confirmation |
 | Shut down selected guest | ShutdownGuest; VirtualMachine.Interact.PowerOff; running Tools | Tools running; no call made. Select only one VM when shutdown is necessary |
-| Export powered-off VM | ExportVm, VApp.Export, powered-off VM, eligible licensing | First candidate; method and data access not exercised |
-| Maintain/release export | HttpNfcLease state, progress, complete/abort | Design only; test normal, cancellation, timeout and cleanup failure paths |
+| Export powered-off VM | ExportVm, VApp.Export, powered-off VM, eligible licensing | V0.3.1 probe rejected by server licensing before shutdown; live bytes pending licensed access |
+| Maintain/release export | HttpNfcLease state, progress, complete/abort | Rust implementation and local TLS fixtures pass; live complete/abort still pending |
 | Package export | Lease device URLs, optional OVF descriptor and manifest | Treat contents as VMDK containers; no random-read guarantee |
 | Online snapshot export | CreateSnapshotEx_Task + ExportSnapshot; snapshot/export/remove privileges and eligible licensing | Later phase; snapshot consistency and owned-resource cleanup need their own proof |
 | Random guest-block reads / CBT | Separate transport and consistency contracts | Unproven; ordinary NBD interoperability is not VMware NBDSSL/NFC compatibility |
@@ -192,6 +195,11 @@ is not export permission. No trial or VM power change was needed.
 
 ### V0.3 — Powered-off export and cleanup proof
 
+**V0.3.1 complete:** executable Linux export foundation, bounded fixture/failure
+qualification and observed license rejection. [ADR-0048](adr/0048-bounded-export-lease-proof.md)
+records the subset and limitations. This does not check off the live acceptance items
+below. The user has been told that trial/commercial access is needed now.
+
 - [ ] Resolve licensing with supported evaluation/commercial access if needed. Request
   trial activation only when the executable proof and fixtures are ready; never bypass
   server checks or assume switching the free key starts a fresh evaluation.
@@ -218,3 +226,34 @@ access, bytes and cleanup evidence. R6 can then integrate that workflow while
 online backup/random-block access remains explicitly unproven. vCenter qualification
 comes later. The historical QEMU partial second-extent producer discrepancy and
 all prior performance follow-ups remain open.
+
+### V0.3.2 — Licensed live qualification
+
+1. After the user provisions legitimate evaluation/commercial access, rediscover the
+   same admitted host and record active licensing/expiry when visible. Do not change
+   keys, reset evaluation, bypass API restrictions or assume the free installation
+   can be converted. Retain the observed restriction and prior evidence.
+2. Repeat the eligibility probe. An invalid-power-state response only resolves that
+   precondition; it does not prove all later operations are permitted. Revalidate
+   the selected 30 GiB VM and the untouched 60 GiB VM. Passwords remain terminal-only.
+3. Establish an independent logical-byte oracle: deterministic guest content when
+   guest access is available, or an agreed independent offline reference. Server
+   manifest checksums alone do not satisfy this. Record any missing prerequisite.
+4. Admit a new private output and sufficient free space, gracefully shut down only
+   the selected VM under the user's existing authorization, poll poweredOff, then
+   run the Rust export proof. Stop on graceful-shutdown failure; no hard fallback.
+5. Identify the real container and use an independent reference decoder to compare
+   logical content. Retain unsupported streamOptimized/compression as a separate
+   format gate; the current Rust reader must not silently accept an unsupported file.
+6. Demonstrate completed and cooperatively cancelled/interrupted transfers, explicit
+   lease release and Logout, no published partial artifacts, and final VM state.
+   Do not disrupt host networking or unrelated sessions to inject failures.
+7. Collect at least three comparable transfer runs, adding process CPU/RSS capture,
+   encoded/logical counts, digest and sync boundaries, network/storage conditions and
+   plots. For before/after tuning, preserve every adverse sample; any aggregate or
+   individual elapsed pair above +5% triggers three longer alternating pairs.
+8. Investigate V0.3.1 discovery variance with a controlled local TLS workload: its
+   longer median change is +1.96%, but individual adverse matches persist. Preserve
+   all recorded sessions; do not claim the individual regression gate passed.
+9. Update this checklist, architecture, roadmap and implementation log; commit the
+   qualified bounded step locally. V0/R6 remain open until their stated gates pass.

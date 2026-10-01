@@ -16,6 +16,7 @@ pub(crate) enum Kind {
     SessionManager,
     PropertyCollector,
     LicenseManager,
+    HttpNfcLease,
 }
 impl Kind {
     pub(crate) fn name(self) -> &'static str {
@@ -31,6 +32,7 @@ impl Kind {
             Self::SessionManager => "SessionManager",
             Self::PropertyCollector => "PropertyCollector",
             Self::LicenseManager => "LicenseManager",
+            Self::HttpNfcLease => "HttpNfcLease",
         }
     }
     fn parse(s: &str) -> Result<Self> {
@@ -46,6 +48,7 @@ impl Kind {
             Self::SessionManager,
             Self::PropertyCollector,
             Self::LicenseManager,
+            Self::HttpNfcLease,
         ]
         .into_iter()
         .find(|k| k.name() == s)
@@ -70,6 +73,7 @@ impl Kind {
                 "disabledMethod",
             ],
             Self::LicenseManager => &["licenses", "licensedEdition"],
+            Self::HttpNfcLease => &["state", "info", "error"],
             _ => &[],
         }
     }
@@ -176,7 +180,7 @@ pub struct License {
 /// Private identity is available explicitly to callers, never via Debug or serde.
 /// Revalidate it on the same admitted host before future mutating operations.
 pub struct VmIdentity {
-    reference: Reference,
+    pub(crate) reference: Reference,
     bios_uuid: String,
 }
 impl fmt::Debug for VmIdentity {
@@ -213,6 +217,18 @@ pub struct Disk {
     pub thin: Option<bool>,
     pub encrypted: bool,
     pub parent_present: bool,
+    #[serde(skip)]
+    pub(crate) identity: DiskIdentity,
+}
+#[derive(PartialEq, Eq)]
+pub(crate) struct DiskIdentity {
+    pub(crate) key: Option<u64>,
+    pub(crate) backing: Option<String>,
+}
+impl fmt::Debug for DiskIdentity {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("DiskIdentity([redacted])")
+    }
 }
 
 pub(crate) struct Properties<'a, 'i>(BTreeMap<&'a str, Node<'a, 'i>>);
@@ -342,6 +358,12 @@ impl<'a, 'i> Properties<'a, 'i> {
                     .transpose()?,
                 encrypted: xml::child(backing, "keyId")?.is_some(),
                 parent_present: xml::child(backing, "parent")?.is_some(),
+                identity: DiskIdentity {
+                    key: xml::child(device, "key")?.map(xml::number).transpose()?,
+                    backing: xml::child(backing, "fileName")?
+                        .map(|n| xml::text(n).map(str::to_owned))
+                        .transpose()?,
+                },
             });
         }
         let export_disabled_method_list = self

@@ -1,10 +1,14 @@
-//! Independent, bounded standalone ESXi 8.0.3 SOAP discovery.
+//! Independent, bounded standalone ESXi 8.0.3 SOAP discovery and export proof.
 //!
-//! This crate does not export disks, modify VMs or use a VMware SDK. Await
-//! [`discover`] to completion: dropping its future (or killing the process) cannot
+//! No VMware SDK is used. Linux export can explicitly request graceful shutdown.
+//! Await operations to completion: dropping their future (or killing the process) cannot
 //! guarantee remote logout. Internally enforced deadlines still attempt cleanup
 //! with a separate bounded budget. Debug/errors/reports omit operational secrets.
+#[cfg(target_os = "linux")]
+mod artifact;
 mod error;
+mod export;
+pub use export::{Cancellation, ExportOptions, ExportReport, LeaseCleanup, export_vm};
 mod inventory;
 mod transport;
 mod xml;
@@ -101,6 +105,41 @@ pub async fn discover(
     limits: InventoryLimits,
 ) -> Result<DiscoveryReport> {
     limits.validate()?;
+    let result = session_work(policy, credentials, move |session, about| {
+        Box::pin(session.inventory(about, limits))
+    })
+    .await?;
+    let (inventory, primary_error) = match result.value {
+        Ok(value) => (Some(value), None),
+        Err(error) => (None, Some(error)),
+    };
+    Ok(DiscoveryReport {
+        inventory,
+        primary_error,
+        cleanup: result.cleanup,
+        pagination_cleanup_error: result.pagination_cleanup_error,
+        requests: result.requests,
+        certificate_checks: result.certificate_checks,
+        connection_policy: result.connection_policy,
+        elapsed_ms: result.elapsed_ms,
+    })
+}
+struct SessionResult<T> {
+    value: Result<T>,
+    cleanup: Cleanup,
+    pagination_cleanup_error: Option<Error>,
+    requests: Vec<RequestMeasurement>,
+    certificate_checks: usize,
+    connection_policy: ConnectionReuse,
+    elapsed_ms: f64,
+}
+type WorkFuture<'a, T> =
+    std::pin::Pin<Box<dyn std::future::Future<Output = Result<T>> + Send + 'a>>;
+async fn session_work<T>(
+    policy: ConnectionPolicy,
+    credentials: &Credentials,
+    work: impl for<'a> FnOnce(&'a mut Session, About) -> WorkFuture<'a, T>,
+) -> Result<SessionResult<T>> {
     let started = Instant::now();
     let deadline = started + policy.timeouts.discovery;
     let cleanup_timeout = policy.timeouts.cleanup;
@@ -149,9 +188,8 @@ pub async fn discover(
     let (about, manager, collector, root, license) = match setup {
         Ok(setup) => setup,
         Err(error) => {
-            return Ok(DiscoveryReport {
-                inventory: None,
-                primary_error: Some(error),
+            return Ok(SessionResult {
+                value: Err(error),
                 cleanup: Cleanup::NotNeeded,
                 pagination_cleanup_error: None,
                 certificate_checks: transport.handshakes(),
@@ -190,7 +228,7 @@ pub async fn discover(
             }
         });
     let result = match login {
-        Ok(()) => session.inventory(about, limits).await,
+        Ok(()) => work(&mut session, about).await,
         Err(error) => Err(error),
     };
     let logout = session
@@ -206,13 +244,8 @@ pub async fn discover(
         Ok(_) => Cleanup::LoggedOut,
         Err(error) => Cleanup::Unconfirmed(error),
     };
-    let (inventory, primary_error) = match result {
-        Ok(inventory) => (Some(inventory), None),
-        Err(error) => (None, Some(error)),
-    };
-    Ok(DiscoveryReport {
-        inventory,
-        primary_error,
+    Ok(SessionResult {
+        value: result,
         cleanup,
         pagination_cleanup_error: session.pagination_cleanup_error,
         certificate_checks: session.transport.handshakes(),

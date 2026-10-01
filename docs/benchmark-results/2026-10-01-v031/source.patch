@@ -1,0 +1,2069 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 0c88146..5ed0c67 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -369,6 +369,16 @@ version = "1.18.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "252afb9ae5eaa683babdc6a068b3f5726eb19e05070c731f9b2a23a7c3e8ed34"
+ 
++[[package]]
++name = "errno"
++version = "0.3.14"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
++dependencies = [
++ "libc",
++ "windows-sys 0.61.2",
++]
++
+ [[package]]
+ name = "find-msvc-tools"
+ version = "0.1.12"
+@@ -1267,6 +1277,7 @@ dependencies = [
+  "rustls",
+  "serde",
+  "serde_json",
++ "sha1",
+  "sha2",
+  "thiserror",
+  "tokio",
+@@ -1363,6 +1374,17 @@ dependencies = [
+  "zmij",
+ ]
+ 
++[[package]]
++name = "sha1"
++version = "0.11.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "aacc4cc499359472b4abe1bf11d0b12e688af9a805fa5e3016f9a386dc2d0214"
++dependencies = [
++ "cfg-if",
++ "cpufeatures",
++ "digest",
++]
++
+ [[package]]
+ name = "sha2"
+ version = "0.11.0"
+@@ -1380,6 +1402,16 @@ version = "2.0.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
+ 
++[[package]]
++name = "signal-hook-registry"
++version = "1.4.8"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "c4db69cba1110affc0e9f7bcd48bbf87b3f4fc7c61fc9155afd4c469eb3d6c1b"
++dependencies = [
++ "errno",
++ "libc",
++]
++
+ [[package]]
+ name = "simd_cesu8"
+ version = "1.2.0"
+@@ -1563,6 +1595,7 @@ dependencies = [
+  "libc",
+  "mio",
+  "pin-project-lite",
++ "signal-hook-registry",
+  "socket2",
+  "tokio-macros",
+  "windows-sys 0.61.2",
+diff --git a/crates/rvvdk-vsphere/Cargo.toml b/crates/rvvdk-vsphere/Cargo.toml
+index 86c316a..9f64b25 100644
+--- a/crates/rvvdk-vsphere/Cargo.toml
++++ b/crates/rvvdk-vsphere/Cargo.toml
+@@ -10,14 +10,18 @@ reqwest = { version = "=0.13.5", default-features = false, features = ["rustls-n
+ rustls = { version = "=0.23.44", default-features = false, features = ["std", "ring", "tls12"] }
+ roxmltree = "=0.21.1"
+ sha2 = "=0.11.0"
++sha1 = "=0.11.0"
++serde_json = "1.0.151"
+ zeroize = "=1.9.0"
+-tokio = { version = "=1.53.1", features = ["rt", "time"] }
++tokio = { version = "=1.53.1", features = ["rt", "time", "fs", "io-util", "macros", "sync", "signal"] }
+ serde = { version = "1.0.229", features = ["derive"] }
+ thiserror = "2"
+ 
+ [dev-dependencies]
+ rcgen = "=0.14.10"
+ rpassword = "=7.5.4"
+-serde_json = "1.0.151"
+ tokio = { version = "=1.53.1", features = ["macros", "rt", "time"] }
+ libc = "0.2.189"
++
++[target.'cfg(target_os = "linux")'.dependencies]
++libc = "0.2.189"
+diff --git a/crates/rvvdk-vsphere/src/error.rs b/crates/rvvdk-vsphere/src/error.rs
+index b2355e5..98497e9 100644
+--- a/crates/rvvdk-vsphere/src/error.rs
++++ b/crates/rvvdk-vsphere/src/error.rs
+@@ -38,6 +38,30 @@ pub enum Error {
+     InventoryLimit,
+     #[error("unexpected continuation page; cancellation attempted")]
+     Pagination,
++    #[error("operation restricted by the server license")]
++    LicenseRestricted,
++    #[error("virtual machine must be powered off")]
++    InvalidPowerState,
++    #[error("selected virtual machine identity or topology changed")]
++    Identity,
++    #[error("unsupported export scope or backing")]
++    ExportScope,
++    #[error("export lease is in an unexpected state")]
++    LeaseState,
++    #[error("export lease acquisition is unconfirmed; do not retry automatically")]
++    LeaseUnconfirmed,
++    #[error("data endpoint or certificate is not admitted")]
++    DataEndpoint,
++    #[error("export transfer size or buffer limit exceeded")]
++    TransferLimit,
++    #[error("export canceled")]
++    Cancelled,
++    #[error("artifact I/O or publication failed")]
++    Artifact,
++    #[error("manifest does not match downloaded bytes")]
++    Manifest,
++    #[error("operation count limit exceeded")]
++    RequestLimit,
+ }
+ 
+ pub type Result<T> = std::result::Result<T, Error>;
+diff --git a/crates/rvvdk-vsphere/src/inventory.rs b/crates/rvvdk-vsphere/src/inventory.rs
+index 38337d2..ec8e39d 100644
+--- a/crates/rvvdk-vsphere/src/inventory.rs
++++ b/crates/rvvdk-vsphere/src/inventory.rs
+@@ -16,6 +16,7 @@ pub(crate) enum Kind {
+     SessionManager,
+     PropertyCollector,
+     LicenseManager,
++    HttpNfcLease,
+ }
+ impl Kind {
+     pub(crate) fn name(self) -> &'static str {
+@@ -31,6 +32,7 @@ impl Kind {
+             Self::SessionManager => "SessionManager",
+             Self::PropertyCollector => "PropertyCollector",
+             Self::LicenseManager => "LicenseManager",
++            Self::HttpNfcLease => "HttpNfcLease",
+         }
+     }
+     fn parse(s: &str) -> Result<Self> {
+@@ -46,6 +48,7 @@ impl Kind {
+             Self::SessionManager,
+             Self::PropertyCollector,
+             Self::LicenseManager,
++            Self::HttpNfcLease,
+         ]
+         .into_iter()
+         .find(|k| k.name() == s)
+@@ -70,6 +73,7 @@ impl Kind {
+                 "disabledMethod",
+             ],
+             Self::LicenseManager => &["licenses", "licensedEdition"],
++            Self::HttpNfcLease => &["state", "info", "error"],
+             _ => &[],
+         }
+     }
+@@ -176,7 +180,7 @@ pub struct License {
+ /// Private identity is available explicitly to callers, never via Debug or serde.
+ /// Revalidate it on the same admitted host before future mutating operations.
+ pub struct VmIdentity {
+-    reference: Reference,
++    pub(crate) reference: Reference,
+     bios_uuid: String,
+ }
+ impl fmt::Debug for VmIdentity {
+@@ -213,6 +217,18 @@ pub struct Disk {
+     pub thin: Option<bool>,
+     pub encrypted: bool,
+     pub parent_present: bool,
++    #[serde(skip)]
++    pub(crate) identity: DiskIdentity,
++}
++#[derive(PartialEq, Eq)]
++pub(crate) struct DiskIdentity {
++    pub(crate) key: Option<u64>,
++    pub(crate) backing: Option<String>,
++}
++impl fmt::Debug for DiskIdentity {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        f.write_str("DiskIdentity([redacted])")
++    }
+ }
+ 
+ pub(crate) struct Properties<'a, 'i>(BTreeMap<&'a str, Node<'a, 'i>>);
+@@ -342,6 +358,12 @@ impl<'a, 'i> Properties<'a, 'i> {
+                     .transpose()?,
+                 encrypted: xml::child(backing, "keyId")?.is_some(),
+                 parent_present: xml::child(backing, "parent")?.is_some(),
++                identity: DiskIdentity {
++                    key: xml::child(device, "key")?.map(xml::number).transpose()?,
++                    backing: xml::child(backing, "fileName")?
++                        .map(|n| xml::text(n).map(str::to_owned))
++                        .transpose()?,
++                },
+             });
+         }
+         let export_disabled_method_list = self
+diff --git a/crates/rvvdk-vsphere/src/lib.rs b/crates/rvvdk-vsphere/src/lib.rs
+index 560b2b3..50d1a5b 100644
+--- a/crates/rvvdk-vsphere/src/lib.rs
++++ b/crates/rvvdk-vsphere/src/lib.rs
+@@ -1,10 +1,14 @@
+-//! Independent, bounded standalone ESXi 8.0.3 SOAP discovery.
++//! Independent, bounded standalone ESXi 8.0.3 SOAP discovery and export proof.
+ //!
+-//! This crate does not export disks, modify VMs or use a VMware SDK. Await
+-//! [`discover`] to completion: dropping its future (or killing the process) cannot
++//! No VMware SDK is used. Linux export can explicitly request graceful shutdown.
++//! Await operations to completion: dropping their future (or killing the process) cannot
+ //! guarantee remote logout. Internally enforced deadlines still attempt cleanup
+ //! with a separate bounded budget. Debug/errors/reports omit operational secrets.
++#[cfg(target_os = "linux")]
++mod artifact;
+ mod error;
++mod export;
++pub use export::{Cancellation, ExportOptions, ExportReport, LeaseCleanup, export_vm};
+ mod inventory;
+ mod transport;
+ mod xml;
+@@ -101,6 +105,40 @@ pub async fn discover(
+     limits: InventoryLimits,
+ ) -> Result<DiscoveryReport> {
+     limits.validate()?;
++    let result = session_work(policy, credentials, move |session, about| {
++        Box::pin(session.inventory(about, limits))
++    })
++    .await?;
++    let (inventory, primary_error) = match result.value {
++        Ok(value) => (Some(value), None),
++        Err(error) => (None, Some(error)),
++    };
++    Ok(DiscoveryReport {
++        inventory,
++        primary_error,
++        cleanup: result.cleanup,
++        pagination_cleanup_error: result.pagination_cleanup_error,
++        requests: result.requests,
++        certificate_checks: result.certificate_checks,
++        connection_policy: result.connection_policy,
++        elapsed_ms: result.elapsed_ms,
++    })
++}
++struct SessionResult<T> {
++    value: Result<T>,
++    cleanup: Cleanup,
++    pagination_cleanup_error: Option<Error>,
++    requests: Vec<RequestMeasurement>,
++    certificate_checks: usize,
++    connection_policy: ConnectionReuse,
++    elapsed_ms: f64,
++}
++type WorkFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = Result<T>> + 'a>>;
++async fn session_work<T>(
++    policy: ConnectionPolicy,
++    credentials: &Credentials,
++    work: impl for<'a> FnOnce(&'a mut Session, About) -> WorkFuture<'a, T>,
++) -> Result<SessionResult<T>> {
+     let started = Instant::now();
+     let deadline = started + policy.timeouts.discovery;
+     let cleanup_timeout = policy.timeouts.cleanup;
+@@ -149,9 +187,8 @@ pub async fn discover(
+     let (about, manager, collector, root, license) = match setup {
+         Ok(setup) => setup,
+         Err(error) => {
+-            return Ok(DiscoveryReport {
+-                inventory: None,
+-                primary_error: Some(error),
++            return Ok(SessionResult {
++                value: Err(error),
+                 cleanup: Cleanup::NotNeeded,
+                 pagination_cleanup_error: None,
+                 certificate_checks: transport.handshakes(),
+@@ -190,7 +227,7 @@ pub async fn discover(
+             }
+         });
+     let result = match login {
+-        Ok(()) => session.inventory(about, limits).await,
++        Ok(()) => work(&mut session, about).await,
+         Err(error) => Err(error),
+     };
+     let logout = session
+@@ -206,13 +243,8 @@ pub async fn discover(
+         Ok(_) => Cleanup::LoggedOut,
+         Err(error) => Cleanup::Unconfirmed(error),
+     };
+-    let (inventory, primary_error) = match result {
+-        Ok(inventory) => (Some(inventory), None),
+-        Err(error) => (None, Some(error)),
+-    };
+-    Ok(DiscoveryReport {
+-        inventory,
+-        primary_error,
++    Ok(SessionResult {
++        value: result,
+         cleanup,
+         pagination_cleanup_error: session.pagination_cleanup_error,
+         certificate_checks: session.transport.handshakes(),
+diff --git a/crates/rvvdk-vsphere/src/transport.rs b/crates/rvvdk-vsphere/src/transport.rs
+index 0cb3cbc..e59799f 100644
+--- a/crates/rvvdk-vsphere/src/transport.rs
++++ b/crates/rvvdk-vsphere/src/transport.rs
+@@ -111,6 +111,7 @@ impl ConnectionPolicy {
+ 
+ struct PinVerifier {
+     pin: [u8; 32],
++    peer_sha1: Arc<std::sync::Mutex<Option<[u8; 20]>>>,
+     provider: Arc<rustls::crypto::CryptoProvider>,
+     handshakes: Arc<AtomicUsize>,
+ }
+@@ -134,6 +135,9 @@ impl ServerCertVerifier for PinVerifier {
+                 rustls::CertificateError::ApplicationVerificationFailure,
+             ));
+         }
++        if let Ok(mut peer) = self.peer_sha1.lock() {
++            *peer = Some(sha1::Sha1::digest(cert.as_ref()).into());
++        }
+         self.handshakes.fetch_add(1, Ordering::Relaxed);
+         Ok(ServerCertVerified::assertion())
+     }
+@@ -176,6 +180,12 @@ pub(crate) enum Method {
+     Logout,
+     RetrievePropertiesEx,
+     CancelRetrievePropertiesEx,
++    ExportVm,
++    ShutdownGuest,
++    HttpNfcLeaseAbort,
++    HttpNfcLeaseComplete,
++    HttpNfcLeaseProgress,
++    HttpNfcLeaseGetManifest,
+ }
+ impl Method {
+     pub(crate) fn name(self) -> &'static str {
+@@ -185,6 +195,12 @@ impl Method {
+             Self::Logout => "Logout",
+             Self::RetrievePropertiesEx => "RetrievePropertiesEx",
+             Self::CancelRetrievePropertiesEx => "CancelRetrievePropertiesEx",
++            Self::ExportVm => "ExportVm",
++            Self::ShutdownGuest => "ShutdownGuest",
++            Self::HttpNfcLeaseAbort => "HttpNfcLeaseAbort",
++            Self::HttpNfcLeaseComplete => "HttpNfcLeaseComplete",
++            Self::HttpNfcLeaseProgress => "HttpNfcLeaseProgress",
++            Self::HttpNfcLeaseGetManifest => "HttpNfcLeaseGetManifest",
+         }
+     }
+ }
+@@ -202,17 +218,20 @@ pub(crate) struct Transport {
+     cookie: Option<Zeroizing<String>>,
+     pub(crate) measurements: Vec<RequestMeasurement>,
+     handshakes: Arc<AtomicUsize>,
++    peer_sha1: Arc<std::sync::Mutex<Option<[u8; 20]>>>,
+ }
+ impl Transport {
+     pub(crate) fn new(policy: ConnectionPolicy) -> Result<Self> {
+         let provider = Arc::new(rustls::crypto::ring::default_provider());
+         let handshakes = Arc::new(AtomicUsize::new(0));
++        let peer_sha1 = Arc::new(std::sync::Mutex::new(None));
+         let mut tls = rustls::ClientConfig::builder_with_provider(provider.clone())
+             .with_safe_default_protocol_versions()
+             .map_err(|_| Error::Transport)?
+             .dangerous()
+             .with_custom_certificate_verifier(Arc::new(PinVerifier {
+                 pin: policy.pin,
++                peer_sha1: peer_sha1.clone(),
+                 provider,
+                 handshakes: handshakes.clone(),
+             }))
+@@ -247,8 +266,58 @@ impl Transport {
+             cookie: None,
+             measurements: Vec::new(),
+             handshakes,
++            peer_sha1,
+         })
+     }
++    pub(crate) fn admit_data_url(&self, raw: &str, thumbprint: &str) -> Result<Url> {
++        if raw.len() > 4096 {
++            return Err(Error::InvalidInput);
++        }
++        let mut url = Url::parse(raw).map_err(|_| Error::InvalidInput)?;
++        if url.host_str() == Some("*") {
++            url.set_host(self.policy.endpoint.host_str())
++                .map_err(|_| Error::DataEndpoint)?;
++        }
++        if url.scheme() != "https"
++            || url.host_str() != self.policy.endpoint.host_str()
++            || url.port_or_known_default() != self.policy.endpoint.port_or_known_default()
++            || !url.username().is_empty()
++            || url.password().is_some()
++            || url.fragment().is_some()
++            || !(url.path().starts_with("/nfc/") || url.path().starts_with("/ha-nfc/"))
++        {
++            return Err(Error::DataEndpoint);
++        }
++        let hex = thumbprint.replace(':', "").to_ascii_lowercase();
++        let expected = if hex.len() == 64 {
++            hex_string(&self.policy.pin)
++        } else if hex.len() == 40 {
++            let peer = self.peer_sha1.lock().map_err(|_| Error::Transport)?;
++            hex_string(&peer.ok_or(Error::Transport)?)
++        } else {
++            return Err(Error::DataEndpoint);
++        };
++        if hex != expected {
++            return Err(Error::DataEndpoint);
++        }
++        Ok(url)
++    }
++    pub(crate) fn data_request(
++        &self,
++        url: Url,
++        deadline: Instant,
++    ) -> Result<reqwest::RequestBuilder> {
++        let remaining = deadline
++            .checked_duration_since(Instant::now())
++            .ok_or(Error::Deadline)?;
++        // The client has no cookie store/default authorization. API credentials
++        // are attached only by exchange(), never to this GET.
++        Ok(self
++            .client
++            .get(url)
++            .header(header::ACCEPT_ENCODING, "identity")
++            .timeout(remaining))
++    }
+     pub(crate) fn handshakes(&self) -> usize {
+         self.handshakes.load(Ordering::Relaxed)
+     }
+@@ -264,6 +333,11 @@ impl Transport {
+         body: String,
+         deadline: Instant,
+     ) -> Result<Zeroizing<String>> {
++        if self.measurements.len() >= 4096
++            && !matches!(method, Method::Logout | Method::HttpNfcLeaseAbort)
++        {
++            return Err(Error::RequestLimit);
++        }
+         let started = Instant::now();
+         let mut bytes = 0;
+         let result = match deadline.checked_duration_since(started) {
+@@ -394,6 +468,10 @@ fn map_http(error: reqwest::Error) -> Error {
+     }
+ }
+ 
++pub(crate) fn hex_string(bytes: &[u8]) -> String {
++    bytes.iter().map(|b| format!("{b:02x}")).collect()
++}
++
+ #[cfg(test)]
+ mod tests {
+     use super::*;
+diff --git a/crates/rvvdk-vsphere/src/xml.rs b/crates/rvvdk-vsphere/src/xml.rs
+index de1de54..69d9c8c 100644
+--- a/crates/rvvdk-vsphere/src/xml.rs
++++ b/crates/rvvdk-vsphere/src/xml.rs
+@@ -71,7 +71,9 @@ pub(crate) fn response<'a, 'i>(doc: &'a Document<'i>, method: &str) -> Result<No
+             Some("InvalidLoginFault") => Error::InvalidLogin,
+             Some("NotAuthenticatedFault") => Error::NotAuthenticated,
+             Some("NoPermissionFault") => Error::NoPermission,
+-            Some("RestrictedVersionFault" | "NotSupportedFault") => Error::Restricted,
++            Some("RestrictedVersionFault") => Error::LicenseRestricted,
++            Some("InvalidPowerStateFault") => Error::InvalidPowerState,
++            Some("NotSupportedFault") => Error::Restricted,
+             _ => Error::SoapFault,
+         });
+     }
+diff --git a/crates/rvvdk-vsphere/tests/discovery.rs b/crates/rvvdk-vsphere/tests/discovery.rs
+index 8113c1a..b00eccd 100644
+--- a/crates/rvvdk-vsphere/tests/discovery.rs
++++ b/crates/rvvdk-vsphere/tests/discovery.rs
+@@ -15,6 +15,7 @@ use std::{
+     time::Duration,
+ };
+ 
++#[derive(Clone)]
+ struct Reply {
+     status: u16,
+     body: String,
+@@ -127,7 +128,7 @@ fn full() -> Vec<Reply> {
+     );
+     let vm=properties("VirtualMachine","vm-private",&[
+         property("config.uuid","01234567-89ab-cdef-0123-456789abcdef"),property("runtime.powerState","poweredOn"),property("config.guestId","fedora64Guest"),property("config.template","false"),property("guest.toolsRunningStatus","guestToolsRunning"),property("disabledMethod","<string>ExportVm</string>"),
+-        property("config.hardware.device","<VirtualDevice xsi:type='VirtualDisk'><capacityInKB>31457280</capacityInKB><capacityInBytes>32212254720</capacityInBytes><backing xsi:type='VirtualDiskFlatVer2BackingInfo'><fileName>PRIVATE-path</fileName><diskMode>persistent</diskMode><thinProvisioned>false</thinProvisioned></backing></VirtualDevice>")
++        property("config.hardware.device","<VirtualDevice xsi:type='VirtualDisk'><key>2000</key><capacityInKB>31457280</capacityInKB><capacityInBytes>32212254720</capacityInBytes><backing xsi:type='VirtualDiskFlatVer2BackingInfo'><fileName>PRIVATE-path</fileName><diskMode>persistent</diskMode><thinProvisioned>false</thinProvisioned></backing></VirtualDevice>")
+     ].concat());
+     vec![
+         service(),
+@@ -154,6 +155,11 @@ impl Server {
+             .iter()
+             .map(|b| format!("{b:02x}"))
+             .collect::<String>();
++        let legacy_pin = sha1::Sha1::digest(cert.cert.der())
++            .iter()
++            .map(|b| format!("{b:02X}"))
++            .collect::<Vec<_>>()
++            .join(":");
+         let config =
+             ServerConfig::builder_with_provider(Arc::new(rustls::crypto::ring::default_provider()))
+                 .with_safe_default_protocol_versions()
+@@ -166,6 +172,18 @@ impl Server {
+                 .unwrap();
+         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+         let endpoint = format!("https://{}", listener.local_addr().unwrap());
++        let replies = replies
++            .into_iter()
++            .map(|mut r| {
++                r.body = r
++                    .body
++                    .replace("ENDPOINT", &endpoint)
++                    .replace("WILDCARD", &endpoint.replacen("127.0.0.1", "*", 1))
++                    .replace("LEGACY_PIN", &legacy_pin)
++                    .replace("THUMBPRINT", &pin);
++                r
++            })
++            .collect::<Vec<_>>();
+         listener.set_nonblocking(true).unwrap();
+         let requests = Arc::new(Mutex::new(Vec::new()));
+         let observed = requests.clone();
+@@ -173,8 +191,9 @@ impl Server {
+         let halted = stop.clone();
+         let worker = thread::spawn(move || {
+             let config = Arc::new(config);
+-            let mut replies = replies.into_iter().peekable();
+-            while !halted.load(Ordering::Relaxed) && replies.peek().is_some() {
++            let replies = Arc::new(Mutex::new(std::collections::VecDeque::from(replies)));
++            let mut connections = Vec::new();
++            while !halted.load(Ordering::Relaxed) && !replies.lock().unwrap().is_empty() {
+                 let (stream, _) = match listener.accept() {
+                     Ok(v) => v,
+                     Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+@@ -189,9 +208,14 @@ impl Server {
+                 stream
+                     .set_write_timeout(Some(Duration::from_millis(300)))
+                     .unwrap();
++                let config = config.clone();
++                let halted = halted.clone();
++                let replies = replies.clone();
++                let observed = observed.clone();
++                connections.push(thread::spawn(move || {
+                 let mut stream =
+                     StreamOwned::new(ServerConnection::new(config.clone()).unwrap(), stream);
+-                while !halted.load(Ordering::Relaxed) && replies.peek().is_some() {
++                while !halted.load(Ordering::Relaxed) && !replies.lock().unwrap().is_empty() {
+                     let mut headers = Vec::new();
+                     while !headers.ends_with(b"\r\n\r\n") && headers.len() < 16384 {
+                         let mut b = [0];
+@@ -211,7 +235,7 @@ impl Server {
+                                 .strip_prefix("content-length: ")
+                                 .map(str::to_owned)
+                         })
+-                        .unwrap()
++                        .unwrap_or_else(|| "0".to_owned())
+                         .parse()
+                         .unwrap();
+                     assert!(length < 65536);
+@@ -221,7 +245,11 @@ impl Server {
+                     }
+                     let body = String::from_utf8(body).unwrap();
+                     observed.lock().unwrap().push(format!("{headers}{body}"));
+-                    let reply = replies.next().unwrap();
++                    let reply = if body.contains("<HttpNfcLeaseProgress ") {
++                        Reply::soap("HttpNfcLeaseProgress", "")
++                    } else {
++                        replies.lock().unwrap().pop_front().unwrap()
++                    };
+                     thread::sleep(reply.delay);
+                     let out = if reply.chunked {
+                         let mut encoded = String::new();
+@@ -256,6 +284,10 @@ impl Server {
+                         break;
+                     }
+                 }
++                }));
++            }
++            for connection in connections {
++                connection.join().unwrap();
+             }
+         });
+         Self {
+@@ -619,3 +651,506 @@ async fn actual_body_limit_does_not_trust_content_length() {
+         .unwrap();
+     assert_eq!(report.primary_error, Some(Error::ResponseLimit));
+ }
++
++#[cfg(target_os = "linux")]
++mod export_tests {
++    use super::*;
++    use rvvdk_vsphere::{ExportOptions, LeaseCleanup, export_vm};
++    use std::path::PathBuf;
++    static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
++    struct Output(PathBuf);
++    impl Output {
++        fn new() -> Self {
++            let path = std::env::temp_dir().join(format!(
++                "rvddk-export-test-{}-{}",
++                std::process::id(),
++                NEXT.fetch_add(1, Ordering::Relaxed)
++            ));
++            std::fs::create_dir(&path).unwrap();
++            Self(path)
++        }
++        fn dest(&self) -> PathBuf {
++            self.0.join("artifact")
++        }
++    }
++    impl Drop for Output {
++        fn drop(&mut self) {
++            std::fs::remove_dir_all(&self.0).unwrap();
++        }
++    }
++    fn options(out: &Output) -> ExportOptions {
++        let mut options = ExportOptions::probe(30 * 1024 * 1024 * 1024);
++        options.probe_only = false;
++        options.output = out.dest();
++        options.max_encoded_bytes = 1024 * 1024;
++        options
++    }
++    fn selected(power: &str) -> Vec<Reply> {
++        let mut replies = full();
++        replies.pop();
++        replies[6].body = replies[6].body.replace("poweredOn", power);
++        replies.push(replies[6].clone());
++        replies
++    }
++    fn granted() -> Reply {
++        Reply::soap(
++            "ExportVm",
++            "<returnval type='HttpNfcLease'>lease-private</returnval>",
++        )
++    }
++    fn ready(url: &str, pin: &str) -> Reply {
++        properties(
++            "HttpNfcLease",
++            "lease-private",
++            &(property("state", "ready")
++                + &property(
++                    "info",
++                    &format!(
++                        "<lease type='HttpNfcLease'>lease-private</lease><entity type='VirtualMachine'>vm-private</entity><deviceUrl><key>private-disk</key><url>{url}</url><sslThumbprint>{pin}</sslThumbprint><disk>true</disk></deviceUrl><totalDiskCapacityInKB>31457280</totalDiskCapacityInKB><leaseTimeout>30</leaseTimeout>"
++                    ),
++                )),
++        )
++    }
++    fn payload() -> String {
++        "KDMV".to_owned() + &"x".repeat(64 * 1024 - 4)
++    }
++    fn data() -> Reply {
++        let mut reply = Reply::soap("unused", "");
++        reply.body = payload();
++        reply
++    }
++    fn manifest() -> Reply {
++        let digest = Sha256::digest(payload().as_bytes())
++            .iter()
++            .map(|b| format!("{b:02x}"))
++            .collect::<String>();
++        Reply::soap(
++            "HttpNfcLeaseGetManifest",
++            &format!(
++                "<returnval><key>private-disk</key><disk>true</disk><size>65536</size><capacity>32212254720</capacity><checksumType>sha256</checksumType><checksum>{digest}</checksum><sha1/></returnval>"
++            ),
++        )
++    }
++    fn complete() -> Reply {
++        Reply::soap("HttpNfcLeaseComplete", "")
++    }
++    fn abort() -> Reply {
++        Reply::soap("HttpNfcLeaseAbort", "")
++    }
++    #[tokio::test]
++    async fn probe_distinguishes_license_and_power_without_shutdown() {
++        for (fault, expected) in [
++            ("RestrictedVersionFault", Error::LicenseRestricted),
++            ("InvalidPowerStateFault", Error::InvalidPowerState),
++        ] {
++            let mut replies = selected("poweredOn");
++            replies.extend([Reply::fault(fault), logout()]);
++            let server = Server::start(replies);
++            let report = export_vm(
++                server.policy(),
++                &credentials(),
++                ExportOptions::probe(30 * 1024 * 1024 * 1024),
++            )
++            .await
++            .unwrap();
++            assert_eq!(report.primary_error, Some(expected));
++            assert_eq!(report.lease_cleanup, LeaseCleanup::Rejected);
++            assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
++            assert!(!report.shutdown_requested);
++            assert!(
++                !server
++                    .requests()
++                    .iter()
++                    .any(|r| r.contains("<ShutdownGuest "))
++            );
++        }
++    }
++    #[tokio::test]
++    async fn probe_aborts_any_granted_lease() {
++        let mut replies = selected("poweredOff");
++        replies.extend([granted(), abort(), logout()]);
++        let server = Server::start(replies);
++        let report = export_vm(
++            server.policy(),
++            &credentials(),
++            ExportOptions::probe(30 * 1024 * 1024 * 1024),
++        )
++        .await
++        .unwrap();
++        assert_eq!(report.primary_error, None);
++        assert_eq!(report.lease_cleanup, LeaseCleanup::Aborted);
++        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
++        assert!(!report.is_success());
++    }
++    #[tokio::test]
++    async fn full_transfer_verifies_manifest_completes_logs_out_and_publishes() {
++        let mut replies = selected("poweredOff");
++        replies.extend([
++            granted(),
++            ready("ENDPOINT/nfc/PRIVATE-ticket", "THUMBPRINT"),
++            data(),
++            manifest(),
++            complete(),
++            logout(),
++        ]);
++        let server = Server::start(replies);
++        let out = Output::new();
++        let report = export_vm(server.policy(), &credentials(), options(&out))
++            .await
++            .unwrap();
++        assert!(report.is_success(), "{report:?}");
++        assert_eq!(
++            std::fs::read(out.dest().join("disk-1.vmdk")).unwrap(),
++            payload().as_bytes()
++        );
++        assert!(!serde_json::to_string(&report).unwrap().contains("PRIVATE"));
++        let requests = server.requests();
++        let get = requests
++            .iter()
++            .find(|r| r.starts_with("GET "))
++            .unwrap()
++            .to_ascii_lowercase();
++        assert!(
++            !get.contains("cookie:")
++                && !get.contains("authorization:")
++                && !get.contains("password")
++        );
++        assert!(requests.last().unwrap().contains("<Logout "));
++    }
++    #[tokio::test]
++    async fn endpoint_or_pin_rejection_aborts_without_get() {
++        for (url, pin) in [
++            ("https://other.invalid/nfc/private", "THUMBPRINT"),
++            ("ENDPOINT/sdk", "THUMBPRINT"),
++            (
++                "ENDPOINT/nfc/private",
++                "0000000000000000000000000000000000000000000000000000000000000000",
++            ),
++        ] {
++            let mut replies = selected("poweredOff");
++            replies.extend([granted(), ready(url, pin), abort(), logout()]);
++            let server = Server::start(replies);
++            let out = Output::new();
++            let report = export_vm(server.policy(), &credentials(), options(&out))
++                .await
++                .unwrap();
++            assert_eq!(report.primary_error, Some(Error::DataEndpoint));
++            assert_eq!(report.lease_cleanup, LeaseCleanup::Aborted);
++            assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
++            assert!(!out.dest().exists());
++            assert!(!server.requests().iter().any(|r| r.starts_with("GET ")));
++            assert_eq!(std::fs::read_dir(&out.0).unwrap().count(), 0);
++        }
++    }
++    #[tokio::test]
++    async fn digest_mismatch_retains_both_cleanup_outcomes_without_publication() {
++        let mut wrong = manifest();
++        wrong.body = wrong.body.replace("65536", "65535");
++        let mut replies = selected("poweredOff");
++        replies.extend([
++            granted(),
++            ready("ENDPOINT/nfc/private", "THUMBPRINT"),
++            data(),
++            wrong,
++            Reply::fault("RuntimeFault"),
++            Reply::fault("RuntimeFault"),
++        ]);
++        let server = Server::start(replies);
++        let out = Output::new();
++        let report = export_vm(server.policy(), &credentials(), options(&out))
++            .await
++            .unwrap();
++        assert_eq!(report.primary_error, Some(Error::Manifest));
++        assert_eq!(report.lease_cleanup, LeaseCleanup::Unconfirmed);
++        assert_eq!(report.lease_cleanup_error, Some(Error::SoapFault));
++        assert_eq!(
++            report.session_cleanup,
++            Cleanup::Unconfirmed(Error::SoapFault)
++        );
++        assert!(!out.dest().exists());
++        assert_eq!(std::fs::read_dir(&out.0).unwrap().count(), 0);
++    }
++    #[tokio::test]
++    async fn cancel_pending_download_aborts_and_removes_private_files() {
++        let mut slow = data();
++        slow.delay = Duration::from_millis(500);
++        let mut replies = selected("poweredOff");
++        replies.extend([
++            granted(),
++            ready("ENDPOINT/nfc/private", "THUMBPRINT"),
++            slow,
++            abort(),
++            logout(),
++        ]);
++        let server = Server::start(replies);
++        let out = Output::new();
++        let options = options(&out);
++        let token = options.cancellation.clone();
++        let worker = tokio::spawn(async move {
++            tokio::time::sleep(Duration::from_millis(150)).await;
++            token.cancel();
++        });
++        let report = export_vm(server.policy(), &credentials(), options)
++            .await
++            .unwrap();
++        worker.await.unwrap();
++        assert_eq!(report.primary_error, Some(Error::Cancelled));
++        assert_eq!(report.lease_cleanup, LeaseCleanup::Aborted);
++        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
++        assert_eq!(std::fs::read_dir(&out.0).unwrap().count(), 0);
++    }
++    #[tokio::test]
++    async fn output_collision_precedes_power_and_lease_calls() {
++        let mut replies = selected("poweredOn");
++        replies.push(logout());
++        let server = Server::start(replies);
++        let out = Output::new();
++        std::fs::create_dir(out.dest()).unwrap();
++        std::fs::write(out.dest().join("sentinel"), b"keep").unwrap();
++        let mut options = options(&out);
++        options.allow_graceful_shutdown = true;
++        let report = export_vm(server.policy(), &credentials(), options)
++            .await
++            .unwrap();
++        assert_eq!(report.primary_error, Some(Error::Artifact));
++        assert!(!report.shutdown_requested);
++        assert_eq!(report.lease_cleanup, LeaseCleanup::NotAcquired);
++        assert_eq!(std::fs::read(out.dest().join("sentinel")).unwrap(), b"keep");
++    }
++    #[tokio::test]
++    async fn malformed_acquisition_is_uncertain_and_not_retried() {
++        let mut replies = selected("poweredOff");
++        replies.extend([
++            Reply::soap(
++                "ExportVm",
++                "<returnval type='VirtualMachine'>wrong</returnval>",
++            ),
++            logout(),
++        ]);
++        let server = Server::start(replies);
++        let report = export_vm(
++            server.policy(),
++            &credentials(),
++            ExportOptions::probe(30 * 1024 * 1024 * 1024),
++        )
++        .await
++        .unwrap();
++        assert_eq!(report.primary_error, Some(Error::LeaseUnconfirmed));
++        assert_eq!(report.lease_cleanup, LeaseCleanup::Unconfirmed);
++        assert_eq!(
++            server
++                .requests()
++                .iter()
++                .filter(|r| r.contains("<ExportVm "))
++                .count(),
++            1
++        );
++    }
++
++    #[tokio::test]
++    async fn graceful_shutdown_revalidates_disk_before_acquisition() {
++        for changed in [false, true] {
++            let mut replies = selected("poweredOn");
++            let mut off = selected("poweredOff").pop().unwrap();
++            if changed {
++                off.body = off.body.replace("PRIVATE-path", "PRIVATE-replaced");
++            }
++            replies.extend([Reply::soap("ShutdownGuest", ""), off]);
++            if !changed {
++                replies.push(Reply::fault("RestrictedVersionFault"));
++            }
++            replies.push(logout());
++            let server = Server::start(replies);
++            let out = Output::new();
++            let mut options = options(&out);
++            options.allow_graceful_shutdown = true;
++            let report = export_vm(server.policy(), &credentials(), options)
++                .await
++                .unwrap();
++            assert!(report.shutdown_requested);
++            assert_eq!(
++                report.last_observed_power_state.as_deref(),
++                Some("poweredOff")
++            );
++            assert_eq!(
++                report.primary_error,
++                Some(if changed {
++                    Error::Identity
++                } else {
++                    Error::LicenseRestricted
++                })
++            );
++            assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
++            assert_eq!(
++                server
++                    .requests()
++                    .iter()
++                    .filter(|r| r.contains("<ExportVm "))
++                    .count(),
++                usize::from(!changed)
++            );
++            assert_eq!(std::fs::read_dir(&out.0).unwrap().count(), 0);
++        }
++    }
++
++    #[tokio::test]
++    async fn shutdown_failure_never_falls_back_to_hard_power_off() {
++        let mut replies = selected("poweredOn");
++        replies.extend([Reply::fault("ToolsUnavailableFault"), logout()]);
++        let server = Server::start(replies);
++        let out = Output::new();
++        let mut options = options(&out);
++        options.allow_graceful_shutdown = true;
++        let report = export_vm(server.policy(), &credentials(), options)
++            .await
++            .unwrap();
++        assert_eq!(report.primary_error, Some(Error::SoapFault));
++        assert_eq!(report.lease_cleanup, LeaseCleanup::NotAcquired);
++        assert!(server.requests().last().unwrap().contains("<Logout "));
++        assert!(
++            !server
++                .requests()
++                .iter()
++                .any(|r| r.contains("PowerOffVM") || r.contains("<ExportVm "))
++        );
++    }
++
++    #[tokio::test]
++    async fn transfer_limit_redirect_and_truncation_abort_without_publication() {
++        for case in 0..3 {
++            let mut bad = data();
++            let expected = match case {
++                0 => {
++                    bad.declared = Some(2 * 1024 * 1024);
++                    Error::TransferLimit
++                }
++                1 => {
++                    bad.status = 302;
++                    bad.headers = "Location: https://other.invalid/PRIVATE\r\n".to_owned();
++                    Error::Http
++                }
++                _ => {
++                    bad.declared = Some(65537);
++                    Error::Transport
++                }
++            };
++            let mut replies = selected("poweredOff");
++            replies.extend([
++                granted(),
++                ready("ENDPOINT/nfc/private", "THUMBPRINT"),
++                bad,
++                abort(),
++                logout(),
++            ]);
++            let server = Server::start(replies);
++            let out = Output::new();
++            let report = export_vm(server.policy(), &credentials(), options(&out))
++                .await
++                .unwrap();
++            assert_eq!(report.primary_error, Some(expected), "{report:?}");
++            assert_eq!(report.lease_cleanup, LeaseCleanup::Aborted);
++            assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
++            assert_eq!(std::fs::read_dir(&out.0).unwrap().count(), 0);
++        }
++    }
++
++    #[tokio::test]
++    async fn complete_or_logout_failure_prevents_publication() {
++        for failed_complete in [false, true] {
++            let mut replies = selected("poweredOff");
++            replies.extend([
++                granted(),
++                ready("ENDPOINT/nfc/private", "THUMBPRINT"),
++                data(),
++                manifest(),
++            ]);
++            if failed_complete {
++                replies.extend([Reply::fault("RuntimeFault"), abort(), logout()]);
++            } else {
++                replies.extend([complete(), Reply::fault("RuntimeFault")]);
++            }
++            let server = Server::start(replies);
++            let out = Output::new();
++            let report = export_vm(server.policy(), &credentials(), options(&out))
++                .await
++                .unwrap();
++            assert!(!report.is_success());
++            assert_eq!(
++                report.lease_cleanup,
++                if failed_complete {
++                    LeaseCleanup::Aborted
++                } else {
++                    LeaseCleanup::Completed
++                }
++            );
++            assert_eq!(std::fs::read_dir(&out.0).unwrap().count(), 0);
++        }
++    }
++
++    #[tokio::test]
++    async fn heartbeats_renew_lease_while_data_response_is_pending() {
++        let mut slow = data();
++        slow.delay = Duration::from_millis(2300);
++        let mut short_lease = ready("ENDPOINT/nfc/private", "THUMBPRINT");
++        short_lease.body = short_lease
++            .body
++            .replace("<leaseTimeout>30", "<leaseTimeout>3");
++        let mut replies = selected("poweredOff");
++        replies.extend([
++            granted(),
++            short_lease,
++            slow,
++            manifest(),
++            complete(),
++            logout(),
++        ]);
++        let server = Server::start(replies);
++        let out = Output::new();
++        let report = export_vm(server.policy(), &credentials(), options(&out))
++            .await
++            .unwrap();
++        assert!(report.is_success(), "{report:?}");
++        let requests = server.requests();
++        let get = requests.iter().position(|r| r.starts_with("GET ")).unwrap();
++        let manifest = requests
++            .iter()
++            .position(|r| r.contains("<HttpNfcLeaseGetManifest "))
++            .unwrap();
++        assert!(
++            requests[get + 1..manifest]
++                .iter()
++                .filter(|r| r.contains("<HttpNfcLeaseProgress "))
++                .count()
++                >= 2
++        );
++    }
++
++    #[tokio::test]
++    async fn wildcard_and_legacy_sha1_are_bound_to_the_sha256_pinned_endpoint() {
++        let digest = sha1::Sha1::digest(payload().as_bytes())
++            .iter()
++            .map(|b| format!("{b:02x}"))
++            .collect::<String>();
++        let manifest = Reply::soap(
++            "HttpNfcLeaseGetManifest",
++            &format!(
++                "<returnval><key>private-disk</key><disk>true</disk><size>65536</size><sha1>{digest}</sha1></returnval>"
++            ),
++        );
++        let mut replies = selected("poweredOff");
++        replies.extend([
++            granted(),
++            ready("WILDCARD/ha-nfc/private", "LEGACY_PIN"),
++            data(),
++            manifest,
++            complete(),
++            logout(),
++        ]);
++        let server = Server::start(replies);
++        let out = Output::new();
++        let report = export_vm(server.policy(), &credentials(), options(&out))
++            .await
++            .unwrap();
++        assert!(report.is_success(), "{report:?}");
++    }
++}
+diff --git a/crates/rvvdk-vsphere/examples/export.rs b/crates/rvvdk-vsphere/examples/export.rs
+new file mode 100644
+index 0000000..6a8b439
+--- /dev/null
++++ b/crates/rvvdk-vsphere/examples/export.rs
+@@ -0,0 +1,114 @@
++//! Internal standalone-host export proof. No password command arguments or env.
++use rvvdk_vsphere::{ConnectionPolicy, Credentials, Error, ExportOptions, export_vm};
++use std::{path::PathBuf, time::Duration};
++fn main() {
++    if let Err(error) = run() {
++        eprintln!("export proof failed: {error}");
++        std::process::exit(1);
++    }
++}
++fn run() -> Result<(), Error> {
++    let mut args = std::env::args().skip(1);
++    let mut endpoint = None;
++    let mut pin = None;
++    let mut user = "root".to_owned();
++    let mut options = ExportOptions::probe(30 * 1024 * 1024 * 1024);
++    let mut cancel_after = None;
++    while let Some(arg) = args.next() {
++        match arg.as_str() {
++            "--endpoint" => endpoint = args.next(),
++            "--certificate-sha256" => pin = args.next(),
++            "--user" => user = args.next().ok_or(Error::InvalidInput)?,
++            "--capacity-bytes" => {
++                options.single_disk_capacity_bytes = args
++                    .next()
++                    .ok_or(Error::InvalidInput)?
++                    .parse()
++                    .map_err(|_| Error::InvalidInput)?
++            }
++            "--output" => {
++                options.output = PathBuf::from(args.next().ok_or(Error::InvalidInput)?);
++                options.probe_only = false;
++            }
++            "--allow-shutdown" => options.allow_graceful_shutdown = true,
++            "--max-bytes" => {
++                options.max_encoded_bytes = args
++                    .next()
++                    .ok_or(Error::InvalidInput)?
++                    .parse()
++                    .map_err(|_| Error::InvalidInput)?
++            }
++            "--timeout-seconds" => {
++                options.transfer_timeout = Duration::from_secs(
++                    args.next()
++                        .ok_or(Error::InvalidInput)?
++                        .parse()
++                        .map_err(|_| Error::InvalidInput)?,
++                )
++            }
++            "--cancel-after-ms" => {
++                cancel_after = Some(Duration::from_millis(
++                    args.next()
++                        .ok_or(Error::InvalidInput)?
++                        .parse()
++                        .map_err(|_| Error::InvalidInput)?,
++                ))
++            }
++            "--help" => {
++                println!(
++                    "export --endpoint HTTPS_URL --certificate-sha256 SHA256 [--user USER] [--capacity-bytes N] [--output NEW_DIRECTORY --allow-shutdown] [--max-bytes N] [--timeout-seconds N] [--cancel-after-ms N]\nDefault: one 30 GiB disk VM eligibility probe; no power change or download. Supplying output enables export. Shutdown is graceful only and requires its flag. The selected VM is left in its last observed state. Ctrl-C requests cooperative abort/logout."
++                );
++                return Ok(());
++            }
++            _ => return Err(Error::InvalidInput),
++        }
++    }
++    let policy = ConnectionPolicy::pinned(
++        &endpoint.ok_or(Error::InvalidInput)?,
++        &pin.ok_or(Error::InvalidInput)?,
++    )?;
++    let credentials = Credentials::new(
++        user,
++        rpassword::prompt_password("ESXi password (memory only): ")
++            .map_err(|_| Error::InvalidInput)?,
++    )?;
++    let runtime = tokio::runtime::Builder::new_current_thread()
++        .enable_all()
++        .build()
++        .map_err(|_| Error::Transport)?;
++    let report = runtime.block_on(async {
++        let cancellation = options.cancellation.clone();
++        let handler = tokio::spawn(async move {
++            if tokio::signal::ctrl_c().await.is_ok() {
++                cancellation.cancel();
++            }
++        });
++        let timer = cancel_after.map(|delay| {
++            let cancellation = options.cancellation.clone();
++            tokio::spawn(async move {
++                tokio::time::sleep(delay).await;
++                cancellation.cancel();
++            })
++        });
++        let report = export_vm(policy, &credentials, options).await;
++        handler.abort();
++        if let Some(timer) = timer {
++            timer.abort();
++        }
++        report
++    })?;
++    let success = report.is_success()
++        || (report.probe_only
++            && report.primary_error.is_none()
++            && report.lease_cleanup == rvvdk_vsphere::LeaseCleanup::Aborted
++            && report.session_cleanup == rvvdk_vsphere::Cleanup::LoggedOut);
++    println!(
++        "{}",
++        serde_json::to_string_pretty(&report).map_err(|_| Error::Schema)?
++    );
++    if success {
++        Ok(())
++    } else {
++        Err(report.primary_error.unwrap_or(Error::LeaseState))
++    }
++}
+diff --git a/crates/rvvdk-vsphere/src/artifact.rs b/crates/rvvdk-vsphere/src/artifact.rs
+new file mode 100644
+index 0000000..32ff2de
+--- /dev/null
++++ b/crates/rvvdk-vsphere/src/artifact.rs
+@@ -0,0 +1,193 @@
++//! Linux descriptor-bound, private staging and no-replace directory publication.
++use crate::{Error, Result};
++use std::{
++    ffi::CString,
++    fs::{File, OpenOptions},
++    os::{
++        fd::{AsRawFd, FromRawFd},
++        unix::{ffi::OsStrExt, fs::OpenOptionsExt},
++    },
++    path::Path,
++    sync::atomic::{AtomicU64, Ordering},
++};
++static NEXT: AtomicU64 = AtomicU64::new(0);
++pub(crate) struct Artifact {
++    parent: File,
++    dir: File,
++    temp: CString,
++    final_name: CString,
++    files: Vec<CString>,
++    pub(crate) published: bool,
++    removed: bool,
++}
++impl Artifact {
++    pub(crate) fn create(path: &Path, max_bytes: u64) -> Result<Self> {
++        let name = path.file_name().ok_or(Error::Artifact)?;
++        let final_name = CString::new(name.as_bytes()).map_err(|_| Error::Artifact)?;
++        if name == "." || name == ".." {
++            return Err(Error::Artifact);
++        }
++        let parent = OpenOptions::new()
++            .read(true)
++            .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_CLOEXEC)
++            .open(
++                path.parent()
++                    .filter(|p| !p.as_os_str().is_empty())
++                    .unwrap_or(Path::new(".")),
++            )
++            .map_err(|_| Error::Artifact)?;
++        // SAFETY: output pointers refer to initialized-sized writable storage.
++        let mut stat = std::mem::MaybeUninit::<libc::stat>::uninit();
++        let exists = unsafe {
++            libc::fstatat(
++                parent.as_raw_fd(),
++                final_name.as_ptr(),
++                stat.as_mut_ptr(),
++                libc::AT_SYMLINK_NOFOLLOW,
++            )
++        };
++        if exists == 0 || std::io::Error::last_os_error().raw_os_error() != Some(libc::ENOENT) {
++            return Err(Error::Artifact);
++        }
++        let mut space = std::mem::MaybeUninit::<libc::statvfs>::uninit();
++        // SAFETY: valid directory descriptor and output storage.
++        if unsafe { libc::fstatvfs(parent.as_raw_fd(), space.as_mut_ptr()) } != 0 {
++            return Err(Error::Artifact);
++        }
++        let space = unsafe { space.assume_init() };
++        if (space.f_bavail as u128) * (space.f_frsize as u128) < max_bytes as u128 + 1024 * 1024 {
++            return Err(Error::Artifact);
++        }
++        for _ in 0..128 {
++            let temp = CString::new(format!(
++                ".rvddk-export-{}-{}",
++                std::process::id(),
++                NEXT.fetch_add(1, Ordering::Relaxed)
++            ))
++            .map_err(|_| Error::Artifact)?;
++            // SAFETY: valid directory descriptor and NUL-terminated single component.
++            if unsafe { libc::mkdirat(parent.as_raw_fd(), temp.as_ptr(), 0o700) } != 0 {
++                if std::io::Error::last_os_error().raw_os_error() == Some(libc::EEXIST) {
++                    continue;
++                }
++                return Err(Error::Artifact);
++            }
++            let fd = unsafe {
++                libc::openat(
++                    parent.as_raw_fd(),
++                    temp.as_ptr(),
++                    libc::O_RDONLY | libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_CLOEXEC,
++                )
++            };
++            if fd < 0 {
++                unsafe { libc::unlinkat(parent.as_raw_fd(), temp.as_ptr(), libc::AT_REMOVEDIR) };
++                return Err(Error::Artifact);
++            }
++            let dir = unsafe { File::from_raw_fd(fd) };
++            return Ok(Self {
++                parent,
++                dir,
++                temp,
++                final_name,
++                files: Vec::new(),
++                published: false,
++                removed: false,
++            });
++        }
++        Err(Error::Artifact)
++    }
++    pub(crate) fn file(&mut self, name: &str) -> Result<tokio::fs::File> {
++        if name.contains('/') || name == "." || name == ".." {
++            return Err(Error::Artifact);
++        }
++        let name = CString::new(name).map_err(|_| Error::Artifact)?;
++        // SAFETY: valid pinned directory, exclusive creation, fixed private mode.
++        let fd = unsafe {
++            libc::openat(
++                self.dir.as_raw_fd(),
++                name.as_ptr(),
++                libc::O_WRONLY | libc::O_CREAT | libc::O_EXCL | libc::O_NOFOLLOW | libc::O_CLOEXEC,
++                0o600,
++            )
++        };
++        if fd < 0 {
++            return Err(Error::Artifact);
++        }
++        self.files.push(name);
++        Ok(tokio::fs::File::from_std(unsafe { File::from_raw_fd(fd) }))
++    }
++    pub(crate) fn publish(&mut self) -> Result<()> {
++        self.dir.sync_all().map_err(|_| Error::Artifact)?;
++        // SAFETY: both names are single components in the same pinned parent.
++        if unsafe {
++            libc::renameat2(
++                self.parent.as_raw_fd(),
++                self.temp.as_ptr(),
++                self.parent.as_raw_fd(),
++                self.final_name.as_ptr(),
++                libc::RENAME_NOREPLACE,
++            )
++        } != 0
++        {
++            return Err(Error::Artifact);
++        }
++        self.published = true;
++        self.parent.sync_all().map_err(|_| Error::Artifact)
++    }
++    pub(crate) fn discard(&mut self) -> Result<()> {
++        if self.published || self.removed {
++            return Ok(());
++        }
++        let mut failed = false;
++        for name in &self.files {
++            // Only files created by this instance, relative to its pinned directory.
++            if unsafe { libc::unlinkat(self.dir.as_raw_fd(), name.as_ptr(), 0) } != 0
++                && std::io::Error::last_os_error().raw_os_error() != Some(libc::ENOENT)
++            {
++                failed = true;
++            }
++        }
++        if unsafe {
++            libc::unlinkat(
++                self.parent.as_raw_fd(),
++                self.temp.as_ptr(),
++                libc::AT_REMOVEDIR,
++            )
++        } != 0
++        {
++            failed = true;
++        }
++        self.removed = !failed;
++        if failed { Err(Error::Artifact) } else { Ok(()) }
++    }
++}
++impl Drop for Artifact {
++    fn drop(&mut self) {
++        let _ = self.discard();
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    #[test]
++    fn publication_race_preserves_existing_destination_and_private_modes() {
++        use std::os::unix::fs::PermissionsExt;
++        let root = std::env::temp_dir().join(format!("rvddk-publish-test-{}", std::process::id()));
++        std::fs::create_dir(&root).unwrap();
++        let output = root.join("artifact");
++        let mut artifact = Artifact::create(&output, 1024).unwrap();
++        assert_eq!(
++            artifact.dir.metadata().unwrap().permissions().mode() & 0o777,
++            0o700
++        );
++        std::fs::create_dir(&output).unwrap();
++        std::fs::write(output.join("sentinel"), b"keep").unwrap();
++        assert_eq!(artifact.publish(), Err(Error::Artifact));
++        assert!(!artifact.published);
++        artifact.discard().unwrap();
++        assert_eq!(std::fs::read(output.join("sentinel")).unwrap(), b"keep");
++        assert_eq!(std::fs::read_dir(&root).unwrap().count(), 1);
++        std::fs::remove_dir_all(root).unwrap();
++    }
++}
+diff --git a/crates/rvvdk-vsphere/src/export.rs b/crates/rvvdk-vsphere/src/export.rs
+new file mode 100644
+index 0000000..db84072
+--- /dev/null
++++ b/crates/rvvdk-vsphere/src/export.rs
+@@ -0,0 +1,649 @@
++use crate::{
++    About, Cleanup, ConnectionPolicy, Credentials, Error, InventoryLimits, Result, Session,
++    inventory::{Kind, Properties, Reference, Vm},
++    session_work,
++    transport::{Method, hex_string},
++    xml,
++};
++use serde::Serialize;
++use sha1::Sha1;
++use sha2::{Digest, Sha256};
++use std::{
++    fmt,
++    future::Future,
++    path::PathBuf,
++    sync::{
++        Arc,
++        atomic::{AtomicBool, Ordering},
++    },
++    time::{Duration, Instant},
++};
++use tokio::io::AsyncWriteExt;
++
++#[derive(Clone, Default)]
++pub struct Cancellation(Arc<AtomicBool>);
++impl Cancellation {
++    pub fn cancel(&self) {
++        self.0.store(true, Ordering::Relaxed);
++    }
++    fn check(&self) -> Result<()> {
++        if self.0.load(Ordering::Relaxed) {
++            Err(Error::Cancelled)
++        } else {
++            Ok(())
++        }
++    }
++}
++impl fmt::Debug for Cancellation {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        f.write_str("Cancellation")
++    }
++}
++/// Qualification subset: exactly one persistent unencrypted disk without snapshots.
++/// Capacity selects an unambiguous VM; its private reference+UUID are rechecked
++/// immediately before shutdown/acquisition. No implicit hard power-off exists.
++#[derive(Clone)]
++pub struct ExportOptions {
++    pub single_disk_capacity_bytes: u64,
++    pub probe_only: bool,
++    pub allow_graceful_shutdown: bool,
++    pub output: PathBuf,
++    pub max_encoded_bytes: u64,
++    pub transfer_timeout: Duration,
++    pub cancellation: Cancellation,
++}
++impl fmt::Debug for ExportOptions {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        f.write_str("ExportOptions([private output/selection])")
++    }
++}
++impl ExportOptions {
++    pub fn probe(single_disk_capacity_bytes: u64) -> Self {
++        Self {
++            single_disk_capacity_bytes,
++            probe_only: true,
++            allow_graceful_shutdown: false,
++            output: PathBuf::new(),
++            max_encoded_bytes: 40 * 1024 * 1024 * 1024,
++            transfer_timeout: Duration::from_secs(3600),
++            cancellation: Cancellation::default(),
++        }
++    }
++    fn validate(&self) -> Result<()> {
++        if self.single_disk_capacity_bytes == 0
++            || self.max_encoded_bytes == 0
++            || self.max_encoded_bytes > 1024 * 1024 * 1024 * 1024
++            || self.transfer_timeout.is_zero()
++            || self.transfer_timeout > Duration::from_secs(21600)
++            || (!self.probe_only && self.output.as_os_str().is_empty())
++        {
++            Err(Error::InvalidInput)
++        } else {
++            Ok(())
++        }
++    }
++}
++#[derive(Clone, Copy, Debug, Serialize, PartialEq, Eq)]
++#[serde(rename_all = "snake_case")]
++pub enum LeaseCleanup {
++    NotAcquired,
++    Rejected,
++    Aborted,
++    Completed,
++    Unconfirmed,
++}
++#[derive(Debug, Serialize)]
++pub struct ExportFile {
++    pub name: String,
++    pub encoded_bytes: u64,
++    pub sha256: String,
++    pub sha1: String,
++    pub header_kind: &'static str,
++    pub elapsed_ms: f64,
++}
++#[derive(Debug, Serialize)]
++pub struct ExportReport {
++    pub probe_only: bool,
++    pub selected_capacity_bytes: u64,
++    pub initial_power_state: Option<String>,
++    pub last_observed_power_state: Option<String>,
++    pub shutdown_requested: bool,
++    pub primary_error: Option<Error>,
++    pub lease_cleanup: LeaseCleanup,
++    pub lease_cleanup_error: Option<Error>,
++    pub session_cleanup: Cleanup,
++    pub pagination_cleanup_error: Option<Error>,
++    pub files: Vec<ExportFile>,
++    pub manifest_verified: bool,
++    pub artifact_published: bool,
++    pub artifact_cleanup_error: Option<Error>,
++    pub requests: Vec<crate::RequestMeasurement>,
++    pub elapsed_ms: f64,
++}
++impl ExportReport {
++    pub fn is_success(&self) -> bool {
++        self.primary_error.is_none()
++            && self.lease_cleanup == LeaseCleanup::Completed
++            && self.session_cleanup == Cleanup::LoggedOut
++            && self.manifest_verified
++            && self.artifact_published
++            && self.artifact_cleanup_error.is_none()
++            && self.lease_cleanup_error.is_none()
++            && self.pagination_cleanup_error.is_none()
++    }
++}
++impl ExportReport {
++    fn new(options: &ExportOptions) -> Self {
++        Self {
++            probe_only: options.probe_only,
++            selected_capacity_bytes: options.single_disk_capacity_bytes,
++            initial_power_state: None,
++            last_observed_power_state: None,
++            shutdown_requested: false,
++            primary_error: None,
++            lease_cleanup: LeaseCleanup::NotAcquired,
++            lease_cleanup_error: None,
++            session_cleanup: Cleanup::NotNeeded,
++            pagination_cleanup_error: None,
++            files: Vec::new(),
++            manifest_verified: false,
++            artifact_published: false,
++            artifact_cleanup_error: None,
++            requests: Vec::new(),
++            elapsed_ms: 0.,
++        }
++    }
++}
++#[cfg(target_os = "linux")]
++struct Attempt {
++    report: ExportReport,
++    artifact: Option<crate::artifact::Artifact>,
++}
++
++/// Execute a scoped export proof, or acquire-and-abort eligibility probe.
++/// Await to completion; cancel via Cancellation, not by dropping this future.
++#[cfg(target_os = "linux")]
++pub async fn export_vm(
++    policy: ConnectionPolicy,
++    credentials: &Credentials,
++    options: ExportOptions,
++) -> Result<ExportReport> {
++    let started = Instant::now();
++    options.validate()?;
++    let mut report = ExportReport::new(&options);
++    let outcome = session_work(policy, credentials, move |session, about| {
++        Box::pin(session.export_attempt(about, options))
++    })
++    .await?;
++    let mut artifact = None;
++    match outcome.value {
++        Ok(attempt) => {
++            report = attempt.report;
++            artifact = attempt.artifact;
++        }
++        Err(error) => report.primary_error = Some(error),
++    }
++    report.session_cleanup = outcome.cleanup;
++    report.pagination_cleanup_error = outcome.pagination_cleanup_error;
++    report.requests = outcome.requests;
++    if let Some(mut writer) = artifact {
++        if report.primary_error.is_none()
++            && report.session_cleanup == Cleanup::LoggedOut
++            && report.pagination_cleanup_error.is_none()
++            && report.lease_cleanup == LeaseCleanup::Completed
++            && report.manifest_verified
++        {
++            if let Err(error) = writer.publish() {
++                report.primary_error = Some(error);
++            }
++            report.artifact_published = writer.published;
++        }
++        if !writer.published {
++            report.artifact_cleanup_error = writer.discard().err();
++        }
++    }
++    report.elapsed_ms = started.elapsed().as_secs_f64() * 1000.;
++    Ok(report)
++}
++#[cfg(not(target_os = "linux"))]
++pub async fn export_vm(
++    _: ConnectionPolicy,
++    _: &Credentials,
++    _: ExportOptions,
++) -> Result<ExportReport> {
++    Err(Error::ExportScope)
++}
++
++struct Device {
++    key: String,
++    url: reqwest::Url,
++}
++struct LeaseInfo {
++    device: Device,
++    timeout: Duration,
++}
++#[cfg(target_os = "linux")]
++impl Session {
++    async fn selected_vm(&mut self, reference: &Reference) -> Result<Vm> {
++        let raw = self.properties(reference).await?;
++        let doc = xml::parse(&raw)?;
++        Properties::parse(xml::response(&doc, "RetrievePropertiesEx")?, reference)?.vm(
++            reference.clone(),
++            1,
++            16,
++        )
++    }
++    async fn export_attempt(&mut self, about: About, options: ExportOptions) -> Result<Attempt> {
++        let mut attempt = Attempt {
++            report: ExportReport::new(&options),
++            artifact: None,
++        };
++        let mut lease = None;
++        let result = self
++            .export_inner(about, &options, &mut attempt, &mut lease)
++            .await;
++        attempt.report.primary_error = result.err();
++        if let Some(lease) = lease
++            && attempt.report.lease_cleanup != LeaseCleanup::Completed
++        {
++            match self
++                .transport
++                .call(
++                    Method::HttpNfcLeaseAbort,
++                    lease.element("_this"),
++                    Instant::now() + self.cleanup_timeout,
++                )
++                .await
++            {
++                Ok(_) => attempt.report.lease_cleanup = LeaseCleanup::Aborted,
++                Err(error) => {
++                    attempt.report.lease_cleanup = LeaseCleanup::Unconfirmed;
++                    attempt.report.lease_cleanup_error = Some(error);
++                }
++            }
++        }
++        Ok(attempt)
++    }
++    async fn export_inner(
++        &mut self,
++        about: About,
++        options: &ExportOptions,
++        attempt: &mut Attempt,
++        owned: &mut Option<Reference>,
++    ) -> Result<()> {
++        options.cancellation.check()?;
++        let inventory = self.inventory(about, InventoryLimits::default()).await?;
++        let mut candidates = inventory.vms.into_iter().filter(|vm| {
++            vm.disks.len() == 1 && vm.disks[0].capacity_bytes == options.single_disk_capacity_bytes
++        });
++        let selected = candidates.next().ok_or(Error::Identity)?;
++        if candidates.next().is_some() {
++            return Err(Error::Identity);
++        }
++        let reference = selected.identity.reference.clone();
++        let mut vm = self.selected_vm(&reference).await?;
++        if vm.identity.bios_uuid() != selected.identity.bios_uuid()
++            || vm.disks.len() != 1
++            || vm.disks[0].identity != selected.disks[0].identity
++        {
++            return Err(Error::Identity);
++        }
++        admit_vm(&vm, options.single_disk_capacity_bytes)?;
++        attempt.report.initial_power_state = Some(vm.power_state.clone());
++        attempt.report.last_observed_power_state = Some(vm.power_state.clone());
++        if !options.probe_only {
++            // Output admission happens before any guest power operation or lease.
++            attempt.artifact = Some(crate::artifact::Artifact::create(
++                &options.output,
++                options.max_encoded_bytes,
++            )?);
++            if vm.power_state != "poweredOff" {
++                if !options.allow_graceful_shutdown
++                    || vm.power_state != "poweredOn"
++                    || vm.tools != "guestToolsRunning"
++                {
++                    return Err(Error::InvalidPowerState);
++                }
++                options.cancellation.check()?;
++                attempt.report.shutdown_requested = true;
++                self.transport
++                    .call(
++                        Method::ShutdownGuest,
++                        reference.element("_this"),
++                        self.deadline,
++                    )
++                    .await?;
++                loop {
++                    options.cancellation.check()?;
++                    vm = self.selected_vm(&reference).await?;
++                    attempt.report.last_observed_power_state = Some(vm.power_state.clone());
++                    if vm.identity.bios_uuid() != selected.identity.bios_uuid() {
++                        return Err(Error::Identity);
++                    }
++                    if vm.power_state == "poweredOff" {
++                        break;
++                    }
++                    if Instant::now() >= self.deadline {
++                        return Err(Error::Deadline);
++                    }
++                    tokio::time::sleep(Duration::from_millis(500)).await;
++                }
++            }
++            admit_vm(&vm, options.single_disk_capacity_bytes)?;
++            if vm.disks[0].identity != selected.disks[0].identity {
++                return Err(Error::Identity);
++            }
++        }
++        options.cancellation.check()?;
++        let acquired = self
++            .transport
++            .call(Method::ExportVm, reference.element("_this"), self.deadline)
++            .await;
++        let raw = match acquired {
++            Ok(raw) => raw,
++            Err(error) => {
++                attempt.report.lease_cleanup = if matches!(
++                    error,
++                    Error::LicenseRestricted
++                        | Error::InvalidPowerState
++                        | Error::NoPermission
++                        | Error::Restricted
++                ) {
++                    LeaseCleanup::Rejected
++                } else {
++                    LeaseCleanup::Unconfirmed
++                };
++                return Err(error);
++            }
++        };
++        // Any successful-looking but unparseable acquisition is ambiguous; never retry.
++        attempt.report.lease_cleanup = LeaseCleanup::Unconfirmed;
++        let doc = xml::parse(&raw)?;
++        let lease = Reference::parse(xml::required(
++            xml::response(&doc, "ExportVm")?,
++            "returnval",
++        )?)?;
++        if lease.kind != Kind::HttpNfcLease {
++            return Err(Error::LeaseUnconfirmed);
++        }
++        *owned = Some(lease.clone());
++        if options.probe_only {
++            return Ok(());
++        }
++        let deadline = Instant::now() + options.transfer_timeout;
++        self.deadline = deadline;
++        let info = loop {
++            options.cancellation.check()?;
++            let raw = self.properties(&lease).await?;
++            let doc = xml::parse(&raw)?;
++            let props = Properties::parse(xml::response(&doc, "RetrievePropertiesEx")?, &lease)?;
++            match xml::text(props.get("state")?)? {
++                "initializing" => {
++                    if Instant::now() >= deadline {
++                        return Err(Error::Deadline);
++                    }
++                    tokio::time::sleep(Duration::from_millis(250)).await;
++                }
++                "ready" => {
++                    break self.lease_info(
++                        props.get("info")?,
++                        &lease,
++                        &reference,
++                        options.single_disk_capacity_bytes,
++                    )?;
++                }
++                _ => return Err(Error::LeaseState),
++            }
++        };
++        self.transport
++            .call(
++                Method::HttpNfcLeaseProgress,
++                format!("{}<percent>0</percent>", lease.element("_this")),
++                deadline,
++            )
++            .await?;
++        let request = self
++            .transport
++            .data_request(info.device.url.clone(), deadline)?;
++        let writer = attempt
++            .artifact
++            .as_mut()
++            .ok_or(Error::Artifact)?
++            .file("disk-1.vmdk")?;
++        let downloaded = self
++            .heartbeat(
++                &lease,
++                info.timeout,
++                deadline,
++                &options.cancellation,
++                download(request, writer, options.max_encoded_bytes),
++            )
++            .await?;
++        attempt.report.files.push(downloaded);
++        let raw = self
++            .transport
++            .call(
++                Method::HttpNfcLeaseGetManifest,
++                lease.element("_this"),
++                deadline,
++            )
++            .await?;
++        verify_manifest(
++            &raw,
++            &info.device.key,
++            &attempt.report.files[0],
++            options.single_disk_capacity_bytes,
++        )?;
++        attempt.report.manifest_verified = true;
++        // Final progress and durable artifact metadata are covered by the heartbeat.
++        let metadata = serde_json::to_vec(&attempt.report.files).map_err(|_| Error::Artifact)?;
++        let mut file = attempt
++            .artifact
++            .as_mut()
++            .ok_or(Error::Artifact)?
++            .file("manifest.json")?;
++        self.heartbeat(
++            &lease,
++            info.timeout,
++            deadline,
++            &options.cancellation,
++            async {
++                file.write_all(&metadata)
++                    .await
++                    .map_err(|_| Error::Artifact)?;
++                file.sync_all().await.map_err(|_| Error::Artifact)
++            },
++        )
++        .await?;
++        self.transport
++            .call(
++                Method::HttpNfcLeaseComplete,
++                lease.element("_this"),
++                deadline,
++            )
++            .await?;
++        attempt.report.lease_cleanup = LeaseCleanup::Completed;
++        Ok(())
++    }
++    fn lease_info(
++        &self,
++        node: roxmltree::Node<'_, '_>,
++        lease: &Reference,
++        vm: &Reference,
++        capacity: u64,
++    ) -> Result<LeaseInfo> {
++        if Reference::parse(xml::required(node, "lease")?)? != *lease
++            || Reference::parse(xml::required(node, "entity")?)? != *vm
++            || xml::number(xml::required(node, "totalDiskCapacityInKB")?)?.checked_mul(1024)
++                != Some(capacity)
++        {
++            return Err(Error::Identity);
++        }
++        let timeout = xml::number(xml::required(node, "leaseTimeout")?)?;
++        if !(3..=3600).contains(&timeout) {
++            return Err(Error::LeaseState);
++        }
++        let device = xml::required(node, "deviceUrl")?; // exactly one device in this proof
++        if !xml::boolean(xml::required(device, "disk")?)? {
++            return Err(Error::ExportScope);
++        }
++        let key = xml::text(xml::required(device, "key")?)?;
++        if key.is_empty() || key.len() > 256 {
++            return Err(Error::Schema);
++        }
++        let url = self.transport.admit_data_url(
++            xml::text(xml::required(device, "url")?)?,
++            xml::text(xml::required(device, "sslThumbprint")?)?,
++        )?;
++        Ok(LeaseInfo {
++            device: Device {
++                key: key.to_owned(),
++                url,
++            },
++            timeout: Duration::from_secs(timeout),
++        })
++    }
++    async fn heartbeat<T>(
++        &mut self,
++        lease: &Reference,
++        timeout: Duration,
++        deadline: Instant,
++        cancel: &Cancellation,
++        work: impl Future<Output = Result<T>>,
++    ) -> Result<T> {
++        let mut interval = tokio::time::interval((timeout / 3).min(Duration::from_secs(10)));
++        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
++        let mut cancellation = tokio::time::interval(Duration::from_millis(100));
++        tokio::pin!(work);
++        loop {
++            tokio::select! {
++                result=&mut work=>return result,
++                _=tokio::time::sleep_until(deadline.into())=>return Err(Error::Deadline),
++                _=cancellation.tick()=>{cancel.check()?;},
++                _=interval.tick()=>{cancel.check()?;self.transport.call(Method::HttpNfcLeaseProgress,format!("{}<percent>0</percent>",lease.element("_this")),deadline.min(Instant::now()+timeout/3)).await?;},
++            }
++        }
++    }
++}
++fn admit_vm(vm: &Vm, capacity: u64) -> Result<()> {
++    if vm.template || vm.snapshot_present || vm.disks.len() != 1 {
++        return Err(Error::ExportScope);
++    }
++    let disk = &vm.disks[0];
++    if disk.identity.key.is_none() || disk.identity.backing.is_none() {
++        return Err(Error::ExportScope);
++    }
++    if disk.capacity_bytes != capacity
++        || disk.encrypted
++        || disk.parent_present
++        || disk.disk_mode != "persistent"
++        || disk.backing_type != "VirtualDiskFlatVer2BackingInfo"
++    {
++        return Err(Error::ExportScope);
++    }
++    Ok(())
++}
++async fn download(
++    request: reqwest::RequestBuilder,
++    file: tokio::fs::File,
++    limit: u64,
++) -> Result<ExportFile> {
++    let started = Instant::now();
++    let mut response = request.send().await.map_err(|e| {
++        if e.is_timeout() {
++            Error::Deadline
++        } else {
++            Error::Transport
++        }
++    })?;
++    if response.status() != reqwest::StatusCode::OK
++        || response
++            .headers()
++            .get(reqwest::header::CONTENT_ENCODING)
++            .is_some_and(|v| v != "identity")
++    {
++        return Err(Error::Http);
++    }
++    if response.content_length().is_some_and(|v| v > limit) {
++        return Err(Error::TransferLimit);
++    }
++    let mut writer = tokio::io::BufWriter::with_capacity(1024 * 1024, file);
++    let mut bytes = 0u64;
++    let mut sha256 = Sha256::new();
++    let mut sha1 = Sha1::new();
++    let mut prefix = Vec::with_capacity(512);
++    while let Some(chunk) = response.chunk().await.map_err(|e| {
++        if e.is_timeout() {
++            Error::Deadline
++        } else {
++            Error::Transport
++        }
++    })? {
++        bytes = bytes
++            .checked_add(chunk.len() as u64)
++            .ok_or(Error::TransferLimit)?;
++        if bytes > limit || chunk.len() > 1024 * 1024 {
++            return Err(Error::TransferLimit);
++        }
++        if prefix.len() < 512 {
++            prefix.extend_from_slice(&chunk[..chunk.len().min(512 - prefix.len())]);
++        }
++        sha256.update(&chunk);
++        sha1.update(&chunk);
++        writer
++            .write_all(&chunk)
++            .await
++            .map_err(|_| Error::Artifact)?;
++    }
++    if bytes < 512 {
++        return Err(Error::ExportScope);
++    }
++    let header_kind = if prefix.starts_with(b"KDMV") {
++        "vmdk_sparse_magic"
++    } else {
++        return Err(Error::ExportScope);
++    };
++    writer.flush().await.map_err(|_| Error::Artifact)?;
++    writer
++        .into_inner()
++        .sync_all()
++        .await
++        .map_err(|_| Error::Artifact)?;
++    Ok(ExportFile {
++        name: "disk-1.vmdk".to_owned(),
++        encoded_bytes: bytes,
++        sha256: hex_string(&sha256.finalize()),
++        sha1: hex_string(&sha1.finalize()),
++        header_kind,
++        elapsed_ms: started.elapsed().as_secs_f64() * 1000.,
++    })
++}
++fn verify_manifest(raw: &str, key: &str, file: &ExportFile, capacity: u64) -> Result<()> {
++    let doc = xml::parse(raw)?;
++    let response = xml::response(&doc, "HttpNfcLeaseGetManifest")?;
++    let entry = xml::required(response, "returnval")?;
++    if xml::text(xml::required(entry, "key")?)? != key
++        || !xml::boolean(xml::required(entry, "disk")?)?
++        || xml::number(xml::required(entry, "size")?)? != file.encoded_bytes
++    {
++        return Err(Error::Manifest);
++    }
++    if let Some(value) = xml::child(entry, "capacity")?
++        && xml::number(value)? != capacity
++    {
++        return Err(Error::Manifest);
++    }
++    if let Some(checksum) = xml::child(entry, "checksum")? {
++        let expected = match xml::text(xml::required(entry, "checksumType")?)? {
++            "sha256" => &file.sha256,
++            "sha1" => &file.sha1,
++            _ => return Err(Error::Manifest),
++        };
++        if xml::text(checksum)?.to_ascii_lowercase() != *expected {
++            return Err(Error::Manifest);
++        }
++    } else if xml::text(xml::required(entry, "sha1")?)?.to_ascii_lowercase() != file.sha1 {
++        return Err(Error::Manifest);
++    }
++    Ok(())
++}
