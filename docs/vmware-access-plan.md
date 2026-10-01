@@ -150,15 +150,17 @@ stateDiagram-v2
     Streaming --> Streaming: bounded reads and lease progress
     Streaming --> VerifyArtifact: all selected devices received
     VerifyArtifact --> CompleteLease: manifest and length checks
-    CompleteLease --> Publish: confirmed lease completion, sync output
-    Publish --> Logout
+    CompleteLease --> Logout: confirmed lease completion
     Acquiring --> AbortOrReconcile: error or ambiguous response
     Ready --> AbortOrReconcile: cancellation or error
     Streaming --> AbortOrReconcile: failure, timeout or cancellation
     VerifyArtifact --> AbortOrReconcile: verification failure
     CompleteLease --> AbortOrReconcile: ambiguous completion
     AbortOrReconcile --> Logout: cleanup result retained
-    Logout --> [*]
+    Logout --> Publish: verified artifact and confirmed cleanup
+    Logout --> Discard: failed or uncertain attempt
+    Publish --> [*]
+    Discard --> [*]
 ```
 
 The [lease API](https://developer.broadcom.com/xapis/vsphere-web-services-api/latest/vim.HttpNfcLease.html)
@@ -238,7 +240,8 @@ all prior performance follow-ups remain open.
 
 Continue on the **existing ESXi 8.0.3 / HostAgent API 8.0.3.0 host**. The user
 reported applying a license key; discovery now lists an Enterprise edition. Active
-assignment remains unresolved, and this is not yet proof of export eligibility.
+assignment remains unresolved. Subsequent V0.3.2b calls acquired leases and streamed
+real disk bytes; complete export qualification is still pending.
 No replacement host, new VMs or vCenter is needed for the current bounded proof.
 vSphere 9 remains deferred compatibility work.
 
@@ -267,9 +270,12 @@ Keep direct host access as the initial scope; vCenter integration remains later 
    Passwords remain terminal-only. Do not cancel unrelated tasks.
 3. Establish an independent logical-byte oracle: deterministic guest content when
    guest access is available, or an agreed independent offline reference. Server
-   manifest checksums alone do not satisfy this. Guest SSH details for the selected
-   30 GiB Fedora VM have been requested and are currently missing. Prepare the
-   fixture before shutdown; retain guest content/digests outside committed evidence.
+   manifest checksums alone do not satisfy this. Guest SSH access has been verified:
+   the selected 30 GiB guest contains an 8 MiB deterministic fixture. Its XFS extent
+   map, linear LVM offset and partition offset identify a logical disk range; a
+   direct guest-disk read matched the local fixture before shutdown. Keep these
+   private inputs outside committed evidence. The offline comparator checks those
+   known bytes after independent QEMU decoding; this is not whole-source equivalence.
 4. Admit a new private output and sufficient free space, gracefully shut down only
    the selected VM under the user's existing authorization, poll poweredOff, then
    run the Rust export proof. Stop on graceful-shutdown failure; no hard fallback.
@@ -288,6 +294,32 @@ Keep direct host access as the initial scope; vCenter integration remains later 
    all recorded sessions; do not claim the individual regression gate passed.
 9. Update this checklist, architecture, roadmap and implementation log; commit the
    qualified bounded step locally. V0/R6 remain open until their stated gates pass.
+
+### V0.3.2b checkpoint and next runner decision
+
+[Evidence and all attempt plots](benchmark-results/2026-10-01-v032b/README.md).
+The selected 30 GiB guest now holds the private 8 MiB oracle and is powered off
+following authorized graceful shutdown. The 60 GiB control remains powered on
+and received only read-only inspection. Opaque lease references and auxiliary
+files are supported within bounded disk-only scope. Real cancellation and deadline
+both acknowledged Abort/Logout and removed partial staging. The one-hour attempt
+received 2,544,547,134 bytes without completing; it is not a throughput benchmark.
+
+Next, choose a runner before another long transfer. VM02 has a compatible x86_64
+Linux environment and about 12.7 GiB available; qemu-img is absent. A private local
+package is prepared. Using it would require installing qemu-img and copying the
+frozen Rust binaries and private oracle inputs into a new private directory.
+Run one artifact at a time with an explicit encoded-byte cap and free-space checks;
+QEMU sparse decode can still exhaust storage, so check actual usage before repeats.
+Retain reports/hashes and remove only owned duplicates after verification. This
+runner shares source-host resources and must be labeled accordingly. The user was
+asked to choose this role change, a separate LAN runner, or a longer timeout over
+the existing connection. No VM02 writes are authorized by elapsed waiting alone.
+
+Completed transfers, manifest verification, Complete, independent decoded-byte
+comparison and three comparable performance samples remain open. The provisional
+prefix identifies compressed version-3 streamOptimized, which the current native
+reader does not support; do not broaden format acceptance from a partial header.
 
 ### Later — vSphere 9 compatibility (deferred)
 

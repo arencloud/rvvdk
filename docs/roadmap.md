@@ -334,11 +334,16 @@ confirmed Logout without shutting down either VM. [Evidence and plots](benchmark
 read-only task inspection confirms the user's cancellation of two earlier export
 tasks. [Evidence](benchmark-results/2026-10-01-v032a/README.md).
 
-**Next bounded package — V0.3.2:** continue on the existing ESXi 8.0.3 host after the
-user's license update. An available Enterprise edition does not prove active
-assignment or operation eligibility. Prepare deterministic data using the requested
-guest SSH access, then qualify export bytes/format, complete/abort/logout,
-independent logical-byte equivalence and repeated transfer performance.
+**V0.3.2b complete:** bounded opaque lease references and auxiliary-file selection
+work against the live host. The guest oracle is prepared; real cancellation and
+deadline paths acknowledge Abort/Logout and discard partial artifacts.
+[All attempt plots and evidence](benchmark-results/2026-10-01-v032b/README.md).
+
+**Next bounded package — V0.3.2:** obtain three completed exports, independently
+decode and verify the known guest range, qualify Complete/Logout, and plot transfer
+performance. The current connection timed out after one hour and 2.37 GiB; choose
+a LAN runner or a longer deadline. Using the control VM as runner requires the
+user's choice because it changes the saved untouched-control role.
 [Continuation plan](vmware-access-plan.md#v032--licensed-live-qualification).
 Export remains a sequential container stream; logical decoding is a separate gate.
 V0 remains open.
@@ -348,6 +353,7 @@ V0 remains open.
 - [x] V0.3.1 Rust export foundation, local cleanup fixtures and actual license gate.
 - [ ] Later compatibility: explicit vSphere 9 API/version and lease-certificate qualification; deferred until after the preferred 8 U3 proof.
 - [x] V0.3.2a Powered-off probe guard and bounded read-only task inspection.
+- [x] V0.3.2b Live export compatibility, guest oracle preparation and partial-transfer cleanup.
 - [ ] V0.3.2 Licensed live transfer, independent byte oracle, cleanup and performance.
 - [ ] V0.3 disposable-lab independent Rust export proof and failure/lease-cleanup evidence.
 
@@ -480,7 +486,7 @@ R0.1 was the bounded change directly related to the observer work:
    tradeoff in the implementation log. Update this checklist and ADR-0025 with
    the implemented behavior and remaining limitations.
 
-R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete. R3.1 inspect/plan and R3.2 copy/verify are complete. R3.3 progress and cancellation are complete. R4.1–R4.4 are complete within their documented subset. R4.5 bounded hosted descriptor acquisition compatibility is complete. R5.1 header admission, R5.2 metadata validation and R5.3 base sparse logical mapping are complete. R5.4 sparse CLI integration is complete. R5.5 deterministic adversarial validation and scaling benchmarks are complete. R5.6 bounded sparse parent metadata admission is complete. R5.7 read-only logical parent fallback is complete. R5.8 CLI parent integration is complete. R5.9 bounded admission fuzz qualification is complete. V0.1 feasibility planning and read-only lab discovery are complete. V0.2 Rust session/inventory and cleanup are complete. V0.3.1 export foundation and license probing are complete. Continue **V0.3.2** on the existing host after guest fixture preparation; licensing availability has changed but export eligibility remains unqualified. Keep PERF.0 and the prior performance follow-ups open.
+R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete. R3.1 inspect/plan and R3.2 copy/verify are complete. R3.3 progress and cancellation are complete. R4.1–R4.4 are complete within their documented subset. R4.5 bounded hosted descriptor acquisition compatibility is complete. R5.1 header admission, R5.2 metadata validation and R5.3 base sparse logical mapping are complete. R5.4 sparse CLI integration is complete. R5.5 deterministic adversarial validation and scaling benchmarks are complete. R5.6 bounded sparse parent metadata admission is complete. R5.7 read-only logical parent fallback is complete. R5.8 CLI parent integration is complete. R5.9 bounded admission fuzz qualification is complete. V0.1 feasibility planning and read-only lab discovery are complete. V0.2 Rust session/inventory and cleanup are complete. V0.3.1 export foundation and license probing are complete. Continue **V0.3.2** on the existing host after the compatibility/cleanup substep; guest fixture preparation and streaming are established, while completed artifacts and decoded bytes remain unqualified. Keep PERF.0 and the prior performance follow-ups open.
 
 ## Decisions to record before their milestone
 

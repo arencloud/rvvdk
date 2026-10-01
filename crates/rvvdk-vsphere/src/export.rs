@@ -119,6 +119,10 @@ pub struct ExportReport {
     pub lease_cleanup_error: Option<Error>,
     pub session_cleanup: Cleanup,
     pub pagination_cleanup_error: Option<Error>,
+    /// Accepted HTTP body bytes, retained on failure; not durable/published bytes.
+    pub received_encoded_bytes: u64,
+    /// Explicit non-disk lease entries omitted by this disk-only proof.
+    pub ignored_non_disk_devices: usize,
     pub files: Vec<ExportFile>,
     pub manifest_verified: bool,
     pub artifact_published: bool,
@@ -153,6 +157,8 @@ impl ExportReport {
             lease_cleanup_error: None,
             session_cleanup: Cleanup::NotNeeded,
             pagination_cleanup_error: None,
+            received_encoded_bytes: 0,
+            ignored_non_disk_devices: 0,
             files: Vec::new(),
             manifest_verified: false,
             artifact_published: false,
@@ -237,6 +243,7 @@ struct Device {
 }
 struct LeaseInfo {
     device: Device,
+    ignored_non_disk_devices: usize,
     timeout: Duration,
 }
 #[cfg(target_os = "linux")]
@@ -446,10 +453,8 @@ impl Session {
         // Any successful-looking but unparseable acquisition is ambiguous; never retry.
         attempt.report.lease_cleanup = LeaseCleanup::Unconfirmed;
         let doc = xml::parse(&raw)?;
-        let lease = Reference::parse(xml::required(
-            xml::response(&doc, "ExportVm")?,
-            "returnval",
-        )?)?;
+        let node = xml::required(xml::response(&doc, "ExportVm")?, "returnval")?;
+        let lease = Reference::parse(node)?;
         if lease.kind != Kind::HttpNfcLease {
             return Err(Error::LeaseUnconfirmed);
         }
@@ -482,6 +487,7 @@ impl Session {
                 _ => return Err(Error::LeaseState),
             }
         };
+        attempt.report.ignored_non_disk_devices = info.ignored_non_disk_devices;
         self.transport
             .call(
                 Method::HttpNfcLeaseProgress,
@@ -503,7 +509,12 @@ impl Session {
                 info.timeout,
                 deadline,
                 &options.cancellation,
-                download(request, writer, options.max_encoded_bytes),
+                download(
+                    request,
+                    writer,
+                    options.max_encoded_bytes,
+                    &mut attempt.report.received_encoded_bytes,
+                ),
             )
             .await?;
         attempt.report.files.push(downloaded);
@@ -570,10 +581,10 @@ impl Session {
         if !(3..=3600).contains(&timeout) {
             return Err(Error::LeaseState);
         }
-        let device = xml::required(node, "deviceUrl")?; // exactly one device in this proof
-        if !xml::boolean(xml::required(device, "disk")?)? {
-            return Err(Error::ExportScope);
-        }
+        let (device, ignored_non_disk_devices) = one_disk(
+            node.children()
+                .filter(|n| n.has_tag_name((xml::VIM, "deviceUrl"))),
+        )?;
         let key = xml::text(xml::required(device, "key")?)?;
         if key.is_empty() || key.len() > 256 {
             return Err(Error::Schema);
@@ -583,6 +594,7 @@ impl Session {
             xml::text(xml::required(device, "sslThumbprint")?)?,
         )?;
         Ok(LeaseInfo {
+            ignored_non_disk_devices,
             device: Device {
                 key: key.to_owned(),
                 url,
@@ -687,6 +699,7 @@ async fn download(
     request: reqwest::RequestBuilder,
     file: tokio::fs::File,
     limit: u64,
+    received: &mut u64,
 ) -> Result<ExportFile> {
     let started = Instant::now();
     let mut response = request.send().await.map_err(|e| {
@@ -725,6 +738,7 @@ async fn download(
         if bytes > limit || chunk.len() > 1024 * 1024 {
             return Err(Error::TransferLimit);
         }
+        *received = bytes;
         if prefix.len() < 512 {
             prefix.extend_from_slice(&chunk[..chunk.len().min(512 - prefix.len())]);
         }
@@ -758,10 +772,41 @@ async fn download(
         elapsed_ms: started.elapsed().as_secs_f64() * 1000.,
     })
 }
+// Lease metadata may include auxiliary files. This proof transfers one disk only.
+// Explicit flags, unique bounded keys and cardinality prevent guessing from URLs.
+fn one_disk<'a, 'i>(
+    nodes: impl Iterator<Item = roxmltree::Node<'a, 'i>>,
+) -> Result<(roxmltree::Node<'a, 'i>, usize)> {
+    let mut disk = None;
+    let mut ignored = 0;
+    let mut keys = std::collections::BTreeSet::new();
+    for (index, node) in nodes.enumerate() {
+        if index >= 32 {
+            return Err(Error::InventoryLimit);
+        }
+        let key = xml::text(xml::required(node, "key")?)?;
+        if key.is_empty() || key.len() > 256 || !keys.insert(key) {
+            return Err(Error::Schema);
+        }
+        if xml::boolean(xml::required(node, "disk")?)? {
+            if disk.replace(node).is_some() {
+                return Err(Error::ExportScope);
+            }
+        } else {
+            ignored += 1;
+        }
+    }
+    Ok((disk.ok_or(Error::ExportScope)?, ignored))
+}
+
 fn verify_manifest(raw: &str, key: &str, file: &ExportFile, capacity: u64) -> Result<()> {
     let doc = xml::parse(raw)?;
     let response = xml::response(&doc, "HttpNfcLeaseGetManifest")?;
-    let entry = xml::required(response, "returnval")?;
+    let (entry, _) = one_disk(
+        response
+            .children()
+            .filter(|n| n.has_tag_name((xml::VIM, "returnval"))),
+    )?;
     if xml::text(xml::required(entry, "key")?)? != key
         || !xml::boolean(xml::required(entry, "disk")?)?
         || xml::number(xml::required(entry, "size")?)? != file.encoded_bytes
@@ -789,8 +834,49 @@ fn verify_manifest(raw: &str, key: &str, file: &ExportFile, capacity: u64) -> Re
 }
 
 #[cfg(test)]
-mod task_timestamp_tests {
+mod qualification_tests {
     use super::*;
+    #[test]
+    fn disk_selection_rejects_ambiguous_untyped_and_unbounded_entries() {
+        let select = |entries: &str| {
+            let raw = format!("<root xmlns='urn:vim25'>{entries}</root>");
+            let doc = xml::parse(&raw)?;
+            one_disk(doc.root_element().children().filter(|n| n.is_element()))
+                .map(|(_, ignored)| ignored)
+        };
+        let disk = "<entry><key>disk</key><disk>true</disk></entry>";
+        assert_eq!(select(disk), Ok(0));
+        assert_eq!(select(&(disk.to_owned() + disk)), Err(Error::Schema));
+        assert_eq!(
+            select(&(disk.to_owned() + "<entry><key>other</key><disk>true</disk></entry>")),
+            Err(Error::ExportScope)
+        );
+        assert_eq!(
+            select("<entry><key>other</key></entry>"),
+            Err(Error::Schema)
+        );
+        assert_eq!(
+            select("<entry><key>other</key><disk>false</disk></entry>"),
+            Err(Error::ExportScope)
+        );
+        let mut entries = disk.to_owned();
+        for index in 0..31 {
+            entries.push_str(&format!(
+                "<entry><key>aux-{index}</key><disk>false</disk></entry>"
+            ));
+        }
+        assert_eq!(select(&entries), Ok(31));
+        entries.push_str("<entry><key>overflow</key><disk>false</disk></entry>");
+        assert_eq!(select(&entries), Err(Error::InventoryLimit));
+        assert_eq!(
+            select(&format!(
+                "<entry><key>{}</key><disk>true</disk></entry>",
+                "x".repeat(257)
+            )),
+            Err(Error::Schema)
+        );
+    }
+
     #[test]
     fn timestamps_are_bounded_calendar_values_not_server_messages() {
         for value in [

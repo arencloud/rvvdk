@@ -968,6 +968,68 @@ mod export_tests {
         assert!(!report.is_success());
     }
     #[tokio::test]
+    async fn opaque_lease_reference_is_escaped_and_aborted() {
+        let encoded = "lease:session[synthetic]&amp;&lt;&quot;&apos;";
+        let mut grant = granted();
+        grant.body = grant.body.replace("lease-private", encoded);
+        let mut replies = selected("poweredOff");
+        replies.extend([grant, abort(), logout()]);
+        let server = Server::start(replies);
+        let report = export_vm(
+            server.policy(),
+            &credentials(),
+            ExportOptions::probe(30 * 1024 * 1024 * 1024),
+        )
+        .await
+        .unwrap();
+        assert_eq!(report.primary_error, None);
+        assert_eq!(report.lease_cleanup, LeaseCleanup::Aborted);
+        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+        assert!(
+            server
+                .requests()
+                .iter()
+                .any(|r| r.contains("<HttpNfcLeaseAbort ") && r.contains(encoded))
+        );
+        assert!(
+            !serde_json::to_string(&report)
+                .unwrap()
+                .contains("synthetic")
+        );
+    }
+
+    #[tokio::test]
+    async fn auxiliary_non_disk_entries_are_not_downloaded_or_verified_as_disks() {
+        let auxiliary = "<deviceUrl><key>auxiliary-private</key><disk>false</disk><url>https://other.invalid/never-fetch</url></deviceUrl>";
+        let mut info = ready("ENDPOINT/nfc/PRIVATE-ticket", "THUMBPRINT");
+        info.body = info.body.replace(
+            "<totalDiskCapacityInKB>",
+            &format!("{auxiliary}<totalDiskCapacityInKB>"),
+        );
+        let mut digest = manifest();
+        digest.body = digest.body.replace("</HttpNfcLeaseGetManifestResponse>", "<returnval><key>auxiliary-private</key><disk>false</disk></returnval></HttpNfcLeaseGetManifestResponse>");
+        let mut replies = selected("poweredOff");
+        replies.extend([granted(), info, data(), digest, complete(), logout()]);
+        let server = Server::start(replies);
+        let out = Output::new();
+        let report = export_vm(server.policy(), &credentials(), options(&out))
+            .await
+            .unwrap();
+        assert!(report.is_success(), "{report:?}");
+        assert_eq!(report.ignored_non_disk_devices, 1);
+        assert_eq!(report.files.len(), 1);
+        assert_eq!(
+            server
+                .requests()
+                .iter()
+                .filter(|r| r.starts_with("GET "))
+                .count(),
+            1
+        );
+        assert!(!server.requests().iter().any(|r| r.contains("never-fetch")));
+    }
+
+    #[tokio::test]
     async fn full_transfer_verifies_manifest_completes_logs_out_and_publishes() {
         let mut replies = selected("poweredOff");
         replies.extend([
@@ -984,6 +1046,7 @@ mod export_tests {
             .await
             .unwrap();
         assert!(report.is_success(), "{report:?}");
+        assert_eq!(report.received_encoded_bytes, 65536);
         assert_eq!(
             std::fs::read(out.dest().join("disk-1.vmdk")).unwrap(),
             payload().as_bytes()
@@ -1046,6 +1109,7 @@ mod export_tests {
             .await
             .unwrap();
         assert_eq!(report.primary_error, Some(Error::Manifest));
+        assert_eq!(report.received_encoded_bytes, 65536);
         assert_eq!(report.lease_cleanup, LeaseCleanup::Unconfirmed);
         assert_eq!(report.lease_cleanup_error, Some(Error::SoapFault));
         assert_eq!(

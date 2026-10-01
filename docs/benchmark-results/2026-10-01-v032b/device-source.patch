@@ -1,0 +1,308 @@
+diff --git a/crates/rvvdk-vsphere/examples/export.rs b/crates/rvvdk-vsphere/examples/export.rs
+index 11d43bc..375686a 100644
+--- a/crates/rvvdk-vsphere/examples/export.rs
++++ b/crates/rvvdk-vsphere/examples/export.rs
+@@ -1,6 +1,32 @@
+ //! Internal standalone-host export proof. No password command arguments or env.
+ use rvvdk_vsphere::{ConnectionPolicy, Credentials, Error, ExportOptions, export_vm};
+ use std::{path::PathBuf, time::Duration};
++#[cfg(target_os = "linux")]
++fn usage() -> (Option<f64>, Option<i64>) {
++    let mut value = std::mem::MaybeUninit::<libc::rusage>::uninit();
++    // SAFETY: valid writable storage; only read after getrusage reports success.
++    if unsafe { libc::getrusage(libc::RUSAGE_SELF, value.as_mut_ptr()) } != 0 {
++        return (None, None);
++    }
++    let value = unsafe { value.assume_init() };
++    let cpu = value.ru_utime.tv_sec as f64
++        + value.ru_utime.tv_usec as f64 / 1e6
++        + value.ru_stime.tv_sec as f64
++        + value.ru_stime.tv_usec as f64 / 1e6;
++    (Some(cpu), Some(value.ru_maxrss))
++}
++#[cfg(not(target_os = "linux"))]
++fn usage() -> (Option<f64>, Option<i64>) {
++    (None, None)
++}
++
++#[derive(serde::Serialize)]
++struct Measurement {
++    #[serde(flatten)]
++    report: rvvdk_vsphere::ExportReport,
++    cpu_seconds: Option<f64>,
++    process_peak_rss_kib: Option<i64>,
++}
+ fn main() {
+     if let Err(error) = run() {
+         eprintln!("export proof failed: {error}");
+@@ -77,6 +103,7 @@ fn run() -> Result<(), Error> {
+         .enable_all()
+         .build()
+         .map_err(|_| Error::Transport)?;
++    let before = usage();
+     let report = runtime.block_on(async {
+         let cancellation = options.cancellation.clone();
+         let handler = tokio::spawn(async move {
+@@ -98,6 +125,7 @@ fn run() -> Result<(), Error> {
+         }
+         report
+     })?;
++    let after = usage();
+     let success = report.is_success()
+         || (report.inspection_only
+             && report.primary_error.is_none()
+@@ -107,13 +135,19 @@ fn run() -> Result<(), Error> {
+             && report.primary_error.is_none()
+             && report.lease_cleanup == rvvdk_vsphere::LeaseCleanup::Aborted
+             && report.session_cleanup == rvvdk_vsphere::Cleanup::LoggedOut);
++    let primary_error = report.primary_error;
++    let measurement = Measurement {
++        report,
++        cpu_seconds: before.0.zip(after.0).map(|(b, a)| a - b),
++        process_peak_rss_kib: after.1,
++    };
+     println!(
+         "{}",
+-        serde_json::to_string_pretty(&report).map_err(|_| Error::Schema)?
++        serde_json::to_string_pretty(&measurement).map_err(|_| Error::Schema)?
+     );
+     if success {
+         Ok(())
+     } else {
+-        Err(report.primary_error.unwrap_or(Error::LeaseState))
++        Err(primary_error.unwrap_or(Error::LeaseState))
+     }
+ }
+diff --git a/crates/rvvdk-vsphere/src/export.rs b/crates/rvvdk-vsphere/src/export.rs
+index c73f75a..0d958ee 100644
+--- a/crates/rvvdk-vsphere/src/export.rs
++++ b/crates/rvvdk-vsphere/src/export.rs
+@@ -119,6 +119,8 @@ pub struct ExportReport {
+     pub lease_cleanup_error: Option<Error>,
+     pub session_cleanup: Cleanup,
+     pub pagination_cleanup_error: Option<Error>,
++    /// Accepted HTTP body bytes, retained on failure; not durable/published bytes.
++    pub received_encoded_bytes: u64,
+     pub files: Vec<ExportFile>,
+     pub manifest_verified: bool,
+     pub artifact_published: bool,
+@@ -153,6 +155,7 @@ impl ExportReport {
+             lease_cleanup_error: None,
+             session_cleanup: Cleanup::NotNeeded,
+             pagination_cleanup_error: None,
++            received_encoded_bytes: 0,
+             files: Vec::new(),
+             manifest_verified: false,
+             artifact_published: false,
+@@ -446,10 +449,8 @@ impl Session {
+         // Any successful-looking but unparseable acquisition is ambiguous; never retry.
+         attempt.report.lease_cleanup = LeaseCleanup::Unconfirmed;
+         let doc = xml::parse(&raw)?;
+-        let lease = Reference::parse(xml::required(
+-            xml::response(&doc, "ExportVm")?,
+-            "returnval",
+-        )?)?;
++        let node = xml::required(xml::response(&doc, "ExportVm")?, "returnval")?;
++        let lease = Reference::parse(node)?;
+         if lease.kind != Kind::HttpNfcLease {
+             return Err(Error::LeaseUnconfirmed);
+         }
+@@ -463,6 +464,15 @@ impl Session {
+             options.cancellation.check()?;
+             let raw = self.properties(&lease).await?;
+             let doc = xml::parse(&raw)?;
++            eprintln!(
++                "lease_properties_shape: missing_sets={}, property_count={}",
++                doc.descendants()
++                    .filter(|n| n.has_tag_name((xml::VIM, "missingSet")))
++                    .count(),
++                doc.descendants()
++                    .filter(|n| n.has_tag_name((xml::VIM, "propSet")))
++                    .count()
++            );
+             let props = Properties::parse(xml::response(&doc, "RetrievePropertiesEx")?, &lease)?;
+             match xml::text(props.get("state")?)? {
+                 "initializing" => {
+@@ -503,7 +513,12 @@ impl Session {
+                 info.timeout,
+                 deadline,
+                 &options.cancellation,
+-                download(request, writer, options.max_encoded_bytes),
++                download(
++                    request,
++                    writer,
++                    options.max_encoded_bytes,
++                    &mut attempt.report.received_encoded_bytes,
++                ),
+             )
+             .await?;
+         attempt.report.files.push(downloaded);
+@@ -559,6 +574,17 @@ impl Session {
+         vm: &Reference,
+         capacity: u64,
+     ) -> Result<LeaseInfo> {
++        eprintln!(
++            "lease_info_shape: lease={}, entity={}, capacity={}, timeout={}, device_disk_flags={:?}",
++            xml::child(node, "lease")?.is_some(),
++            xml::child(node, "entity")?.is_some(),
++            xml::child(node, "totalDiskCapacityInKB")?.is_some(),
++            xml::child(node, "leaseTimeout")?.is_some(),
++            node.children()
++                .filter(|n| n.has_tag_name((xml::VIM, "deviceUrl")))
++                .map(|n| xml::child(n, "disk").and_then(|n| n.map(xml::boolean).transpose()))
++                .collect::<Vec<_>>()
++        );
+         if Reference::parse(xml::required(node, "lease")?)? != *lease
+             || Reference::parse(xml::required(node, "entity")?)? != *vm
+             || xml::number(xml::required(node, "totalDiskCapacityInKB")?)?.checked_mul(1024)
+@@ -687,6 +713,7 @@ async fn download(
+     request: reqwest::RequestBuilder,
+     file: tokio::fs::File,
+     limit: u64,
++    received: &mut u64,
+ ) -> Result<ExportFile> {
+     let started = Instant::now();
+     let mut response = request.send().await.map_err(|e| {
+@@ -725,6 +752,7 @@ async fn download(
+         if bytes > limit || chunk.len() > 1024 * 1024 {
+             return Err(Error::TransferLimit);
+         }
++        *received = bytes;
+         if prefix.len() < 512 {
+             prefix.extend_from_slice(&chunk[..chunk.len().min(512 - prefix.len())]);
+         }
+diff --git a/crates/rvvdk-vsphere/src/inventory.rs b/crates/rvvdk-vsphere/src/inventory.rs
+index 0fe565c..7520745 100644
+--- a/crates/rvvdk-vsphere/src/inventory.rs
++++ b/crates/rvvdk-vsphere/src/inventory.rs
+@@ -87,6 +87,7 @@ impl Kind {
+ pub(crate) struct Reference {
+     pub(crate) kind: Kind,
+     value: String,
++    escaped_value: String,
+ }
+ impl fmt::Debug for Reference {
+     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+@@ -99,24 +100,20 @@ impl Reference {
+     pub(crate) fn parse(node: Node<'_, '_>) -> Result<Self> {
+         let kind = Kind::parse(xml::reference_type(node).ok_or(Error::Schema)?)?;
+         let value = xml::text(node)?;
+-        if value.is_empty()
+-            || value.len() > 256
+-            || !value
+-                .bytes()
+-                .all(|b| b.is_ascii_alphanumeric() || b"_.:-".contains(&b))
+-        {
++        if value.is_empty() || value.len() > 256 {
+             return Err(Error::Schema);
+         }
+         Ok(Self {
+             kind,
+             value: value.to_owned(),
++            escaped_value: xml::escape(value).map_err(|_| Error::Schema)?,
+         })
+     }
+     pub(crate) fn element(&self, name: &str) -> String {
+         format!(
+             "<{name} type='{}'>{}</{name}>",
+             self.kind.name(),
+-            self.value
++            self.escaped_value
+         )
+     }
+ }
+@@ -414,3 +411,36 @@ fn xsi_type<'a>(node: Node<'a, '_>) -> Result<&'a str> {
+     }
+     Ok(local)
+ }
++
++#[cfg(test)]
++mod reference_tests {
++    use super::*;
++    #[test]
++    fn opaque_references_round_trip_without_xml_injection() {
++        for value in [
++            "lease:session[synthetic]",
++            "opaque / value",
++            "a<&\"'>",
++            "λ-reference",
++        ] {
++            let raw = format!(
++                "<r xmlns='urn:vim25' type='HttpNfcLease'>{}</r>",
++                xml::escape(value).unwrap()
++            );
++            let doc = xml::parse(&raw).unwrap();
++            let reference = Reference::parse(doc.root_element()).unwrap();
++            assert_eq!(reference.value, value);
++            let encoded = reference.element("_this");
++            let decoded = xml::parse(&encoded).unwrap();
++            assert_eq!(decoded.root_element().text(), Some(value));
++            assert_eq!(decoded.descendants().filter(|n| n.is_element()).count(), 1);
++        }
++        for value in ["".to_owned(), "x".repeat(257)] {
++            let raw = format!("<r type='HttpNfcLease'>{value}</r>");
++            assert_eq!(
++                Reference::parse(xml::parse(&raw).unwrap().root_element()).unwrap_err(),
++                Error::Schema
++            );
++        }
++    }
++}
+diff --git a/crates/rvvdk-vsphere/tests/discovery.rs b/crates/rvvdk-vsphere/tests/discovery.rs
+index f127aff..75afeba 100644
+--- a/crates/rvvdk-vsphere/tests/discovery.rs
++++ b/crates/rvvdk-vsphere/tests/discovery.rs
+@@ -967,6 +967,37 @@ mod export_tests {
+         assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+         assert!(!report.is_success());
+     }
++    #[tokio::test]
++    async fn opaque_lease_reference_is_escaped_and_aborted() {
++        let encoded = "lease:session[synthetic]&amp;&lt;&quot;&apos;";
++        let mut grant = granted();
++        grant.body = grant.body.replace("lease-private", encoded);
++        let mut replies = selected("poweredOff");
++        replies.extend([grant, abort(), logout()]);
++        let server = Server::start(replies);
++        let report = export_vm(
++            server.policy(),
++            &credentials(),
++            ExportOptions::probe(30 * 1024 * 1024 * 1024),
++        )
++        .await
++        .unwrap();
++        assert_eq!(report.primary_error, None);
++        assert_eq!(report.lease_cleanup, LeaseCleanup::Aborted);
++        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
++        assert!(
++            server
++                .requests()
++                .iter()
++                .any(|r| r.contains("<HttpNfcLeaseAbort ") && r.contains(encoded))
++        );
++        assert!(
++            !serde_json::to_string(&report)
++                .unwrap()
++                .contains("synthetic")
++        );
++    }
++
+     #[tokio::test]
+     async fn full_transfer_verifies_manifest_completes_logs_out_and_publishes() {
+         let mut replies = selected("poweredOff");
+@@ -984,6 +1015,7 @@ mod export_tests {
+             .await
+             .unwrap();
+         assert!(report.is_success(), "{report:?}");
++        assert_eq!(report.received_encoded_bytes, 65536);
+         assert_eq!(
+             std::fs::read(out.dest().join("disk-1.vmdk")).unwrap(),
+             payload().as_bytes()
+@@ -1046,6 +1078,7 @@ mod export_tests {
+             .await
+             .unwrap();
+         assert_eq!(report.primary_error, Some(Error::Manifest));
++        assert_eq!(report.received_encoded_bytes, 65536);
+         assert_eq!(report.lease_cleanup, LeaseCleanup::Unconfirmed);
+         assert_eq!(report.lease_cleanup_error, Some(Error::SoapFault));
+         assert_eq!(

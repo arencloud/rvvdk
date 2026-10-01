@@ -1367,7 +1367,7 @@ publication. Primary failure, lease/session uncertainty and staging cleanup are
 distinct outcomes. Cooperative cancellation must be awaited. A lost acquisition
 response can leave an unidentified lease; no retry hides that uncertainty.
 
-The real host rejects ExportVm by license before power changes. Local TLS fixtures
+At V0.3.1, the real host rejected ExportVm by license before power changes. Local TLS fixtures
 qualify mechanics; actual format, guest-byte equivalence, remote lease release and
 throughput await supported trial/commercial access in V0.3.2. Sparse magic alone is
 not full format validation. [Contract](../crates/rvvdk-vsphere/README.md),
@@ -1393,3 +1393,29 @@ The existing host now lists an Enterprise edition following the user's license
 update. Active assignment and live export remain unqualified. Guest access is
 pending for independent deterministic content preparation before shutdown; transfer
 CPU/RSS, repeated throughput plots and real Complete/Abort evidence remain V0.3.2.
+
+
+## Live export compatibility and partial-transfer evidence (V0.3.2b)
+
+Real ESXi lease references are opaque strings, including square brackets. References
+retain a bounded raw identity and an XML-escaped representation; carriage returns
+are character references to preserve identity across XML normalization. Kind and
+256-byte limits remain enforced, and Debug remains redacted.
+
+A disk export lease may advertise auxiliary files. Lease and manifest selection
+inspect at most 32 entries with unique bounded keys and explicit disk flags,
+requiring exactly one disk. Auxiliary URLs are never fetched. This yields a disk
+artifact, not a complete VM/OVF package. The selected URL retains exact endpoint
+and SHA-256 certificate checks. [ADR-0050](adr/0050-live-export-compatibility.md).
+
+Reports retain accepted encoded-body bytes even when cancellation or deadline
+prevents publication. This counter is neither durable bytes nor completed-transfer
+throughput. The Linux example adds operation CPU and process-lifetime peak RSS.
+Real cancellation and a one-hour deadline both acknowledged Abort and Logout,
+removed staging and published nothing. The deadline received 2,544,547,134 bytes.
+
+An independently mapped 8 MiB guest fixture matched raw guest sectors before
+shutdown. Comparing it against a completed QEMU-decoded export remains pending.
+The provisional prefix reports version-3 compressed streamOptimized; full format
+validation and native Rust decoding remain separate gates. No production QEMU
+fallback is introduced. [Evidence and plots](benchmark-results/2026-10-01-v032b/README.md).

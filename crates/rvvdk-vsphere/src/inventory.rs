@@ -87,6 +87,7 @@ impl Kind {
 pub(crate) struct Reference {
     pub(crate) kind: Kind,
     value: String,
+    escaped_value: String,
 }
 impl fmt::Debug for Reference {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -99,24 +100,22 @@ impl Reference {
     pub(crate) fn parse(node: Node<'_, '_>) -> Result<Self> {
         let kind = Kind::parse(xml::reference_type(node).ok_or(Error::Schema)?)?;
         let value = xml::text(node)?;
-        if value.is_empty()
-            || value.len() > 256
-            || !value
-                .bytes()
-                .all(|b| b.is_ascii_alphanumeric() || b"_.:-".contains(&b))
-        {
+        if value.is_empty() || value.len() > 256 {
             return Err(Error::Schema);
         }
         Ok(Self {
             kind,
             value: value.to_owned(),
+            escaped_value: xml::escape(value)
+                .map_err(|_| Error::Schema)?
+                .replace('\r', "&#13;"),
         })
     }
     pub(crate) fn element(&self, name: &str) -> String {
         format!(
             "<{name} type='{}'>{}</{name}>",
             self.kind.name(),
-            self.value
+            self.escaped_value
         )
     }
 }
@@ -413,4 +412,38 @@ fn xsi_type<'a>(node: Node<'a, '_>) -> Result<&'a str> {
         return Err(Error::Schema);
     }
     Ok(local)
+}
+
+#[cfg(test)]
+mod reference_tests {
+    use super::*;
+    #[test]
+    fn opaque_references_round_trip_without_xml_injection() {
+        for value in [
+            "lease:session[synthetic]",
+            "opaque / value",
+            "a<&\"'>",
+            "λ-reference",
+            "opaque\r\n\tvalue",
+        ] {
+            let raw = format!(
+                "<r xmlns='urn:vim25' type='HttpNfcLease'>{}</r>",
+                xml::escape(value).unwrap().replace('\r', "&#13;")
+            );
+            let doc = xml::parse(&raw).unwrap();
+            let reference = Reference::parse(doc.root_element()).unwrap();
+            assert_eq!(reference.value, value);
+            let encoded = reference.element("_this");
+            let decoded = xml::parse(&encoded).unwrap();
+            assert_eq!(decoded.root_element().text(), Some(value));
+            assert_eq!(decoded.descendants().filter(|n| n.is_element()).count(), 1);
+        }
+        for value in ["".to_owned(), "x".repeat(257)] {
+            let raw = format!("<r type='HttpNfcLease'>{value}</r>");
+            assert_eq!(
+                Reference::parse(xml::parse(&raw).unwrap().root_element()).unwrap_err(),
+                Error::Schema
+            );
+        }
+    }
 }

@@ -7,12 +7,15 @@ graceful shutdown when requested. Local disk crates and the public `rvddk` CLI d
 not depend on this crate.
 
 Continue live qualification on the existing ESXi 8.0.3 host. Its available license
-edition has changed, but export eligibility and decoded bytes remain unqualified.
+edition has changed; real lease acquisition and disk streaming now work. Complete
+artifacts and decoded bytes remain unqualified.
 V0.3.2a prevents powered-on eligibility calls and adds read-only recent-task
 inspection after two earlier probes correlated with blocked export tasks.
 The user canceled both; inspection confirmed terminal canceled states.
 See the [continuation plan](../../docs/vmware-access-plan.md#v032--licensed-live-qualification)
 and [evidence](../../docs/benchmark-results/2026-10-01-v032a/README.md).
+V0.3.2b handles bounded opaque references and explicit auxiliary-file exclusion,
+with [live cancellation/deadline evidence](../../docs/benchmark-results/2026-10-01-v032b/README.md).
 vSphere 9 is **not yet admitted or qualified**.
 
 ## API and trust
@@ -71,6 +74,7 @@ eligibility check**; the report explicitly says `active_assignment: unresolved`.
 | Inventory | 128 visited objects and queued references; lower caller limit allowed |
 | VM disks | 16 per VM; lower caller limit allowed |
 | License entries | 128 |
+| Lease device / manifest entries | 32 each; exactly one explicit disk, unique keys |
 | Credentials / managed references | 1 KiB per credential field / 256 bytes per reference |
 | Connect / read inactivity / request | 5 s / 5 s / 15 s |
 | Discovery / each cleanup request | 120 s / 15 s |
@@ -85,7 +89,10 @@ outlive a canceled request even though the caller's request deadline is enforced
 RetrievePropertiesEx requests exactly one object. A continuation token is rejected
 as an unsupported partial result, with CancelRetrievePropertiesEx attempted to
 release the owned cursor. Missing/duplicate properties, wrong object references,
-unknown object types, invalid namespaces and count limits fail closed. In particular,
+unknown object types, invalid namespaces and count limits fail closed. Managed-reference
+values are opaque XML strings bounded to 256 UTF-8 bytes, with escaped serialization
+(including numeric escaping for carriage returns); punctuation is not interpreted.
+In particular,
 managed-reference `type` must have **no namespace**, while `xsi:type` is schema type
 metadata. The parser library's local-name attribute helper cannot distinguish them.
 
@@ -150,7 +157,8 @@ object and optional VM entity identities must match. Reports expose closed state
 and operation codes, cancellation flags and bounded UTC timestamps, never task IDs,
 raw descriptions or errors. Recent-task history can be incomplete; it does not
 establish ownership or the absence of every lock. Inspection is not export success.
- Probe success
+
+Probe success
 does not satisfy `ExportReport::is_success()`, which requires a verified artifact,
 completed lease and confirmed Logout.
 
@@ -161,7 +169,11 @@ there is no hard power-off fallback. Disk identity is rechecked after power-off.
 The VM is left in its last observed state; no automatic power-on or license change.
 
 One owned lease is polled to ready. Its entity, capacity, one disk URL and timeout
-are validated. Only HTTPS URLs on the pinned control host and effective port,
+are validated. Up to 32 device entries may include explicit `disk=false` auxiliary
+files; only the single `disk=true` entry is selected. Missing flags, duplicate keys
+or multiple disks reject. Auxiliary files are counted in `ignored_non_disk_devices`
+and never downloaded. This produces a disk artifact, not a complete VM/OVF package.
+Only HTTPS URLs on the pinned control host and effective port,
 under `/nfc/` or `/ha-nfc/`, are admitted; `*` substitutes that host. No API cookie
 or password is sent on GET. A SHA-256 or legacy SHA-1 lease thumbprint must match
 the certificate already admitted by the SHA-256 pin; SHA-1 never replaces that
@@ -177,7 +189,11 @@ are capped at 4,096, with reserved abort/logout attempts after exhaustion.
 The stream uses a 1 MiB application buffer and rejects chunks over 1 MiB. Received
 and advertised byte limits are checked (default 40 GiB, maximum 1 TiB). File data
 is hashed incrementally with SHA-256 and SHA-1 and synced. The server manifest's
-device key, size, optional capacity and declared digest are checked. Only a minimum
+selected disk key, size, optional capacity and declared digest are checked. The
+manifest independently enforces the same entry/key/single-disk bounds; non-disk
+entries are ignored. `received_encoded_bytes` retains accepted body bytes on
+failure/cancellation, including bytes not yet durably written. It excludes a chunk
+rejected by the byte limit and is not a published-byte counter. Only a minimum
 512-byte body with sparse VMDK magic is accepted: **this is not VMDK decoding or
 full format validation**. The synthetic fixture is deliberately not a guest disk.
 
@@ -212,6 +228,9 @@ target/release/examples/export --endpoint HTTPS_URL --certificate-sha256 SHA256 
 Encoded-file elapsed time includes HTTP receive, hashing, writes and file sync;
 whole-operation elapsed time additionally includes discovery, shutdown if requested,
 lease/session cleanup and publication. Neither includes terminal password entry.
+The example also emits Linux process CPU seconds around the operation and lifetime
+peak RSS in KiB; CPU excludes argument parsing, password entry, runtime creation
+and final JSON serialization. RSS is a lifetime high-water mark, not a buffer cap.
 Live throughput, CPU/RSS, logical-byte equivalence and server lease release remain
 V0.3.2 acceptance work.
 

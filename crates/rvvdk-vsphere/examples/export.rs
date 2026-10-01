@@ -1,6 +1,32 @@
 //! Internal standalone-host export proof. No password command arguments or env.
 use rvvdk_vsphere::{ConnectionPolicy, Credentials, Error, ExportOptions, export_vm};
 use std::{path::PathBuf, time::Duration};
+#[cfg(target_os = "linux")]
+fn usage() -> (Option<f64>, Option<i64>) {
+    let mut value = std::mem::MaybeUninit::<libc::rusage>::uninit();
+    // SAFETY: valid writable storage; only read after getrusage reports success.
+    if unsafe { libc::getrusage(libc::RUSAGE_SELF, value.as_mut_ptr()) } != 0 {
+        return (None, None);
+    }
+    let value = unsafe { value.assume_init() };
+    let cpu = value.ru_utime.tv_sec as f64
+        + value.ru_utime.tv_usec as f64 / 1e6
+        + value.ru_stime.tv_sec as f64
+        + value.ru_stime.tv_usec as f64 / 1e6;
+    (Some(cpu), Some(value.ru_maxrss))
+}
+#[cfg(not(target_os = "linux"))]
+fn usage() -> (Option<f64>, Option<i64>) {
+    (None, None)
+}
+
+#[derive(serde::Serialize)]
+struct Measurement {
+    #[serde(flatten)]
+    report: rvvdk_vsphere::ExportReport,
+    cpu_seconds: Option<f64>,
+    process_peak_rss_kib: Option<i64>,
+}
 fn main() {
     if let Err(error) = run() {
         eprintln!("export proof failed: {error}");
@@ -77,6 +103,7 @@ fn run() -> Result<(), Error> {
         .enable_all()
         .build()
         .map_err(|_| Error::Transport)?;
+    let before = usage();
     let report = runtime.block_on(async {
         let cancellation = options.cancellation.clone();
         let handler = tokio::spawn(async move {
@@ -98,6 +125,7 @@ fn run() -> Result<(), Error> {
         }
         report
     })?;
+    let after = usage();
     let success = report.is_success()
         || (report.inspection_only
             && report.primary_error.is_none()
@@ -107,13 +135,19 @@ fn run() -> Result<(), Error> {
             && report.primary_error.is_none()
             && report.lease_cleanup == rvvdk_vsphere::LeaseCleanup::Aborted
             && report.session_cleanup == rvvdk_vsphere::Cleanup::LoggedOut);
+    let primary_error = report.primary_error;
+    let measurement = Measurement {
+        report,
+        cpu_seconds: before.0.zip(after.0).map(|(b, a)| a - b),
+        process_peak_rss_kib: after.1,
+    };
     println!(
         "{}",
-        serde_json::to_string_pretty(&report).map_err(|_| Error::Schema)?
+        serde_json::to_string_pretty(&measurement).map_err(|_| Error::Schema)?
     );
     if success {
         Ok(())
     } else {
-        Err(report.primary_error.unwrap_or(Error::LeaseState))
+        Err(primary_error.unwrap_or(Error::LeaseState))
     }
 }

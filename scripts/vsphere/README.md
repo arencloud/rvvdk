@@ -75,3 +75,39 @@ validates and plots every baseline/candidate discovery session and computes the
 aggregate, pair-median and individual >5% adverse triggers. Initial blocks contain
 three sessions per arm; longer repeats contain six, in two three-session processes.
 It does not access VMware. [Evidence](../../docs/benchmark-results/2026-10-01-v031/README.md).
+
+
+## Live export qualification helpers
+
+`verify_guest_fixture.py RAW PRIVATE_MAP PRIVATE_FIXTURE` is an offline oracle.
+It reads only local files and does not contact ESXi or a guest. The map must be
+obtained independently from guest file extents and underlying device mapping,
+then checked against raw guest disk sectors before shutdown. Version 1 requires
+exact logical disk/fixture sizes and SHA-256 fixture digest, at most 1,024 aligned,
+non-overlapping extents covering the complete fixture, a 64 MiB fixture cap and
+1 TiB logical disk cap. Comparison uses at most 1 MiB chunks. Output reports only
+counts and match status. It proves the mapped fixture bytes, **not whole-disk
+source equivalence**. Keep maps, fixture digests, guest contents and VM images in
+ignored private storage.
+
+`plot_live_export.py OUTPUT_DIRECTORY REPORT1 REPORT2 REPORT3` validates completed,
+manifest-verified, powered-off single-disk runs and plots every supplied sample:
+transfer/full-operation elapsed time, encoded MiB/s, process CPU and peak RSS.
+It requires at least three comparable reports. Its computed data records report
+hashes and medians; it does not silently convert logical disk capacity into network
+throughput, pair unrelated runs, or claim a tuning improvement. Use the existing
+`target/benchmark-plots/bin/python` environment for SVG/PNG output.
+
+```bash
+python3 -m unittest discover -s scripts/vsphere -p test_guest_fixture.py -v
+python3 scripts/vsphere/verify_guest_fixture.py DISK.raw PRIVATE_MAP.json PRIVATE_FIXTURE.bin
+```
+
+The live VMware transport remains Rust. QEMU is an independent offline lab decoder;
+these helpers introduce no Python VMware API access or production decoder fallback.
+
+`plot_export_attempts.py OUTPUT_DIRECTORY REPORT...` plots every supplied full-mode
+attempt, including failures, using elapsed time, accepted body bytes, CPU and RSS.
+It labels partial bytes explicitly and records report hashes. Differing diagnostic
+builds are not a tuning comparison. The V0.3.2b evidence uses this plot because no
+complete transfer is available yet; `plot_live_export.py` must reject those reports.

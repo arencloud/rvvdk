@@ -2098,13 +2098,49 @@ as transfer throughput or an improvement. The transfer path is unchanged; the
 ordinary discovery property sets remain unchanged. PERF.0/R4.4, V0.3.1's adverse
 individual pairs and the QEMU producer discrepancy remain open.
 
+## V0.3.2b — Live export compatibility and partial-transfer cleanup (2026-10-01)
+
+Completed in this step's commit; baseline `dedce58`.
+[ADR-0050](adr/0050-live-export-compatibility.md),
+[evidence and plots](benchmark-results/2026-10-01-v032b/README.md).
+
+Guest SSH access established an independent 8 MiB known-byte oracle on the selected
+30 GiB VM: local bytes, guest file bytes and independently mapped raw guest sectors
+agree. The selected guest was gracefully shut down under existing authorization.
+The 60 GiB control received only read-only inspection and stays powered on.
+Private inputs and credentials remain outside commits.
+
+Live failures exposed bracketed opaque lease references and auxiliary non-disk
+lease URLs. Bounded escaped references and explicit single-disk selection correct
+both assumptions, including manifest selection. Reports now retain accepted body
+bytes on failure; the Linux example measures CPU and peak RSS. Initial ambiguous
+acquisition remains visible; its task reached terminal error before another probe.
+Later acquired leases all acknowledged Abort and Logout.
+
+Real Ctrl-C cancellation received 272,684,467 bytes. The final measured build then
+hit its one-hour deadline after 2,544,547,134 bytes (3,603.675 seconds including
+cleanup, 33.624 CPU seconds, 7,868 KiB peak RSS). Both discarded staging and
+published nothing. All five full-mode attempts are plotted, including failures.
+Final task inspection returned only a terminal error; three final discovery
+sessions confirm the selected VM off and control on, all with Logout acknowledged.
+No completed-transfer throughput or tuning improvement is claimed. The provisional
+prefix is compressed version-3 streamOptimized, not full format validation.
+
+Validation: **584 unique workspace tests pass**, one existing ignored; formatting,
+workspace Clippy with warnings denied and release examples pass. Four new Rust
+tests cover opaque references, escaped lease cleanup, auxiliary-file exclusion and
+bounded disk selection. Three offline oracle tests pass. No Python VMware API
+access, SDK/VDDK dependency or public CLI decoder expansion was introduced.
+
 ## Next session
 
-Continue **V0.3.2** on the existing host using the
-[saved qualification plan](vmware-access-plan.md#v032--licensed-live-qualification).
-Guest SSH address/login for the selected 30 GiB Fedora VM has been requested and
-is pending. Prepare deterministic content and an independent reference before
-graceful shutdown; the ESXi root login does not provide guest access. Then qualify
-live export format/bytes, Complete/Abort/Logout, final power state and at least
-three comparable transfers with CPU/RSS and throughput plots. Do not mark V0/R6
-complete from fixtures or a server manifest alone. Commit each completed step.
+Continue **V0.3.2** using the
+[saved qualification plan](vmware-access-plan.md#v032b-checkpoint-and-next-runner-decision).
+Choose VM02 as a LAN runner, a separate LAN machine, or a longer timeout over the
+existing slow connection. A local private package is prepared; changing VM02's
+untouched-control role is awaiting the user's choice. Obtain three completed
+same-build exports, independently decode with QEMU, verify the private mapped
+8 MiB fixture and qualify Complete/Logout and final power state. This known-range
+oracle does not prove whole-source equivalence. Keep native streamOptimized support,
+V0/R6, PERF.0/R4.4, V0.3.1's adverse individual pairs and the historical QEMU
+partial second-extent discrepancy open. Commit every completed bounded step.

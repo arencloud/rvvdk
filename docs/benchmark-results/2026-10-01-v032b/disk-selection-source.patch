@@ -1,0 +1,390 @@
+diff --git a/crates/rvvdk-vsphere/examples/export.rs b/crates/rvvdk-vsphere/examples/export.rs
+index 11d43bc..375686a 100644
+--- a/crates/rvvdk-vsphere/examples/export.rs
++++ b/crates/rvvdk-vsphere/examples/export.rs
+@@ -1,6 +1,32 @@
+ //! Internal standalone-host export proof. No password command arguments or env.
+ use rvvdk_vsphere::{ConnectionPolicy, Credentials, Error, ExportOptions, export_vm};
+ use std::{path::PathBuf, time::Duration};
++#[cfg(target_os = "linux")]
++fn usage() -> (Option<f64>, Option<i64>) {
++    let mut value = std::mem::MaybeUninit::<libc::rusage>::uninit();
++    // SAFETY: valid writable storage; only read after getrusage reports success.
++    if unsafe { libc::getrusage(libc::RUSAGE_SELF, value.as_mut_ptr()) } != 0 {
++        return (None, None);
++    }
++    let value = unsafe { value.assume_init() };
++    let cpu = value.ru_utime.tv_sec as f64
++        + value.ru_utime.tv_usec as f64 / 1e6
++        + value.ru_stime.tv_sec as f64
++        + value.ru_stime.tv_usec as f64 / 1e6;
++    (Some(cpu), Some(value.ru_maxrss))
++}
++#[cfg(not(target_os = "linux"))]
++fn usage() -> (Option<f64>, Option<i64>) {
++    (None, None)
++}
++
++#[derive(serde::Serialize)]
++struct Measurement {
++    #[serde(flatten)]
++    report: rvvdk_vsphere::ExportReport,
++    cpu_seconds: Option<f64>,
++    process_peak_rss_kib: Option<i64>,
++}
+ fn main() {
+     if let Err(error) = run() {
+         eprintln!("export proof failed: {error}");
+@@ -77,6 +103,7 @@ fn run() -> Result<(), Error> {
+         .enable_all()
+         .build()
+         .map_err(|_| Error::Transport)?;
++    let before = usage();
+     let report = runtime.block_on(async {
+         let cancellation = options.cancellation.clone();
+         let handler = tokio::spawn(async move {
+@@ -98,6 +125,7 @@ fn run() -> Result<(), Error> {
+         }
+         report
+     })?;
++    let after = usage();
+     let success = report.is_success()
+         || (report.inspection_only
+             && report.primary_error.is_none()
+@@ -107,13 +135,19 @@ fn run() -> Result<(), Error> {
+             && report.primary_error.is_none()
+             && report.lease_cleanup == rvvdk_vsphere::LeaseCleanup::Aborted
+             && report.session_cleanup == rvvdk_vsphere::Cleanup::LoggedOut);
++    let primary_error = report.primary_error;
++    let measurement = Measurement {
++        report,
++        cpu_seconds: before.0.zip(after.0).map(|(b, a)| a - b),
++        process_peak_rss_kib: after.1,
++    };
+     println!(
+         "{}",
+-        serde_json::to_string_pretty(&report).map_err(|_| Error::Schema)?
++        serde_json::to_string_pretty(&measurement).map_err(|_| Error::Schema)?
+     );
+     if success {
+         Ok(())
+     } else {
+-        Err(report.primary_error.unwrap_or(Error::LeaseState))
++        Err(primary_error.unwrap_or(Error::LeaseState))
+     }
+ }
+diff --git a/crates/rvvdk-vsphere/src/export.rs b/crates/rvvdk-vsphere/src/export.rs
+index c73f75a..1b00471 100644
+--- a/crates/rvvdk-vsphere/src/export.rs
++++ b/crates/rvvdk-vsphere/src/export.rs
+@@ -119,6 +119,10 @@ pub struct ExportReport {
+     pub lease_cleanup_error: Option<Error>,
+     pub session_cleanup: Cleanup,
+     pub pagination_cleanup_error: Option<Error>,
++    /// Accepted HTTP body bytes, retained on failure; not durable/published bytes.
++    pub received_encoded_bytes: u64,
++    /// Explicit non-disk lease entries omitted by this disk-only proof.
++    pub ignored_non_disk_devices: usize,
+     pub files: Vec<ExportFile>,
+     pub manifest_verified: bool,
+     pub artifact_published: bool,
+@@ -153,6 +157,8 @@ impl ExportReport {
+             lease_cleanup_error: None,
+             session_cleanup: Cleanup::NotNeeded,
+             pagination_cleanup_error: None,
++            received_encoded_bytes: 0,
++            ignored_non_disk_devices: 0,
+             files: Vec::new(),
+             manifest_verified: false,
+             artifact_published: false,
+@@ -237,6 +243,7 @@ struct Device {
+ }
+ struct LeaseInfo {
+     device: Device,
++    ignored_non_disk_devices: usize,
+     timeout: Duration,
+ }
+ #[cfg(target_os = "linux")]
+@@ -446,10 +453,8 @@ impl Session {
+         // Any successful-looking but unparseable acquisition is ambiguous; never retry.
+         attempt.report.lease_cleanup = LeaseCleanup::Unconfirmed;
+         let doc = xml::parse(&raw)?;
+-        let lease = Reference::parse(xml::required(
+-            xml::response(&doc, "ExportVm")?,
+-            "returnval",
+-        )?)?;
++        let node = xml::required(xml::response(&doc, "ExportVm")?, "returnval")?;
++        let lease = Reference::parse(node)?;
+         if lease.kind != Kind::HttpNfcLease {
+             return Err(Error::LeaseUnconfirmed);
+         }
+@@ -482,6 +487,7 @@ impl Session {
+                 _ => return Err(Error::LeaseState),
+             }
+         };
++        attempt.report.ignored_non_disk_devices = info.ignored_non_disk_devices;
+         self.transport
+             .call(
+                 Method::HttpNfcLeaseProgress,
+@@ -503,7 +509,12 @@ impl Session {
+                 info.timeout,
+                 deadline,
+                 &options.cancellation,
+-                download(request, writer, options.max_encoded_bytes),
++                download(
++                    request,
++                    writer,
++                    options.max_encoded_bytes,
++                    &mut attempt.report.received_encoded_bytes,
++                ),
+             )
+             .await?;
+         attempt.report.files.push(downloaded);
+@@ -570,10 +581,10 @@ impl Session {
+         if !(3..=3600).contains(&timeout) {
+             return Err(Error::LeaseState);
+         }
+-        let device = xml::required(node, "deviceUrl")?; // exactly one device in this proof
+-        if !xml::boolean(xml::required(device, "disk")?)? {
+-            return Err(Error::ExportScope);
+-        }
++        let (device, ignored_non_disk_devices) = one_disk(
++            node.children()
++                .filter(|n| n.has_tag_name((xml::VIM, "deviceUrl"))),
++        )?;
+         let key = xml::text(xml::required(device, "key")?)?;
+         if key.is_empty() || key.len() > 256 {
+             return Err(Error::Schema);
+@@ -583,6 +594,7 @@ impl Session {
+             xml::text(xml::required(device, "sslThumbprint")?)?,
+         )?;
+         Ok(LeaseInfo {
++            ignored_non_disk_devices,
+             device: Device {
+                 key: key.to_owned(),
+                 url,
+@@ -687,6 +699,7 @@ async fn download(
+     request: reqwest::RequestBuilder,
+     file: tokio::fs::File,
+     limit: u64,
++    received: &mut u64,
+ ) -> Result<ExportFile> {
+     let started = Instant::now();
+     let mut response = request.send().await.map_err(|e| {
+@@ -725,6 +738,7 @@ async fn download(
+         if bytes > limit || chunk.len() > 1024 * 1024 {
+             return Err(Error::TransferLimit);
+         }
++        *received = bytes;
+         if prefix.len() < 512 {
+             prefix.extend_from_slice(&chunk[..chunk.len().min(512 - prefix.len())]);
+         }
+@@ -758,10 +772,41 @@ async fn download(
+         elapsed_ms: started.elapsed().as_secs_f64() * 1000.,
+     })
+ }
++// Lease metadata may include auxiliary files. This proof transfers one disk only.
++// Explicit flags, unique bounded keys and cardinality prevent guessing from URLs.
++fn one_disk<'a, 'i>(
++    nodes: impl Iterator<Item = roxmltree::Node<'a, 'i>>,
++) -> Result<(roxmltree::Node<'a, 'i>, usize)> {
++    let mut disk = None;
++    let mut ignored = 0;
++    let mut keys = std::collections::BTreeSet::new();
++    for (index, node) in nodes.enumerate() {
++        if index >= 32 {
++            return Err(Error::InventoryLimit);
++        }
++        let key = xml::text(xml::required(node, "key")?)?;
++        if key.is_empty() || key.len() > 256 || !keys.insert(key) {
++            return Err(Error::Schema);
++        }
++        if xml::boolean(xml::required(node, "disk")?)? {
++            if disk.replace(node).is_some() {
++                return Err(Error::ExportScope);
++            }
++        } else {
++            ignored += 1;
++        }
++    }
++    Ok((disk.ok_or(Error::ExportScope)?, ignored))
++}
++
+ fn verify_manifest(raw: &str, key: &str, file: &ExportFile, capacity: u64) -> Result<()> {
+     let doc = xml::parse(raw)?;
+     let response = xml::response(&doc, "HttpNfcLeaseGetManifest")?;
+-    let entry = xml::required(response, "returnval")?;
++    let (entry, _) = one_disk(
++        response
++            .children()
++            .filter(|n| n.has_tag_name((xml::VIM, "returnval"))),
++    )?;
+     if xml::text(xml::required(entry, "key")?)? != key
+         || !xml::boolean(xml::required(entry, "disk")?)?
+         || xml::number(xml::required(entry, "size")?)? != file.encoded_bytes
+diff --git a/crates/rvvdk-vsphere/src/inventory.rs b/crates/rvvdk-vsphere/src/inventory.rs
+index 0fe565c..7520745 100644
+--- a/crates/rvvdk-vsphere/src/inventory.rs
++++ b/crates/rvvdk-vsphere/src/inventory.rs
+@@ -87,6 +87,7 @@ impl Kind {
+ pub(crate) struct Reference {
+     pub(crate) kind: Kind,
+     value: String,
++    escaped_value: String,
+ }
+ impl fmt::Debug for Reference {
+     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+@@ -99,24 +100,20 @@ impl Reference {
+     pub(crate) fn parse(node: Node<'_, '_>) -> Result<Self> {
+         let kind = Kind::parse(xml::reference_type(node).ok_or(Error::Schema)?)?;
+         let value = xml::text(node)?;
+-        if value.is_empty()
+-            || value.len() > 256
+-            || !value
+-                .bytes()
+-                .all(|b| b.is_ascii_alphanumeric() || b"_.:-".contains(&b))
+-        {
++        if value.is_empty() || value.len() > 256 {
+             return Err(Error::Schema);
+         }
+         Ok(Self {
+             kind,
+             value: value.to_owned(),
++            escaped_value: xml::escape(value).map_err(|_| Error::Schema)?,
+         })
+     }
+     pub(crate) fn element(&self, name: &str) -> String {
+         format!(
+             "<{name} type='{}'>{}</{name}>",
+             self.kind.name(),
+-            self.value
++            self.escaped_value
+         )
+     }
+ }
+@@ -414,3 +411,36 @@ fn xsi_type<'a>(node: Node<'a, '_>) -> Result<&'a str> {
+     }
+     Ok(local)
+ }
++
++#[cfg(test)]
++mod reference_tests {
++    use super::*;
++    #[test]
++    fn opaque_references_round_trip_without_xml_injection() {
++        for value in [
++            "lease:session[synthetic]",
++            "opaque / value",
++            "a<&\"'>",
++            "λ-reference",
++        ] {
++            let raw = format!(
++                "<r xmlns='urn:vim25' type='HttpNfcLease'>{}</r>",
++                xml::escape(value).unwrap()
++            );
++            let doc = xml::parse(&raw).unwrap();
++            let reference = Reference::parse(doc.root_element()).unwrap();
++            assert_eq!(reference.value, value);
++            let encoded = reference.element("_this");
++            let decoded = xml::parse(&encoded).unwrap();
++            assert_eq!(decoded.root_element().text(), Some(value));
++            assert_eq!(decoded.descendants().filter(|n| n.is_element()).count(), 1);
++        }
++        for value in ["".to_owned(), "x".repeat(257)] {
++            let raw = format!("<r type='HttpNfcLease'>{value}</r>");
++            assert_eq!(
++                Reference::parse(xml::parse(&raw).unwrap().root_element()).unwrap_err(),
++                Error::Schema
++            );
++        }
++    }
++}
+diff --git a/crates/rvvdk-vsphere/tests/discovery.rs b/crates/rvvdk-vsphere/tests/discovery.rs
+index f127aff..78d1328 100644
+--- a/crates/rvvdk-vsphere/tests/discovery.rs
++++ b/crates/rvvdk-vsphere/tests/discovery.rs
+@@ -967,6 +967,68 @@ mod export_tests {
+         assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+         assert!(!report.is_success());
+     }
++    #[tokio::test]
++    async fn opaque_lease_reference_is_escaped_and_aborted() {
++        let encoded = "lease:session[synthetic]&amp;&lt;&quot;&apos;";
++        let mut grant = granted();
++        grant.body = grant.body.replace("lease-private", encoded);
++        let mut replies = selected("poweredOff");
++        replies.extend([grant, abort(), logout()]);
++        let server = Server::start(replies);
++        let report = export_vm(
++            server.policy(),
++            &credentials(),
++            ExportOptions::probe(30 * 1024 * 1024 * 1024),
++        )
++        .await
++        .unwrap();
++        assert_eq!(report.primary_error, None);
++        assert_eq!(report.lease_cleanup, LeaseCleanup::Aborted);
++        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
++        assert!(
++            server
++                .requests()
++                .iter()
++                .any(|r| r.contains("<HttpNfcLeaseAbort ") && r.contains(encoded))
++        );
++        assert!(
++            !serde_json::to_string(&report)
++                .unwrap()
++                .contains("synthetic")
++        );
++    }
++
++    #[tokio::test]
++    async fn auxiliary_non_disk_entries_are_not_downloaded_or_verified_as_disks() {
++        let auxiliary = "<deviceUrl><key>auxiliary-private</key><disk>false</disk><url>https://other.invalid/never-fetch</url></deviceUrl>";
++        let mut info = ready("ENDPOINT/nfc/PRIVATE-ticket", "THUMBPRINT");
++        info.body = info.body.replace(
++            "<totalDiskCapacityInKB>",
++            &format!("{auxiliary}<totalDiskCapacityInKB>"),
++        );
++        let mut digest = manifest();
++        digest.body = digest.body.replace("</HttpNfcLeaseGetManifestResponse>", "<returnval><key>auxiliary-private</key><disk>false</disk></returnval></HttpNfcLeaseGetManifestResponse>");
++        let mut replies = selected("poweredOff");
++        replies.extend([granted(), info, data(), digest, complete(), logout()]);
++        let server = Server::start(replies);
++        let out = Output::new();
++        let report = export_vm(server.policy(), &credentials(), options(&out))
++            .await
++            .unwrap();
++        assert!(report.is_success(), "{report:?}");
++        assert_eq!(report.ignored_non_disk_devices, 1);
++        assert_eq!(report.files.len(), 1);
++        assert_eq!(
++            server
++                .requests()
++                .iter()
++                .filter(|r| r.starts_with("GET "))
++                .count(),
++            1
++        );
++        assert!(!server.requests().iter().any(|r| r.contains("never-fetch")));
++    }
++
+     #[tokio::test]
+     async fn full_transfer_verifies_manifest_completes_logs_out_and_publishes() {
+         let mut replies = selected("poweredOff");
+@@ -984,6 +1046,7 @@ mod export_tests {
+             .await
+             .unwrap();
+         assert!(report.is_success(), "{report:?}");
++        assert_eq!(report.received_encoded_bytes, 65536);
+         assert_eq!(
+             std::fs::read(out.dest().join("disk-1.vmdk")).unwrap(),
+             payload().as_bytes()
+@@ -1046,6 +1109,7 @@ mod export_tests {
+             .await
+             .unwrap();
+         assert_eq!(report.primary_error, Some(Error::Manifest));
++        assert_eq!(report.received_encoded_bytes, 65536);
+         assert_eq!(report.lease_cleanup, LeaseCleanup::Unconfirmed);
+         assert_eq!(report.lease_cleanup_error, Some(Error::SoapFault));
+         assert_eq!(
