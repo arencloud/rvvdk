@@ -17,6 +17,7 @@ pub(crate) enum Kind {
     PropertyCollector,
     LicenseManager,
     HttpNfcLease,
+    Task,
 }
 impl Kind {
     pub(crate) fn name(self) -> &'static str {
@@ -33,6 +34,7 @@ impl Kind {
             Self::PropertyCollector => "PropertyCollector",
             Self::LicenseManager => "LicenseManager",
             Self::HttpNfcLease => "HttpNfcLease",
+            Self::Task => "Task",
         }
     }
     fn parse(s: &str) -> Result<Self> {
@@ -49,6 +51,7 @@ impl Kind {
             Self::PropertyCollector,
             Self::LicenseManager,
             Self::HttpNfcLease,
+            Self::Task,
         ]
         .into_iter()
         .find(|k| k.name() == s)
@@ -74,6 +77,7 @@ impl Kind {
             ],
             Self::LicenseManager => &["licenses", "licensedEdition"],
             Self::HttpNfcLease => &["state", "info", "error"],
+            Self::Task => &["info"],
             _ => &[],
         }
     }
@@ -234,6 +238,13 @@ impl fmt::Debug for DiskIdentity {
 pub(crate) struct Properties<'a, 'i>(BTreeMap<&'a str, Node<'a, 'i>>);
 impl<'a, 'i> Properties<'a, 'i> {
     pub(crate) fn parse(response: Node<'a, 'i>, reference: &Reference) -> Result<Self> {
+        Self::parse_fields(response, reference, reference.kind.paths())
+    }
+    pub(crate) fn parse_fields(
+        response: Node<'a, 'i>,
+        reference: &Reference,
+        fields: &[&str],
+    ) -> Result<Self> {
         let result = xml::required(response, "returnval")?;
         let object = xml::required(result, "objects")?;
         if Reference::parse(xml::required(object, "obj")?)? != *reference {
@@ -248,7 +259,7 @@ impl<'a, 'i> Properties<'a, 'i> {
                 continue;
             }
             let name = xml::text(xml::required(entry, "name")?)?;
-            if !reference.kind.paths().contains(&name) {
+            if !fields.contains(&name) {
                 return Err(Error::Schema);
             }
             if props.insert(name, xml::required(entry, "val")?).is_some() {

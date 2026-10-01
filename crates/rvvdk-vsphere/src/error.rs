@@ -42,6 +42,12 @@ pub enum Error {
     LicenseRestricted,
     #[error("virtual machine must be powered off")]
     InvalidPowerState,
+    #[error("operation is disabled in the current server or VM state")]
+    MethodDisabled,
+    #[error("server or VM state does not permit this operation")]
+    InvalidState,
+    #[error("another task is in progress")]
+    TaskInProgress,
     #[error("selected virtual machine identity or topology changed")]
     Identity,
     #[error("unsupported export scope or backing")]

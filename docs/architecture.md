@@ -1373,3 +1373,23 @@ throughput await supported trial/commercial access in V0.3.2. Sparse magic alone
 not full format validation. [Contract](../crates/rvvdk-vsphere/README.md),
 [ADR-0048](adr/0048-bounded-export-lease-proof.md),
 [evidence](benchmark-results/2026-10-01-v031/README.md).
+
+
+## Powered-off acquisition and task diagnostics (V0.3.2a)
+
+Eligibility probing now requires poweredOff before ExportVm. Two powered-on probes
+correlated with running export tasks despite fault replies; TaskInProgress therefore
+preserves acquisition uncertainty. No unidentified remote task is retried or canceled.
+The user canceled the observed tasks; subsequent read-only inspection confirmed it.
+
+The optional inspection path requests only recentTask, then info for at most 32
+unique Task references. It validates identities, emits closed diagnostic values and
+bounded UTC timestamps, and makes no power/acquisition/cancellation calls. Normal
+discovery property lists remain unchanged. Task history is not a full active-task
+or ownership oracle. [ADR-0049](adr/0049-powered-off-export-probes.md),
+[evidence](benchmark-results/2026-10-01-v032a/README.md).
+
+The existing host now lists an Enterprise edition following the user's license
+update. Active assignment and live export remain unqualified. Guest access is
+pending for independent deterministic content preparation before shutdown; transfer
+CPU/RSS, repeated throughput plots and real Complete/Abort evidence remain V0.3.2.

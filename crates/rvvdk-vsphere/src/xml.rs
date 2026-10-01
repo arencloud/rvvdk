@@ -73,6 +73,9 @@ pub(crate) fn response<'a, 'i>(doc: &'a Document<'i>, method: &str) -> Result<No
             Some("NoPermissionFault") => Error::NoPermission,
             Some("RestrictedVersionFault") => Error::LicenseRestricted,
             Some("InvalidPowerStateFault") => Error::InvalidPowerState,
+            Some("MethodDisabledFault") => Error::MethodDisabled,
+            Some("InvalidStateFault") => Error::InvalidState,
+            Some("TaskInProgressFault") => Error::TaskInProgress,
             Some("NotSupportedFault") => Error::Restricted,
             _ => Error::SoapFault,
         });

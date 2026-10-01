@@ -236,24 +236,20 @@ all prior performance follow-ups remain open.
 
 ### V0.3.2 — Licensed live qualification
 
-Prefer **ESXi 8.0 Update 3 (8.0.3) with an active supported trial/commercial
-license** for this proof. The existing Rust version policy admits product 8.0.3 and
-HostAgent API 8.0.3.0; the old free installation's export rejection was a licensing
-gate. An appropriately licensed replacement lets us qualify the existing workflow
-before expanding to vSphere 9. Eligibility is still confirmed by the actual server;
-no installer name alone proves licensing, and no evaluation conversion is assumed.
+Continue on the **existing ESXi 8.0.3 / HostAgent API 8.0.3.0 host**. The user
+reported applying a license key; discovery now lists an Enterprise edition. Active
+assignment remains unresolved, and this is not yet proof of export eligibility.
+No replacement host, new VMs or vCenter is needed for the current bounded proof.
+vSphere 9 remains deferred compatibility work.
 
-Record the exact replacement build/API version before running the export example.
-If they do not match the admitted combination, stop for explicit compatibility work.
-Use a supported, appropriately patched 8 U3 image available under the user's
-entitlement; this is not a requirement to reproduce the old free installer/build.
-Broadcom describes vSphere 8 support through October 2027 in its
-[published lifecycle guidance](https://blogs.vmware.com/cloud-foundation/2025/08/01/sap-customers-running-on-vmware-vsphere-7-call-to-action/).
-
-New VMs or a replacement host require fresh identity/certificate checks and a new
-benchmark baseline. Preserve old timings as historical evidence, not matched
-before/after results across changed guests, software or hardware. vSphere 9 remains
-later compatibility work, rather than a prerequisite for this 8 U3 proof.
+The two powered-on eligibility calls returned faults but correlated with running
+export tasks. The user canceled both, and read-only inspection confirmed terminal
+canceled states. [V0.3.2a evidence](benchmark-results/2026-10-01-v032a/README.md)
+records the failure and correction. **Never call ExportVm as a powered-on license
+probe.** The executable now rejects that state locally; `--inspect` is read-only.
+The existing host pin is unchanged from the earlier TOFU observation; it has not
+been independently authenticated. A replacement host or certificate would require
+fresh trust and identity checks, plus a new benchmark baseline.
 
 Suggested disposable fixture: two Fedora VMs, each with one persistent, unencrypted
 disk, 30 GiB on the selected VM and 60 GiB on the untouched control VM. Use no
@@ -262,19 +258,18 @@ shutdown. These are our proof's fixture choices, not vSphere minimum requirement
 One VM suffices for basic export, but a second permits unchanged-control checks.
 Keep direct host access as the initial scope; vCenter integration remains later work.
 
-1. After the user provisions legitimate evaluation/commercial access, validate the
-   replacement host's certificate through a trusted channel, discover fresh host/VM
-   identities and record active licensing/expiry when visible. Do not reuse the old
-   pin, managed references, UUIDs or disk paths, even if the network address is reused.
-   Do not change
-   keys, reset evaluation, bypass API restrictions or assume the free installation
-   can be converted. Retain the observed restriction and prior evidence.
-2. Repeat the eligibility probe. An invalid-power-state response only resolves that
-   precondition; it does not prove all later operations are permitted. Revalidate
-   the newly selected 30 GiB VM and the new untouched 60 GiB VM. Passwords remain terminal-only.
+1. Revalidate the existing host version, certificate, selected VM and untouched
+   control VM. Record active licensing/expiry if visible; do not infer it from the
+   available-edition list. Do not change license keys or retry an ambiguous acquisition.
+2. Use `--inspect` to inspect recent tasks without acquiring a lease. It is bounded
+   task history, not a complete lock/ownership oracle. A standalone acquire-and-abort
+   probe requires poweredOff; a full export can request authorized graceful shutdown.
+   Passwords remain terminal-only. Do not cancel unrelated tasks.
 3. Establish an independent logical-byte oracle: deterministic guest content when
    guest access is available, or an agreed independent offline reference. Server
-   manifest checksums alone do not satisfy this. Record any missing prerequisite.
+   manifest checksums alone do not satisfy this. Guest SSH details for the selected
+   30 GiB Fedora VM have been requested and are currently missing. Prepare the
+   fixture before shutdown; retain guest content/digests outside committed evidence.
 4. Admit a new private output and sufficient free space, gracefully shut down only
    the selected VM under the user's existing authorization, poll poweredOff, then
    run the Rust export proof. Stop on graceful-shutdown failure; no hard fallback.

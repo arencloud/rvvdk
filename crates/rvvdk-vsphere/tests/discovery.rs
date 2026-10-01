@@ -715,6 +715,140 @@ mod export_tests {
             "<returnval type='HttpNfcLease'>lease-private</returnval>",
         )
     }
+
+    #[tokio::test]
+    async fn inspection_reads_tasks_without_acquiring_or_cancelling_them() {
+        let mut replies = selected("poweredOn");
+        replies.push(properties(
+            "VirtualMachine",
+            "vm-private",
+            &property(
+                "recentTask",
+                "<ManagedObjectReference type='Task'>PRIVATE-task</ManagedObjectReference>",
+            ),
+        ));
+        replies.push(properties("Task", "PRIVATE-task", &property("info", "<task type='Task'>PRIVATE-task</task><entity type='VirtualMachine'>vm-private</entity><descriptionId>VirtualMachine.exportVm</descriptionId><state>running</state><cancelable>true</cancelable><cancelled>false</cancelled>")));
+        replies.push(logout());
+        let server = Server::start(replies);
+        let mut options = ExportOptions::probe(30 * 1024 * 1024 * 1024);
+        options.inspect_only = true;
+        let report = export_vm(server.policy(), &credentials(), options)
+            .await
+            .unwrap();
+        assert_eq!(report.primary_error, None);
+        assert_eq!(report.lease_cleanup, LeaseCleanup::NotAcquired);
+        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+        assert_eq!(report.recent_tasks[0].state, "running");
+        assert_eq!(report.recent_tasks[0].operation, "export_vm");
+        assert!(!serde_json::to_string(&report).unwrap().contains("PRIVATE"));
+        assert!(!server.requests().iter().any(|r| r.contains("<ExportVm ")
+            || r.contains("CancelTask")
+            || r.contains("<ShutdownGuest ")));
+    }
+
+    #[tokio::test]
+    async fn inspection_rejects_task_identity_change_and_always_logs_out() {
+        let mut replies = selected("poweredOn");
+        replies.push(properties(
+            "VirtualMachine",
+            "vm-private",
+            &property(
+                "recentTask",
+                "<ManagedObjectReference type='Task'>PRIVATE-task</ManagedObjectReference>",
+            ),
+        ));
+        replies.push(properties(
+            "Task",
+            "PRIVATE-task",
+            &property("info", "<task type='Task'>wrong</task>"),
+        ));
+        replies.push(logout());
+        let server = Server::start(replies);
+        let mut options = ExportOptions::probe(30 * 1024 * 1024 * 1024);
+        options.inspect_only = true;
+        let report = export_vm(server.policy(), &credentials(), options)
+            .await
+            .unwrap();
+        assert_eq!(report.primary_error, Some(Error::Identity));
+        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+        assert_eq!(report.lease_cleanup, LeaseCleanup::NotAcquired);
+    }
+    #[tokio::test]
+    async fn inspection_bounds_and_validates_all_references_before_task_queries() {
+        let task = "<ManagedObjectReference type='Task'>PRIVATE-task</ManagedObjectReference>";
+        for (refs, error) in [
+            (task.repeat(33), Error::InventoryLimit),
+            (task.repeat(2), Error::Schema),
+            (
+                "<ManagedObjectReference type='VirtualMachine'>PRIVATE-vm</ManagedObjectReference>"
+                    .to_owned(),
+                Error::Schema,
+            ),
+        ] {
+            let mut replies = selected("poweredOn");
+            replies.extend([
+                properties(
+                    "VirtualMachine",
+                    "vm-private",
+                    &property("recentTask", &refs),
+                ),
+                logout(),
+            ]);
+            let server = Server::start(replies);
+            let mut options = ExportOptions::probe(30 * 1024 * 1024 * 1024);
+            options.inspect_only = true;
+            let report = export_vm(server.policy(), &credentials(), options)
+                .await
+                .unwrap();
+            assert_eq!(report.primary_error, Some(error));
+            assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+            assert_eq!(report.lease_cleanup, LeaseCleanup::NotAcquired);
+            assert!(
+                !server
+                    .requests()
+                    .iter()
+                    .any(|r| r.contains("<type>Task</type>"))
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn inspection_does_not_serialize_arbitrary_task_strings() {
+        for (description, timestamp, expected) in [
+            ("PRIVATE-description", "2026-01-02T03:04:05.123456Z", None),
+            (
+                "VirtualMachine.exportVm",
+                "PRIVATE-timestamp",
+                Some(Error::Schema),
+            ),
+        ] {
+            let mut replies = selected("poweredOn");
+            replies.push(properties(
+                "VirtualMachine",
+                "vm-private",
+                &property(
+                    "recentTask",
+                    "<ManagedObjectReference type='Task'>PRIVATE-task</ManagedObjectReference>",
+                ),
+            ));
+            replies.push(properties("Task", "PRIVATE-task", &property("info", &format!("<task type='Task'>PRIVATE-task</task><descriptionId>{description}</descriptionId><state>error</state><cancelable>true</cancelable><cancelled>true</cancelled><queueTime>{timestamp}</queueTime>"))));
+            replies.push(logout());
+            let server = Server::start(replies);
+            let mut options = ExportOptions::probe(30 * 1024 * 1024 * 1024);
+            options.inspect_only = true;
+            let report = export_vm(server.policy(), &credentials(), options)
+                .await
+                .unwrap();
+            assert_eq!(report.primary_error, expected);
+            assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+            assert!(!serde_json::to_string(&report).unwrap().contains("PRIVATE"));
+            if expected.is_none() {
+                assert_eq!(report.recent_tasks[0].operation, "other");
+                assert_eq!(report.recent_tasks[0].queued_at.as_deref(), Some(timestamp));
+            }
+        }
+    }
+
     fn ready(url: &str, pin: &str) -> Reply {
         properties(
             "HttpNfcLease",
@@ -759,8 +893,11 @@ mod export_tests {
         for (fault, expected) in [
             ("RestrictedVersionFault", Error::LicenseRestricted),
             ("InvalidPowerStateFault", Error::InvalidPowerState),
+            ("MethodDisabledFault", Error::MethodDisabled),
+            ("InvalidStateFault", Error::InvalidState),
+            ("TaskInProgressFault", Error::TaskInProgress),
         ] {
-            let mut replies = selected("poweredOn");
+            let mut replies = selected("poweredOff");
             replies.extend([Reply::fault(fault), logout()]);
             let server = Server::start(replies);
             let report = export_vm(
@@ -771,7 +908,14 @@ mod export_tests {
             .await
             .unwrap();
             assert_eq!(report.primary_error, Some(expected));
-            assert_eq!(report.lease_cleanup, LeaseCleanup::Rejected);
+            assert_eq!(
+                report.lease_cleanup,
+                if expected == Error::TaskInProgress {
+                    LeaseCleanup::Unconfirmed
+                } else {
+                    LeaseCleanup::Rejected
+                }
+            );
             assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
             assert!(!report.shutdown_requested);
             assert!(
@@ -782,6 +926,30 @@ mod export_tests {
             );
         }
     }
+    #[tokio::test]
+    async fn powered_on_probe_never_acquires_a_lease_or_changes_power() {
+        let mut replies = selected("poweredOn");
+        replies.push(logout());
+        let server = Server::start(replies);
+        let report = export_vm(
+            server.policy(),
+            &credentials(),
+            ExportOptions::probe(30 * 1024 * 1024 * 1024),
+        )
+        .await
+        .unwrap();
+        assert_eq!(report.primary_error, Some(Error::InvalidPowerState));
+        assert_eq!(report.lease_cleanup, LeaseCleanup::NotAcquired);
+        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+        assert!(!report.shutdown_requested);
+        assert!(
+            !server
+                .requests()
+                .iter()
+                .any(|r| r.contains("<ExportVm ") || r.contains("<ShutdownGuest "))
+        );
+    }
+
     #[tokio::test]
     async fn probe_aborts_any_granted_lease() {
         let mut replies = selected("poweredOff");

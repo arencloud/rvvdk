@@ -233,7 +233,9 @@ for matched TLS connection-reuse latency, CPU and memory observations; these are
 not disk-throughput benchmarks.
 The [V0.3.1 export foundation and regression plots](docs/benchmark-results/2026-10-01-v031/README.md)
 record the Rust lease workflow, local failure tests and observed ESXi license gate.
-Live transfer qualification awaits supported trial/commercial access.
+The [V0.3.2a probe correction](docs/benchmark-results/2026-10-01-v032a/README.md)
+adds a powered-off guard and read-only task inspection. Live transfer qualification
+continues on the existing host after guest test-data preparation.
 Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
 for sanitizer execution rates, memory and feedback across repeated campaigns.
 The [R5.8 CLI parent-chain timings](docs/benchmark-results/2026-09-30-r58/README.md)

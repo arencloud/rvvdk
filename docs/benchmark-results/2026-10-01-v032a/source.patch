@@ -1,0 +1,607 @@
+diff --git a/crates/rvvdk-vsphere/examples/export.rs b/crates/rvvdk-vsphere/examples/export.rs
+index 6a8b439..11d43bc 100644
+--- a/crates/rvvdk-vsphere/examples/export.rs
++++ b/crates/rvvdk-vsphere/examples/export.rs
+@@ -31,6 +31,7 @@ fn run() -> Result<(), Error> {
+                 options.probe_only = false;
+             }
+             "--allow-shutdown" => options.allow_graceful_shutdown = true,
++            "--inspect" => options.inspect_only = true,
+             "--max-bytes" => {
+                 options.max_encoded_bytes = args
+                     .next()
+@@ -56,7 +57,7 @@ fn run() -> Result<(), Error> {
+             }
+             "--help" => {
+                 println!(
+-                    "export --endpoint HTTPS_URL --certificate-sha256 SHA256 [--user USER] [--capacity-bytes N] [--output NEW_DIRECTORY --allow-shutdown] [--max-bytes N] [--timeout-seconds N] [--cancel-after-ms N]\nDefault: one 30 GiB disk VM eligibility probe; no power change or download. Supplying output enables export. Shutdown is graceful only and requires its flag. The selected VM is left in its last observed state. Ctrl-C requests cooperative abort/logout."
++                    "export --endpoint HTTPS_URL --certificate-sha256 SHA256 [--user USER] [--capacity-bytes N] [--inspect] [--output NEW_DIRECTORY --allow-shutdown] [--max-bytes N] [--timeout-seconds N] [--cancel-after-ms N]\nDefault: one 30 GiB disk VM eligibility probe; requires poweredOff, no power change or download. --inspect reads recent tasks without acquiring a lease and permits poweredOn. Supplying output enables export. Shutdown is graceful only and requires its flag. The selected VM is left in its last observed state. Ctrl-C requests cooperative abort/logout."
+                 );
+                 return Ok(());
+             }
+@@ -98,6 +99,10 @@ fn run() -> Result<(), Error> {
+         report
+     })?;
+     let success = report.is_success()
++        || (report.inspection_only
++            && report.primary_error.is_none()
++            && report.session_cleanup == rvvdk_vsphere::Cleanup::LoggedOut
++            && report.pagination_cleanup_error.is_none())
+         || (report.probe_only
+             && report.primary_error.is_none()
+             && report.lease_cleanup == rvvdk_vsphere::LeaseCleanup::Aborted
+diff --git a/crates/rvvdk-vsphere/src/error.rs b/crates/rvvdk-vsphere/src/error.rs
+index 98497e9..d8e1773 100644
+--- a/crates/rvvdk-vsphere/src/error.rs
++++ b/crates/rvvdk-vsphere/src/error.rs
+@@ -42,6 +42,12 @@ pub enum Error {
+     LicenseRestricted,
+     #[error("virtual machine must be powered off")]
+     InvalidPowerState,
++    #[error("operation is disabled in the current server or VM state")]
++    MethodDisabled,
++    #[error("server or VM state does not permit this operation")]
++    InvalidState,
++    #[error("another task is in progress")]
++    TaskInProgress,
+     #[error("selected virtual machine identity or topology changed")]
+     Identity,
+     #[error("unsupported export scope or backing")]
+diff --git a/crates/rvvdk-vsphere/src/export.rs b/crates/rvvdk-vsphere/src/export.rs
+index db84072..c73f75a 100644
+--- a/crates/rvvdk-vsphere/src/export.rs
++++ b/crates/rvvdk-vsphere/src/export.rs
+@@ -46,6 +46,8 @@ impl fmt::Debug for Cancellation {
+ pub struct ExportOptions {
+     pub single_disk_capacity_bytes: u64,
+     pub probe_only: bool,
++    /// Read-only task inspection: no ExportVm or shutdown call.
++    pub inspect_only: bool,
+     pub allow_graceful_shutdown: bool,
+     pub output: PathBuf,
+     pub max_encoded_bytes: u64,
+@@ -62,6 +64,7 @@ impl ExportOptions {
+         Self {
+             single_disk_capacity_bytes,
+             probe_only: true,
++            inspect_only: false,
+             allow_graceful_shutdown: false,
+             output: PathBuf::new(),
+             max_encoded_bytes: 40 * 1024 * 1024 * 1024,
+@@ -76,6 +79,7 @@ impl ExportOptions {
+             || self.transfer_timeout.is_zero()
+             || self.transfer_timeout > Duration::from_secs(21600)
+             || (!self.probe_only && self.output.as_os_str().is_empty())
++            || (self.inspect_only && (!self.probe_only || self.allow_graceful_shutdown))
+         {
+             Err(Error::InvalidInput)
+         } else {
+@@ -104,6 +108,8 @@ pub struct ExportFile {
+ #[derive(Debug, Serialize)]
+ pub struct ExportReport {
+     pub probe_only: bool,
++    pub inspection_only: bool,
++    pub recent_tasks: Vec<TaskSummary>,
+     pub selected_capacity_bytes: u64,
+     pub initial_power_state: Option<String>,
+     pub last_observed_power_state: Option<String>,
+@@ -136,6 +142,8 @@ impl ExportReport {
+     fn new(options: &ExportOptions) -> Self {
+         Self {
+             probe_only: options.probe_only,
++            inspection_only: options.inspect_only,
++            recent_tasks: Vec::new(),
+             selected_capacity_bytes: options.single_disk_capacity_bytes,
+             initial_power_state: None,
+             last_observed_power_state: None,
+@@ -154,6 +162,15 @@ impl ExportReport {
+         }
+     }
+ }
++#[derive(Debug, Serialize)]
++pub struct TaskSummary {
++    pub state: &'static str,
++    pub operation: &'static str,
++    pub cancelable: bool,
++    pub cancelled: bool,
++    pub queued_at: Option<String>,
++    pub started_at: Option<String>,
++}
+ #[cfg(target_os = "linux")]
+ struct Attempt {
+     report: ExportReport,
+@@ -224,6 +241,65 @@ struct LeaseInfo {
+ }
+ #[cfg(target_os = "linux")]
+ impl Session {
++    async fn vm_tasks(&mut self, vm: &Reference) -> Result<Vec<TaskSummary>> {
++        let raw = self.properties_fields(vm, &["recentTask"]).await?;
++        let doc = xml::parse(&raw)?;
++        let props = Properties::parse_fields(
++            xml::response(&doc, "RetrievePropertiesEx")?,
++            vm,
++            &["recentTask"],
++        )?;
++        let tasks = props.references("recentTask")?;
++        if tasks.len() > 32 {
++            return Err(Error::InventoryLimit);
++        }
++        let mut seen = std::collections::BTreeSet::new();
++        let mut result = Vec::new();
++        for task in &tasks {
++            if task.kind != Kind::Task || !seen.insert(task.clone()) {
++                return Err(Error::Schema);
++            }
++        }
++        for task in tasks {
++            let raw = self.properties(&task).await?;
++            let doc = xml::parse(&raw)?;
++            let props = Properties::parse(xml::response(&doc, "RetrievePropertiesEx")?, &task)?;
++            let info = props.get("info")?;
++            if Reference::parse(xml::required(info, "task")?)? != task {
++                return Err(Error::Identity);
++            }
++            if let Some(entity) = xml::child(info, "entity")?
++                && Reference::parse(entity)? != *vm
++            {
++                return Err(Error::Identity);
++            }
++            let state = match xml::text(xml::required(info, "state")?)? {
++                "queued" => "queued",
++                "running" => "running",
++                "success" => "success",
++                "error" => "error",
++                _ => return Err(Error::Schema),
++            };
++            let operation = match xml::text(xml::required(info, "descriptionId")?)? {
++                "VirtualMachine.exportVm" | "vim.VirtualMachine.exportVm" => "export_vm",
++                "VirtualMachine.powerOn" | "vim.VirtualMachine.powerOn" => "power_on",
++                "VirtualMachine.powerOff" | "vim.VirtualMachine.powerOff" => "power_off",
++                "VirtualMachine.reconfigure" | "vim.VirtualMachine.reconfigure" => "reconfigure",
++                _ => "other",
++            };
++            let summary = TaskSummary {
++                state,
++                operation,
++                cancelable: xml::boolean(xml::required(info, "cancelable")?)?,
++                cancelled: xml::boolean(xml::required(info, "cancelled")?)?,
++                queued_at: xml::child(info, "queueTime")?.map(task_time).transpose()?,
++                started_at: xml::child(info, "startTime")?.map(task_time).transpose()?,
++            };
++            result.push(summary);
++        }
++        Ok(result)
++    }
++
+     async fn selected_vm(&mut self, reference: &Reference) -> Result<Vm> {
+         let raw = self.properties(reference).await?;
+         let doc = xml::parse(&raw)?;
+@@ -291,6 +367,15 @@ impl Session {
+         admit_vm(&vm, options.single_disk_capacity_bytes)?;
+         attempt.report.initial_power_state = Some(vm.power_state.clone());
+         attempt.report.last_observed_power_state = Some(vm.power_state.clone());
++        if options.inspect_only {
++            attempt.report.recent_tasks = self.vm_tasks(&reference).await?;
++            return Ok(());
++        }
++        // Some hosts start an export task before rejecting a powered-on request.
++        // Never use ExportVm as a powered-on license probe.
++        if options.probe_only && vm.power_state != "poweredOff" {
++            return Err(Error::InvalidPowerState);
++        }
+         if !options.probe_only {
+             // Output admission happens before any guest power operation or lease.
+             attempt.artifact = Some(crate::artifact::Artifact::create(
+@@ -346,6 +431,8 @@ impl Session {
+                     error,
+                     Error::LicenseRestricted
+                         | Error::InvalidPowerState
++                        | Error::MethodDisabled
++                        | Error::InvalidState
+                         | Error::NoPermission
+                         | Error::Restricted
+                 ) {
+@@ -525,6 +612,59 @@ impl Session {
+         }
+     }
+ }
++// UTC timestamps only; never propagate arbitrary server strings into diagnostics.
++fn task_time(node: roxmltree::Node<'_, '_>) -> Result<String> {
++    checked_task_time(xml::text(node)?)
++}
++fn checked_task_time(s: &str) -> Result<String> {
++    let b = s.as_bytes();
++    if !(20..=30).contains(&b.len()) || b.last() != Some(&b'Z') {
++        return Err(Error::Schema);
++    }
++    for (i, &c) in b[..19].iter().enumerate() {
++        let valid = match i {
++            4 | 7 => c == b'-',
++            10 => c == b'T',
++            13 | 16 => c == b':',
++            _ => c.is_ascii_digit(),
++        };
++        if !valid {
++            return Err(Error::Schema);
++        }
++    }
++    if b.len() > 20
++        && (b[19] != b'.' || b.len() == 21 || !b[20..b.len() - 1].iter().all(u8::is_ascii_digit))
++    {
++        return Err(Error::Schema);
++    }
++    let n = |a, b| s[a..b].parse::<u32>().map_err(|_| Error::Schema);
++    let (year, month, day) = (n(0, 4)?, n(5, 7)?, n(8, 10)?);
++    let leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
++    let days = [
++        31,
++        if leap { 29 } else { 28 },
++        31,
++        30,
++        31,
++        30,
++        31,
++        31,
++        30,
++        31,
++        30,
++        31,
++    ];
++    if !(1..=12).contains(&month)
++        || day == 0
++        || day > days[(month - 1) as usize]
++        || n(11, 13)? > 23
++        || n(14, 16)? > 59
++        || n(17, 19)? > 60
++    {
++        return Err(Error::Schema);
++    }
++    Ok(s.to_owned())
++}
+ fn admit_vm(vm: &Vm, capacity: u64) -> Result<()> {
+     if vm.template || vm.snapshot_present || vm.disks.len() != 1 {
+         return Err(Error::ExportScope);
+@@ -647,3 +787,33 @@ fn verify_manifest(raw: &str, key: &str, file: &ExportFile, capacity: u64) -> Re
+     }
+     Ok(())
+ }
++
++#[cfg(test)]
++mod task_timestamp_tests {
++    use super::*;
++    #[test]
++    fn timestamps_are_bounded_calendar_values_not_server_messages() {
++        for value in [
++            "2024-02-29T23:59:59Z",
++            "2026-01-02T03:04:05.123456Z",
++            "2000-02-29T00:00:00.123456789Z",
++        ] {
++            assert_eq!(checked_task_time(value).unwrap(), value);
++        }
++        for value in [
++            "PRIVATE",
++            "2025-02-29T00:00:00Z",
++            "1900-02-29T00:00:00Z",
++            "2026-00-01T00:00:00Z",
++            "2026-04-31T00:00:00Z",
++            "2026-10-01T24:00:00Z",
++            "2026-10-01T00:00:00.Z",
++            "2026-10-01T00:00:00.1234567890Z",
++            "2026-10-01T00:00:00+00:00",
++            "2026-10-01T00:00:00.PRIVATEZ",
++            "ééééééééééZ",
++        ] {
++            assert_eq!(checked_task_time(value), Err(Error::Schema), "{value}");
++        }
++    }
++}
+diff --git a/crates/rvvdk-vsphere/src/inventory.rs b/crates/rvvdk-vsphere/src/inventory.rs
+index ec8e39d..0fe565c 100644
+--- a/crates/rvvdk-vsphere/src/inventory.rs
++++ b/crates/rvvdk-vsphere/src/inventory.rs
+@@ -17,6 +17,7 @@ pub(crate) enum Kind {
+     PropertyCollector,
+     LicenseManager,
+     HttpNfcLease,
++    Task,
+ }
+ impl Kind {
+     pub(crate) fn name(self) -> &'static str {
+@@ -33,6 +34,7 @@ impl Kind {
+             Self::PropertyCollector => "PropertyCollector",
+             Self::LicenseManager => "LicenseManager",
+             Self::HttpNfcLease => "HttpNfcLease",
++            Self::Task => "Task",
+         }
+     }
+     fn parse(s: &str) -> Result<Self> {
+@@ -49,6 +51,7 @@ impl Kind {
+             Self::PropertyCollector,
+             Self::LicenseManager,
+             Self::HttpNfcLease,
++            Self::Task,
+         ]
+         .into_iter()
+         .find(|k| k.name() == s)
+@@ -74,6 +77,7 @@ impl Kind {
+             ],
+             Self::LicenseManager => &["licenses", "licensedEdition"],
+             Self::HttpNfcLease => &["state", "info", "error"],
++            Self::Task => &["info"],
+             _ => &[],
+         }
+     }
+@@ -234,6 +238,13 @@ impl fmt::Debug for DiskIdentity {
+ pub(crate) struct Properties<'a, 'i>(BTreeMap<&'a str, Node<'a, 'i>>);
+ impl<'a, 'i> Properties<'a, 'i> {
+     pub(crate) fn parse(response: Node<'a, 'i>, reference: &Reference) -> Result<Self> {
++        Self::parse_fields(response, reference, reference.kind.paths())
++    }
++    pub(crate) fn parse_fields(
++        response: Node<'a, 'i>,
++        reference: &Reference,
++        fields: &[&str],
++    ) -> Result<Self> {
+         let result = xml::required(response, "returnval")?;
+         let object = xml::required(result, "objects")?;
+         if Reference::parse(xml::required(object, "obj")?)? != *reference {
+@@ -248,7 +259,7 @@ impl<'a, 'i> Properties<'a, 'i> {
+                 continue;
+             }
+             let name = xml::text(xml::required(entry, "name")?)?;
+-            if !reference.kind.paths().contains(&name) {
++            if !fields.contains(&name) {
+                 return Err(Error::Schema);
+             }
+             if props.insert(name, xml::required(entry, "val")?).is_some() {
+diff --git a/crates/rvvdk-vsphere/src/lib.rs b/crates/rvvdk-vsphere/src/lib.rs
+index 1a9c061..611ebf3 100644
+--- a/crates/rvvdk-vsphere/src/lib.rs
++++ b/crates/rvvdk-vsphere/src/lib.rs
+@@ -8,7 +8,7 @@
+ mod artifact;
+ mod error;
+ mod export;
+-pub use export::{Cancellation, ExportOptions, ExportReport, LeaseCleanup, export_vm};
++pub use export::{Cancellation, ExportOptions, ExportReport, LeaseCleanup, TaskSummary, export_vm};
+ mod inventory;
+ mod transport;
+ mod xml;
+@@ -256,9 +256,15 @@ async fn session_work<T>(
+ }
+ impl Session {
+     async fn properties(&mut self, reference: &Reference) -> Result<Zeroizing<String>> {
+-        let paths = reference
+-            .kind
+-            .paths()
++        self.properties_fields(reference, reference.kind.paths())
++            .await
++    }
++    async fn properties_fields(
++        &mut self,
++        reference: &Reference,
++        fields: &'static [&'static str],
++    ) -> Result<Zeroizing<String>> {
++        let paths = fields
+             .iter()
+             .map(|p| format!("<pathSet>{p}</pathSet>"))
+             .collect::<String>();
+diff --git a/crates/rvvdk-vsphere/src/xml.rs b/crates/rvvdk-vsphere/src/xml.rs
+index 69d9c8c..54106a4 100644
+--- a/crates/rvvdk-vsphere/src/xml.rs
++++ b/crates/rvvdk-vsphere/src/xml.rs
+@@ -73,6 +73,9 @@ pub(crate) fn response<'a, 'i>(doc: &'a Document<'i>, method: &str) -> Result<No
+             Some("NoPermissionFault") => Error::NoPermission,
+             Some("RestrictedVersionFault") => Error::LicenseRestricted,
+             Some("InvalidPowerStateFault") => Error::InvalidPowerState,
++            Some("MethodDisabledFault") => Error::MethodDisabled,
++            Some("InvalidStateFault") => Error::InvalidState,
++            Some("TaskInProgressFault") => Error::TaskInProgress,
+             Some("NotSupportedFault") => Error::Restricted,
+             _ => Error::SoapFault,
+         });
+diff --git a/crates/rvvdk-vsphere/tests/discovery.rs b/crates/rvvdk-vsphere/tests/discovery.rs
+index fc1fcee..f127aff 100644
+--- a/crates/rvvdk-vsphere/tests/discovery.rs
++++ b/crates/rvvdk-vsphere/tests/discovery.rs
+@@ -715,6 +715,140 @@ mod export_tests {
+             "<returnval type='HttpNfcLease'>lease-private</returnval>",
+         )
+     }
++
++    #[tokio::test]
++    async fn inspection_reads_tasks_without_acquiring_or_cancelling_them() {
++        let mut replies = selected("poweredOn");
++        replies.push(properties(
++            "VirtualMachine",
++            "vm-private",
++            &property(
++                "recentTask",
++                "<ManagedObjectReference type='Task'>PRIVATE-task</ManagedObjectReference>",
++            ),
++        ));
++        replies.push(properties("Task", "PRIVATE-task", &property("info", "<task type='Task'>PRIVATE-task</task><entity type='VirtualMachine'>vm-private</entity><descriptionId>VirtualMachine.exportVm</descriptionId><state>running</state><cancelable>true</cancelable><cancelled>false</cancelled>")));
++        replies.push(logout());
++        let server = Server::start(replies);
++        let mut options = ExportOptions::probe(30 * 1024 * 1024 * 1024);
++        options.inspect_only = true;
++        let report = export_vm(server.policy(), &credentials(), options)
++            .await
++            .unwrap();
++        assert_eq!(report.primary_error, None);
++        assert_eq!(report.lease_cleanup, LeaseCleanup::NotAcquired);
++        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
++        assert_eq!(report.recent_tasks[0].state, "running");
++        assert_eq!(report.recent_tasks[0].operation, "export_vm");
++        assert!(!serde_json::to_string(&report).unwrap().contains("PRIVATE"));
++        assert!(!server.requests().iter().any(|r| r.contains("<ExportVm ")
++            || r.contains("CancelTask")
++            || r.contains("<ShutdownGuest ")));
++    }
++
++    #[tokio::test]
++    async fn inspection_rejects_task_identity_change_and_always_logs_out() {
++        let mut replies = selected("poweredOn");
++        replies.push(properties(
++            "VirtualMachine",
++            "vm-private",
++            &property(
++                "recentTask",
++                "<ManagedObjectReference type='Task'>PRIVATE-task</ManagedObjectReference>",
++            ),
++        ));
++        replies.push(properties(
++            "Task",
++            "PRIVATE-task",
++            &property("info", "<task type='Task'>wrong</task>"),
++        ));
++        replies.push(logout());
++        let server = Server::start(replies);
++        let mut options = ExportOptions::probe(30 * 1024 * 1024 * 1024);
++        options.inspect_only = true;
++        let report = export_vm(server.policy(), &credentials(), options)
++            .await
++            .unwrap();
++        assert_eq!(report.primary_error, Some(Error::Identity));
++        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
++        assert_eq!(report.lease_cleanup, LeaseCleanup::NotAcquired);
++    }
++    #[tokio::test]
++    async fn inspection_bounds_and_validates_all_references_before_task_queries() {
++        let task = "<ManagedObjectReference type='Task'>PRIVATE-task</ManagedObjectReference>";
++        for (refs, error) in [
++            (task.repeat(33), Error::InventoryLimit),
++            (task.repeat(2), Error::Schema),
++            (
++                "<ManagedObjectReference type='VirtualMachine'>PRIVATE-vm</ManagedObjectReference>"
++                    .to_owned(),
++                Error::Schema,
++            ),
++        ] {
++            let mut replies = selected("poweredOn");
++            replies.extend([
++                properties(
++                    "VirtualMachine",
++                    "vm-private",
++                    &property("recentTask", &refs),
++                ),
++                logout(),
++            ]);
++            let server = Server::start(replies);
++            let mut options = ExportOptions::probe(30 * 1024 * 1024 * 1024);
++            options.inspect_only = true;
++            let report = export_vm(server.policy(), &credentials(), options)
++                .await
++                .unwrap();
++            assert_eq!(report.primary_error, Some(error));
++            assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
++            assert_eq!(report.lease_cleanup, LeaseCleanup::NotAcquired);
++            assert!(
++                !server
++                    .requests()
++                    .iter()
++                    .any(|r| r.contains("<type>Task</type>"))
++            );
++        }
++    }
++
++    #[tokio::test]
++    async fn inspection_does_not_serialize_arbitrary_task_strings() {
++        for (description, timestamp, expected) in [
++            ("PRIVATE-description", "2026-01-02T03:04:05.123456Z", None),
++            (
++                "VirtualMachine.exportVm",
++                "PRIVATE-timestamp",
++                Some(Error::Schema),
++            ),
++        ] {
++            let mut replies = selected("poweredOn");
++            replies.push(properties(
++                "VirtualMachine",
++                "vm-private",
++                &property(
++                    "recentTask",
++                    "<ManagedObjectReference type='Task'>PRIVATE-task</ManagedObjectReference>",
++                ),
++            ));
++            replies.push(properties("Task", "PRIVATE-task", &property("info", &format!("<task type='Task'>PRIVATE-task</task><descriptionId>{description}</descriptionId><state>error</state><cancelable>true</cancelable><cancelled>true</cancelled><queueTime>{timestamp}</queueTime>"))));
++            replies.push(logout());
++            let server = Server::start(replies);
++            let mut options = ExportOptions::probe(30 * 1024 * 1024 * 1024);
++            options.inspect_only = true;
++            let report = export_vm(server.policy(), &credentials(), options)
++                .await
++                .unwrap();
++            assert_eq!(report.primary_error, expected);
++            assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
++            assert!(!serde_json::to_string(&report).unwrap().contains("PRIVATE"));
++            if expected.is_none() {
++                assert_eq!(report.recent_tasks[0].operation, "other");
++                assert_eq!(report.recent_tasks[0].queued_at.as_deref(), Some(timestamp));
++            }
++        }
++    }
++
+     fn ready(url: &str, pin: &str) -> Reply {
+         properties(
+             "HttpNfcLease",
+@@ -759,8 +893,11 @@ mod export_tests {
+         for (fault, expected) in [
+             ("RestrictedVersionFault", Error::LicenseRestricted),
+             ("InvalidPowerStateFault", Error::InvalidPowerState),
++            ("MethodDisabledFault", Error::MethodDisabled),
++            ("InvalidStateFault", Error::InvalidState),
++            ("TaskInProgressFault", Error::TaskInProgress),
+         ] {
+-            let mut replies = selected("poweredOn");
++            let mut replies = selected("poweredOff");
+             replies.extend([Reply::fault(fault), logout()]);
+             let server = Server::start(replies);
+             let report = export_vm(
+@@ -771,7 +908,14 @@ mod export_tests {
+             .await
+             .unwrap();
+             assert_eq!(report.primary_error, Some(expected));
+-            assert_eq!(report.lease_cleanup, LeaseCleanup::Rejected);
++            assert_eq!(
++                report.lease_cleanup,
++                if expected == Error::TaskInProgress {
++                    LeaseCleanup::Unconfirmed
++                } else {
++                    LeaseCleanup::Rejected
++                }
++            );
+             assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+             assert!(!report.shutdown_requested);
+             assert!(
+@@ -782,6 +926,30 @@ mod export_tests {
+             );
+         }
+     }
++    #[tokio::test]
++    async fn powered_on_probe_never_acquires_a_lease_or_changes_power() {
++        let mut replies = selected("poweredOn");
++        replies.push(logout());
++        let server = Server::start(replies);
++        let report = export_vm(
++            server.policy(),
++            &credentials(),
++            ExportOptions::probe(30 * 1024 * 1024 * 1024),
++        )
++        .await
++        .unwrap();
++        assert_eq!(report.primary_error, Some(Error::InvalidPowerState));
++        assert_eq!(report.lease_cleanup, LeaseCleanup::NotAcquired);
++        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
++        assert!(!report.shutdown_requested);
++        assert!(
++            !server
++                .requests()
++                .iter()
++                .any(|r| r.contains("<ExportVm ") || r.contains("<ShutdownGuest "))
++        );
++    }
++
+     #[tokio::test]
+     async fn probe_aborts_any_granted_lease() {
+         let mut replies = selected("poweredOff");

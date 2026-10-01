@@ -8,7 +8,7 @@
 mod artifact;
 mod error;
 mod export;
-pub use export::{Cancellation, ExportOptions, ExportReport, LeaseCleanup, export_vm};
+pub use export::{Cancellation, ExportOptions, ExportReport, LeaseCleanup, TaskSummary, export_vm};
 mod inventory;
 mod transport;
 mod xml;
@@ -256,9 +256,15 @@ async fn session_work<T>(
 }
 impl Session {
     async fn properties(&mut self, reference: &Reference) -> Result<Zeroizing<String>> {
-        let paths = reference
-            .kind
-            .paths()
+        self.properties_fields(reference, reference.kind.paths())
+            .await
+    }
+    async fn properties_fields(
+        &mut self,
+        reference: &Reference,
+        fields: &'static [&'static str],
+    ) -> Result<Zeroizing<String>> {
+        let paths = fields
             .iter()
             .map(|p| format!("<pathSet>{p}</pathSet>"))
             .collect::<String>();

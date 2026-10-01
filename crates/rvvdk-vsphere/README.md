@@ -3,14 +3,17 @@
 V0.2 implements independent SOAP authentication and inventory for direct ESXi
 8.0.3 / HostAgent API 8.0.3.0. It uses general-purpose HTTP, TLS and XML crates,
 not a VMware SDK or VDDK. V0.3.1 adds a Linux export-lease proof, including explicit
-graceful shutdown when requested. Live export remains license-blocked. Local disk crates
-and the public `rvddk` CLI do not depend on this crate.
+graceful shutdown when requested. Local disk crates and the public `rvddk` CLI do
+not depend on this crate.
 
-The recommended next lab is an appropriately licensed ESXi 8.0 Update 3 (8.0.3)
-installation with new VMs, matching the existing version policy. Verify the actual
-build/API, license and fresh host/VM identities before live export. vSphere 9 is
-**not yet admitted or qualified** and remains later compatibility work. See the
-[replacement-lab plan](../../docs/vmware-access-plan.md#v032--licensed-live-qualification).
+Continue live qualification on the existing ESXi 8.0.3 host. Its available license
+edition has changed, but export eligibility and decoded bytes remain unqualified.
+V0.3.2a prevents powered-on eligibility calls and adds read-only recent-task
+inspection after two earlier probes correlated with blocked export tasks.
+The user canceled both; inspection confirmed terminal canceled states.
+See the [continuation plan](../../docs/vmware-access-plan.md#v032--licensed-live-qualification)
+and [evidence](../../docs/benchmark-results/2026-10-01-v032a/README.md).
+vSphere 9 is **not yet admitted or qualified**.
 
 ## API and trust
 
@@ -121,7 +124,7 @@ Connection reuse measurements do not establish disk throughput or Python/Rust
 speedups. [Evidence and plots](../../docs/benchmark-results/2026-10-01-v02/README.md).
 
 V0.3.1's live `ExportVm` probe returned `license_restricted`, then confirmed Logout.
-Neither VM was shut down. Trial/commercial access is now needed for V0.3.2's live
+Neither VM was shut down. Licensing has since changed; V0.3.2 still needs live
 export proof; compressed streamOptimized decoding remains a separate format gate.
 [V0.3.1 evidence and comparison](../../docs/benchmark-results/2026-10-01-v031/README.md).
 [Architecture and acceptance](../../docs/vmware-access-plan.md).
@@ -134,8 +137,20 @@ BIOS UUID, disk key and backing path. It admits only a non-template VM with one
 persistent, unencrypted FlatVer2 disk, no parent and no snapshots. Ambiguous selection
 fails closed. This proof is not a general VM selection or export product API.
 
-Probe mode calls `ExportVm` without changing power and immediately aborts any granted
-lease. License restriction and invalid power state are distinct errors. Probe success
+Probe mode requires a revalidated powered-off VM before calling `ExportVm`, then
+immediately aborts any granted lease. A powered-on probe reports `invalid_power_state`
+and `not_acquired` without an acquisition or shutdown request. A server fault may
+still race with state changes. `task_in_progress` reports unconfirmed acquisition;
+a fault does not prove that no remote task was started. No automatic retry occurs.
+
+`inspect_only = true` (`--inspect`) reads recent task references and TaskInfo without
+calling ExportVm, shutdown or CancelTask. It permits poweredOn, requires probe mode
+and rejects the shutdown flag. At most 32 distinct Task references are queried;
+object and optional VM entity identities must match. Reports expose closed state
+and operation codes, cancellation flags and bounded UTC timestamps, never task IDs,
+raw descriptions or errors. Recent-task history can be incomplete; it does not
+establish ownership or the absence of every lock. Inspection is not export success.
+ Probe success
 does not satisfy `ExportReport::is_success()`, which requires a verified artifact,
 completed lease and confirmed Logout.
 
@@ -185,7 +200,9 @@ other platforms return `export_scope` and are not qualified by these tests.
 
 ```bash
 cargo build --release -p rvvdk-vsphere --example export
-# No power change; abort immediately if the server grants a lease.
+# Read-only recent-task inspection; works while the VM is powered on.
+target/release/examples/export --endpoint HTTPS_URL --certificate-sha256 SHA256 --user USER --inspect
+# Powered-off VM only; abort immediately if the server grants a lease.
 target/release/examples/export --endpoint HTTPS_URL --certificate-sha256 SHA256 --user USER
 # Authorized disposable VM only; requires eligible licensing and new local output.
 target/release/examples/export --endpoint HTTPS_URL --certificate-sha256 SHA256 --user USER --capacity-bytes 32212254720 --output NEW_DIRECTORY --allow-shutdown

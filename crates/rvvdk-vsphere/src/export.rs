@@ -46,6 +46,8 @@ impl fmt::Debug for Cancellation {
 pub struct ExportOptions {
     pub single_disk_capacity_bytes: u64,
     pub probe_only: bool,
+    /// Read-only task inspection: no ExportVm or shutdown call.
+    pub inspect_only: bool,
     pub allow_graceful_shutdown: bool,
     pub output: PathBuf,
     pub max_encoded_bytes: u64,
@@ -62,6 +64,7 @@ impl ExportOptions {
         Self {
             single_disk_capacity_bytes,
             probe_only: true,
+            inspect_only: false,
             allow_graceful_shutdown: false,
             output: PathBuf::new(),
             max_encoded_bytes: 40 * 1024 * 1024 * 1024,
@@ -76,6 +79,7 @@ impl ExportOptions {
             || self.transfer_timeout.is_zero()
             || self.transfer_timeout > Duration::from_secs(21600)
             || (!self.probe_only && self.output.as_os_str().is_empty())
+            || (self.inspect_only && (!self.probe_only || self.allow_graceful_shutdown))
         {
             Err(Error::InvalidInput)
         } else {
@@ -104,6 +108,8 @@ pub struct ExportFile {
 #[derive(Debug, Serialize)]
 pub struct ExportReport {
     pub probe_only: bool,
+    pub inspection_only: bool,
+    pub recent_tasks: Vec<TaskSummary>,
     pub selected_capacity_bytes: u64,
     pub initial_power_state: Option<String>,
     pub last_observed_power_state: Option<String>,
@@ -136,6 +142,8 @@ impl ExportReport {
     fn new(options: &ExportOptions) -> Self {
         Self {
             probe_only: options.probe_only,
+            inspection_only: options.inspect_only,
+            recent_tasks: Vec::new(),
             selected_capacity_bytes: options.single_disk_capacity_bytes,
             initial_power_state: None,
             last_observed_power_state: None,
@@ -153,6 +161,15 @@ impl ExportReport {
             elapsed_ms: 0.,
         }
     }
+}
+#[derive(Debug, Serialize)]
+pub struct TaskSummary {
+    pub state: &'static str,
+    pub operation: &'static str,
+    pub cancelable: bool,
+    pub cancelled: bool,
+    pub queued_at: Option<String>,
+    pub started_at: Option<String>,
 }
 #[cfg(target_os = "linux")]
 struct Attempt {
@@ -224,6 +241,65 @@ struct LeaseInfo {
 }
 #[cfg(target_os = "linux")]
 impl Session {
+    async fn vm_tasks(&mut self, vm: &Reference) -> Result<Vec<TaskSummary>> {
+        let raw = self.properties_fields(vm, &["recentTask"]).await?;
+        let doc = xml::parse(&raw)?;
+        let props = Properties::parse_fields(
+            xml::response(&doc, "RetrievePropertiesEx")?,
+            vm,
+            &["recentTask"],
+        )?;
+        let tasks = props.references("recentTask")?;
+        if tasks.len() > 32 {
+            return Err(Error::InventoryLimit);
+        }
+        let mut seen = std::collections::BTreeSet::new();
+        let mut result = Vec::new();
+        for task in &tasks {
+            if task.kind != Kind::Task || !seen.insert(task.clone()) {
+                return Err(Error::Schema);
+            }
+        }
+        for task in tasks {
+            let raw = self.properties(&task).await?;
+            let doc = xml::parse(&raw)?;
+            let props = Properties::parse(xml::response(&doc, "RetrievePropertiesEx")?, &task)?;
+            let info = props.get("info")?;
+            if Reference::parse(xml::required(info, "task")?)? != task {
+                return Err(Error::Identity);
+            }
+            if let Some(entity) = xml::child(info, "entity")?
+                && Reference::parse(entity)? != *vm
+            {
+                return Err(Error::Identity);
+            }
+            let state = match xml::text(xml::required(info, "state")?)? {
+                "queued" => "queued",
+                "running" => "running",
+                "success" => "success",
+                "error" => "error",
+                _ => return Err(Error::Schema),
+            };
+            let operation = match xml::text(xml::required(info, "descriptionId")?)? {
+                "VirtualMachine.exportVm" | "vim.VirtualMachine.exportVm" => "export_vm",
+                "VirtualMachine.powerOn" | "vim.VirtualMachine.powerOn" => "power_on",
+                "VirtualMachine.powerOff" | "vim.VirtualMachine.powerOff" => "power_off",
+                "VirtualMachine.reconfigure" | "vim.VirtualMachine.reconfigure" => "reconfigure",
+                _ => "other",
+            };
+            let summary = TaskSummary {
+                state,
+                operation,
+                cancelable: xml::boolean(xml::required(info, "cancelable")?)?,
+                cancelled: xml::boolean(xml::required(info, "cancelled")?)?,
+                queued_at: xml::child(info, "queueTime")?.map(task_time).transpose()?,
+                started_at: xml::child(info, "startTime")?.map(task_time).transpose()?,
+            };
+            result.push(summary);
+        }
+        Ok(result)
+    }
+
     async fn selected_vm(&mut self, reference: &Reference) -> Result<Vm> {
         let raw = self.properties(reference).await?;
         let doc = xml::parse(&raw)?;
@@ -291,6 +367,15 @@ impl Session {
         admit_vm(&vm, options.single_disk_capacity_bytes)?;
         attempt.report.initial_power_state = Some(vm.power_state.clone());
         attempt.report.last_observed_power_state = Some(vm.power_state.clone());
+        if options.inspect_only {
+            attempt.report.recent_tasks = self.vm_tasks(&reference).await?;
+            return Ok(());
+        }
+        // Some hosts start an export task before rejecting a powered-on request.
+        // Never use ExportVm as a powered-on license probe.
+        if options.probe_only && vm.power_state != "poweredOff" {
+            return Err(Error::InvalidPowerState);
+        }
         if !options.probe_only {
             // Output admission happens before any guest power operation or lease.
             attempt.artifact = Some(crate::artifact::Artifact::create(
@@ -346,6 +431,8 @@ impl Session {
                     error,
                     Error::LicenseRestricted
                         | Error::InvalidPowerState
+                        | Error::MethodDisabled
+                        | Error::InvalidState
                         | Error::NoPermission
                         | Error::Restricted
                 ) {
@@ -525,6 +612,59 @@ impl Session {
         }
     }
 }
+// UTC timestamps only; never propagate arbitrary server strings into diagnostics.
+fn task_time(node: roxmltree::Node<'_, '_>) -> Result<String> {
+    checked_task_time(xml::text(node)?)
+}
+fn checked_task_time(s: &str) -> Result<String> {
+    let b = s.as_bytes();
+    if !(20..=30).contains(&b.len()) || b.last() != Some(&b'Z') {
+        return Err(Error::Schema);
+    }
+    for (i, &c) in b[..19].iter().enumerate() {
+        let valid = match i {
+            4 | 7 => c == b'-',
+            10 => c == b'T',
+            13 | 16 => c == b':',
+            _ => c.is_ascii_digit(),
+        };
+        if !valid {
+            return Err(Error::Schema);
+        }
+    }
+    if b.len() > 20
+        && (b[19] != b'.' || b.len() == 21 || !b[20..b.len() - 1].iter().all(u8::is_ascii_digit))
+    {
+        return Err(Error::Schema);
+    }
+    let n = |a, b| s[a..b].parse::<u32>().map_err(|_| Error::Schema);
+    let (year, month, day) = (n(0, 4)?, n(5, 7)?, n(8, 10)?);
+    let leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+    let days = [
+        31,
+        if leap { 29 } else { 28 },
+        31,
+        30,
+        31,
+        30,
+        31,
+        31,
+        30,
+        31,
+        30,
+        31,
+    ];
+    if !(1..=12).contains(&month)
+        || day == 0
+        || day > days[(month - 1) as usize]
+        || n(11, 13)? > 23
+        || n(14, 16)? > 59
+        || n(17, 19)? > 60
+    {
+        return Err(Error::Schema);
+    }
+    Ok(s.to_owned())
+}
 fn admit_vm(vm: &Vm, capacity: u64) -> Result<()> {
     if vm.template || vm.snapshot_present || vm.disks.len() != 1 {
         return Err(Error::ExportScope);
@@ -646,4 +786,34 @@ fn verify_manifest(raw: &str, key: &str, file: &ExportFile, capacity: u64) -> Re
         return Err(Error::Manifest);
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod task_timestamp_tests {
+    use super::*;
+    #[test]
+    fn timestamps_are_bounded_calendar_values_not_server_messages() {
+        for value in [
+            "2024-02-29T23:59:59Z",
+            "2026-01-02T03:04:05.123456Z",
+            "2000-02-29T00:00:00.123456789Z",
+        ] {
+            assert_eq!(checked_task_time(value).unwrap(), value);
+        }
+        for value in [
+            "PRIVATE",
+            "2025-02-29T00:00:00Z",
+            "1900-02-29T00:00:00Z",
+            "2026-00-01T00:00:00Z",
+            "2026-04-31T00:00:00Z",
+            "2026-10-01T24:00:00Z",
+            "2026-10-01T00:00:00.Z",
+            "2026-10-01T00:00:00.1234567890Z",
+            "2026-10-01T00:00:00+00:00",
+            "2026-10-01T00:00:00.PRIVATEZ",
+            "ééééééééééZ",
+        ] {
+            assert_eq!(checked_task_time(value), Err(Error::Schema), "{value}");
+        }
+    }
 }

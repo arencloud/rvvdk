@@ -2059,21 +2059,52 @@ This is a control-plane regression check. Live transfer throughput, CPU/RSS and
 sync-bound performance remain unqualified until licensed access is available.
 PERF.0/R4.4, prior investigations and the QEMU partial second-extent discrepancy stay open.
 
+## V0.3.2a — Powered-off probes and task diagnostics (2026-10-01)
+
+Completed in this step's commit; baseline `5e5e91b`.
+[ADR-0049](adr/0049-powered-off-export-probes.md),
+[evidence](benchmark-results/2026-10-01-v032a/README.md).
+
+The user reported updating licensing on the existing ESXi 8.0.3 host. Discovery
+now lists an Enterprise edition; active assignment and successful export remain
+unresolved. The replacement/vSphere 9 deployment proposal is superseded for this
+proof. We made no license changes.
+
+Two powered-on eligibility probes returned faults and correlated with two running
+export tasks. The first report classified a generic SOAP fault; the second typed
+TaskInProgress but incorrectly marked acquisition rejected. Both original reports
+are retained. Final code treats TaskInProgress cleanup as unconfirmed and refuses
+to call ExportVm from a powered-on probe. Read-only, bounded recent-task inspection
+helps diagnose uncertainty without changing power or canceling other tasks.
+
+The user canceled both tasks. Subsequent inspection confirmed both terminal and
+canceled. A final-source powered-on probe emitted invalid_power_state/not_acquired,
+made no ExportVm or shutdown call, and confirmed Logout; the following inspection
+found the same two canceled tasks. Final discovery observes both VMs powered on.
+No VM power, guest data or artifact changed in this step. No CancelTask call was
+made by rvddk. All retained live sessions confirmed Logout.
+
+Validation: **580 unique workspace tests pass**, one existing ignored test;
+formatting, workspace Clippy with warnings denied and release example builds pass.
+Six new tests cover the guard, task inspection/identity, bounds/types/duplicates,
+redaction and timestamp calendar limits. The crate totals 43 tests. One initial
+new assertion incorrectly matched a datastore info query as a task query; it was
+corrected to match the Task object type. The failed test log is retained alongside
+the passing full run.
+
+No formal performance comparison: these are differing diagnostic operations, and
+some calls overlapped builds/tests. Preserve all timings without interpreting them
+as transfer throughput or an improvement. The transfer path is unchanged; the
+ordinary discovery property sets remain unchanged. PERF.0/R4.4, V0.3.1's adverse
+individual pairs and the QEMU producer discrepancy remain open.
+
 ## Next session
 
-Continue **V0.3.2** using the [saved licensed qualification plan](vmware-access-plan.md#v032--licensed-live-qualification).
-The user initially proposed vSphere 9, then offered version 8 and asked which to
-deploy. Recommend **ESXi 8.0 Update 3 (8.0.3) with active supported trial/commercial
-licensing and new VMs**. This matches the implemented product/API policy and removes
-a version port from the first live export proof. Verify the exact replacement build,
-API, licensing and certificate; do not assume installer identity implies eligibility.
-Establish fresh VM identities and a new benchmark baseline. The vSphere 9 API and
-lease certificate checklist is retained as deferred compatibility work. No live host
-calls or runtime changes were made; documentation links/whitespace were checked,
-and no new Rust test or benchmark run is claimed for this planning decision.
-
-After user-provisioned supported licensing, repeat the probe, establish an independent
-logical-byte oracle, gracefully shut down only the selected VM if needed, and prove
-live export/format, Complete/Abort/Logout and repeated transfer performance. Retain
-all failure evidence. Do not declare V0/R6 complete from synthetic fixtures or a
-server manifest digest alone. Commit each completed implementation step locally.
+Continue **V0.3.2** on the existing host using the
+[saved qualification plan](vmware-access-plan.md#v032--licensed-live-qualification).
+Guest SSH address/login for the selected 30 GiB Fedora VM has been requested and
+is pending. Prepare deterministic content and an independent reference before
+graceful shutdown; the ESXi root login does not provide guest access. Then qualify
+live export format/bytes, Complete/Abort/Logout, final power state and at least
+three comparable transfers with CPU/RSS and throughput plots. Do not mark V0/R6
+complete from fixtures or a server manifest alone. Commit each completed step.

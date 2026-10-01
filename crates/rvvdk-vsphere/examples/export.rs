@@ -31,6 +31,7 @@ fn run() -> Result<(), Error> {
                 options.probe_only = false;
             }
             "--allow-shutdown" => options.allow_graceful_shutdown = true,
+            "--inspect" => options.inspect_only = true,
             "--max-bytes" => {
                 options.max_encoded_bytes = args
                     .next()
@@ -56,7 +57,7 @@ fn run() -> Result<(), Error> {
             }
             "--help" => {
                 println!(
-                    "export --endpoint HTTPS_URL --certificate-sha256 SHA256 [--user USER] [--capacity-bytes N] [--output NEW_DIRECTORY --allow-shutdown] [--max-bytes N] [--timeout-seconds N] [--cancel-after-ms N]\nDefault: one 30 GiB disk VM eligibility probe; no power change or download. Supplying output enables export. Shutdown is graceful only and requires its flag. The selected VM is left in its last observed state. Ctrl-C requests cooperative abort/logout."
+                    "export --endpoint HTTPS_URL --certificate-sha256 SHA256 [--user USER] [--capacity-bytes N] [--inspect] [--output NEW_DIRECTORY --allow-shutdown] [--max-bytes N] [--timeout-seconds N] [--cancel-after-ms N]\nDefault: one 30 GiB disk VM eligibility probe; requires poweredOff, no power change or download. --inspect reads recent tasks without acquiring a lease and permits poweredOn. Supplying output enables export. Shutdown is graceful only and requires its flag. The selected VM is left in its last observed state. Ctrl-C requests cooperative abort/logout."
                 );
                 return Ok(());
             }
@@ -98,6 +99,10 @@ fn run() -> Result<(), Error> {
         report
     })?;
     let success = report.is_success()
+        || (report.inspection_only
+            && report.primary_error.is_none()
+            && report.session_cleanup == rvvdk_vsphere::Cleanup::LoggedOut
+            && report.pagination_cleanup_error.is_none())
         || (report.probe_only
             && report.primary_error.is_none()
             && report.lease_cleanup == rvvdk_vsphere::LeaseCleanup::Aborted
