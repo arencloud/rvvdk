@@ -1548,6 +1548,23 @@ Length/digest and source comparisons do not authorize resume, abort or cleanup.
 
 [ADR-0057](adr/0057-source-identity-and-artifact-contract.md),
 [contract](export-artifact-contract.md), [qualification](benchmark-results/2026-10-02-r61a/README.md).
-The qualification exporter remains unchanged. Next R6.1b establishes durable
-ownership/state transitions and process-loss reconciliation; R6.1c integrates the
+The qualification exporter remains unchanged. R6.1b now supplies the durable local foundation below; R6.1c integrates the
 workflow. Private source/content hashes remain outside diagnostic reports.
+
+
+### R6.1b — Durable local ownership and recovery assessment
+
+A private store-wide lock serializes bounded atomic journal updates. Each operation
+binds artifact/source/store identity and random ownership, with intent persisted
+before external actions. Owned stage/member inode stamps and a marker permit only
+bounded, freshly checked local cleanup. Terminal records reserve artifact IDs;
+failed transactions, uncertain preparation, remote outcomes and publication remain
+for reconciliation. Reopening never creates a live lease capability.
+
+[ADR-0058](adr/0058-durable-job-ownership.md), [contract](durable-job-ownership.md),
+[fault qualification and timing](benchmark-results/2026-10-02-r61b/README.md).
+No remote resume/abort or actual payload publication is implemented here. Next
+R6.1c must bind the real export, content validation, conversion and publication to
+these intents, preserve heartbeat/cancellation under journal delays, and qualify
+uncertain outcomes. Private ancestor trust, cooperating writers, local filesystem
+semantics and store-wide serialization are explicit boundaries.

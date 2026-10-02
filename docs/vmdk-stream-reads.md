@@ -119,5 +119,5 @@ current CLI conversion checks; historical envelope/read scripts deliberately
 retain their pre-integration CLI rejection gate. Retain PERF.0 and prior stream
 timing follow-ups. R5.12p qualifies space-efficient local zero output; [R5.12q](benchmark-results/2026-10-02-r512q/README.md)
 records the full-copy phase investigation and preserves the flush/layout follow-up.
-[R6.1a](export-artifact-contract.md) defines artifact identity; next is R6.1b durable
-ownership before R6.1c production VMware workflow integration.
+[R6.1a](export-artifact-contract.md) defines artifact identity; [R6.1b](durable-job-ownership.md)
+adds the local ownership/recovery foundation. Next is R6.1c workflow integration.

@@ -96,6 +96,10 @@ pub struct SourceSelection {
     binding: [u8; 32],
 }
 impl SourceSelection {
+    #[cfg(target_os = "linux")]
+    pub(crate) fn ownership_binding(&self) -> [u8; 32] {
+        self.binding
+    }
     pub fn new(
         endpoint: EndpointIdentity,
         vm_reference: &str,

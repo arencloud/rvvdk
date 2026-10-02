@@ -9,6 +9,8 @@ mod artifact;
 pub mod contract;
 mod error;
 mod export;
+#[cfg(target_os = "linux")]
+pub mod ownership;
 pub use export::{Cancellation, ExportOptions, ExportReport, LeaseCleanup, TaskSummary, export_vm};
 mod inventory;
 mod transport;

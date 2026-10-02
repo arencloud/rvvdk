@@ -378,8 +378,9 @@ following bounded packages in order:
    default and storage/layout performance follow-up. R6.1a is complete.
 5. **R6.1a complete — Source/artifact contract:** [explicit identity and bounded
    metadata](export-artifact-contract.md) distinguish runtime selection from untrusted
-   persistence. **Next R6.1b:** durable ownership and process-loss reconciliation;
-   never infer cleanup authority from artifact metadata. R6.1c then integrates
+   persistence. **R6.1b complete:** [durable local ownership](durable-job-ownership.md)
+   and conservative crash assessment/cleanup; records grant no remote capability.
+   **Next R6.1c** integrates
    the proven sequential export and conversion, replacing capacity-only selection
    in the production path. The qualification harness remains separate.
 6. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9

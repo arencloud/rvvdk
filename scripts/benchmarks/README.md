@@ -174,3 +174,15 @@ Use `--binary RELEASE_CONTRACT_BENCH --report NEW_DIRECTORY` for new observation
 The precomputed binding comparison is distinct from identity hashing; whole-process
 CPU/RSS include Criterion's own warmup and analysis. Prior copy/flush follow-ups
 remain separate.
+
+R6.1b records synthetic durable-job phases separately on Btrfs and volatile tmpfs,
+including longer job batches after over-5% run-median spreads:
+
+```sh
+python scripts/benchmarks/measure_ownership.py --plot-only --report docs/benchmark-results/2026-10-02-r61b
+```
+
+For new measurements, build `ownership_probe` and supply `--binary`, a new report
+and new `--btrfs-parent` / `--tmpfs-parent` fixture parents. Every job performs ten
+journal commits with no VMware or disk payload operations. Reopening/cleanup are
+checked, and each successful synthetic fixture is removed outside timed phases.

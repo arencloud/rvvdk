@@ -2485,34 +2485,70 @@ so these are a new baseline, not a speedup or regression claim. Plot audit and
 source/artifact hashes bind the evidence. No timed run overlaps builds/tests/plots.
 Keep the older Btrfs flush and other PERF.0 work separate and open.
 
+## R6.1b — Durable ownership and conservative recovery foundation
+
+Completed [ADR-0058](adr/0058-durable-job-ownership.md) and the
+[Linux ownership contract](durable-job-ownership.md). A private, exclusively locked
+job store binds a random operation ID, artifact ID, expected source and store inode.
+Bounded checksummed records use exclusive temporary creation, full write, file sync,
+atomic rename and parent sync. Persistence uncertainty poisons the writer; surviving
+transactions are retained, never replayed. Terminal records prevent artifact reuse.
+
+The store creates and stamps a private stage and three fixed members before claiming
+ownership. Cleanup persists intent, freshly checks inode/mode/link count and marker,
+then removes only owned names nonrecursively. Unknown/replaced entries are preserved.
+Reopening yields an assessment, not a live Job or lease capability. Remote request /
+release and publication uncertainties remain unresolved. No credential, ticket URL,
+usable lease reference, automatic resume or network action is introduced. Production
+export/conversion wiring is R6.1c; the legacy qualification exporter is unchanged.
+
+[Evidence and plots](benchmark-results/2026-10-02-r61b/README.md): 649 workspace tests
+pass, two filesystem-specific tests ignored. Fourteen ownership tests pass on tmpfs
+and Btrfs, including sixteen real child-process exits and staged I/O failures.
+Clippy across all targets and formatting pass. An initial test exposed a transient
+fork-inherited lock lifetime; explicit Drop unlock fixes it. Ten repeated suites
+(140 executions) pass afterward. Store handles must not be shared across fork;
+private trusted ancestors and cooperating writers remain explicit prerequisites.
+These are process-loss tests, not physical power-cut qualification.
+
+Twelve synthetic runs retain 576 jobs (ten journal commits each), all phase samples,
+CPU/RSS, record allocation and host observations. Both filesystems receive longer
+64-job repeats after initial over-5% spreads. Longer Btrfs phase medians: record
+creation 12.925 ms, stage preparation 57.793 ms, five lease-observation updates
+65.044 ms, reopen/recovery 77.65 µs, cleanup 39.080 ms. Btrfs recovery spread remains
+12.1%; tmpfs spreads remain 3.8–10.0%. Largest record 743 bytes; terminal file allocation
+4 KiB per job excludes filesystem metadata. Preserve all durability barriers and
+measure this overhead during integration. No prior implementation exists, so these
+are new baselines. No benchmark overlaps builds/tests/standalone plotting. No ESXi
+or guest access was needed; synthetic fixtures are removed and private data excluded.
+
 ## Next session
 
-Start **R6.1b — Durable ownership and process-loss reconciliation**:
+Start **R6.1c — Integrate explicit selection, export and conversion**, in reviewable
+bounded packages if needed:
 
-1. Define a private durable job/ownership record separate from untrusted artifact
-   claims. Bind unique operation/artifact identity, expected source and owned
-   resources without persisting credentials, session cookies or ticket URLs.
-2. Implement bounded atomic state transitions and crash-safe local persistence,
-   with explicit states for uncertain acquisition, publication and cleanup. Never
-   infer ownership from reused artifact IDs, capacity or a parsed manifest.
-3. Fault-inject crashes/interrupted writes and cleanup, stale records, competing
-   processes and unconfirmed remote outcomes. Require fresh evidence before any
-   remote resume/abort or local removal; prove resources belong to this operation.
-4. Record performance and update the architecture/implementation log. Keep the
-   first package synthetic/local unless new host evidence is actually needed.
+1. Add the production source-selection path using R6.1a identities instead of
+   capacity-only selection. Revalidate on the admitted connection before acquisition
+   and around state changes; preserve existing scope and power/cancellation rules.
+2. Connect R6.1b intents to the actual export lease and owned resource handles.
+   Await durable intent before RPC; keep the live lease capability process-local.
+   Do not resurrect ownership from records or retry uncertain requests. Qualify
+   cancellation/heartbeat behavior when local journal writes stall.
+3. Finish and independently check container bytes, persist private artifact metadata,
+   connect confined local conversion, and implement actual no-replace publication
+   with file/directory durability and no outstanding writers. Journal acknowledgments
+   alone do not prove payload validation or publication. Keep uncertain states pending.
+4. Fault-inject ordering, publication races, dropped responses, cleanup and process
+   loss through the combined workflow. Keep the old capacity-selected proof separate;
+   never automatically promote its manifest to job ownership.
+5. Repeat matched performance/CPU/RSS/allocation and byte checks, then qualify the
+   integrated workflow on the already authorized lab when new host evidence is needed.
+   Preserve the journal's measured storage overhead; do not remove barriers to tune it.
 
-Then **R6.1c** connects explicit source revalidation, the qualified sequential
-export and local conversion using these contracts, retaining cancellation,
-redaction and durable no-replace publication. Do not automatically promote the
-old capacity-selected proof manifest. Qualify the integrated workflow on the
-already authorized lab when needed.
-
-Keep PERF.0 visible: prior stream timing, controlled CPU/SMT/frequency/layout work,
-map admission/cache sensitivity, random whole-grain amplification, sparse-output
-Btrfs layout/flush cost and measured bounded parallel decoding. Do not grow scratch
-state with unbounded worker count. Retain R4.4 and discovery/TLS follow-ups. The
-historical monolithic sparse CLI-copy slowdown did not reproduce in R5.12p; the
-retained-export Btrfs slowdown remains visible in R5.12q. Preserve all datasets
-without unsupported causal claims. VMFS sparse, seSparse, online snapshots, CBT,
-restore, vCenter and vSphere 9 remain separately qualified later work. Commit each
-completed package with tests, benchmark disposition, evidence and next-session notes.
+Keep PERF.0 visible: prior stream timing, CPU/SMT/frequency/layout controls, map/cache
+sensitivity, random whole-grain amplification, sparse-output Btrfs layout/flush cost,
+bounded parallel decoding and integrated durable-journal overhead. Retain R4.4 and
+discovery/TLS work. No universal timing or automatic remote-recovery clearance is
+claimed. VMFS sparse, seSparse, online snapshots, CBT, restore, vCenter and vSphere 9
+remain later qualified work. Commit every completed package with tests, benchmark
+results, architecture decisions and updated next-session notes.

@@ -106,9 +106,9 @@ record does not authorize remote or local actions.
 
 ## Remaining integration gates
 
-R6.1b defines durable ownership, state transitions and process-loss reconciliation.
-It must prevent stale/reused artifact IDs or forged claims from granting authority
-over a lease or staging directory. R6.1c connects explicit source revalidation,
+[R6.1b](durable-job-ownership.md) supplies the private durable ownership journal,
+state transitions and conservative process-loss assessment/cleanup. Artifact claims
+never grant authority over a lease or staging directory. R6.1c connects explicit source revalidation,
 sequential export, durable artifact admission and local conversion. Existing
 capacity-only manifests are not automatically promoted. No new ESXi run is needed
 for R6.1a's pure contract tests and synthetic measurements.
