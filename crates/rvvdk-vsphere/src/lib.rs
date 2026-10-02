@@ -15,6 +15,12 @@ pub use export::{
     Cancellation, ExportOptions, ExportReport, LeaseCleanup, TaskSummary, export_selected_vm,
     export_vm,
 };
+#[cfg(target_os = "linux")]
+mod journal_worker;
+#[cfg(target_os = "linux")]
+mod owned_probe;
+#[cfg(target_os = "linux")]
+pub use owned_probe::{OwnedProbeReport, probe_owned_export};
 mod inventory;
 mod transport;
 mod xml;

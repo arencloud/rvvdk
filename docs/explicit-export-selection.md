@@ -65,9 +65,9 @@ attempt. Production integration must journal intent and preserve uncertain remot
 outcomes instead of treating this proof as a recovery protocol. Published proof
 artifacts are not automatically promoted to durable jobs.
 
-Next is R6.1c.2: join actual lease handling and owned resources to durable intents,
-await filesystem work without blocking heartbeats, and qualify cancellation,
-dropped responses, process loss and writer lifetime. Verified artifact metadata,
+[R6.1c.2a](durable-export-probe.md) now binds a separate acquire/abort probe to
+durable intent, with worker drain, heartbeats and conservative process-loss
+assessment. Next R6.1c.2b integrates payload writers and completion. Verified artifact metadata,
 confined conversion and actual journal-bound publication then complete R6.1c.
 
 [ADR-0059](adr/0059-explicit-export-selection.md),

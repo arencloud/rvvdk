@@ -1,0 +1,29 @@
+   Compiling rvvdk-vsphere v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-vsphere)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.80s
+     Running unittests src/lib.rs (target/debug/deps/rvvdk_vsphere-bd050ffb210a946e)
+
+running 3 tests
+test owned_probe::tests::cancellation_keeps_heartbeat_and_drains_accepted_intent_before_abort ... ok
+test owned_probe::tests::failed_progress_still_drains_intent_before_exactly_one_abort ... ok
+test owned_probe::tests::heartbeat_runs_while_held_and_abort_intents_sync ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 35 filtered out; finished in 2.98s
+
+     Running tests/discovery.rs (target/debug/deps/discovery-9afa23b70b64d360)
+
+running 13 tests
+test export_tests::owned_probe::benchmark::matched_owned_probe ... ignored, opt-in matched journal/probe performance matrix
+test export_tests::owned_probe::owned_probe_crash_child ... ok
+test export_tests::owned_probe::store_id_reuse_fails_before_any_connection ... ok
+test export_tests::owned_probe::failed_lease_record_never_authorizes_abort ... ok
+test export_tests::owned_probe::fresh_identity_change_after_intent_blocks_acquisition ... ok
+test export_tests::owned_probe::malformed_acquisition_does_not_invent_a_lease ... ok
+test export_tests::owned_probe::cancellation_after_acquire_intent_preserves_conservative_record_without_rpc ... ok
+test export_tests::owned_probe::failed_abort_ack_retains_remote_success_but_blocks_local_cleanup ... ok
+test export_tests::owned_probe::cancellation_after_acquire_still_persists_abort_intent ... ok
+test export_tests::owned_probe::intents_precede_rpc_and_cleanup_requires_the_returned_operation ... ok
+test export_tests::owned_probe::process_loss_at_rpc_boundaries_leaves_durable_intent_without_recovered_capability ... ok
+test export_tests::owned_probe::acquisition_and_abort_failures_remain_unknown_without_retry ... ok
+test export_tests::owned_probe::lost_rpc_response_retains_intent_and_never_retries ... ok
+
+test result: ok. 12 passed; 0 failed; 1 ignored; 0 measured; 49 filtered out; finished in 0.97s

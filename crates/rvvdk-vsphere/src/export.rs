@@ -27,7 +27,7 @@ impl Cancellation {
     pub fn cancel(&self) {
         self.0.store(true, Ordering::Relaxed);
     }
-    fn check(&self) -> Result<()> {
+    pub(crate) fn check(&self) -> Result<()> {
         if self.0.load(Ordering::Relaxed) {
             Err(Error::Cancelled)
         } else {
@@ -288,10 +288,10 @@ struct Device {
     key: String,
     url: reqwest::Url,
 }
-struct LeaseInfo {
+pub(crate) struct LeaseInfo {
     device: Device,
     ignored_non_disk_devices: usize,
-    timeout: Duration,
+    pub(crate) timeout: Duration,
 }
 #[cfg(target_os = "linux")]
 impl Session {
@@ -354,7 +354,7 @@ impl Session {
         Ok(result)
     }
 
-    async fn selected_vm(&mut self, reference: &Reference) -> Result<Vm> {
+    pub(crate) async fn selected_vm(&mut self, reference: &Reference) -> Result<Vm> {
         let raw = self.properties(reference).await?;
         let doc = xml::parse(&raw)?;
         Properties::parse(xml::response(&doc, "RetrievePropertiesEx")?, reference)?.vm(
@@ -693,7 +693,7 @@ impl Session {
             .map_err(selection_error)?;
         Ok(())
     }
-    fn lease_info(
+    pub(crate) fn lease_info(
         &self,
         node: roxmltree::Node<'_, '_>,
         lease: &Reference,
@@ -732,7 +732,7 @@ impl Session {
             timeout: Duration::from_secs(timeout),
         })
     }
-    async fn heartbeat<T>(
+    pub(crate) async fn heartbeat<T>(
         &mut self,
         lease: &Reference,
         timeout: Duration,
@@ -964,7 +964,7 @@ fn verify_manifest(raw: &str, key: &str, file: &ExportFile, capacity: u64) -> Re
 }
 
 #[cfg(target_os = "linux")]
-fn selection_error(error: crate::contract::ContractError) -> Error {
+pub(crate) fn selection_error(error: crate::contract::ContractError) -> Error {
     match error {
         crate::contract::ContractError::UnsupportedScope => Error::ExportScope,
         _ => Error::Identity,

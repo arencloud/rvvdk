@@ -2556,30 +2556,68 @@ No VMware host, guest, power operation or private image is used for this package
 R6.1c as a whole remains open: this is still the qualification artifact lifecycle,
 not production durable export, recovery, verified R6 metadata or conversion.
 
+## R6.1c.2a — Durable acquire/abort integration
+
+Completed a bounded part of R6.1c.2: `probe_owned_export` consumes a locked private
+store and binds a real acquire/abort lease to an owned empty stage. One blocking
+worker owns Job and all stage handles, with a one-slot serial command channel.
+AcquireIntent is durable before fresh source revalidation and ExportVm. The live
+lease remains process-local; LeaseHeld and AbortIntent must be durable before one
+abort attempt. The abort response and its journal acknowledgment remain distinct.
+
+Ready-lease heartbeats run during journal waits. Cancellation and progress failure
+never abandon an accepted write; the worker is drained before return. Journal
+failure blocks further remote mutation, while uncertain acquisition/abort and
+post-intent cancellation preserve conservative records. No file writer escapes,
+no cleanup occurs on Drop, and no recovery record creates a lease capability. The
+empty stage requires explicit checked cleanup after the store is released.
+
+[Contract](durable-export-probe.md), [ADR-0060](adr/0060-durable-export-lease-probe.md),
+[tests and performance plots](benchmark-results/2026-10-02-r61c2a/README.md).
+Workspace **676 passed, four ignored**; all-target clippy and formatting pass.
+Eighteen new tests include RPC ordering observations, journal failures, lost replies,
+SIGKILL at acquisition/abort boundaries, cancelled waiters, worker failure/panic,
+and heartbeats through injected 1.3-second journal stalls. All 15 owned-probe tests
+also pass with Btrfs fixtures. No physical power-cut qualification is implied.
+
+The matched release matrix retains **576 probes / 288 pairs** on Btrfs and tmpfs,
+including longer repeats after adverse observations. Seven durable commits per
+owned probe add a substantial fixed cost. Longer median wall is 124.832 ms on
+Btrfs versus 1.590 ms for the explicit proof; tmpfs is 4.087 versus 1.338 ms. Separate
+cleanup costs 38.231 ms / 0.186 ms. Every owned payload/metadata file is empty,
+file allocation is 8,192 bytes per stage+record, and checked cleanup reaches Cleaned.
+No data-throughput claim or sync-barrier removal follows from this comparison.
+
+No ESXi or guest operation was needed. This is an API-level durable probe, not full
+payload export, completion, conversion, publication or resumable production recovery.
+R6.1c.2 and R6.1c remain open; legacy exporters retain their separate lifecycle.
+
 ## Next session
 
-Start **R6.1c.2 — Bind real lease and resource ownership to durable intents**:
+Start **R6.1c.2b — Transfer through owned resources and qualify completion**:
 
-1. Preserve R6.1c.1's explicit source binding and boundary checks while connecting
-   R6.1b intents to the actual export lease and owned resource handles. The current
-   proof writer must not be represented as a journal-owned stage by assertion.
-2. Await durable intent before RPC; keep live lease capability process-local. Do
-   not resurrect ownership from records or retry uncertain requests. Replace the
-   proof's abort-after-completion-error behavior with conservative uncertain-state
-   handling in the journal-bound path. Keep the legacy proof separate.
-3. Coordinate blocking journal work with heartbeat/cancellation and await all
-   outstanding writers. The borrowing synchronous Job API needs a concrete worker
-   or owned coordinator design; dropping a future must not leave untracked writers.
-4. Qualify intent/RPC ordering, dropped acquisition/completion responses, slow local
-   storage, cleanup failure and process loss. Keep uncertain states pending; journal
-   acknowledgments alone are not proof of payload validation or publication.
-5. Subsequent bounded packages must independently check container bytes, persist
-   private artifact metadata, connect confined conversion, and implement actual
-   no-replace publication with file/directory durability. Never automatically promote
-   a capacity-proof manifest into job ownership.
-6. Repeat matched CPU/RSS/allocation and byte checks. Qualify the complete integrated
-   workflow on the authorized lab when new host evidence is needed. Keep measured
-   journal storage overhead and selection RPC costs; do not remove barriers to tune.
+1. Extend the existing worker/coordinator to transfer through the journal-owned
+   payload handle. Keep bounded buffers, explicit source/pin binding, progress,
+   cancellation, byte budgets and source checks at all transfer boundaries. Do not
+   label the legacy Artifact writer as owned by assertion or promote old manifests.
+2. Coordinate payload writers and journal commands, drain accepted work on every
+   outcome, and distinguish received, written and durable bytes. Preserve inode/
+   marker checks and prevent publication or cleanup with outstanding writers.
+3. Validate/sync the completed container before recording TransferComplete. Persist
+   CompleteIntent before the completion RPC and revalidate source as required after
+   any slow local barrier. A lost response or uncertain persistence remains pending;
+   never follow an uncertain completion with the legacy proof's automatic abort.
+4. Fault-inject transfer failure, cancellation, source drift, slow disk/journal work,
+   dropped completion response, acknowledgment failure and process loss through the
+   combined workflow. Keep the live lease capability process-local and never replay
+   uncertain requests from a record.
+5. Follow with verified private artifact metadata, confined local conversion, and
+   actual descriptor-bound no-replace publication with file/directory durability.
+   Journal acknowledgment is not proof of container validity or publication.
+6. Benchmark matched CPU/RSS/allocation and byte correctness with standalone plots.
+   Preserve the measured journal fixed cost and previous storage/stream findings.
+   Use the authorized lab when the integrated path needs new host/guest evidence;
+   current synthetic tests do not qualify full live workflow compatibility.
 
 Keep PERF.0 visible: prior stream timing, CPU/SMT/frequency/layout controls, map/cache
 sensitivity, random whole-grain amplification, sparse-output Btrfs layout/flush cost,

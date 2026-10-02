@@ -23,7 +23,8 @@ const MAX_RECORD: u64 = 8192;
 const MEMBERS: [&str; 3] = ["disk-1.vmdk", "manifest.json", "owner"];
 type Result<T> = std::result::Result<T, OwnershipError>;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, thiserror::Error)]
+#[serde(rename_all = "snake_case")]
 pub enum OwnershipError {
     #[error("job store is busy")]
     Busy,
@@ -70,7 +71,8 @@ pub enum JobState {
 }
 
 /// An assessment, never permission to resume, abort, publish or remove a path.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum RecoveryAction {
     NoResourcesRecorded,
     LocalPreparationUnknown,
@@ -81,8 +83,9 @@ pub enum RecoveryAction {
     CleanupMayBePartial,
     Terminal,
 }
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct RecoveryReport {
+    #[serde(skip)]
     pub operation: OperationId,
     pub state: JobState,
     pub sequence: u64,

@@ -1,0 +1,596 @@
+{
+  "binary_sha256": "eb3a254674a83adc0a151db0181bc370c1db56354840f702def6e78f1c7cfca1",
+  "kernel": "7.2.5-200.fc44.x86_64",
+  "cpu": 0,
+  "commands": [
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c2a/initial-btrfs-1-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c2a/reference/discovery",
+        "--exact",
+        "export_tests::owned_probe::benchmark::matched_owned_probe",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 16,
+      "before": {
+        "unix_seconds": 1790963058.6207771,
+        "load": [
+          2.501953125,
+          1.85400390625,
+          1.5625
+        ],
+        "frequency": {
+          "scaling_cur_freq": "1441257",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790963061.3406692,
+        "load": [
+          2.5419921875,
+          1.873046875,
+          1.5703125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2637094",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 2.69,
+        "user_seconds": 0.06,
+        "system_seconds": 0.12,
+        "max_rss_kib": 7752
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c2a/initial-tmpfs-1-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c2a/reference/discovery",
+        "--exact",
+        "export_tests::owned_probe::benchmark::matched_owned_probe",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 16,
+      "before": {
+        "unix_seconds": 1790963061.34149,
+        "load": [
+          2.5419921875,
+          1.873046875,
+          1.5703125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "800339",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790963061.5057452,
+        "load": [
+          2.5419921875,
+          1.873046875,
+          1.5703125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2052233",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 0.13,
+        "user_seconds": 0.03,
+        "system_seconds": 0.03,
+        "max_rss_kib": 7912
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c2a/initial-tmpfs-2-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c2a/reference/discovery",
+        "--exact",
+        "export_tests::owned_probe::benchmark::matched_owned_probe",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 16,
+      "before": {
+        "unix_seconds": 1790963061.5070095,
+        "load": [
+          2.5419921875,
+          1.873046875,
+          1.5703125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2074722",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790963061.671304,
+        "load": [
+          2.5419921875,
+          1.873046875,
+          1.5703125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "1671938",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 0.14,
+        "user_seconds": 0.03,
+        "system_seconds": 0.03,
+        "max_rss_kib": 7688
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c2a/initial-btrfs-2-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c2a/reference/discovery",
+        "--exact",
+        "export_tests::owned_probe::benchmark::matched_owned_probe",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 16,
+      "before": {
+        "unix_seconds": 1790963061.6722999,
+        "load": [
+          2.5419921875,
+          1.873046875,
+          1.5703125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "986726",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790963064.3922749,
+        "load": [
+          2.5419921875,
+          1.873046875,
+          1.5703125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2198581",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 2.7,
+        "user_seconds": 0.05,
+        "system_seconds": 0.13,
+        "max_rss_kib": 7884
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c2a/initial-btrfs-3-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c2a/reference/discovery",
+        "--exact",
+        "export_tests::owned_probe::benchmark::matched_owned_probe",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 16,
+      "before": {
+        "unix_seconds": 1790963064.3935075,
+        "load": [
+          2.5419921875,
+          1.873046875,
+          1.5703125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "1269599",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790963067.1135106,
+        "load": [
+          2.5791015625,
+          1.89208984375,
+          1.578125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2159741",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 2.67,
+        "user_seconds": 0.05,
+        "system_seconds": 0.14,
+        "max_rss_kib": 7928
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c2a/initial-tmpfs-3-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c2a/reference/discovery",
+        "--exact",
+        "export_tests::owned_probe::benchmark::matched_owned_probe",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 16,
+      "before": {
+        "unix_seconds": 1790963067.1149392,
+        "load": [
+          2.5791015625,
+          1.89208984375,
+          1.578125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2159741",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790963067.2792814,
+        "load": [
+          2.5791015625,
+          1.89208984375,
+          1.578125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "800968",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 0.14,
+        "user_seconds": 0.03,
+        "system_seconds": 0.04,
+        "max_rss_kib": 7868
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c2a/longer-btrfs-1-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c2a/reference/discovery",
+        "--exact",
+        "export_tests::owned_probe::benchmark::matched_owned_probe",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 32,
+      "before": {
+        "unix_seconds": 1790963067.2807639,
+        "load": [
+          2.5791015625,
+          1.89208984375,
+          1.578125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "851903",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790963072.7062283,
+        "load": [
+          2.53271484375,
+          1.89404296875,
+          1.58056640625
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2397377",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 5.39,
+        "user_seconds": 0.1,
+        "system_seconds": 0.28,
+        "max_rss_kib": 8000
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c2a/longer-tmpfs-1-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c2a/reference/discovery",
+        "--exact",
+        "export_tests::owned_probe::benchmark::matched_owned_probe",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 32,
+      "before": {
+        "unix_seconds": 1790963072.7081485,
+        "load": [
+          2.53271484375,
+          1.89404296875,
+          1.58056640625
+        ],
+        "frequency": {
+          "scaling_cur_freq": "1428335",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790963072.9727373,
+        "load": [
+          2.53271484375,
+          1.89404296875,
+          1.58056640625
+        ],
+        "frequency": {
+          "scaling_cur_freq": "800555",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 0.26,
+        "user_seconds": 0.05,
+        "system_seconds": 0.08,
+        "max_rss_kib": 7816
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c2a/longer-tmpfs-2-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c2a/reference/discovery",
+        "--exact",
+        "export_tests::owned_probe::benchmark::matched_owned_probe",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 32,
+      "before": {
+        "unix_seconds": 1790963072.974551,
+        "load": [
+          2.53271484375,
+          1.89404296875,
+          1.58056640625
+        ],
+        "frequency": {
+          "scaling_cur_freq": "1208073",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790963073.239237,
+        "load": [
+          2.53271484375,
+          1.89404296875,
+          1.58056640625
+        ],
+        "frequency": {
+          "scaling_cur_freq": "800755",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 0.25,
+        "user_seconds": 0.07,
+        "system_seconds": 0.07,
+        "max_rss_kib": 7816
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c2a/longer-btrfs-2-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c2a/reference/discovery",
+        "--exact",
+        "export_tests::owned_probe::benchmark::matched_owned_probe",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 32,
+      "before": {
+        "unix_seconds": 1790963073.241323,
+        "load": [
+          2.53271484375,
+          1.89404296875,
+          1.58056640625
+        ],
+        "frequency": {
+          "scaling_cur_freq": "4306708",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790963078.9170024,
+        "load": [
+          2.650390625,
+          1.92919921875,
+          1.59375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "892269",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 5.62,
+        "user_seconds": 0.11,
+        "system_seconds": 0.28,
+        "max_rss_kib": 7800
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c2a/longer-btrfs-3-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c2a/reference/discovery",
+        "--exact",
+        "export_tests::owned_probe::benchmark::matched_owned_probe",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 32,
+      "before": {
+        "unix_seconds": 1790963078.9190938,
+        "load": [
+          2.650390625,
+          1.92919921875,
+          1.59375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "1844531",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790963084.2944016,
+        "load": [
+          2.7587890625,
+          1.9638671875,
+          1.60693359375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2256762",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 5.34,
+        "user_seconds": 0.1,
+        "system_seconds": 0.27,
+        "max_rss_kib": 7852
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c2a/longer-tmpfs-3-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c2a/reference/discovery",
+        "--exact",
+        "export_tests::owned_probe::benchmark::matched_owned_probe",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 32,
+      "before": {
+        "unix_seconds": 1790963084.2968059,
+        "load": [
+          2.7587890625,
+          1.9638671875,
+          1.60693359375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "800000",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790963084.5613873,
+        "load": [
+          2.7587890625,
+          1.9638671875,
+          1.60693359375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2537517",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 0.26,
+        "user_seconds": 0.08,
+        "system_seconds": 0.06,
+        "max_rss_kib": 7688
+      }
+    }
+  ],
+  "conditions": "Same release executable; alternating per-pair order, shared CPU0, powersave, SMT not isolated. Synthetic local TLS server TCP_NODELAY. No builds/tests/plots overlap timing. Per-probe CPU includes server and journal worker; setup/readback/cleanup excluded. Whole-process CPU/RSS includes all setup/cleanup. No payload, live host or throughput claim. tmpfs is volatile."
+}

@@ -1582,5 +1582,23 @@ with no journal-bound ownership, restart recovery or automatic conversion.
 
 [ADR-0059](adr/0059-explicit-export-selection.md), [contract](explicit-export-selection.md),
 [matched synthetic timing](benchmark-results/2026-10-02-r61c1/README.md).
-Next R6.1c.2 binds real leases and owned resources to durable intents and qualifies
-uncertain outcomes and writer lifetimes; full R6.1c remains open.
+R6.1c.2a below now binds acquire/abort to durable intent. Next R6.1c.2b binds
+transfer/completion and writer lifetimes; full R6.1c remains open.
+
+
+### R6.1c.2a — Durable acquire/abort probe
+
+`probe_owned_export` consumes a locked store and sends bounded serial commands to
+one blocking owner of Job and its stage handles. Durable AcquireIntent precedes
+fresh source revalidation and ExportVm; the live lease is process-local. LeaseHeld
+and AbortIntent must be durable before one abort attempt. Heartbeats continue
+while a ready lease's journal commands run. Accepted writes are drained despite
+cancellation or progress failure, and before return. No stage writers escape.
+Remote and journal observations are reported separately; failure leaves conservative
+intent states. The empty stage requires explicit checked cleanup after worker exit.
+
+[ADR-0060](adr/0060-durable-export-lease-probe.md), [contract](durable-export-probe.md),
+[process-loss/slow-journal tests and timing](benchmark-results/2026-10-02-r61c2a/README.md).
+This does not transfer, complete, convert or publish. R6.1c.2b must join actual
+payload writers and completion to these intents, including uncertain completion
+without automatic abort. Metadata/conversion/publication remain subsequent gates.
