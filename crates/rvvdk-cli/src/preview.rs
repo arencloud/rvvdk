@@ -97,6 +97,7 @@ pub(crate) fn build(name: &str, args: &clap::ArgMatches) -> Result<Preview> {
     let endpoint = source.copy_endpoint()?;
     let (device, inode) = opened.identity();
     if name == "plan" {
+        opened.validate_block_size(*args.get_one::<usize>("block-size").unwrap())?;
         opened.validate_backend(args.get_one::<String>("backend").unwrap())?;
     }
     let budget = *args.get_one::<usize>("memory-budget").unwrap();

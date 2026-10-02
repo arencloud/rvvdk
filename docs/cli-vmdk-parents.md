@@ -20,7 +20,7 @@ rvddk verify leaf.vmdk output.raw --format vmdk --allow-parents --json
 | External `monolithicSparse` descriptor mirror | Accepted only with the library's embedded descriptor binding checks |
 | Mixed monolithic/split sparse ancestry | Accepted with matching CID and logical capacity |
 | Single sparse base | Accepted as a one-layer chain |
-| RAW / FLAT / ZERO / managed or compressed variants | Rejected; omit the flag for existing RAW or FLAT/ZERO support |
+| RAW / FLAT / ZERO / managed or compressed variants | Rejected; omit the flag for existing RAW, FLAT/ZERO or admitted base streamOptimized support |
 
 Every layer uses [bounded chain admission](vmdk-parent-chain.md), then
 [SparseChainDisk](vmdk-chain-disk.md) resolves the nearest allocated ancestor.

@@ -1,0 +1,64 @@
+{
+  "scope": "retained_export_cli_conversion",
+  "conditions": "Buffered retained export on the shared VM runner, no cache flushing. Inspect and plan succeeded. The first copy --verify (one worker, 1 MiB blocks) failed with ENOSPC during zero output; no verification, QEMU comparison or later copy round ran there.",
+  "cli_sha256": "e0f2b86c340dc6128049e06351dbc1172a985c7d51bf4dd97e10817eb1afbe60",
+  "rows": [
+    {
+      "case": "inspect",
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 5.39,
+        "user_seconds": 0.08,
+        "system_seconds": 1.12,
+        "max_rss_kib": 4328
+      },
+      "logical_bytes": 32212254720,
+      "map": {
+        "allocated_grains": 57295,
+        "backing_file_count": 1,
+        "decode_memory_reservation_bytes": 141679,
+        "descriptor_extent_count": 1,
+        "layout": "stream_optimized",
+        "metadata_memory_reservation_bytes": 693684,
+        "metadata_read_bytes": 1205620,
+        "payload_validation": "on_read",
+        "read_request_limit_bytes": 67108864
+      }
+    },
+    {
+      "case": "plan",
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 0.12,
+        "user_seconds": 0.04,
+        "system_seconds": 0.07,
+        "max_rss_kib": 4328
+      }
+    },
+    {
+      "case": "copy-verify-1",
+      "exit_code": 1,
+      "metrics": {
+        "wall_seconds": 21.55,
+        "user_seconds": 6.35,
+        "system_seconds": 3.17,
+        "max_rss_kib": 7464
+      }
+    }
+  ],
+  "checks": [],
+  "outcome": {
+    "code": "copy_failed",
+    "os_error": 28,
+    "operation": "WriteZero",
+    "destination_state": "private_unpublished",
+    "temporary_output_absent_after_failure": true,
+    "filesystem": "xfs",
+    "root_capacity_gib": 15,
+    "available_gib_after_cleanup": 7.5,
+    "next_action": "Use development host storage; do not change runner volumes or zero semantics.",
+    "confirmed_bytes_read": 1572208640,
+    "confirmed_bytes_written": 1572208640,
+    "confirmed_bytes_zeroed": 6017843200
+  }
+}

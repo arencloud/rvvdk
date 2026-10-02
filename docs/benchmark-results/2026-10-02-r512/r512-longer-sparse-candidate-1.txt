@@ -1,0 +1,37 @@
+Gnuplot not found, using plotters backend
+Benchmarking cli_sparse/inspect_mono
+Benchmarking cli_sparse/inspect_mono: Warming up for 500.00 ms
+Benchmarking cli_sparse/inspect_mono: Collecting 30 samples in estimated 4.0004 s (76k iterations)
+Benchmarking cli_sparse/inspect_mono: Analyzing
+cli_sparse/inspect_mono time:   [50.956 µs 51.287 µs 51.660 µs]
+Found 1 outliers among 30 measurements (3.33%)
+  1 (3.33%) high mild
+Benchmarking cli_sparse/plan_split
+Benchmarking cli_sparse/plan_split: Warming up for 500.00 ms
+Benchmarking cli_sparse/plan_split: Collecting 30 samples in estimated 4.0005 s (51k iterations)
+Benchmarking cli_sparse/plan_split: Analyzing
+cli_sparse/plan_split   time:   [87.008 µs 91.314 µs 96.090 µs]
+Benchmarking cli_sparse/copy_mono_verify
+Benchmarking cli_sparse/copy_mono_verify: Warming up for 500.00 ms
+Benchmarking cli_sparse/copy_mono_verify: Collecting 30 samples in estimated 4.0015 s (4500 iterations)
+Benchmarking cli_sparse/copy_mono_verify: Analyzing
+cli_sparse/copy_mono_verify
+                        time:   [733.68 µs 743.25 µs 753.48 µs]
+Found 1 outliers among 30 measurements (3.33%)
+  1 (3.33%) high mild
+Benchmarking cli_sparse/copy_split_verify
+Benchmarking cli_sparse/copy_split_verify: Warming up for 500.00 ms
+Benchmarking cli_sparse/copy_split_verify: Collecting 30 samples in estimated 4.0388 s (2490 iterations)
+Benchmarking cli_sparse/copy_split_verify: Analyzing
+cli_sparse/copy_split_verify
+                        time:   [1.2095 ms 1.2168 ms 1.2249 ms]
+Found 2 outliers among 30 measurements (6.67%)
+  2 (6.67%) high mild
+Benchmarking cli_sparse/verify_split
+Benchmarking cli_sparse/verify_split: Warming up for 500.00 ms
+Benchmarking cli_sparse/verify_split: Collecting 30 samples in estimated 4.0035 s (13k iterations)
+Benchmarking cli_sparse/verify_split: Analyzing
+cli_sparse/verify_split time:   [306.39 µs 309.48 µs 313.26 µs]
+Found 2 outliers among 30 measurements (6.67%)
+  1 (3.33%) high mild
+  1 (3.33%) high severe

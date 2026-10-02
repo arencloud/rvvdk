@@ -6,7 +6,7 @@ use rvvdk_local::LocalFileBlockDevice;
 use rvvdk_vmdk::{
     BackingError, BackingResolver, CreateType, Descriptor, Limits, LocalResolver, ResolutionLimits,
     ResolvedDescriptor, SparseDescriptor, SparseDisk, SparseDiskLimits, SparseHeader, SparseLimits,
-    VmdkDisk,
+    StreamDisk, StreamDiskLimits, VmdkDisk,
 };
 use std::{
     fs::{File, Metadata},
@@ -47,6 +47,7 @@ pub(crate) enum Disk {
     Vmdk(VmdkDisk),
     Sparse(SparseDisk),
     Chain(rvvdk_vmdk::SparseChainDisk),
+    Stream(Box<StreamDisk>),
 }
 pub(crate) struct Source {
     pub disk: Disk,
@@ -108,7 +109,23 @@ impl Source {
             let (file, local) = LocalResolver::open_descriptor_file(path)?;
             let mut descriptor =
                 Observed::new(file).map_err(|e| Failure::io("inspect descriptor", e))?;
-            let (bytes, embedded) = acquire(&mut descriptor)?;
+            let (bytes, embedded) = match acquire(&mut descriptor)? {
+                Acquired::Descriptor(bytes, embedded) => (bytes, embedded),
+                Acquired::Stream => {
+                    let device = LocalFileBlockDevice::from_buffered_file(
+                        descriptor.file.try_clone().map_err(observation_error)?,
+                    )?;
+                    let source = Self {
+                        disk: Disk::Stream(Box::new(StreamDisk::load(
+                            Arc::new(device),
+                            StreamDiskLimits::default(),
+                        )?)),
+                        files: vec![descriptor],
+                    };
+                    source.revalidate()?;
+                    return Ok(source);
+                }
+            };
             let resolver = ObservingResolver {
                 local,
                 embedded_identity: embedded.then_some((descriptor.initial.0, descriptor.initial.1)),
@@ -166,21 +183,35 @@ impl Source {
             Disk::Vmdk(d) => d,
             Disk::Sparse(d) => d,
             Disk::Chain(d) => d,
+            Disk::Stream(d) => d.as_ref(),
         }
     }
     pub fn format(&self) -> &'static str {
         match self.disk {
             Disk::Raw(_) => "raw",
-            Disk::Vmdk(_) | Disk::Sparse(_) | Disk::Chain(_) => "vmdk",
+            Disk::Vmdk(_) | Disk::Sparse(_) | Disk::Chain(_) | Disk::Stream(_) => "vmdk",
         }
     }
     pub fn validate_backend(&self, requested: &str) -> Result<()> {
-        if matches!(self.disk, Disk::Vmdk(_) | Disk::Sparse(_) | Disk::Chain(_))
-            && requested == "io-uring"
+        if matches!(
+            self.disk,
+            Disk::Vmdk(_) | Disk::Sparse(_) | Disk::Chain(_) | Disk::Stream(_)
+        ) && requested == "io-uring"
         {
             return Err(Failure::new(
                 "unsupported_backend",
                 "VMDK logical sources require threaded or auto execution",
+            ));
+        }
+        Ok(())
+    }
+    pub fn validate_block_size(&self, bytes: usize) -> Result<()> {
+        if matches!(self.disk, Disk::Stream(_))
+            && bytes as u64 > StreamDiskLimits::default().request_bytes
+        {
+            return Err(Failure::new(
+                "arguments",
+                "streamOptimized block size exceeds 64 MiB read limit",
             ));
         }
         Ok(())
@@ -213,6 +244,22 @@ impl Source {
         (self.files[0].initial.0, self.files[0].initial.1)
     }
     pub fn vmdk_report(&self) -> Option<serde_json::Value> {
+        if let Disk::Stream(disk) = &self.disk {
+            let stats = disk.map().stats();
+            let identity =
+                serde_json::json!({"device":self.identity().0,"inode":self.identity().1});
+            return Some(serde_json::json!({
+                "descriptor_identity":identity, "backing_identities":[identity],
+                "layout":"stream_optimized", "backing_file_count":1,
+                "descriptor_extent_count":1, "cid":format!("{:08x}",disk.map().cid()),
+                "metadata_memory_reservation_bytes":stats.reserved_bytes,
+                "metadata_read_bytes":stats.metadata_bytes_read,
+                "allocated_grains":stats.allocated_grains,
+                "decode_memory_reservation_bytes":disk.decode_memory_bytes(),
+                "read_request_limit_bytes":StreamDiskLimits::default().request_bytes,
+                "payload_validation":"on_read"
+            }));
+        }
         if let Disk::Chain(disk) = &self.disk {
             let chain = disk.chain();
             let layers = chain.layers();
@@ -280,7 +327,11 @@ impl From<rvvdk_vmdk::SparseError> for Failure {
 }
 /// The first bounded chunk is also descriptor input, so text sources need no
 /// extra probe syscall. Format dispatch stays inside explicit --format vmdk.
-fn acquire(source: &mut Observed) -> Result<(Vec<u8>, bool)> {
+enum Acquired {
+    Descriptor(Vec<u8>, bool),
+    Stream,
+}
+fn acquire(source: &mut Observed) -> Result<Acquired> {
     let mut chunk = [0; 4096];
     let mut n = 0;
     while n < 4 {
@@ -297,6 +348,11 @@ fn acquire(source: &mut Observed) -> Result<(Vec<u8>, bool)> {
             .file
             .read_exact_at(&mut raw, 0)
             .map_err(observation_error)?;
+        // Dispatch only; StreamDisk performs complete bounded admission on this
+        // same retained file. Embedded stream filenames are never resolved.
+        if u32::from_le_bytes(raw[4..8].try_into().unwrap()) == 3 {
+            return Ok(Acquired::Stream);
+        }
         let header =
             SparseHeader::parse_with_limits(&raw, source.initial.2, SparseLimits::default())?;
         let region = header
@@ -307,7 +363,7 @@ fn acquire(source: &mut Observed) -> Result<(Vec<u8>, bool)> {
             .file
             .read_exact_at(&mut text, region.offset())
             .map_err(observation_error)?;
-        return Ok((text, true));
+        return Ok(Acquired::Descriptor(text, true));
     }
     let limit = Limits::default().descriptor_bytes;
     let mut bytes = Vec::new();
@@ -332,11 +388,17 @@ fn acquire(source: &mut Observed) -> Result<(Vec<u8>, bool)> {
         }
         bytes.extend_from_slice(&chunk[..n]);
     }
-    Ok((bytes, false))
+    Ok(Acquired::Descriptor(bytes, false))
 }
 
 impl From<rvvdk_vmdk::SparseChainError> for Failure {
     fn from(error: rvvdk_vmdk::SparseChainError) -> Self {
+        Self::new("vmdk", error.to_string())
+    }
+}
+
+impl From<rvvdk_vmdk::StreamDiskError> for Failure {
+    fn from(error: rvvdk_vmdk::StreamDiskError) -> Self {
         Self::new("vmdk", error.to_string())
     }
 }

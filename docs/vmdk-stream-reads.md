@@ -4,7 +4,7 @@
 [R5.11a validated grain map](vmdk-stream-map.md). It retains the exact
 `Arc<dyn BlockDevice>` used for admission and never opens an embedded filename.
 It supports the admitted base front/footer profiles, including the retained
-ESXi export. The public CLI still rejects compressed disks pending R5.12.
+ESXi export. R5.12 exposes the admitted subset through [local CLI commands](cli-vmdk.md).
 [Decision](adr/0054-bounded-native-stream-reads.md),
 [qualification and plots](benchmark-results/2026-10-02-r511b/README.md).
 
@@ -100,9 +100,10 @@ credentials and content digests remain outside Git.
 cargo test -p rvvdk-vmdk --test stream_disk
 cargo bench -p rvvdk-vmdk --bench stream_reads
 cargo build --release -p rvvdk-vmdk --example stream_read_probe
-# Generate the synthetic corpus with compare_stream_envelope.py first.
+# Historical R5.11 checks require an archived pre-R5.12 CLI.
+# Generate the corpus with compare_stream_envelope.py and that CLI first.
 python3 scripts/vmdk/compare_stream_reads.py \
-  --probe target/release/examples/stream_read_probe --cli target/release/rvddk \
+  --probe target/release/examples/stream_read_probe --cli target/r512/reference/rvddk-before \
   --directory target/stream-reference-new --report target/native-stream-reads.json
 ```
 
@@ -112,7 +113,10 @@ never decoded content or disk identities. It is a qualification helper, not a
 public conversion command. Python generates synthetic compression fixtures and
 orchestrates references/plots; VMware access and logical reads remain Rust.
 
-Next is **R5.12**: confined local CLI acquisition, inspect/plan/copy/verify, explicit
-format routing, alias/durability/cancellation qualification and conversion
-benchmarks. Retain PERF.0 and prior stream timing follow-ups. R6 still owns durable
-artifact/lease recovery and production VMware workflow integration.
+**R5.12 is complete:** confined local CLI acquisition and inspect/plan/copy/verify
+are qualified in the [CLI contract](cli-vmdk.md). Use `compare_stream_cli.py` for
+current CLI conversion checks; historical envelope/read scripts deliberately
+retain their pre-integration CLI rejection gate. Retain PERF.0 and prior stream
+timing follow-ups. R5.12p next qualifies space-efficient zero output; then R6.1
+defines artifact identity and durable ownership before
+production VMware workflow integration.

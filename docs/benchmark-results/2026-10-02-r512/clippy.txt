@@ -1,0 +1,44 @@
+    Checking rvvdk-cli v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-cli)
+error: duplicated attribute
+ --> crates/rvvdk-cli/benches/../../rvvdk-vmdk/tests/support/stream_disk.rs:1:10
+  |
+1 | #![allow(dead_code)]
+  |          ^^^^^^^^^
+  |
+note: first defined here
+ --> crates/rvvdk-cli/benches/stream.rs:2:9
+  |
+2 | #[allow(dead_code)]
+  |         ^^^^^^^^^
+help: remove this attribute
+ --> crates/rvvdk-cli/benches/../../rvvdk-vmdk/tests/support/stream_disk.rs:1:10
+  |
+1 | #![allow(dead_code)]
+  |          ^^^^^^^^^
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.95.0/index.html#duplicated_attributes
+  = note: `-D clippy::duplicated-attributes` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(clippy::duplicated_attributes)]`
+
+error: duplicated attribute
+  --> crates/rvvdk-cli/tests/../../rvvdk-vmdk/tests/support/stream_disk.rs:1:10
+   |
+ 1 | #![allow(dead_code)]
+   |          ^^^^^^^^^
+   |
+note: first defined here
+  --> crates/rvvdk-cli/tests/stream.rs:12:9
+   |
+12 | #[allow(dead_code)]
+   |         ^^^^^^^^^
+help: remove this attribute
+  --> crates/rvvdk-cli/tests/../../rvvdk-vmdk/tests/support/stream_disk.rs:1:10
+   |
+ 1 | #![allow(dead_code)]
+   |          ^^^^^^^^^
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.95.0/index.html#duplicated_attributes
+   = note: `-D clippy::duplicated-attributes` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::duplicated_attributes)]`
+
+error: could not compile `rvvdk-cli` (bench "stream") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `rvvdk-cli` (test "stream") due to 1 previous error

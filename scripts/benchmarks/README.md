@@ -133,3 +133,11 @@ live comparison success and saves SVG/PNG charts with an input/output hash audit
 ```sh
 python scripts/benchmarks/plot_stream_reads.py docs/benchmark-results/2026-10-02-r511b
 ```
+
+R5.12 plots complete local CLI conversion and verification, paired unchanged
+hosted-sparse controls, and retained-export copy/readback CPU/RSS. Every adverse
+pair and longer repeat remains visible; logical throughput includes sparse holes.
+
+```sh
+python scripts/benchmarks/plot_stream_cli.py docs/benchmark-results/2026-10-02-r512
+```

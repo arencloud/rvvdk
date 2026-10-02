@@ -3,7 +3,8 @@
 `rvvdk-vmdk` now has separate `StreamDescriptor`, `StreamHeader`, `StreamMarker`
 and `StreamEnvelope` APIs. An envelope proves only the bounded structural checks
 listed here. It is not a grain map, `BlockDevice`, logical reader or decompressor.
-The public CLI and existing sparse parsers continue to reject compressed disks.
+The existing hosted sparse parsers continue to reject compressed disks. R5.12
+separately exposes the qualified native stream reader in the [CLI](cli-vmdk.md).
 [Decision](adr/0052-bounded-stream-envelope.md),
 [validation and performance](benchmark-results/2026-10-02-r510/README.md).
 
@@ -101,7 +102,8 @@ Use a new fixture directory. Python only generates local fixtures and orchestrat
 QEMU/Rust reference checks; production decoding remains Rust. Three QEMU front
 images and three authored footer layouts using QEMU compressed records decode to
 their original RAW bytes. Rust admits their envelopes; it rejects an unaligned
-capacity and the public CLI rejects all seven compressed images. Guest content,
+capacity. At R5.10 the public CLI rejected all seven compressed images; current
+R5.12 conversion is qualified separately. Guest content,
 credentials and exported image digests are excluded from committed evidence.
 
 Format reference: VMware's [Virtual Disk Format 5.0 technical note](https://github.com/vmware/open-vmdk/blob/master/vmdk_50_technote.pdf),

@@ -36,7 +36,7 @@ VMware disk access and migration, extensible to other platforms.
 > VMDK disks are readable through Rust APIs and [all four CLI commands](docs/cli-vmdk.md), with RAW output and
 > [bounded terminal-padding support](docs/vmdk-padding.md). Hosted sparse parents are
 > available through [explicit CLI opt-in](docs/cli-vmdk-parents.md).
-> [Native streamOptimized reads](docs/vmdk-stream-reads.md) are available through Rust APIs; compressed CLI support is next.
+> [Native streamOptimized reads](docs/vmdk-stream-reads.md) are available through Rust APIs and local inspect/plan/copy/verify commands.
 > Production VMware workflows, CBT, and durable resume remain planned.
 > The [roadmap](docs/roadmap.md) tracks completed fixes and remaining work;
 > the [dated review](docs/project-review-2026-09-28.md) records the starting assessment.
@@ -61,7 +61,7 @@ VMware disk access and migration, extensible to other platforms.
 | **Copy memory budget** | Configurable 256 MiB default for buffers, queue entries, and extent metadata; [scope and limits](docs/copy-memory.md) |
 | **VMDK descriptors** | [Hosted base FLAT/ZERO metadata](docs/vmdk-descriptor.md), bounded parsing, [confined backing resolution](docs/vmdk-backing.md) and [logical reads](docs/vmdk-logical.md) |
 | **Hosted sparse reads** | [Read-only base monolithic/split sparse](docs/vmdk-sparse-disk.md), bounded metadata and [CLI inspect/plan/copy/verify](docs/cli-vmdk.md) |
-| **Compressed VMDK reads** | [Bounded streamOptimized Rust reader](docs/vmdk-stream-reads.md), fixed decode storage, checksummed grains and sparse zeros; CLI integration pending |
+| **Compressed VMDK reads** | [Bounded streamOptimized Rust reader](docs/vmdk-stream-reads.md), fixed decode storage, checksummed grains and sparse zeros; local CLI conversion qualified |
 | **Parent chains** | [Read-only sparse parent fallback](docs/vmdk-chain-disk.md) with bounded metadata, whole-chain alias checks and [opt-in CLI support](docs/cli-vmdk-parents.md) |
 | **Admission fuzzing** | [Four bounded libFuzzer targets](fuzz/README.md), authored seeds, sanitizer campaigns and retained corpora |
 | **VMware access** | [Independent Rust authentication and inventory](crates/rvvdk-vsphere/README.md) qualified on ESXi 8.0.3; powered-off disk export and independent known-byte verification demonstrated; no VMware SDK/VDDK dependency |
@@ -253,7 +253,7 @@ ownership against QEMU fixtures and the retained ESXi export;
 [benchmark plots](docs/benchmark-results/2026-10-02-r511a/README.md) track admission
 costs. [R5.11b native reads](docs/vmdk-stream-reads.md) now pass complete QEMU
 byte comparison and the independent guest oracle, with [read/CPU/RSS plots](docs/benchmark-results/2026-10-02-r511b/README.md).
-Public CLI integration is next (R5.12).
+[R5.12 CLI conversion](docs/cli-vmdk.md) is qualified; [conversion plots and controls](docs/benchmark-results/2026-10-02-r512/README.md) are retained. Next is R5.12p output-space/performance tuning, then R6.1 artifact identity and durable ownership.
 Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
 for sanitizer execution rates, memory and feedback across repeated campaigns.
 The [R5.8 CLI parent-chain timings](docs/benchmark-results/2026-09-30-r58/README.md)
@@ -279,7 +279,7 @@ Parent hints must be basenames in the source directory:
 rvddk copy leaf.vmdk output.raw --format vmdk --allow-parents --backend auto --workers 4 --verify
 ```
 
-Convert a supported base FLAT/ZERO or hosted sparse VMDK to RAW:
+Convert a supported base FLAT/ZERO, hosted sparse or streamOptimized VMDK to RAW:
 
 ```bash
 target/release/rvddk copy disk.vmdk output.raw --format vmdk --verify --progress

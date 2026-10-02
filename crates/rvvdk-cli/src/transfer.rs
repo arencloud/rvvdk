@@ -152,6 +152,7 @@ fn verify<C: Cancellation>(
         args.get_one::<String>("format").unwrap(),
         args.get_flag("allow-parents"),
     )?;
+    opened.validate_block_size(*args.get_one::<usize>("block-size").unwrap())?;
     let source = opened.logical();
     let destination_file = target::verify_destination(destination_path)?;
     let destination_stamp = stamp(&destination_file)?;
@@ -216,6 +217,7 @@ fn copy_controlled<C: Cancellation>(
         args.get_one::<String>("format").unwrap(),
         args.get_flag("allow-parents"),
     )?;
+    opened.validate_block_size(*args.get_one::<usize>("block-size").unwrap())?;
     let source = opened.logical();
     let budget = *args.get_one::<usize>("memory-budget").unwrap();
     let block = *args.get_one::<usize>("block-size").unwrap();
@@ -243,6 +245,7 @@ fn copy_controlled<C: Cancellation>(
         check(cancellation)?;
         let destination = disk(&target.file)?;
         let plan = match &opened.disk {
+            Disk::Stream(stream) => mover.plan_with_destination(stream.as_ref(), &destination)?,
             Disk::Raw(raw) => mover.plan_raw_with_destination(raw, &destination)?,
             Disk::Vmdk(vmdk) => mover.plan_with_destination(vmdk, &destination)?,
             Disk::Sparse(sparse) => mover.plan_with_destination(sparse, &destination)?,
@@ -257,6 +260,13 @@ fn copy_controlled<C: Cancellation>(
         target.mutation_started = true;
         let observer = |e: &rvvdk_datamover::CopyEvent| feedback.engine(e);
         let report = match &opened.disk {
+            Disk::Stream(stream) => mover.execute_plan_controlled(
+                &plan,
+                stream.as_ref(),
+                &destination,
+                cancellation,
+                &observer,
+            )?,
             Disk::Raw(raw) => mover.execute_raw_plan_controlled(
                 &plan,
                 raw,

@@ -1,0 +1,47 @@
+Gnuplot not found, using plotters backend
+Benchmarking cli_stream/inspect_dense
+Benchmarking cli_stream/inspect_dense: Warming up for 500.00 ms
+Benchmarking cli_stream/inspect_dense: Collecting 30 samples in estimated 2.0018 s (31k iterations)
+Benchmarking cli_stream/inspect_dense: Analyzing
+cli_stream/inspect_dense
+                        time:   [63.483 µs 63.862 µs 64.328 µs]
+Found 3 outliers among 30 measurements (10.00%)
+  1 (3.33%) high mild
+  2 (6.67%) high severe
+Benchmarking cli_stream/plan_sparse
+Benchmarking cli_stream/plan_sparse: Warming up for 500.00 ms
+Benchmarking cli_stream/plan_sparse: Collecting 30 samples in estimated 2.0000 s (38k iterations)
+Benchmarking cli_stream/plan_sparse: Analyzing
+cli_stream/plan_sparse  time:   [51.719 µs 51.937 µs 52.184 µs]
+Found 2 outliers among 30 measurements (6.67%)
+  2 (6.67%) high mild
+Benchmarking cli_stream/copy_dense
+Benchmarking cli_stream/copy_dense: Warming up for 500.00 ms
+Benchmarking cli_stream/copy_dense: Collecting 30 samples in estimated 2.1605 s (240 iterations)
+Benchmarking cli_stream/copy_dense: Analyzing
+cli_stream/copy_dense   time:   [8.0848 ms 8.0987 ms 8.1132 ms]
+Benchmarking cli_stream/copy_dense_verify
+Benchmarking cli_stream/copy_dense_verify: Warming up for 500.00 ms
+Benchmarking cli_stream/copy_dense_verify: Collecting 30 samples in estimated 2.4364 s (150 iterations)
+Benchmarking cli_stream/copy_dense_verify: Analyzing
+cli_stream/copy_dense_verify
+                        time:   [15.222 ms 15.286 ms 15.362 ms]
+Found 4 outliers among 30 measurements (13.33%)
+  3 (10.00%) high mild
+  1 (3.33%) high severe
+Benchmarking cli_stream/copy_sparse_verify
+Benchmarking cli_stream/copy_sparse_verify: Warming up for 500.00 ms
+Benchmarking cli_stream/copy_sparse_verify: Collecting 30 samples in estimated 2.0515 s (840 iterations)
+Benchmarking cli_stream/copy_sparse_verify: Analyzing
+cli_stream/copy_sparse_verify
+                        time:   [1.8593 ms 1.8714 ms 1.8862 ms]
+Found 4 outliers among 30 measurements (13.33%)
+  3 (10.00%) high mild
+  1 (3.33%) high severe
+Benchmarking cli_stream/verify_dense
+Benchmarking cli_stream/verify_dense: Warming up for 500.00 ms
+Benchmarking cli_stream/verify_dense: Collecting 30 samples in estimated 2.1342 s (300 iterations)
+Benchmarking cli_stream/verify_dense: Analyzing
+cli_stream/verify_dense time:   [7.0580 ms 7.0905 ms 7.1296 ms]
+Found 3 outliers among 30 measurements (10.00%)
+  3 (10.00%) high severe

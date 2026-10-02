@@ -1,0 +1,307 @@
+{
+  "baseline_commit": "d65b098",
+  "binary_sha256": {
+    "sparse-before": "a34c906f3aaf1414f14466b9241f3da095f8e89c81b1fc51dcc708806f4a5140",
+    "sparse-candidate": "1065c33a93ce013177d228336c7b9859de6e560cbbdde3264a1732559f21e9db",
+    "stream": "4d5e434b4827a47697d3f3c7659515fd59e08cc8f9fb304a1aa1f465de0ef177"
+  },
+  "cpu_affinity": [
+    0
+  ],
+  "smt_siblings": "0,8",
+  "governor": "powersave",
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)\nbinary: rustc\ncommit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860\ncommit-date: 2026-04-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.95.0\nLLVM version: 22.1.2",
+  "kernel": "7.2.5-200.fc44.x86_64",
+  "sample_size": 30,
+  "warmup_seconds": 0.5,
+  "initial_measurement_seconds": 2,
+  "longer_measurement_seconds": 4,
+  "conditions": "Shared host, no CPU isolation/cache flushing/governor changes. Tests/builds/QEMU/live probes/plotting finish outside the timed matrix. Five existing sparse CLI cases; six new stream CLI cases. Not blanket regression coverage.",
+  "commands": [
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512/reference/sparse-before",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512-initial-sparse-before-1"
+      ],
+      "start_unix": 1790947469.984323,
+      "end_unix": 1790947497.3518724
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512/reference/sparse-candidate",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512-initial-sparse-candidate-1"
+      ],
+      "start_unix": 1790947497.3522499,
+      "end_unix": 1790947524.8927608
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512/reference/sparse-candidate",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512-initial-sparse-candidate-2"
+      ],
+      "start_unix": 1790947524.8933508,
+      "end_unix": 1790947552.472966
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512/reference/sparse-before",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512-initial-sparse-before-2"
+      ],
+      "start_unix": 1790947552.473585,
+      "end_unix": 1790947580.6462245
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512/reference/sparse-before",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512-initial-sparse-before-3"
+      ],
+      "start_unix": 1790947580.6469324,
+      "end_unix": 1790947608.7813098
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512/reference/sparse-candidate",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512-initial-sparse-candidate-3"
+      ],
+      "start_unix": 1790947608.782245,
+      "end_unix": 1790947637.329741
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512/reference/sparse-candidate",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512-longer-sparse-candidate-1"
+      ],
+      "start_unix": 1790947637.330524,
+      "end_unix": 1790947676.4936652
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512/reference/sparse-before",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512-longer-sparse-before-1"
+      ],
+      "start_unix": 1790947676.4946475,
+      "end_unix": 1790947713.1435595
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512/reference/sparse-before",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512-longer-sparse-before-2"
+      ],
+      "start_unix": 1790947713.1444309,
+      "end_unix": 1790947750.6945708
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512/reference/sparse-candidate",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512-longer-sparse-candidate-2"
+      ],
+      "start_unix": 1790947750.695484,
+      "end_unix": 1790947788.3205569
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512/reference/sparse-candidate",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512-longer-sparse-candidate-3"
+      ],
+      "start_unix": 1790947788.3215992,
+      "end_unix": 1790947825.4653325
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512/reference/sparse-before",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512-longer-sparse-before-3"
+      ],
+      "start_unix": 1790947825.466319,
+      "end_unix": 1790947862.5099905
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512/reference/stream",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512-new-stream-1"
+      ],
+      "start_unix": 1790947862.5112605,
+      "end_unix": 1790947895.420485
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512/reference/stream",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512-new-stream-2"
+      ],
+      "start_unix": 1790947895.4216642,
+      "end_unix": 1790947928.2976713
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512/reference/stream",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512-new-stream-3"
+      ],
+      "start_unix": 1790947928.2989852,
+      "end_unix": 1790947961.1089654
+    }
+  ]
+}

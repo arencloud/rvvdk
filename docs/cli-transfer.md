@@ -1,7 +1,7 @@
 # Local copy and verification
 
 `rvddk copy` and `rvddk verify` operate on Linux RAW or supported
-[base FLAT/ZERO and hosted sparse VMDK sources](cli-vmdk.md), with RAW destinations. Explicit
+[base FLAT/ZERO, hosted sparse and streamOptimized VMDK sources](cli-vmdk.md), with RAW destinations. Explicit
 `--format raw|vmdk` is required. The [inspect/plan guide](cli.md) remains applicable
 to read-only previews; a preview is never replayed as an executable plan.
 

@@ -84,7 +84,7 @@ Only aggregate live counters enter Git; guest content and disk identities stay p
 exact checksummed zlib input/output and provide sparse-zero/cross-grain reads.
 Complete QEMU and guest-oracle byte comparisons and repeated read/CPU/RSS
 measurements pass within that documented scope. This map API itself still does
-not validate payloads. R5.12 separately gates public CLI integration. Existing PERF.0 follow-ups remain open.
+not validate payloads. R5.12 separately qualifies public CLI integration. Existing PERF.0 follow-ups remain open.
 
 ```sh
 cargo test -p rvvdk-vmdk --test stream_map

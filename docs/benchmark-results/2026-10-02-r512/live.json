@@ -1,0 +1,144 @@
+{
+  "scope": "retained_export_cli_conversion",
+  "conditions": "Buffered reads on the development host, no CPU affinity or cache flushing. Retained export copied locally after the runner failed with ENOSPC; these timings are not a matched runner comparison. Three copy --verify operations, one worker, 1 MiB blocks; CPU/RSS and elapsed include admission, conversion, readback and durability. QEMU/oracle checks occur outside timed operations after the first copy. Logical throughput includes sparse holes, not encoded/network throughput.",
+  "cli_sha256": "e0f2b86c340dc6128049e06351dbc1172a985c7d51bf4dd97e10817eb1afbe60",
+  "rows": [
+    {
+      "case": "inspect",
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 0.03,
+        "user_seconds": 0.0,
+        "system_seconds": 0.03,
+        "max_rss_kib": 4328
+      },
+      "logical_bytes": 32212254720,
+      "map": {
+        "allocated_grains": 57295,
+        "backing_file_count": 1,
+        "decode_memory_reservation_bytes": 141679,
+        "descriptor_extent_count": 1,
+        "layout": "stream_optimized",
+        "metadata_memory_reservation_bytes": 693684,
+        "metadata_read_bytes": 1205620,
+        "payload_validation": "on_read",
+        "read_request_limit_bytes": 67108864
+      }
+    },
+    {
+      "case": "plan",
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 0.03,
+        "user_seconds": 0.0,
+        "system_seconds": 0.03,
+        "max_rss_kib": 4332
+      }
+    },
+    {
+      "case": "copy-verify-1",
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 19.08,
+        "user_seconds": 12.04,
+        "system_seconds": 6.83,
+        "max_rss_kib": 7460
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": {
+        "bytes_verified": 32212254720,
+        "elapsed_seconds": 12.763962503
+      },
+      "elapsed_seconds": 19.084498395,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 32212254720
+    },
+    {
+      "case": "verify",
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 14.78,
+        "user_seconds": 7.62,
+        "system_seconds": 6.66,
+        "max_rss_kib": 6392
+      },
+      "logical_bytes": 32212254720,
+      "elapsed_seconds": 14.780740659
+    },
+    {
+      "case": "copy-verify-2",
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 23.22,
+        "user_seconds": 13.2,
+        "system_seconds": 8.7,
+        "max_rss_kib": 7440
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": {
+        "bytes_verified": 32212254720,
+        "elapsed_seconds": 15.051675343
+      },
+      "elapsed_seconds": 23.219428504,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 32212254720
+    },
+    {
+      "case": "copy-verify-3",
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 24.14,
+        "user_seconds": 14.29,
+        "system_seconds": 9.41,
+        "max_rss_kib": 7500
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": {
+        "bytes_verified": 32212254720,
+        "elapsed_seconds": 16.373888568
+      },
+      "elapsed_seconds": 24.148155244,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 32212254720
+    }
+  ],
+  "checks": [
+    {
+      "case": "qemu_full_logical",
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "case": "independent_guest_oracle",
+      "matched": true,
+      "logical_bytes": 8388608
+    }
+  ]
+}

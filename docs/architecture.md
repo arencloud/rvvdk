@@ -1447,7 +1447,7 @@ durable resource ownership and crash reconciliation as separate follow-on work.
 
 Separate `StreamDescriptor`, `StreamHeader`, `StreamMarker` and `StreamEnvelope`
 types admit the bounded version-3 compressed base subset. They are not a logical
-map or `BlockDevice`; the public CLI still rejects compressed inputs. The existing
+map or `BlockDevice`; R5.12 separately exposes the admitted logical subset in the CLI. The existing
 format enum and parser acceptance remain unchanged. QEMU front directories and
 VMware footer envelopes have explicit structural rules and resource budgets.
 
@@ -1462,7 +1462,7 @@ quiescence is required; length/header rechecks are not snapshots.
 R5.10p adds an inline hint for fixed-key comparisons and recovers the measured
 flat-descriptor cost, with unchanged grammar/bounds. [Both-core evidence](benchmark-results/2026-10-02-r510p/README.md)
 retains unresolved stream timing observations and identical-binary controls.
-R5.12 remains the public CLI integration gate; global performance clearance
+R5.12 completes the public CLI integration gate; global performance clearance
 requires more controlled measurement.
 
 
@@ -1479,7 +1479,7 @@ The [contract](vmdk-stream-map.md) documents the strict ordered subset, two-pass
 cost, source quiescence and memory-accounting exclusions. QEMU/authored references
 and the retained ESXi export pass. [ADR-0053](adr/0053-bounded-stream-grain-index.md)
 records why native reads are qualified separately in R5.11b. Public CLI admission
-stays gated on R5.12; PERF.0 timing follow-ups remain open.
+is qualified separately by R5.12; PERF.0 timing follow-ups remain open.
 
 
 ### R5.11b — Owned native compressed reads
@@ -1496,6 +1496,23 @@ bytes are advertised as a native RAW endpoint.
 [contract](vmdk-stream-reads.md) specify limits, cache invalidation, source
 quiescence, partial-buffer errors, lazy checksum checks and alias protection.
 Full QEMU and independent guest-oracle comparisons pass. Public CLI integration
-remains R5.12. Admission cache sensitivity, parallel-decode scaling and prior
+is qualified by R5.12. Admission cache sensitivity, parallel-decode scaling and prior
 stream timing observations remain performance follow-ups, with
 [all measurements](benchmark-results/2026-10-02-r511b/README.md) retained.
+
+
+### R5.12 — Local CLI stream conversion
+
+Binary version 3 inside explicit VMDK mode dispatches to complete bounded
+`StreamDisk` admission on the same confined retained file. Embedded filenames
+are not followed. Logical commands share existing observation/alias checks,
+portable execution, cancellation and durable no-replace publication. Parent-chain
+opt-in remains hosted sparse only. Stream read blocks above 64 MiB reject before
+destination preparation. Preview reports map/decode reservations and lazy payload
+validation. Worker count does not multiply decoder storage or parallelize its lock.
+
+[ADR-0055](adr/0055-local-cli-stream-conversion.md), [CLI contract](cli-vmdk.md),
+[conversion qualification](benchmark-results/2026-10-02-r512/README.md).
+R5.12p next qualifies space-efficient zero output after the runner ENOSPC attempt.
+R6.1 then defines explicit source selection/trust, artifact identity and durable
+ownership; existing PERF.0 and stream timing follow-ups remain open.

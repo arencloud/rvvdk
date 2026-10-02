@@ -2324,22 +2324,86 @@ map and lookup medians remain adverse at +5.17% and +6.70%; instruction shapes
 match with changed placement, which is not performance proof. These and prior
 stream timing/PERF.0 concerns remain open; read correctness does not clear them.
 
+## R5.12 — Local CLI streamOptimized conversion (2026-10-02)
+
+Completed in this step's commit; baseline `d65b098`.
+[CLI contract](cli-vmdk.md), [ADR-0055](adr/0055-local-cli-stream-conversion.md),
+[tests, references and plots](benchmark-results/2026-10-02-r512/README.md).
+
+Explicit VMDK version-3 routing now admits only the native reader's bounded base
+subset. The confined opened container is retained as the sole physical backing;
+embedded filenames are never followed. Inspect/plan expose logical topology,
+map/decode reservations and lazy payload validation. Copy/verify use logical reads,
+portable execution and the established durable publication path. Explicit native
+execution and stream blocks above 64 MiB reject before destination preparation.
+Parent opt-in remains specific to hosted sparse chains.
+
+Six new integration tests qualify both layouts, cross-grain reads, multiworker
+copy, overwrite tails, source/destination aliases, symlinks, mutation, malformed
+payloads, unsupported variants, cancellation and publication races. Workspace:
+623 passed, one ignored. Final Clippy across all targets and formatting pass.
+Initial Clippy rejected duplicate fixture `allow(dead_code)` attributes; removing
+the redundant outer attributes fixed it. The failed check is retained. The earlier
+export-cleanup test flake did not recur. Six full synthetic CLI conversions match
+authored RAW and QEMU; unsupported unaligned capacity rejects.
+
+The first retained-export conversion exhausted the runner's small XFS root during
+Zero output. Cleanup removed private output; no publication occurred. The retained
+export/oracle were copied to ignored development-host storage with enough space.
+Three full CLI conversions and readback pass there. Every logical byte (30 GiB)
+agrees with QEMU; every independent guest-oracle byte (8 MiB) agrees, and standalone
+CLI verification passes. No new export, lease, VM power action or storage resize
+was needed. Temporary RAW outputs were removed. Only sanitized aggregate results
+are committed. Local Btrfs allocated 30 GiB in each round; R5.12p now precedes R6.1.
+
+Median local whole-command time is 23.219 s, CPU 21.90 s and peak RSS about
+7.3 MiB. The 1,323.03 logical MiB/s includes zero ranges and is not decoder or
+network throughput; these local results are not matched against prior VM timings.
+The matrix retains 78 runs / 2,340 samples and all adverse longer repeats. Existing
+monolithic sparse copy/readback remains +6.48% by median, with round variation;
+causality is unresolved. Six new stream CLI cases establish complete-command
+baselines on tmpfs. No blanket performance clearance is claimed. Source quiescence and existing
+PERF.0/R4.4/discovery follow-ups remain required.
+
 ## Next session
 
-Start **R5.12 — Local CLI streamOptimized integration and conversion qualification**.
-Route only the admitted base profiles through confined, retained file acquisition.
-Integrate inspect/plan/copy/verify while preserving version/format rejection for
-unsupported variants, alias checks, request limits, cancellation and durable
-publication. Test complete conversions and cross-grain ranges against authored
-RAW/QEMU and the private guest oracle. Retain source quiescence requirements and
-do not advertise compressed containers as native RAW endpoints.
+Start **R5.12p — Space-efficient zero output and conversion performance**. The
+first retained-export CLI attempt exhausted the runner's small XFS filesystem:
+logical Zero extents use `ZERO_RANGE`, which may allocate their full length.
+Cleanup removed the private output correctly. Qualify a bounded optimization
+before advancing production export integration:
 
-Benchmark end-to-end conversion separately from decoding and map acquisition.
-Investigate the observed admission/cache sensitivity and random whole-grain
-amplification; measure any optimization against the recorded baseline before
-changing I/O budgets or cache bounds. Keep bounded parallel decoding as a measured
-follow-up, not an unbounded per-thread scratch allocation. PERF.0 also retains
-prior marker/stream timing observations, controlled-core/SMT/layout work and
-identical-binary controls. Earlier R4.4 and discovery/TLS follow-ups remain open.
-R6.1 still gates source identity, artifact contracts and durable resource ownership.
-Commit each completed bounded package with tests, benchmarks and updated plans.
+- Evaluate zero-to-discard only when the destination explicitly guarantees
+  zero-reading discard, or prove when a newly created destination needs no zero I/O.
+  Preserve arbitrary-range zero semantics, nonzero overwrite contents, tails,
+  access exclusion, error accounting and capability fallbacks. Do not relabel
+  source Zero extents as Hole merely to alter the planner.
+- Test physical allocation as well as full logical bytes on XFS and Btrfs; include
+  partial blocks, unsupported fallocate, cancellation and ENOSPC cleanup. Re-run
+  the retained 30 GiB conversion on the unchanged runner after the optimization.
+- Measure copy-only and copy/readback, CPU/RSS, allocated bytes and unchanged RAW,
+  FLAT and sparse controls. Investigate the retained +6.48% monolithic copy/readback
+  median with controlled conditions and identical-binary pairs. Retain every attempt.
+
+Then start **R6.1a — Explicit source identity and export artifact contract**. Split
+the larger R6.1 ownership/integration gate into reviewable committed packages:
+
+1. Specify versioned artifact metadata and bounded Rust types for explicit endpoint
+   trust, VM/disk selection, container versus logical sizes, completeness and
+   validation state. Eliminate capacity-only selection from the future public path.
+   Keep secrets outside persisted metadata and distinguish opaque identity from
+   guest names. Use synthetic round-trip, mismatch and malformed-input tests.
+2. **R6.1b:** define durable lease/resource ownership, atomic state transitions and
+   process-loss reconciliation. Fault-inject crashes and interrupted cleanup;
+   never resume or abort a lease solely from untrusted/reused artifact metadata.
+3. **R6.1c:** connect the qualified sequential export and local conversion through
+   those contracts, retaining cancellation, redaction and publication semantics.
+   Qualify on the authorized lab only when the workflow needs new host evidence.
+
+Keep PERF.0 work visible: repeated CLI/stream timing, controlled CPU/SMT/frequency
+and identical-binary/layout controls; map admission/cache sensitivity; random
+whole-grain amplification; and measured bounded parallel decoding. Do not grow
+scratch state with unbounded worker count. Retain existing R4.4 and discovery/TLS
+follow-ups. VMFS sparse, seSparse, online snapshots, CBT, restore, vCenter and
+vSphere 9 remain separately qualified later work. Commit every completed package
+with tests, benchmark disposition, evidence and updated next-session notes.

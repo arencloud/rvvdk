@@ -1,4 +1,4 @@
-# VMDK sources in the CLI (R4.4–R5.8)
+# VMDK sources in the CLI (R4.4–R5.12)
 
 All four commands accept explicit `--format vmdk`. Destinations are always RAW;
 there is no RAW/VMDK autodetection or VMDK writer. Linux and the existing
@@ -15,8 +15,8 @@ The [descriptor subset](vmdk-descriptor.md) and [logical reader](vmdk-logical.md
 define hosted base `monolithicFlat`, split flat and custom FLAT/ZERO layouts.
 R5.4 additionally accepts the [clean version-1 base sparse subset](vmdk-sparse-disk.md):
 `monolithicSparse` containers and external `twoGbMaxExtentSparse`/`2GbMaxExtentSparse`
-descriptors. Without `--allow-parents`, parent chains reject. Version 2, dirty state, compressed/encrypted images and
-managed variants reject. [Bounded terminal NUL padding](vmdk-padding.md) is accepted
+descriptors. Without `--allow-parents`, parent chains reject. Version 2, dirty state, encrypted images and managed variants reject. R5.12
+additionally accepts the bounded version-3 base `streamOptimized` subset described below. [Bounded terminal NUL padding](vmdk-padding.md) is accepted
 during acquisition; embedded NULs or nonzero suffixes reject. Files are never rewritten. Custom layouts have byte
 oracle coverage, but independent decoder qualification remains open.
 
@@ -115,3 +115,46 @@ commands against QEMU-produced monolithic/split fixtures, including a two-file s
 disk. See [ADR-0041](adr/0041-sparse-cli-source-acquisition.md). R5.5 adds
 [adversarial and scaling qualification](vmdk-sparse-qualification.md). R5.6 now provides [metadata-only parent admission](vmdk-parent-chain.md).
 R5.7 now adds [logical parent reads](vmdk-chain-disk.md); R5.8 adds [explicit confined CLI parent support](cli-vmdk-parents.md).
+
+## StreamOptimized containers (R5.12)
+
+All four commands accept the [bounded native stream subset](vmdk-stream-reads.md):
+64 KiB grains, zlib compression and admitted QEMU front / VMware footer profiles.
+The magic probe and version field select the reader; full envelope/map admission
+still precedes access. The opened confined file is the sole backing. Its embedded
+filename is never followed, so renaming a container requires no descriptor edit.
+The entry probe (at most 4 KiB), dispatch header (512 bytes) and reader's final
+header recheck (512 bytes) are outside `metadata_read_bytes`.
+
+`--allow-parents` remains a hosted-sparse-chain option and rejects stream input.
+`--block-size` must be at most 67,108,864 bytes for stream plan/copy/verify; this
+check precedes destination preparation and verification buffer allocation.
+Other reader defaults still apply, including 65,536 output extents. The decoder
+uses a single shared fixed scratch/cache slot, so more workers do not imply
+parallel decompression. The copy payload budget excludes map/decode storage.
+
+Inspect/plan `source.vmdk` adds `layout: "stream_optimized"`, `allocated_grains`,
+`decode_memory_reservation_bytes`, `read_request_limit_bytes` and
+`payload_validation: "on_read"`. Existing metadata reservation/read fields report
+the map counters. One physical container appears in `backing_identities` and
+`backing_file_count`, even though its observation also represents the descriptor.
+These reservations are requested storage, not total RSS. The schema remains 1.
+
+Inspect and plan do not decompress payloads. Copy detects corrupt allocated grains;
+`copy --verify` additionally compares the entire logical output before publication.
+Standalone verify compares the logical source with the RAW destination prefix.
+Sparse absent grains become zeros; allocated zero-filled grains remain Data.
+Logical Zero output currently uses the local backend's `ZERO_RANGE` (or zero-write
+fallback), which can allocate storage for the entire logical range. The encoded
+container size and Data-byte total do not bound destination allocation. The
+retained-export test exhausted a small XFS root for this reason; plan sufficient
+space for logical capacity until the separate R5.12p optimization is qualified.
+Explicit `io-uring` rejects before destination preparation; `auto` uses threaded.
+
+Source quiescence, retained inode observations, hardlink alias rejection, cancellation
+and durable publication follow the common contract above. Failed new conversion
+removes private output. Failed explicit overwrite may leave modified bytes and
+preserves the destination tail; it provides no rollback.
+
+[Decision](adr/0055-local-cli-stream-conversion.md),
+[qualification and conversion plots](benchmark-results/2026-10-02-r512/README.md).

@@ -94,13 +94,14 @@ HTTP bytes, exported container size and decoded logical bytes are different coun
 [export performance factors](https://knowledge.broadcom.com/external/article/389737/understanding-the-factors-that-affect-th.html).
 
 Current rvddk supports clean version-1 hosted sparse and documented FLAT/ZERO
-layouts; compressed streamOptimized, VMFS sparse and seSparse remain unsupported.
+layouts and the bounded version-3 base streamOptimized subset. VMFS sparse and
+seSparse remain unsupported.
 An API backing type alone does not admit a container into that parser. Do not wire
-an HTTP export stream into `BlockDevice::read_at` or claim RAW output yet.
+an HTTP export stream into `BlockDevice::read_at` or treat sequential export as random I/O.
 
 The first Rust proof may produce a verified export artifact and use an independent
-reference decoder solely for lab validation. Production logical conversion must
-wait for a separately specified, bounded Rust streamOptimized decoder. No automatic
+reference decoder solely for lab validation. Local logical conversion now uses the bounded Rust streamOptimized decoder;
+production artifact integration remains a separate R6 gate. No automatic
 SDK/QEMU production fallback is authorized by this design. If disk decoding fails,
 retain the bytes and diagnostics without declaring the migration successful.
 
@@ -357,7 +358,7 @@ following bounded packages in order:
    **R5.10p complete for scoped descriptor recovery:** the inline comparison hint
    recovers the measured small-input cost. [All controls and unresolved stream
    timing](benchmark-results/2026-10-02-r510p/README.md) remain visible. Continue
-   R5.12 while retaining the controlled-runner performance follow-up.
+   R5.12p/R6.1 while retaining the controlled-runner performance follow-up.
 2. **R5.11a complete — Bounded grain index:** map pointers, aliases, redundancy,
    record ordering and LBA binding pass synthetic and retained-export checks.
    [Contract](vmdk-stream-map.md), [evidence](benchmark-results/2026-10-02-r511a/README.md).
@@ -366,23 +367,27 @@ following bounded packages in order:
    complete QEMU/guest-oracle comparison. [Contract](vmdk-stream-reads.md),
    [CPU/RSS/throughput](benchmark-results/2026-10-02-r511b/README.md).
    Keep guest images private; preserve unsupported VMFS sparse/seSparse variants.
-3. **R5.12 — Local CLI conversion qualification:** integrate only the admitted
-   subset into inspect/plan/copy/verify, test cross-grain reads, durability and
-   cancellation, and plot all repeated benchmark samples.
-4. **R6.1 — Container export contract and ownership:** replace capacity-only
+3. **R5.12 complete — Local CLI conversion qualification:** admitted subset
+   integrated into inspect/plan/copy/verify, including cross-grain reads, durability
+   and cancellation. [Tests and repeated plots](benchmark-results/2026-10-02-r512/README.md).
+4. **R5.12p — Output-space and performance qualification:** prioritize bounded
+   zero-output allocation improvements after the runner ENOSPC attempt. Preserve
+   logical zero semantics and repeat the retained conversion on its unchanged XFS
+   filesystem. [Detailed next package](implementation-log.md#next-session).
+5. **R6.1 — Container export contract and ownership:** replace capacity-only
    experimental selection with explicit source identity/trust inputs. Define
    versioned artifact and durable lease-ownership records, then test process-loss
    reconciliation before claiming resumable or recoverable backup jobs. Integrate
    the proven sequential export as an artifact workflow, never as fake random I/O.
-5. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9
+6. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9
    in later independently qualified steps. Keep PERF.0/R4.4 and the discovery
    variance/controlled-TLS investigation visible while adding new features.
 
 Commit each completed bounded package with tests, evidence, performance disposition
 and an updated next-session record. This sequence extends the R5/R6 roadmap; it
 claims R5.10 metadata admission, R5.10p scoped descriptor recovery, R5.11a map
-validation and R5.11b native reads as implemented. CLI conversion, overall stream
-performance clearance and production integration remain open.
+validation, R5.11b native reads and R5.12 CLI conversion as implemented. Overall
+stream performance clearance and production integration remain open.
 
 ### Later — vSphere 9 compatibility (deferred)
 
