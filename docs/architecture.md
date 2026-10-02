@@ -1621,5 +1621,28 @@ The worker drains before return; successful output remains a private owned stage
 [ADR-0061](adr/0061-owned-transfer-and-conservative-completion.md),
 [contract](durable-owned-transfer.md), [tests and timing](benchmark-results/2026-10-02-r61c2b/README.md).
 These checks verify container bytes, not VMDK structure or logical content. R6.1c.3
-next adds private artifact metadata and native VMDK admission before conversion and
+below adds private artifact metadata and native VMDK admission before conversion and
 actual publication. Existing manifests do not confer ownership or validation.
+
+
+### R6.1c.3 — Private artifact metadata and native admission
+
+`transfer_owned_artifact` shares the owned coordinator and adds admission before
+TransferComplete. The blocking owner adopts a freshly checked read-only payload
+handle into StreamDisk, applies existing bounded map rules, matches logical source
+capacity and decodes every present grain. Absent grains are structurally admitted
+zeros. Another SHA-256 pass binds the native observations to the sealed container.
+
+The private ExportArtifact records ContainerDigestVerified, not logical oracle
+verification. Metadata is written to the existing empty owned member, synced and
+independently reread/parsed before acknowledgment. It does not replace the inode or
+publish a path. Heartbeats remain async; cancellation/deadlines are checked between
+bounded work units. Failures prevent TransferComplete and preserve the journaled
+abort/completion boundaries. Parseable metadata alone never restores authority.
+
+[ADR-0062](adr/0062-private-native-artifact-admission.md),
+[contract](owned-artifact-admission.md), [tests and timing](benchmark-results/2026-10-02-r61c3/README.md).
+Metadata persistence uses LeaseHeld, avoiding any reopening of completed Job. The
+fresh retained read-only capability moves to R6.1c.4 alongside local conversion;
+publication and composed live qualification remain subsequent gates. Cooperating
+writers/source quiescence remain required; these checks are not a snapshot.

@@ -19,6 +19,7 @@ use std::{
 struct Reply {
     status: u16,
     body: String,
+    binary: Option<Vec<u8>>,
     headers: String,
     delay: Duration,
     declared: Option<usize>,
@@ -31,6 +32,7 @@ impl Reply {
             body: envelope(&format!(
                 "<{method}Response xmlns='urn:vim25'>{body}</{method}Response>"
             )),
+            binary: None,
             headers: String::new(),
             delay: Duration::ZERO,
             declared: None,
@@ -43,6 +45,7 @@ impl Reply {
             body: envelope(&format!(
                 "<s:Fault><faultstring>PRIVATE fault text</faultstring><detail><{kind} xmlns='urn:vim25'/></detail></s:Fault>"
             )),
+            binary: None,
             headers: String::new(),
             delay: Duration::ZERO,
             declared: None,
@@ -277,30 +280,24 @@ impl Server {
                         replies.lock().unwrap().pop_front().unwrap()
                     };
                     thread::sleep(reply.delay);
-                    let out = if reply.chunked {
-                        let mut encoded = String::new();
-                        for chunk in reply.body.as_bytes().chunks(8192) {
-                            encoded.push_str(&format!(
-                                "{:x}\r\n{}\r\n",
-                                chunk.len(),
-                                std::str::from_utf8(chunk).unwrap()
-                            ));
-                        }
-                        format!(
-                            "HTTP/1.1 {} status\r\nContent-Type: text/xml\r\nTransfer-Encoding: chunked\r\n{}\r\n{}0\r\n\r\n",
-                            reply.status, reply.headers, encoded
-                        )
+                    let bytes = reply.binary.as_deref().unwrap_or(reply.body.as_bytes());
+                    let mut out = if reply.chunked {
+                        format!("HTTP/1.1 {} status\r\nContent-Type: text/xml\r\nTransfer-Encoding: chunked\r\n{}\r\n", reply.status, reply.headers).into_bytes()
                     } else {
-                        format!(
-                            "HTTP/1.1 {} status\r\nContent-Type: text/xml\r\nContent-Length: {}\r\n{}\r\n{}",
-                            reply.status,
-                            reply.declared.unwrap_or(reply.body.len()),
-                            reply.headers,
-                            reply.body
-                        )
+                        format!("HTTP/1.1 {} status\r\nContent-Type: text/xml\r\nContent-Length: {}\r\n{}\r\n", reply.status, reply.declared.unwrap_or(bytes.len()), reply.headers).into_bytes()
                     };
+                    if reply.chunked {
+                        for chunk in bytes.chunks(8192) {
+                            out.extend_from_slice(format!("{:x}\r\n", chunk.len()).as_bytes());
+                            out.extend_from_slice(chunk);
+                            out.extend_from_slice(b"\r\n");
+                        }
+                        out.extend_from_slice(b"0\r\n\r\n");
+                    } else {
+                        out.extend_from_slice(bytes);
+                    }
                     if stream
-                        .write_all(out.as_bytes())
+                        .write_all(&out)
                         .and_then(|_| stream.flush())
                         .is_err()
                     {

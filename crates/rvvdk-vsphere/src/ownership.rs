@@ -40,6 +40,10 @@ pub enum OwnershipError {
     Uncertain,
     #[error("payload verification failed")]
     Content,
+    #[error("artifact admission cancelled")]
+    Cancelled,
+    #[error("artifact admission deadline exceeded")]
+    Deadline,
     #[error("local job I/O failed")]
     Io,
 }
@@ -540,12 +544,15 @@ impl Job<'_> {
     /// Caller writes through the pinned, newly created member. No path from a
     /// manifest is used. Content verification/durability belongs to R6.1c.
     pub fn payload_file(&self) -> Result<File> {
-        self.member(0)
+        self.member(0, true)
     }
     pub fn metadata_file(&self) -> Result<File> {
-        self.member(1)
+        self.member(1, true)
     }
-    fn member(&self, index: usize) -> Result<File> {
+    pub(crate) fn payload_reader(&self) -> Result<File> {
+        self.member(0, false)
+    }
+    fn member(&self, index: usize, writable: bool) -> Result<File> {
         self.store.ready()?;
         if !matches!(
             self.record.state,
@@ -564,7 +571,7 @@ impl Job<'_> {
             expected.directory,
             true,
         )?;
-        let file = open_at(dir, MEMBERS[index], true, false, false)?;
+        let file = open_at(dir, MEMBERS[index], writable, false, false)?;
         private(&file, false)?;
         if identity(&file)? != expected.members[index] {
             return Err(OwnershipError::Identity);

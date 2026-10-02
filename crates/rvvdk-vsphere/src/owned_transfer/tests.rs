@@ -1,4 +1,5 @@
 use super::*;
+use crate::artifact_fixture as fixture;
 #[allow(dead_code, unused_imports)]
 mod mock {
     use crate as rvvdk_vsphere;
@@ -21,8 +22,17 @@ mod mock {
             .mode(0o700)
             .create(&path)
             .unwrap();
-        let payload = "KDMV".to_owned() + &"x".repeat((1 << 20) - 4);
-        let digest = Sha256::digest(payload.as_bytes())
+        let payload = if command == "admit" {
+            super::fixture::image(
+                true,
+                (30u64 << 30) / 65536,
+                &[(0, super::fixture::stored(&super::fixture::bytes(0)))],
+            )
+        } else {
+            ("KDMV".to_owned() + &"x".repeat((1 << 20) - 4)).into_bytes()
+        };
+        let size = payload.len();
+        let digest = Sha256::digest(&payload)
             .iter()
             .map(|b| format!("{b:02x}"))
             .collect::<String>();
@@ -44,10 +54,10 @@ mod mock {
         r.push(properties("HttpNfcLease","lease-private",&(property("state","ready")+&property("info","<lease type='HttpNfcLease'>lease-private</lease><entity type='VirtualMachine'>vm-private</entity><deviceUrl><key>disk</key><disk>true</disk><url>ENDPOINT/nfc/private</url><sslThumbprint>THUMBPRINT</sslThumbprint></deviceUrl><totalDiskCapacityInKB>31457280</totalDiskCapacityInKB><leaseTimeout>3</leaseTimeout>"))));
         r.push(vm.clone());
         let mut data = Reply::soap("unused", "");
-        data.body = payload.clone();
+        data.binary = Some(payload.clone());
         r.push(data);
         if command != "write" || (!cancel && !fail) {
-            r.push(Reply::soap("HttpNfcLeaseGetManifest",&format!("<returnval><key>disk</key><disk>true</disk><size>1048576</size><capacity>32212254720</capacity><checksumType>sha256</checksumType><checksum>{digest}</checksum></returnval>")));
+            r.push(Reply::soap("HttpNfcLeaseGetManifest",&format!("<returnval><key>disk</key><disk>true</disk><size>{size}</size><capacity>32212254720</capacity><checksumType>sha256</checksumType><checksum>{digest}</checksum></returnval>")));
         }
         if command == "complete" || (!cancel && !fail) {
             r.push(vm.clone());
@@ -96,6 +106,7 @@ mod mock {
                     ("write", Command::PayloadWrite(_))
                         | ("seal", Command::PayloadSeal(_))
                         | ("complete", Command::Complete)
+                        | ("admit", Command::PayloadAdmit(..))
                 ) {
                     if cancel {
                         trigger.cancel();
@@ -108,9 +119,15 @@ mod mock {
                 Ok(())
             },
         );
-        let report = super::transfer_with_worker(source, &credentials(), options, worker)
-            .await
-            .unwrap();
+        let report = super::transfer_with_worker(
+            source,
+            &credentials(),
+            options,
+            worker,
+            command == "admit",
+        )
+        .await
+        .unwrap();
         assert!(JobStore::open(&path).is_ok());
         assert!(
             progress.load(Ordering::Relaxed) >= 2,
@@ -136,6 +153,9 @@ mod mock {
             assert_eq!(state, JobState::AbortedLease);
         } else {
             assert!(report.is_success(), "{report:?}");
+            if command == "admit" {
+                assert!(report.is_artifact_success());
+            }
         }
         let stages: Vec<_> = std::fs::read_dir(&path)
             .unwrap()
@@ -145,9 +165,9 @@ mod mock {
         if !fail {
             assert_eq!(
                 std::fs::read(stages[0].join("disk-1.vmdk")).unwrap(),
-                payload.as_bytes()
+                payload.as_slice()
             );
-            assert_eq!(report.written_encoded_bytes, 1 << 20);
+            assert_eq!(report.written_encoded_bytes, size as u64);
         }
         if command == "write" && (cancel || fail) {
             assert_eq!(report.durable_encoded_bytes, 0);
@@ -183,4 +203,11 @@ async fn cancellation_during_seal_or_complete_intent_obeys_durable_boundary() {
 #[tokio::test]
 async fn payload_write_failure_still_allows_durable_abort_after_writer_closes() {
     mock::delayed("write", false, true).await;
+}
+
+#[tokio::test]
+async fn slow_native_admission_keeps_heartbeats_and_drains_on_cancel_or_error() {
+    mock::delayed("admit", false, false).await;
+    mock::delayed("admit", true, false).await;
+    mock::delayed("admit", false, true).await;
 }

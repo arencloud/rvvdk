@@ -6,6 +6,7 @@ use crate::{
 use tokio::sync::{mpsc, oneshot};
 use zeroize::Zeroizing;
 
+mod admission;
 mod payload;
 pub(crate) use payload::{CHUNK_BYTES, Expected, Progress};
 
@@ -19,6 +20,7 @@ pub(crate) enum Command {
     PayloadOpen(u64),
     PayloadWrite(Vec<u8>),
     PayloadSeal(Expected),
+    PayloadAdmit(crate::Cancellation, std::time::Instant),
     Transferred,
     Complete,
     Completed,
@@ -84,6 +86,7 @@ impl Worker {
                         Command::PayloadOpen(_)
                             | Command::PayloadWrite(_)
                             | Command::PayloadSeal(_)
+                            | Command::PayloadAdmit(..)
                     );
                     let result = hook(&request.command).and_then(|()| match request.command {
                         Command::Prepare => job.prepare_stage(),
@@ -97,6 +100,9 @@ impl Worker {
                         Command::PayloadOpen(limit) => payload.open(&job, limit),
                         Command::PayloadWrite(data) => payload.write(&data),
                         Command::PayloadSeal(expected) => payload.seal(&job, &expected),
+                        Command::PayloadAdmit(cancel, deadline) => {
+                            payload.admit(&job, artifact, &source, &cancel, deadline)
+                        }
                         Command::Transferred
                             if payload.progress.verified && payload_error.is_none() =>
                         {

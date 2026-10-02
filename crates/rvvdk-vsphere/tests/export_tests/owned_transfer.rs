@@ -5,18 +5,18 @@ use rvvdk_vsphere::{
     ownership::{JobState, JobStore, OwnershipError, RecoveryAction},
     transfer_owned_export,
 };
-fn replies() -> Vec<Reply> {
+pub(super) fn replies() -> Vec<Reply> {
     let mut r = explicit_replies();
     r.insert(15, r[14].clone());
     r
 }
-fn opts() -> OwnedTransferOptions {
+pub(super) fn opts() -> OwnedTransferOptions {
     OwnedTransferOptions {
         max_encoded_bytes: 8 << 20,
         ..Default::default()
     }
 }
-fn stage(path: &std::path::Path) -> PathBuf {
+pub(super) fn stage(path: &std::path::Path) -> PathBuf {
     let stages: Vec<_> = std::fs::read_dir(path)
         .unwrap()
         .map(|e| e.unwrap().path())

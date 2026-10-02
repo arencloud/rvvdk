@@ -287,7 +287,11 @@ fn journal_result(
 ) -> Result<()> {
     result.map_err(|error| {
         report.journal_error.get_or_insert(error);
-        Error::Artifact
+        match error {
+            OwnershipError::Cancelled => Error::Cancelled,
+            OwnershipError::Deadline => Error::Deadline,
+            _ => Error::Artifact,
+        }
     })
 }
 

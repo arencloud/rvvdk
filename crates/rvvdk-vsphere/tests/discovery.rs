@@ -379,6 +379,7 @@ mod export_tests {
     use super::*;
     use rvvdk_vsphere::{ExportOptions, LeaseCleanup, export_vm};
     use std::path::PathBuf;
+    mod owned_artifact;
     mod owned_probe;
     mod owned_transfer;
     mod selected_benchmark;

@@ -45,8 +45,16 @@ pub struct OwnedTransferReport {
     /// Independent digest/length readback, not VMDK structure or logical validation.
     pub container_readback_verified: bool,
     pub payload_error: Option<OwnershipError>,
+    /// All native stream-map checks and every present grain decode succeeded.
+    pub native_admission_verified: bool,
+    /// Private ContainerDigestVerified metadata was synced and reread.
+    pub artifact_metadata_durable: bool,
+    pub present_grains_verified: u64,
 }
 impl OwnedTransferReport {
+    pub fn is_artifact_success(&self) -> bool {
+        self.is_success() && self.native_admission_verified && self.artifact_metadata_durable
+    }
     pub fn is_success(&self) -> bool {
         let r = &self.lifecycle;
         r.primary_error.is_none()
@@ -75,6 +83,29 @@ pub async fn transfer_owned_export(
     artifact: ArtifactId,
     options: OwnedTransferOptions,
 ) -> Result<OwnedTransferReport> {
+    start_transfer(source, credentials, store, artifact, options, false).await
+}
+/// Transfer into an owned private artifact, admit native streamOptimized structure
+/// and every present compressed grain, and persist bounded metadata before completion.
+/// Metadata records ContainerDigestVerified; no logical oracle comparison is implied.
+/// Await this future to drain accepted local work. No publication or resume is provided.
+pub async fn transfer_owned_artifact(
+    source: SourceSelection,
+    credentials: &Credentials,
+    store: JobStore,
+    artifact: ArtifactId,
+    options: OwnedTransferOptions,
+) -> Result<OwnedTransferReport> {
+    start_transfer(source, credentials, store, artifact, options, true).await
+}
+async fn start_transfer(
+    source: SourceSelection,
+    credentials: &Credentials,
+    store: JobStore,
+    artifact: ArtifactId,
+    options: OwnedTransferOptions,
+    admit: bool,
+) -> Result<OwnedTransferReport> {
     if options.max_encoded_bytes < 512
         || options.max_encoded_bytes > 1 << 40
         || options.transfer_timeout.is_zero()
@@ -84,13 +115,14 @@ pub async fn transfer_owned_export(
     }
     options.cancellation.check()?;
     let worker = Worker::start(store, artifact, source.clone());
-    transfer_with_worker(source, credentials, options, worker).await
+    transfer_with_worker(source, credentials, options, worker, admit).await
 }
 async fn transfer_with_worker(
     source: SourceSelection,
     credentials: &Credentials,
     options: OwnedTransferOptions,
     mut worker: Worker,
+    admit: bool,
 ) -> Result<OwnedTransferReport> {
     let started = Instant::now();
     let mut report = OwnedTransferReport::default();
@@ -121,6 +153,7 @@ async fn transfer_with_worker(
                                 &mut report,
                                 &mut lease,
                                 &mut completing,
+                                admit,
                             )
                             .await
                         {
@@ -187,6 +220,9 @@ async fn transfer_with_worker(
             report.durable_encoded_bytes = outcome.progress.durable;
             report.container_readback_verified = outcome.progress.verified;
             report.payload_error = outcome.payload_error;
+            report.native_admission_verified = outcome.progress.native_verified;
+            report.artifact_metadata_durable = outcome.progress.metadata_durable;
+            report.present_grains_verified = outcome.progress.grains_verified;
             match outcome.recovery {
                 Ok(r) => report.lifecycle.recovery = Some(r),
                 Err(e) => {
@@ -216,6 +252,7 @@ impl Session {
         report: &mut OwnedTransferReport,
         live: &mut Option<(Reference, Option<Duration>)>,
         completing: &mut bool,
+        admit: bool,
     ) -> Result<()> {
         options.cancellation.check()?;
         let inventory = self.inventory(about, InventoryLimits::default()).await?;
@@ -319,10 +356,15 @@ impl Session {
             source.logical_bytes(),
         )?;
         report.manifest_verified = true;
-        for command in [
-            Command::PayloadSeal(downloaded.expected),
-            Command::Transferred,
-        ] {
+        let mut commands = vec![Command::PayloadSeal(downloaded.expected)];
+        if admit {
+            commands.push(Command::PayloadAdmit(
+                options.cancellation.clone(),
+                self.deadline,
+            ));
+        }
+        commands.push(Command::Transferred);
+        for command in commands {
             self.probe_journal(client, command, &lease, timeout, &mut report.lifecycle)
                 .await?;
             check_continue(report, &options.cancellation)?;

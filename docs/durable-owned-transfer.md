@@ -89,9 +89,10 @@ future artifact admission. The fixed metadata file remains empty in this package
 **Container-byte verification is not VMDK structure validation or logical-disk
 verification.** A matching header prefix/digest does not validate stream version,
 grain maps, compressed payloads or the logical capacity encoded inside the image.
-No LogicalReadbackVerified artifact claim is produced. R6.1c.3 must apply bounded
-native VMDK admission and persist private verified artifact metadata before the
-conversion/publication workflow can consume this output.
+No LogicalReadbackVerified artifact claim is produced. The separate
+[R6.1c.3 artifact API](owned-artifact-admission.md) now applies bounded native
+structure/grain admission and persists private metadata before completion.
+Retained artifact admission, conversion and publication remain later gates.
 
 The existing private-store, trusted-ancestor and cooperating-writer constraints
 remain in force. Reopening an assessment does not recreate Job or a live lease;

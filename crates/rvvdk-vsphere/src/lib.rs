@@ -24,7 +24,9 @@ pub use owned_probe::{OwnedProbeReport, probe_owned_export};
 #[cfg(target_os = "linux")]
 mod owned_transfer;
 #[cfg(target_os = "linux")]
-pub use owned_transfer::{OwnedTransferOptions, OwnedTransferReport, transfer_owned_export};
+pub use owned_transfer::{
+    OwnedTransferOptions, OwnedTransferReport, transfer_owned_artifact, transfer_owned_export,
+};
 mod inventory;
 mod transport;
 mod xml;
@@ -386,3 +388,7 @@ impl Session {
         Ok(inventory)
     }
 }
+
+#[cfg(all(test, target_os = "linux"))]
+#[path = "../../rvvdk-vmdk/tests/support/stream_disk.rs"]
+mod artifact_fixture;

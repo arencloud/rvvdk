@@ -2631,39 +2631,81 @@ No ESXi or guest operation was needed. R6.1c.2 is complete at this API/container
 scope; R6.1c remains open for metadata, native admission, conversion, publication
 and integrated live qualification. Legacy exporters retain their separate lifecycle.
 
+## R6.1c.3 — Private artifact metadata and native VMDK admission
+
+Completed the explicit `transfer_owned_artifact` API. After container seal/readback
+and before TransferComplete, the journal owner adopts a freshly checked read-only
+payload into the existing native StreamDisk. It validates bounded stream metadata,
+checks source logical capacity and decodes every present grain, then rechecks the
+container SHA-256 against the sealed observation. Structurally absent zero regions
+need no scan proportional to logical capacity.
+
+The existing private ExportArtifact schema is written into the owned empty metadata
+member during LeaseHeld, synced and independently reread/parsed. It records
+ContainerDigestVerified, never LogicalReadbackVerified. No stage handle escapes,
+metadata path is followed or remote authority recreated. Heartbeats/cancellation,
+writer drain and conservative completion remain in force. The container-byte API
+retains its separate scope and empty metadata behavior.
+
+[Contract](owned-artifact-admission.md), [ADR-0062](adr/0062-private-native-artifact-admission.md),
+[tests, raw samples and plots](benchmark-results/2026-10-02-r61c3/README.md).
+Workspace **701 passed, six ignored**; strict all-target clippy and formatting pass.
+Eleven added tests include an inert crash helper. They cover both stream layouts,
+empty/present grains, malformed metadata/payloads, source capacity mismatch, native
+limits, changed sealed bytes/member/marker, existing metadata preservation,
+partial-write/sync/readback failures, cancellation/deadlines, slow native work and
+SIGKILL during metadata persistence. Btrfs reruns pass seven unit and three new
+integration tests. Completion observes metadata first; lost completion still stays
+pending. Mock TLS now carries arbitrary binary bodies for valid authored VMDKs.
+
+The matched release matrix retains **288 transfers / 144 pairs**, with 128 authored
+64 KiB stored-DEFLATE grains, 30 GiB logical capacity and 8,528,384 encoded bytes.
+Both paths use owned transfer; the artifact path adds native admission, another hash
+pass and metadata durability. Longer wall medians are **218.729 → 230.586 ms on
+Btrfs** (+5.42%) and **73.888 → 82.769 ms on tmpfs** (+12.02%). CPU rises 21.50% and
+27.62%. All container bytes and decoded authored grains compare; trailing hole
+samples are zero. The 441-byte metadata remains private. Adverse initial comparisons
+and tmpfs variation triggered longer repeats; all raw observations are retained.
+No timing, logical equivalence or production throughput claim follows beyond these
+fixtures. Preserve all durability barriers and PERF.0 costs.
+
+No ESXi/guest operation was needed. Metadata persistence was chosen during the live
+LeaseHeld phase; the separately checked read-only retained-artifact capability is
+explicitly assigned to R6.1c.4. Conversion, publication, composed live qualification
+and production remote recovery remain open.
+
 ## Next session
 
-Start **R6.1c.3 — Private artifact metadata and native VMDK admission**:
+Start **R6.1c.4 — Retained artifact admission and confined local conversion**:
 
-1. Bind the R6.1a ExportArtifact contract to the retained owned payload, explicit
-   source identity and actual verification evidence. Metadata remains private and
-   bounded; source/content hashes must never enter public diagnostic reports.
-   ContainerDigestVerified must not become LogicalReadbackVerified by assertion.
-2. Apply existing bounded native VMDK admission to header/version, grain map,
-   compressed payloads and encoded logical capacity. Qualify malformed and truncated
-   containers, size budgets and source/capacity mismatch before conversion consumes
-   them. A prefix, matching manifest or journal acknowledgment is insufficient.
-3. Choose a valid metadata persistence phase or introduce a separately admitted
-   read-only artifact capability. Job member access currently ends at TransferComplete;
-   CompletedLease does not reopen Job or a lease. Fresh admission must bind the
-   store, artifact, source, stage/member identities, ownership marker and bytes.
-   No metadata path/URL or recovered journal record confers authority.
-4. Preserve confined handles, bounded memory, heartbeat/cancellation, writer drain,
-   file/directory durability and conservative remote outcomes. Extend fault tests
-   across metadata writes/readback, replaced members and process loss. Follow with
-   local conversion and actual descriptor-bound no-replace publication, preserving
-   existing source/destination alias and sparse-output rules.
-5. Benchmark matched CPU/RSS/allocation and byte correctness with standalone plots.
-   Retain journal fixed cost and full readback cost alongside prior stream/storage
-   findings. Repeat adverse comparisons/spreads above 5% before drawing conclusions.
-6. Use the authorized lab when the composed path needs new host/guest evidence.
-   Current synthetic tests do not qualify full live workflow compatibility or
-   resumable export; never replay uncertain remote actions from a record.
+1. Define a read-only capability for a retained CompletedLease stage. Acquire and
+   retain the store lock, reject transactions/uncertain or aborted states, freshly
+   bind explicit source/artifact/store identity and stage/member/marker identities.
+   Do not reopen Job, regenerate a remote lease or treat metadata as authority.
+2. Read at most 4 KiB metadata from the owned handle, verify source/artifact/capacity,
+   require completeness and freshly compare container size/digest. Apply bounded
+   native admission to current bytes; stored validation claims never skip checks.
+   Keep source handles and the lock alive until the consumer is done, preventing
+   cooperating cleanup while reads are active. Qualify replacement/mutation races,
+   stale claims, malicious fields, wrong source and unknown journal states.
+3. Route local conversion through the retained confined native source and existing
+   DataMover/RAW destination policies. Preserve alias admission, payload/memory limits,
+   cancellation/progress, sparse zero semantics and durable output completion. Do
+   not follow a metadata path/URL or weaken existing publication rules.
+4. Keep actual journal-bound descriptor publication as R6.1c.5. Define output ownership
+   and intent/acknowledgment ordering before exposing any new final artifact, with
+   file/directory sync and no-replace collision guarantees. Metadata sync alone is
+   not publication or a resumable job protocol.
+5. Test correct logical output and conservative failure/process-loss handling, and
+   benchmark admission/conversion CPU/RSS/allocation with plots. Retain cumulative
+   hash/decode/journal cost; repeat adverse comparisons/spreads above 5%.
+6. Use the authorized ESXi lab when the composed workflow requires live qualification.
+   Synthetic fixtures and the previously qualified native decoder do not prove new
+   integrated host compatibility. No uncertain remote action may be replayed.
 
 Keep PERF.0 visible: prior stream timing, CPU/SMT/frequency/layout controls, map/cache
 sensitivity, random whole-grain amplification, sparse-output Btrfs layout/flush cost,
-bounded parallel decoding and integrated durable-journal/readback overhead. Retain
-R4.4 and discovery/TLS work. No universal timing or automatic remote-recovery
-clearance is claimed. VMFS sparse, seSparse, online snapshots, CBT, restore, vCenter
-and vSphere 9 remain later qualified work. Commit every completed package with tests,
-benchmark results, architecture decisions and updated next-session notes.
+bounded parallel decoding and integrated journal/readback/native-admission cost.
+Retain R4.4 and discovery/TLS work. VMFS sparse, seSparse, online snapshots, CBT,
+restore, vCenter and vSphere 9 remain later qualified work. Commit every completed
+package with tests, benchmark results, architecture decisions and updated next notes.

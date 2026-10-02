@@ -12,7 +12,11 @@ pub(crate) struct Progress {
     pub(crate) written: u64,
     pub(crate) durable: u64,
     pub(crate) verified: bool,
+    pub(crate) native_verified: bool,
+    pub(crate) metadata_durable: bool,
+    pub(crate) grains_verified: u64,
 }
+#[derive(Clone)]
 pub(crate) struct Expected {
     pub(crate) bytes: u64,
     pub(crate) sha256: [u8; 32],
@@ -21,6 +25,7 @@ pub(crate) struct Expected {
 #[derive(Default)]
 pub(super) struct Payload {
     file: Option<File>,
+    pub(super) expected: Option<Expected>,
     started: bool,
     limit: u64,
     pub(super) progress: Progress,
@@ -109,6 +114,7 @@ impl Payload {
         // Recheck the namespace/marker after readback as well as before it.
         job.validate_stage()?;
         drop(job.payload_file()?);
+        self.expected = Some(expected.clone());
         self.progress.verified = true;
         Ok(())
     }

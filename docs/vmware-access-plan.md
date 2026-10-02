@@ -385,8 +385,9 @@ following bounded packages in order:
    download and completion. **R6.1c.2a complete:** [durable acquire/abort](durable-export-probe.md) binds a
    real probe lease to journal-owned resources. **R6.1c.2b complete:** [owned transfer/completion](durable-owned-transfer.md)
    qualifies container-byte readback and the no-abort completion boundary.
-   **Next R6.1c.3:** private artifact metadata and native VMDK admission, then
-   conversion/publication. The
+   **R6.1c.3 complete:** [private metadata/native admission](owned-artifact-admission.md)
+   checks structure and every present grain before completion. **Next R6.1c.4:**
+   retained artifact admission and local conversion, then publication/live qualification. The
    capacity proof remains separate; full production R6.1c remains open.
 6. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9
    in later independently qualified steps. Keep PERF.0/R4.4 and the discovery
