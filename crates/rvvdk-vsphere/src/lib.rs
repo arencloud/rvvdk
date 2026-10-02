@@ -6,6 +6,7 @@
 //! with a separate bounded budget. Debug/errors/reports omit operational secrets.
 #[cfg(target_os = "linux")]
 mod artifact;
+pub mod contract;
 mod error;
 mod export;
 pub use export::{Cancellation, ExportOptions, ExportReport, LeaseCleanup, TaskSummary, export_vm};

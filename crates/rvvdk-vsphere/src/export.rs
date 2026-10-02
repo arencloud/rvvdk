@@ -677,7 +677,7 @@ fn checked_task_time(s: &str) -> Result<String> {
     }
     Ok(s.to_owned())
 }
-fn admit_vm(vm: &Vm, capacity: u64) -> Result<()> {
+pub(crate) fn admit_vm(vm: &Vm, capacity: u64) -> Result<()> {
     if vm.template || vm.snapshot_present || vm.disks.len() != 1 {
         return Err(Error::ExportScope);
     }

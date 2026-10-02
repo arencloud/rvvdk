@@ -1,0 +1,380 @@
+{
+  "kernel": "7.2.5-200.fc44.x86_64",
+  "cpu": 0,
+  "binary_sha256": "4867b5ffff2e17a9fa99a75253191766f2804b5cff03f83243eff0b9cf297a48",
+  "conditions": "Synthetic in-memory fixtures; CPU 0; shared host, powersave, SMT sibling not isolated. No network or disk payload. CPU/RSS cover Criterion including warmup and analysis, not per-operation resource use.",
+  "commands": [
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61a/initial-1-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61a/reference/contract",
+        "export_contract/",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r61a-initial-1"
+      ],
+      "before": {
+        "unix_seconds": 1790955072.77484,
+        "load": [
+          1.34765625,
+          1.28564453125,
+          1.42626953125
+        ],
+        "frequency": {
+          "scaling_governor": "powersave",
+          "scaling_cur_freq": "1696350"
+        },
+        "cpu_ticks": [
+          "cpu  15248242 734561 5272918 367155570 1057455 1061039 825788 0 0 0",
+          "cpu0 1228429 43021 349628 22247066 46907 69066 217309 0 0 0"
+        ]
+      },
+      "after": {
+        "unix_seconds": 1790955115.5446763,
+        "load": [
+          1.55126953125,
+          1.35302734375,
+          1.44384765625
+        ],
+        "frequency": {
+          "scaling_governor": "powersave",
+          "scaling_cur_freq": "4172291"
+        },
+        "cpu_ticks": [
+          "cpu  15255057 734731 5273828 367216692 1057569 1061238 825975 0 0 0",
+          "cpu0 1232686 43021 349636 22247067 46907 69075 217312 0 0 0"
+        ]
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 42.76,
+        "user_seconds": 42.54,
+        "system_seconds": 0.06,
+        "max_rss_kib": 13408
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61a/initial-2-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61a/reference/contract",
+        "export_contract/",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r61a-initial-2"
+      ],
+      "before": {
+        "unix_seconds": 1790955115.5465863,
+        "load": [
+          1.55126953125,
+          1.35302734375,
+          1.44384765625
+        ],
+        "frequency": {
+          "scaling_governor": "powersave",
+          "scaling_cur_freq": "1847647"
+        },
+        "cpu_ticks": [
+          "cpu  15255057 734731 5273828 367216694 1057569 1061238 825975 0 0 0",
+          "cpu0 1232686 43021 349636 22247067 46907 69075 217312 0 0 0"
+        ]
+      },
+      "after": {
+        "unix_seconds": 1790955159.4516623,
+        "load": [
+          1.69091796875,
+          1.41259765625,
+          1.4599609375
+        ],
+        "frequency": {
+          "scaling_governor": "powersave",
+          "scaling_cur_freq": "4394110"
+        },
+        "cpu_ticks": [
+          "cpu  15261994 734849 5274912 367279467 1057665 1061473 826171 0 0 0",
+          "cpu0 1237052 43021 349645 22247067 46908 69086 217315 0 0 0"
+        ]
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 43.9,
+        "user_seconds": 43.64,
+        "system_seconds": 0.06,
+        "max_rss_kib": 13756
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61a/initial-3-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61a/reference/contract",
+        "export_contract/",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r61a-initial-3"
+      ],
+      "before": {
+        "unix_seconds": 1790955159.4533112,
+        "load": [
+          1.69091796875,
+          1.41259765625,
+          1.4599609375
+        ],
+        "frequency": {
+          "scaling_governor": "powersave",
+          "scaling_cur_freq": "3073580"
+        },
+        "cpu_ticks": [
+          "cpu  15261994 734849 5274912 367279469 1057665 1061473 826171 0 0 0",
+          "cpu0 1237052 43021 349645 22247068 46908 69086 217315 0 0 0"
+        ]
+      },
+      "after": {
+        "unix_seconds": 1790955203.1497078,
+        "load": [
+          1.61865234375,
+          1.43603515625,
+          1.46484375
+        ],
+        "frequency": {
+          "scaling_governor": "powersave",
+          "scaling_cur_freq": "4463764"
+        },
+        "cpu_ticks": [
+          "cpu  15268605 734924 5275785 367342353 1057902 1061710 826361 0 0 0",
+          "cpu0 1241400 43021 349651 22247068 46909 69097 217318 0 0 0"
+        ]
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 43.69,
+        "user_seconds": 43.45,
+        "system_seconds": 0.05,
+        "max_rss_kib": 13392
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61a/longer-1-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61a/reference/contract",
+        "export_contract/(check_binding|parse_max_bytes)$",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r61a-longer-1"
+      ],
+      "before": {
+        "unix_seconds": 1790955203.1520455,
+        "load": [
+          1.61865234375,
+          1.43603515625,
+          1.46484375
+        ],
+        "frequency": {
+          "scaling_governor": "powersave",
+          "scaling_cur_freq": "800000"
+        },
+        "cpu_ticks": [
+          "cpu  15268605 734924 5275786 367342357 1057902 1061710 826361 0 0 0",
+          "cpu0 1241400 43021 349651 22247068 46909 69097 217318 0 0 0"
+        ]
+      },
+      "after": {
+        "unix_seconds": 1790955214.3329613,
+        "load": [
+          1.54931640625,
+          1.4306640625,
+          1.4619140625
+        ],
+        "frequency": {
+          "scaling_governor": "powersave",
+          "scaling_cur_freq": "4153005"
+        },
+        "cpu_ticks": [
+          "cpu  15270327 734948 5276131 367358294 1057953 1061778 826411 0 0 0",
+          "cpu0 1242510 43021 349655 22247068 46909 69100 217319 0 0 0"
+        ]
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 11.17,
+        "user_seconds": 11.09,
+        "system_seconds": 0.03,
+        "max_rss_kib": 13392
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61a/longer-2-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61a/reference/contract",
+        "export_contract/(check_binding|parse_max_bytes)$",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r61a-longer-2"
+      ],
+      "before": {
+        "unix_seconds": 1790955214.3350508,
+        "load": [
+          1.54931640625,
+          1.4306640625,
+          1.4619140625
+        ],
+        "frequency": {
+          "scaling_governor": "powersave",
+          "scaling_cur_freq": "4062785"
+        },
+        "cpu_ticks": [
+          "cpu  15270328 734948 5276131 367358296 1057953 1061778 826411 0 0 0",
+          "cpu0 1242510 43021 349655 22247069 46909 69100 217319 0 0 0"
+        ]
+      },
+      "after": {
+        "unix_seconds": 1790955225.3683202,
+        "load": [
+          1.5380859375,
+          1.43310546875,
+          1.4619140625
+        ],
+        "frequency": {
+          "scaling_governor": "powersave",
+          "scaling_cur_freq": "4307313"
+        },
+        "cpu_ticks": [
+          "cpu  15272161 734972 5276318 367374090 1057973 1061843 826458 0 0 0",
+          "cpu0 1243607 43021 349657 22247069 46910 69102 217320 0 0 0"
+        ]
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 11.03,
+        "user_seconds": 10.96,
+        "system_seconds": 0.02,
+        "max_rss_kib": 13424
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61a/longer-3-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61a/reference/contract",
+        "export_contract/(check_binding|parse_max_bytes)$",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r61a-longer-3"
+      ],
+      "before": {
+        "unix_seconds": 1790955225.37061,
+        "load": [
+          1.5380859375,
+          1.43310546875,
+          1.4619140625
+        ],
+        "frequency": {
+          "scaling_governor": "powersave",
+          "scaling_cur_freq": "800540"
+        },
+        "cpu_ticks": [
+          "cpu  15272162 734972 5276318 367374093 1057973 1061843 826458 0 0 0",
+          "cpu0 1243607 43021 349657 22247069 46910 69102 217320 0 0 0"
+        ]
+      },
+      "after": {
+        "unix_seconds": 1790955236.410209,
+        "load": [
+          1.6953125,
+          1.46875,
+          1.47265625
+        ],
+        "frequency": {
+          "scaling_governor": "powersave",
+          "scaling_cur_freq": "4249466"
+        },
+        "cpu_ticks": [
+          "cpu  15273860 735004 5276521 367390000 1058016 1061910 826505 0 0 0",
+          "cpu0 1244703 43021 349660 22247069 46910 69105 217320 0 0 0"
+        ]
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 11.03,
+        "user_seconds": 10.95,
+        "system_seconds": 0.02,
+        "max_rss_kib": 13324
+      }
+    }
+  ]
+}

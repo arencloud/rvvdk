@@ -161,3 +161,16 @@ python scripts/benchmarks/plot_copy_phases.py docs/benchmark-results/2026-10-02-
 `measure_copy_phases.py --help` describes offline measurement inputs. Use private
 source/work paths and a fresh public report directory. Native Rust binaries do all
 disk operations; the harness records aggregates and keeps raw CLI paths private.
+
+R6.1a introduces a synthetic artifact-contract baseline, including longer repeats
+for cases with over-5% spread between run medians. Recompute/audit its plot without
+running any benchmark or contacting VMware:
+
+```sh
+python scripts/benchmarks/measure_artifact_contract.py --plot-only --report docs/benchmark-results/2026-10-02-r61a
+```
+
+Use `--binary RELEASE_CONTRACT_BENCH --report NEW_DIRECTORY` for new observations.
+The precomputed binding comparison is distinct from identity hashing; whole-process
+CPU/RSS include Criterion's own warmup and analysis. Prior copy/flush follow-ups
+remain separate.

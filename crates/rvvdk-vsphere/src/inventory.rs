@@ -223,6 +223,17 @@ pub struct Disk {
     #[serde(skip)]
     pub(crate) identity: DiskIdentity,
 }
+impl Disk {
+    /// Explicit private identity access for source selection; omitted from serde/Debug.
+    pub fn device_key(&self) -> Option<u64> {
+        self.identity.key
+    }
+    /// Backing identity may contain datastore/guest names. Keep it private and
+    /// revalidate with the VM reference, UUID and device key on the same endpoint.
+    pub fn backing_identity(&self) -> Option<&str> {
+        self.identity.backing.as_deref()
+    }
+}
 #[derive(PartialEq, Eq)]
 pub(crate) struct DiskIdentity {
     pub(crate) key: Option<u64>,

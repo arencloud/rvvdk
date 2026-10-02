@@ -1534,5 +1534,20 @@ discard assumption or new-file write omission is introduced.
 Btrfs latency mainly in the engine durability flush. Physical extent count is
 associated with the output policy; causality and a portable mitigation remain
 open. Keep sparse zero output and every durability barrier. PERF.0 will qualify
-storage/layout changes independently. R6.1a source identity and artifact contracts
-are next.
+storage/layout changes independently. R6.1a source identity and artifact contracts are now defined below.
+
+
+### R6.1a — Explicit source identity and artifact claims
+
+`rvvdk_vsphere::contract` separates runtime operational selection from persisted
+artifact metadata. Selection binds endpoint trust/provenance, VM reference/UUID,
+disk key/backing and expected capacity, with a bounded inventory and the qualified
+powered-off single-disk scope. The 4 KiB v1 JSON schema has no routing paths,
+credentials or lease authority; completeness and validation are untrusted claims.
+Length/digest and source comparisons do not authorize resume, abort or cleanup.
+
+[ADR-0057](adr/0057-source-identity-and-artifact-contract.md),
+[contract](export-artifact-contract.md), [qualification](benchmark-results/2026-10-02-r61a/README.md).
+The qualification exporter remains unchanged. Next R6.1b establishes durable
+ownership/state transitions and process-loss reconciliation; R6.1c integrates the
+workflow. Private source/content hashes remain outside diagnostic reports.

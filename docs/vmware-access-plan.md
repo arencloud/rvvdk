@@ -375,12 +375,13 @@ following bounded packages in order:
    [Repeated conversions and timing controls](benchmark-results/2026-10-02-r512p/README.md)
    retain unresolved adverse observations. [R5.12q phase diagnostics](benchmark-results/2026-10-02-r512q/README.md)
    locate the remaining local cost mainly in engine flush; keep the sparse-output
-   default and storage/layout performance follow-up. R6.1a is next.
-5. **R6.1 — Container export contract and ownership:** replace capacity-only
-   experimental selection with explicit source identity/trust inputs. Define
-   versioned artifact and durable lease-ownership records, then test process-loss
-   reconciliation before claiming resumable or recoverable backup jobs. Integrate
-   the proven sequential export as an artifact workflow, never as fake random I/O.
+   default and storage/layout performance follow-up. R6.1a is complete.
+5. **R6.1a complete — Source/artifact contract:** [explicit identity and bounded
+   metadata](export-artifact-contract.md) distinguish runtime selection from untrusted
+   persistence. **Next R6.1b:** durable ownership and process-loss reconciliation;
+   never infer cleanup authority from artifact metadata. R6.1c then integrates
+   the proven sequential export and conversion, replacing capacity-only selection
+   in the production path. The qualification harness remains separate.
 6. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9
    in later independently qualified steps. Keep PERF.0/R4.4 and the discovery
    variance/controlled-TLS investigation visible while adding new features.

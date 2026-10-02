@@ -2452,22 +2452,60 @@ allocation and Btrfs/XFS qualification. No allocating Zero default or omitted sy
 is accepted as a latency fix. R5.12q closes the bounded investigation, not the
 remaining performance tradeoff.
 
+## R6.1a — Explicit source identity and export artifact contract
+
+Completed [ADR-0057](adr/0057-source-identity-and-artifact-contract.md) and the
+[contract](export-artifact-contract.md). `rvvdk_vsphere::contract` provides bounded
+runtime endpoint/pin provenance and VM reference/UUID/disk key/backing selection,
+reusing the existing single-disk scope gate and requiring powered-off state.
+Equal capacity, display names and inventory position cannot select the source.
+Private disk identity accessors preserve existing diagnostic redaction.
+
+The strict 4 KiB v1 artifact schema separates logical capacity from encoded length,
+records completeness/validation claims and uses a stable domain-separated source
+binding. No paths, credentials, URLs or lease handles are persisted. Explicit
+serialization retains private content/source hashes; Debug/errors redact them.
+Parsing and comparisons grant no ownership, authentication, resume or cleanup
+capability. The existing capacity-selected qualification harness stays unchanged
+until R6.1c replaces that selection in the production workflow.
+
+[Evidence and plots](benchmark-results/2026-10-02-r61a/README.md): 635 workspace tests
+pass, two storage tests ignored by default; focused vSphere tests total 57. Ten new
+contract tests cover mismatch, ambiguity, scope, malformed/bounded input, state
+consistency, redaction and an independent synthetic golden binding. Clippy across
+all targets and formatting pass. No live host or disk payload qualification was
+needed because this package adds only the pure contract and explicit accessors.
+
+Thirty synthetic Criterion case runs retain 900 samples, CPU/RSS and host snapshots.
+Complete parsing is 0.654 µs, worst-sized identity construction 4.839 µs, encoding
+3.476 µs by median of initial run medians. The two cases with over-5% spread receive
+three longer repeats; 4 KiB parse spread becomes 2.83%, while precomputed binding
+comparison retains 8.62% spread at 1.208–1.312 ns. No prior implementation exists,
+so these are a new baseline, not a speedup or regression claim. Plot audit and
+source/artifact hashes bind the evidence. No timed run overlaps builds/tests/plots.
+Keep the older Btrfs flush and other PERF.0 work separate and open.
+
 ## Next session
 
-Start **R6.1a — Explicit source identity and export artifact contract**. Split the
-larger R6.1 ownership/integration gate into reviewable committed packages:
+Start **R6.1b — Durable ownership and process-loss reconciliation**:
 
-1. Specify versioned artifact metadata and bounded Rust types for explicit endpoint
-   trust, VM/disk selection, container versus logical sizes, completeness and
-   validation state. Eliminate capacity-only selection from the future public path.
-   Keep secrets outside persisted metadata and distinguish opaque identity from
-   guest names. Use synthetic round-trip, mismatch and malformed-input tests.
-2. **R6.1b:** define durable lease/resource ownership, atomic state transitions and
-   process-loss reconciliation. Fault-inject crashes and interrupted cleanup;
-   never resume or abort a lease solely from untrusted/reused artifact metadata.
-3. **R6.1c:** connect the qualified sequential export and local conversion through
-   those contracts, retaining cancellation, redaction and publication semantics.
-   Qualify on the authorized lab only when the workflow needs new host evidence.
+1. Define a private durable job/ownership record separate from untrusted artifact
+   claims. Bind unique operation/artifact identity, expected source and owned
+   resources without persisting credentials, session cookies or ticket URLs.
+2. Implement bounded atomic state transitions and crash-safe local persistence,
+   with explicit states for uncertain acquisition, publication and cleanup. Never
+   infer ownership from reused artifact IDs, capacity or a parsed manifest.
+3. Fault-inject crashes/interrupted writes and cleanup, stale records, competing
+   processes and unconfirmed remote outcomes. Require fresh evidence before any
+   remote resume/abort or local removal; prove resources belong to this operation.
+4. Record performance and update the architecture/implementation log. Keep the
+   first package synthetic/local unless new host evidence is actually needed.
+
+Then **R6.1c** connects explicit source revalidation, the qualified sequential
+export and local conversion using these contracts, retaining cancellation,
+redaction and durable no-replace publication. Do not automatically promote the
+old capacity-selected proof manifest. Qualify the integrated workflow on the
+already authorized lab when needed.
 
 Keep PERF.0 visible: prior stream timing, controlled CPU/SMT/frequency/layout work,
 map admission/cache sensitivity, random whole-grain amplification, sparse-output
@@ -2475,7 +2513,6 @@ Btrfs layout/flush cost and measured bounded parallel decoding. Do not grow scra
 state with unbounded worker count. Retain R4.4 and discovery/TLS follow-ups. The
 historical monolithic sparse CLI-copy slowdown did not reproduce in R5.12p; the
 retained-export Btrfs slowdown remains visible in R5.12q. Preserve all datasets
-without unsupported causal claims.
-VMFS sparse, seSparse, online snapshots, CBT, restore, vCenter and vSphere 9 remain
-separately qualified later work. Commit every completed package with tests,
-benchmark disposition, evidence and updated next-session notes.
+without unsupported causal claims. VMFS sparse, seSparse, online snapshots, CBT,
+restore, vCenter and vSphere 9 remain separately qualified later work. Commit each
+completed package with tests, benchmark disposition, evidence and next-session notes.

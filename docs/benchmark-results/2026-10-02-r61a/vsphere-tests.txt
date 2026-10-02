@@ -1,0 +1,77 @@
+   Compiling criterion v0.8.2
+   Compiling rvvdk-vsphere v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-vsphere)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.04s
+     Running unittests src/lib.rs (target/debug/deps/rvvdk_vsphere-bd050ffb210a946e)
+
+running 18 tests
+test contract::tests::canonical_endpoint_pin_and_uuid_spellings_match ... ok
+test export::qualification_tests::timestamps_are_bounded_calendar_values_not_server_messages ... ok
+test xml::tests::escaping_and_invalid_characters ... ok
+test transport::tests::exact_authority_and_secret_safe_debug ... ok
+test artifact::tests::publication_race_preserves_existing_destination_and_private_modes ... ok
+test contract::tests::incomplete_artifacts_cannot_claim_checks_or_complete_content ... ok
+test contract::tests::v1_golden_binding_and_explicit_inventory_access_remain_stable ... ok
+test contract::tests::round_trip_preserves_claims_but_never_skips_fresh_container_checks ... ok
+test inventory::reference_tests::opaque_references_round_trip_without_xml_injection ... ok
+test xml::tests::namespaces_shape_and_faults ... ok
+test contract::tests::runtime_input_bounds_and_redaction ... ok
+test export::qualification_tests::disk_selection_rejects_ambiguous_untyped_and_unbounded_entries ... ok
+test contract::tests::trust_endpoint_and_source_components_are_bound ... ok
+test contract::tests::identity_check_retains_power_topology_and_backing_scope_gates ... ok
+test contract::tests::parser_budget_duplicates_nesting_overflow_and_trailing_data_are_rejected ... ok
+test contract::tests::malformed_versions_sizes_digests_states_and_extensions_fail_closed ... ok
+test xml::tests::hostile_xml_is_bounded ... ok
+test contract::tests::explicit_selection_rejects_same_capacity_impostors_and_duplicates ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/discovery.rs (target/debug/deps/discovery-9afa23b70b64d360)
+
+running 39 tests
+test a_successful_inventory_with_failed_logout_is_not_success ... ok
+test export_tests::inspection_rejects_task_identity_change_and_always_logs_out ... ok
+test export_tests::malformed_acquisition_is_uncertain_and_not_retried ... ok
+test export_tests::opaque_lease_reference_is_escaped_and_aborted ... ok
+test authentication_and_cleanup_faults_remain_separate_and_redacted ... ok
+test export_tests::inspection_reads_tasks_without_acquiring_or_cancelling_them ... ok
+test export_tests::powered_on_probe_never_acquires_a_lease_or_changes_power ... ok
+test actual_body_limit_does_not_trust_content_length ... ok
+test export_tests::inspection_bounds_and_validates_all_references_before_task_queries ... ok
+test export_tests::output_collision_precedes_power_and_lease_calls ... ok
+test duplicate_wrong_object_and_missing_traversal_fail ... ok
+test export_tests::auxiliary_non_disk_entries_are_not_downloaded_or_verified_as_disks ... ok
+test export_tests::full_transfer_verifies_manifest_completes_logs_out_and_publishes ... ok
+test export_tests::probe_aborts_any_granted_lease ... ok
+test export_tests::inspection_does_not_serialize_arbitrary_task_strings ... ok
+test malformed_login_still_uses_received_cookie_for_logout ... ok
+test export_tests::graceful_shutdown_revalidates_disk_before_acquisition ... ok
+test redirect_is_never_followed ... ok
+test scoped_operation_futures_remain_send ... ok
+test fresh_policy_rechecks_pin_for_each_request ... ok
+test export_tests::endpoint_or_pin_rejection_aborts_without_get ... ok
+test unsupported_server_is_rejected_before_login ... ok
+test export_tests::shutdown_failure_never_falls_back_to_hard_power_off ... ok
+test size_encoding_and_truncated_responses_fail_closed ... ok
+test wrong_pin_sends_no_http_or_credentials ... ok
+test missing_cookie_is_not_reported_as_authenticated ... ok
+test missing_property_reports_primary_and_logout_failure ... ok
+test inventory_and_disk_limits_logout_without_partial_success ... ok
+test pagination_cancels_cursor_and_preserves_cleanup_error ... ok
+test tls_inventory_identity_redaction_and_reuse ... ok
+test export_tests::wildcard_and_legacy_sha1_are_bound_to_the_sha256_pinned_endpoint ... ok
+test deadlines_expire_and_still_allow_logout ... ok
+test export_tests::probe_distinguishes_license_and_power_without_shutdown ... ok
+test export_tests::digest_mismatch_retains_both_cleanup_outcomes_without_publication ... ok
+test export_tests::complete_or_logout_failure_prevents_publication ... ok
+test whole_discovery_deadline_has_an_independent_cleanup_budget ... ok
+test export_tests::cancel_pending_download_aborts_and_removes_private_files ... ok
+test export_tests::transfer_limit_redirect_and_truncation_abort_without_publication ... ok
+test export_tests::heartbeats_renew_lease_while_data_response_is_pending ... ok
+
+test result: ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.42s
+
+   Doc-tests rvvdk_vsphere
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
