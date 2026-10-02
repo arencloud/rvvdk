@@ -2889,44 +2889,74 @@ variance in PERF.0; no barrier or hash pass was removed.
 No ESXi or guest operation was needed. This completes local R6.1c.5b within its
 specified recovery subset; overall R6.1c.5 and production recovery remain open.
 
+## R6.1c.5c — awaited composed Rust pipeline and live qualification
+
+The composed library entry point and private-config Rust runner connect explicit
+source selection, owned transfer/admission, fresh retained conversion, fresh output
+admission and durable bundle publication. A pinned store descriptor survives phase
+handoffs without resolving a replaceable path. The destination stays locked; export
+and blocking local work are awaited. One cancellation token reaches all phases and
+one shared local deadline starts after export. Nested reports retain their own errors.
+Failure never automatically rolls back, deletes resources or replays remote requests.
+Explicit cleanup retains source/output terminal journals.
+
+[Contract](composed-export-pipeline.md), [ADR-0066](adr/0066-awaited-export-pipeline.md),
+[qualification, measurements and plots](benchmark-results/2026-10-02-r61c5c/README.md).
+Workspace **735 passed, nine ignored**; formatting and all-target Clippy are clean.
+Five new synthetic pipeline tests cover complete logical bytes and separate cleanup,
+initial/late collisions, cancellation/local failures/deadline, uncertain remote
+completion and store-path replacement. All five also pass on Btrfs. One intermediate
+workspace attempt failed an existing transfer Abort assertion; focused and full
+reruns pass, and the failed log remains in the report without a claimed diagnosis.
+
+The live 30 GiB run passed QEMU full logical comparison and the independent 8 MiB
+guest oracle. Source and RAW payloads were explicitly cleaned; both terminal journals
+remain. Final inspection confirms unchanged source binding, source off, runner on
+and no recent tasks. Wall time was **1,645.252 s**, CPU **1,164.358 s**, peak RSS
+**10.594 MiB**, and sparse RAW allocation **3.497 GiB**. Local phases accounted for
+**78.4%** of wall time; checked cleanup was **72.228 ms**. The exact scope and raw
+phase measurements are recorded in the linked report. This is a bounded
+single complete observation plus a workstation cancellation case; it is not repeated
+performance qualification. No VM power change was made; private identities and
+credentials stay outside the committed evidence. PERF.0 remains open, including repeated verification
+cost on the one-vCPU runner and shared-host variability.
+
 ## Next session
 
-Start **R6.1c.5c — Rust runner and bounded composed live qualification**:
+Start **R6.1c.5p — repeated composed-workflow performance qualification**:
 
-1. Wire an explicit Rust entry point for source selection, owned export/artifact
-   transfer, fresh retained admission, owned conversion, VerifiedOutput admission,
-   no-replace bundle publication and explicit cleanup. Use configured artifact/output
-   IDs, private store and destination; credentials/tickets must remain runtime-only.
-   Await blocking local work and handle cancellation without losing worker/lock
-   lifetimes. Preserve report boundaries and the no-abort-after-completion-intent rule.
-2. Qualify the runner synthetically before live use. Exercise whole-pipeline success,
-   output collision, cancellation and local failure with correct source/output
-   retention and conservative diagnostic reports. A failure after publication intent
-   must not trigger automatic rollback, deletion or remote request replay.
-3. Use existing authorized lab access for read-only preflight: confirm current host
-   identity/version/license/export capability, explicit VM/disk binding, power state
-   and active-task ownership. Reuse private configuration without putting endpoints,
-   credentials, guest identities or private image hashes in Git. Recheck actual state;
-   previously observed host/guest state is not current evidence.
-4. Run a bounded composed export on a suitable authorized VM. Preserve existing
-   guest/power controls, avoid unrelated active exports, compare the published RAW
-   with the source and independently established guest known-byte oracle, and retain
-   private evidence. Verify metadata and namespace/durability reports. Never label a
-   shared-decoder comparison alone independent decoder qualification.
-5. Exercise explicit checked cleanup of this run's resources only after all handles
-   drain and evidence is saved. Keep source cleanup separate from output cleanup;
-   refuse pending transactions, unstamped stages and uncertain publication. Do not
-   repair or delete unfamiliar existing journals/stages based on naming alone.
-6. Record wall/phase/CPU/RSS/allocation, network versus local conversion/publication
-   timing and correctness with sanitized standalone plots. Repeat adverse matched
-   observations/spreads over 5%; retain raw samples. Treat host/VM/version or storage
-   changes as a new baseline rather than an implementation speedup.
-7. Document the exact completed live scope and remaining recovery limitations. General
-   uncertain-publication reconciliation, transaction repair and unstamped-stage
-   adoption require separate designed capabilities and fault tests; they remain open.
+1. Reuse the frozen R6.1c.5c source/binary identity and sanitized measurement contract.
+   Recheck actual host pin/version, explicit source binding, source/runner power state,
+   snapshots and active-task ownership using the Rust runner. No new host, license or
+   VM is required for this existing powered-off workflow. Keep credentials terminal-only.
+2. Establish at least three comparable complete observations with the same binary,
+   source and runner. Keep one source/output pair at a time; check available space,
+   independently compare with QEMU and the guest oracle, then perform explicit checked
+   cleanup and preserve terminal journals before starting the next pair. Keep the
+   earlier observation separately if conditions cannot be matched.
+3. Record wall/phase/CPU/RSS/allocation and every sample. Repeat three observations
+   if any initial wall/phase/CPU/cleanup spread exceeds 5%; retain unresolved variance.
+   Do not treat ordinary-cache repeats, different hosts or changed VM resources as
+   matched implementation speedups. Separate network/ESXi time from local costs.
+4. Profile the dominant local phases with bounded retained-artifact controls. Separate
+   native grain validation/decompression, full logical hashing/readback, journal and
+   flush costs; record profiler overhead and uninstrumented controls. Do not remove
+   hash passes, completion gates or durability barriers merely to improve a number.
+5. Only propose tuning after evidence identifies a cost and a correctness-preserving
+   change. Preserve sparse allocation and bounded memory. Benchmark any candidate
+   against a frozen reference, repeating adverse results above 5%, and rerun relevant
+   oracle/cancellation/fault tests. Save standalone plots, source manifests and next
+   decisions; commit the bounded performance package even if variance stays unresolved.
 
-Keep PERF.0 open: cumulative source/RAW verification, journal/flush and cleanup costs,
-CPU/SMT/frequency/storage controls, stream/map/cache sensitivity and parallel decoding.
-Retain R4.4 and discovery/TLS work. VMFS sparse, seSparse, online snapshots, CBT,
-restore, vCenter and vSphere 9 remain later independently qualified work. Commit
-this bounded package with sanitized evidence, architecture decisions and next steps.
+Then design **R6.1d.1 — explicit reconciliation of unambiguous PublishIntent** before
+implementing mutation: require original destination/store/source binding, no pending
+transactions, a uniquely owned staged OR published bundle, full fresh content checks,
+and the required directory syncs/acknowledgment. Both/neither/foreign namespace states
+must stay blocked. Add crash/fault/cancellation tests before exposing this recovery
+capability. Transaction repair and unstamped-stage adoption remain separate work;
+never infer remote cleanup/replay authority from a local journal.
+
+Retain PERF.0 CPU/SMT/frequency/storage controls, stream/map/cache sensitivity and
+parallel decoding, plus R4.4 and discovery/TLS follow-ups. VMFS sparse, seSparse,
+online snapshots, CBT, restore, vCenter and vSphere 9 remain independently qualified
+later work. Continue local commits after each completed bounded package.

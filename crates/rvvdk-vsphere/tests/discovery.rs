@@ -382,6 +382,7 @@ mod export_tests {
     mod owned_artifact;
     mod owned_probe;
     mod owned_transfer;
+    mod pipeline;
     mod selected_benchmark;
     static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
     struct Output(PathBuf);

@@ -6,6 +6,15 @@ use super::*;
 /// outside the job store. Opening this does not create directories.
 pub struct PublicationDirectory(JobStore);
 impl PublicationDirectory {
+    pub(crate) fn preflight(&self, store: &JobStore, output: OutputId) -> Result<()> {
+        self.validate(store)?;
+        store.output_available(output)?;
+        if exists(&self.0.directory, &output.bundle_name())? {
+            return Err(OwnershipError::Exists);
+        }
+        Ok(())
+    }
+
     pub fn open(path: &Path) -> Result<Self> {
         JobStore::open(path).map(Self)
     }

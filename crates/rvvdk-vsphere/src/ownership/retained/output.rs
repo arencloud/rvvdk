@@ -161,6 +161,14 @@ fn check_stage(store: &JobStore, record: &OutputRecord) -> Result<File> {
     Ok(dir)
 }
 impl JobStore {
+    pub(crate) fn output_available(&self, id: OutputId) -> Result<()> {
+        self.ready()?;
+        if exists(&self.directory, &name(&id.0))? || exists(&self.directory, &txn(&id.0))? {
+            return Err(OwnershipError::Exists);
+        }
+        Ok(())
+    }
+
     /// Read-only assessment. Never returns a writer, publication or cleanup capability.
     pub fn assess_output(
         &self,

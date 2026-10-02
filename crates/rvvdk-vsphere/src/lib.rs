@@ -27,6 +27,10 @@ mod owned_transfer;
 pub use owned_transfer::{
     OwnedTransferOptions, OwnedTransferReport, transfer_owned_artifact, transfer_owned_export,
 };
+#[cfg(target_os = "linux")]
+mod pipeline;
+#[cfg(target_os = "linux")]
+pub use pipeline::{PipelineOptions, PipelinePhase, PipelineReport, run_export_pipeline};
 mod inventory;
 mod transport;
 mod xml;

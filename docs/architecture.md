@@ -1691,7 +1691,7 @@ remain on every outcome. The cooperating private-store model is unchanged.
 [ADR-0064](adr/0064-private-owned-raw-output.md), [contract](owned-raw-output.md),
 [tests and timing](benchmark-results/2026-10-02-r61c5a/README.md).
 R6.1c.5b below adds fresh output admission, no-replace publication and checked cleanup;
-R6.1c.5c will qualify the composed live workflow. Full readback is O(logical capacity)
+R6.1c.5c qualifies the bounded composed live workflow. Full readback is O(logical capacity)
 and seven output journal commits add cost; PERF.0 retains these follow-ups.
 
 ### R6.1c.5b — Fresh output admission, atomic publication and explicit cleanup
@@ -1718,8 +1718,31 @@ removed automatically. No remote ownership or replay follows from a record.
 
 [ADR-0065](adr/0065-durable-raw-bundle-publication.md),
 [contract](durable-output-publication.md), [tests and timing](benchmark-results/2026-10-02-r61c5b/README.md).
-R6.1c.5c will wire/qualify the composed live Rust workflow. General reconciliation
+R6.1c.5c wires and qualifies the bounded composed live Rust workflow. General reconciliation
 and production recovery remain open. Two extra full logical verification passes,
 publication member/parent syncs and two journal commits add measured cost; cleanup
 has two separately timed commits. PERF.0 retains cumulative verification/durability
 cost, and removing checks requires an explicit lifetime/trust argument.
+
+### Awaited composed export pipeline (R6.1c.5c)
+
+`run_export_pipeline` preflights explicit output/destination ownership, awaits the
+owned export worker, then runs retained admission, owned conversion, fresh output
+admission and publication in one awaited blocking task. Each nested success gate
+remains authoritative. One token propagates cancellation; one absolute local budget
+covers all post-export phases. The original store inode is pinned by a descriptor
+anchor and its lock is freshly acquired between capabilities; pathname replacement
+cannot redirect the workflow. The destination remains locked throughout.
+
+Failure preserves reports and resources, including uncertain remote completion or
+publication. No automatic retry, rollback, deletion or VM power transition is added.
+A local worker panic is an unknown local outcome, never a cleanup grant. Callers
+must await the future: dropping it cannot cancel accepted blocking work or guarantee
+remote cleanup. The internal Rust runner accepts private explicit configuration and
+terminal-only credentials; cleanup is a separate checked command that preserves
+terminal journals. Recovery of pending transactions, unstamped stages and uncertain
+publication remains separate work.
+
+[ADR-0066](adr/0066-awaited-export-pipeline.md),
+[contract](composed-export-pipeline.md),
+[qualification and phase plots](benchmark-results/2026-10-02-r61c5c/README.md).

@@ -171,7 +171,44 @@ impl fmt::Debug for Job<'_> {
     }
 }
 
+/// Pins the original store inode across separately awaited workflow phases.
+pub(crate) struct StoreAnchor {
+    directory: File,
+    identity: Identity,
+}
+impl StoreAnchor {
+    pub(crate) fn open(&self) -> Result<JobStore> {
+        let directory = open_at(&self.directory, ".", false, false, true)?;
+        private(&directory, true)?;
+        if identity(&directory)? != self.identity {
+            return Err(OwnershipError::Identity);
+        }
+        // SAFETY: live pinned directory, nonblocking advisory lock.
+        if unsafe { libc::flock(directory.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0 {
+            return Err(
+                if std::io::Error::last_os_error().raw_os_error() == Some(libc::EWOULDBLOCK) {
+                    OwnershipError::Busy
+                } else {
+                    OwnershipError::Io
+                },
+            );
+        }
+        Ok(JobStore {
+            directory,
+            identity: self.identity,
+            poisoned: false,
+        })
+    }
+}
 impl JobStore {
+    pub(crate) fn anchor(&self) -> Result<StoreAnchor> {
+        self.ready()?;
+        Ok(StoreAnchor {
+            directory: self.directory.try_clone().map_err(|_| OwnershipError::Io)?,
+            identity: self.identity,
+        })
+    }
+
     pub fn open(path: &Path) -> Result<Self> {
         let directory = OpenOptions::new()
             .read(true)

@@ -146,3 +146,26 @@ without materializing another RAW file. A successful comparison carries forward
 the independently verified known-range oracle; it does not establish whole-source
 identity. Encoded digests may differ while decoded logical content agrees. QEMU
 comparison has a ten-minute deadline and leaves its private diagnostics on failure.
+
+## Composed Rust pipeline plots
+
+`rvvdk-vsphere`'s Linux `pipeline` example implements the VMware and disk workflow
+in Rust. Its [contract](../../docs/composed-export-pipeline.md) describes private
+configuration, terminal-only credentials, explicit selection, retained outputs and
+separate cleanup. Never commit its inventory/configuration, images or private hashes.
+
+The offline plotter consumes sanitized `run-N.json` qualification records containing
+the runner report, independent QEMU and mapped-guest checks, allocation and separate
+cleanup evidence. It validates successful phase/recovery boundaries. One bounded
+live qualification observation carries no variance estimate; a later three-run
+initial series requires three repeats if its timing/CPU spread exceeds 5%. It does not contact VMware,
+read images or execute cleanup:
+
+```sh
+target/benchmark-plots/bin/python scripts/vsphere/plot_pipeline.py docs/benchmark-results/2026-10-02-r61c5c
+```
+
+Figures separate whole-pipeline and local phases, process CPU/RSS, allocated storage
+and checked cleanup. The canceled workstation pilot is deliberately separate from
+LAN measurements. These are a new composed-workflow baseline, not matched speedups
+over older export-only measurements.

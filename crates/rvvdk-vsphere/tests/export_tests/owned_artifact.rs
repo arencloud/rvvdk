@@ -7,7 +7,7 @@ use rvvdk_vsphere::{
     transfer_owned_artifact,
 };
 #[path = "../../../rvvdk-vmdk/tests/support/stream_disk.rs"]
-mod fixture;
+pub(super) mod fixture;
 fn image() -> Vec<u8> {
     fixture::image(
         true,
@@ -18,7 +18,7 @@ fn image() -> Vec<u8> {
         ],
     )
 }
-fn replies(data: &[u8]) -> Vec<Reply> {
+pub(super) fn replies(data: &[u8]) -> Vec<Reply> {
     let mut r = super::owned_transfer::replies();
     r[12].binary = Some(data.to_vec());
     let digest = Sha256::digest(data)

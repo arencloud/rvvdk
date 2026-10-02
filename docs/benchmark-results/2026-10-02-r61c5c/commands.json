@@ -1,0 +1,21 @@
+{
+  "build": [
+    "cargo fmt --all -- --check",
+    "cargo clippy --workspace --all-targets -- -D warnings",
+    "cargo test --workspace",
+    "cargo build --release -p rvvdk-vsphere --example pipeline"
+  ],
+  "private_live_sequence": [
+    "pipeline inventory PRIVATE_CONNECTION.json > PRIVATE_INVENTORY.json",
+    "pipeline inspect PRIVATE_SELECTED_SOURCE.json > PRIVATE_INSPECTION.json",
+    "pipeline run PRIVATE_RUN_CONFIG.json > PRIVATE_RUN_REPORT.json",
+    "qemu-img compare -f vmdk -F raw PRIVATE_SOURCE.vmdk PRIVATE_BUNDLE/disk.raw",
+    "python3 verify_guest_fixture.py PRIVATE_BUNDLE/disk.raw PRIVATE_MAP.json PRIVATE_FIXTURE.bin",
+    "pipeline cleanup PRIVATE_RUN_CONFIG.json > PRIVATE_CLEANUP.json"
+  ],
+  "cancellation_pilot": [
+    "pipeline run PRIVATE_PILOT_CONFIG.json > PRIVATE_PILOT_REPORT.json (Ctrl-C, then await terminal result)",
+    "pipeline cleanup-aborted PRIVATE_PILOT_CONFIG.json > PRIVATE_PILOT_CLEANUP.json"
+  ],
+  "notes": "Schematic placeholders, not usable lab credentials/selection. All network credentials are terminal-only. Capture allocation and before/after journal states separately; compare and retain evidence before explicit deletion."
+}
