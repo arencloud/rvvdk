@@ -58,9 +58,9 @@ when the Rust export proof is ready. [Free-license policy](https://knowledge.bro
 | Discover and authenticate | SOAP `/sdk`, ServiceInstance, SessionManager; TLS and valid account | Passed in independent Rust (V0.2), with exact certificate pin and bounded session |
 | Read inventory | PropertyCollector, object visibility/System.View | Passed in Rust for this lab account, including bounded failure/Logout; least-privilege role still unqualified |
 | Discover active license | QueryAssignedLicenses when assignment manager is available; account visibility | Available-license metadata read only; active assignment/evaluation expiry still needs confirmation |
-| Shut down selected guest | ShutdownGuest; VirtualMachine.Interact.PowerOff; running Tools | Tools running; no call made. Select only one VM when shutdown is necessary |
-| Export powered-off VM | ExportVm, VApp.Export, powered-off VM, eligible licensing | V0.3.1 probe rejected by server licensing before shutdown; live bytes pending licensed access |
-| Maintain/release export | HttpNfcLease state, progress, complete/abort | Rust implementation and local TLS fixtures pass; live complete/abort still pending |
+| Shut down selected guest | ShutdownGuest; VirtualMachine.Interact.PowerOff; running Tools | V0.3.2b gracefully shut down only the selected guest and observed poweredOff; no hard fallback |
+| Export powered-off VM | ExportVm, VApp.Export, powered-off VM, eligible licensing | V0.3.1 license rejection retained; after the user's license update, V0.3.2c completed a manifest-verified Rust export |
+| Maintain/release export | HttpNfcLease state, progress, complete/abort | Live Complete/Logout confirmed in V0.3.2c; live cancellation/deadline Abort/Logout confirmed in V0.3.2b |
 | Package export | Lease device URLs, optional OVF descriptor and manifest | Treat contents as VMDK containers; no random-read guarantee |
 | Online snapshot export | CreateSnapshotEx_Task + ExportSnapshot; snapshot/export/remove privileges and eligible licensing | Later phase; snapshot consistency and owned-resource cleanup need their own proof |
 | Random guest-block reads / CBT | Separate transport and consistency contracts | Unproven; ordinary NBD interoperability is not VMware NBDSSL/NFC compatibility |
@@ -206,28 +206,32 @@ is not export permission. No trial or VM power change was needed.
 
 **V0.3.1 complete:** executable Linux export foundation, bounded fixture/failure
 qualification and observed license rejection. [ADR-0048](adr/0048-bounded-export-lease-proof.md)
-records the subset and limitations. This does not check off the live acceptance items
-below. The user has been told that trial/commercial access is needed now.
+records the subset and limitations. V0.3.1 alone did not satisfy the live checks.
+After the user's license update, V0.3.2b/c supplied the failure, complete-transfer
+and independent known-byte evidence recorded in the checklist below.
 
-- [ ] Resolve licensing with supported evaluation/commercial access if needed. Request
-  trial activation only when the executable proof and fixtures are ready; never bypass
-  server checks or assume switching the free key starts a fresh evaluation.
-- [ ] Choose the 30 GiB VM by stable private identity; recheck it immediately before
-  any power operation. Keep the 60 GiB VM untouched. User authorized shutdown if needed.
-- [ ] Put known deterministic files in the selected guest or agree a reference oracle.
+- [x] Confirm operation availability after the user's license update: three exports
+  now complete. No server checks were bypassed or license changes made by rvddk.
+  Active-license assignment and expiry remain unresolved.
+- [x] Choose the 30 GiB VM by stable private identity; recheck it immediately before
+  any power operation. The 60 GiB VM was initially an untouched control; on
+  2026-10-02 the user authorized using it as the LAN runner, including qemu-img
+  installation and private benchmark files. User authorized source shutdown if needed.
+- [x] Put known deterministic files in the selected guest or agree a reference oracle.
   Gracefully shut down through Tools, observe poweredOff, and record the final state.
   Stop on shutdown failure; do not silently escalate to a hard power cut.
-- [ ] Acquire one export lease, observe ready, renew within its advertised deadline,
+- [x] Acquire one export lease, observe ready, renew within its advertised deadline,
   and download admitted disk URLs to private output with bounded buffers/bytes.
-- [ ] Identify the actual VMDK format and compare decoded logical bytes/known guest
+- [x] Identify the actual VMDK format and compare decoded logical bytes/known guest
   content with an independent oracle. Retain format incompatibility as a visible gate.
-- [ ] Test cancellation and an interrupted transfer; confirm abort/release and no
+- [x] Test cancellation and an interrupted transfer; confirm abort/release and no
   published partial artifact. Simulate cleanup failure before provoking it remotely.
-- [ ] Confirm successful completion releases the lease, then publish only complete
+- [x] Confirm successful completion releases the lease, then publish only complete
   verified artifacts. No owned snapshots exist in this first workflow.
-- [ ] Report source VM state, logout, lease cleanup, input identities and independent
-  validation. Preserve observations of the unselected VM and unchanged disk topology.
-- [ ] Capture repeated transfer measurements with equal verification/sync boundaries,
+- [x] Report source VM state, logout, lease cleanup, input identities and independent
+  validation. Preserve observations of the second VM and unchanged disk topology;
+  its approved runner role changes guest files, not its disk layout.
+- [x] Capture repeated transfer measurements with equal verification/sync boundaries,
   encoded versus logical byte counts, CPU, RSS, and storage/network conditions.
 
 V0 passes for **export only** after V0.2 and V0.3 supply reproducible independent Rust
@@ -241,7 +245,8 @@ all prior performance follow-ups remain open.
 Continue on the **existing ESXi 8.0.3 / HostAgent API 8.0.3.0 host**. The user
 reported applying a license key; discovery now lists an Enterprise edition. Active
 assignment remains unresolved. Subsequent V0.3.2b calls acquired leases and streamed
-real disk bytes; complete export qualification is still pending.
+real disk bytes. V0.3.2c now qualifies the bounded export workflow with three
+completed runs and an independent known-range oracle.
 No replacement host, new VMs or vCenter is needed for the current bounded proof.
 vSphere 9 remains deferred compatibility work.
 
@@ -255,14 +260,15 @@ been independently authenticated. A replacement host or certificate would requir
 fresh trust and identity checks, plus a new benchmark baseline.
 
 Suggested disposable fixture: two Fedora VMs, each with one persistent, unencrypted
-disk, 30 GiB on the selected VM and 60 GiB on the untouched control VM. Use no
+disk, 30 GiB on the selected VM and 60 GiB on the initial control VM. The user
+subsequently approved that second VM as the V0.3.2c LAN runner. Use no
 snapshots/backing parents and have VMware Tools/open-vm-tools running for graceful
 shutdown. These are our proof's fixture choices, not vSphere minimum requirements.
 One VM suffices for basic export, but a second permits unchanged-control checks.
 Keep direct host access as the initial scope; vCenter integration remains later work.
 
-1. Revalidate the existing host version, certificate, selected VM and untouched
-   control VM. Record active licensing/expiry if visible; do not infer it from the
+1. Revalidate the existing host version, certificate, selected VM and second
+   VM in its explicitly approved role. Record active licensing/expiry if visible; do not infer it from the
    available-edition list. Do not change license keys or retry an ambiguous acquisition.
 2. Use `--inspect` to inspect recent tasks without acquiring a lease. It is bounded
    task history, not a complete lock/ownership oracle. A standalone acquire-and-abort
@@ -314,12 +320,59 @@ QEMU sparse decode can still exhaust storage, so check actual usage before repea
 Retain reports/hashes and remove only owned duplicates after verification. This
 runner shares source-host resources and must be labeled accordingly. The user was
 asked to choose this role change, a separate LAN runner, or a longer timeout over
-the existing connection. No VM02 writes are authorized by elapsed waiting alone.
+the existing connection. On 2026-10-02 the user explicitly approved VM02 as the
+LAN runner, including
+qemu-img installation and private files. This supersedes the untouched-control
+role for the continuation. Keep it powered on, record shared-host conditions,
+and retain source VM01 powered off. The initial frozen-build LAN attempt is
+recorded separately from prior remote-connection failures.
 
-Completed transfers, manifest verification, Complete, independent decoded-byte
-comparison and three comparable performance samples remain open. The provisional
+At the V0.3.2b checkpoint, completed transfers, manifest verification, Complete,
+independent decoded-byte comparison and three performance samples remained open.
+V0.3.2c below closes those checks. The provisional
 prefix identifies compressed version-3 streamOptimized, which the current native
 reader does not support; do not broaden format acceptance from a partial header.
+
+### V0.3.2c — Authorized LAN qualification and continuation
+
+The user approved the VM02 runner on 2026-10-02. It has qemu-img 10.2.2 and the
+unchanged Rust measured binaries. Source VM01 remains off. A complete export now
+passes its manifest and Complete/Logout, and QEMU decodes the 30 GiB version-3
+streamOptimized image. Every byte of the independently mapped 8 MiB fixture agrees.
+The native reader correctly rejects version 3; no production QEMU fallback exists.
+The second encoded digest differs but QEMU confirms complete decoded logical
+agreement with the first. All three timed samples complete; final task inspection
+shows success, all sessions
+confirm Logout, and discovery confirms source off / runner on. Median encoded
+throughput is 11.262 MiB/s with 231.192 seconds median whole-operation time.
+[Current evidence](benchmark-results/2026-10-02-v032c/README.md).
+
+V0 is now qualified for this export-only subset. R6 remains open. Take the
+following bounded packages in order:
+
+1. **R5.10 — Native streamOptimized admission:** specify the supported version-3
+   subset, descriptor/header/footer/marker structure, compression and resource
+   bounds. Add synthetic and QEMU-produced accepted/rejected fixtures. Preserve
+   public rejection until logical decoding is implemented and qualified.
+2. **R5.11 — Bounded native grain decoding:** implement decompression and logical
+   range reads with strict input/output and metadata bounds. Compare known bytes
+   and QEMU output, test malformed/truncated streams and measure CPU/RSS/throughput.
+   Keep guest images private; preserve unsupported VMFS sparse/seSparse variants.
+3. **R5.12 — Local CLI conversion qualification:** integrate only the admitted
+   subset into inspect/plan/copy/verify, test cross-grain reads, durability and
+   cancellation, and plot all repeated benchmark samples.
+4. **R6.1 — Container export contract and ownership:** replace capacity-only
+   experimental selection with explicit source identity/trust inputs. Define
+   versioned artifact and durable lease-ownership records, then test process-loss
+   reconciliation before claiming resumable or recoverable backup jobs. Integrate
+   the proven sequential export as an artifact workflow, never as fake random I/O.
+5. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9
+   in later independently qualified steps. Keep PERF.0/R4.4 and the discovery
+   variance/controlled-TLS investigation visible while adding new features.
+
+Commit each completed bounded package with tests, evidence, performance disposition
+and an updated next-session record. This sequence extends the R5/R6 roadmap; it
+does not claim any of these new native/production packages are already implemented.
 
 ### Later — vSphere 9 compatibility (deferred)
 

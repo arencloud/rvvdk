@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "runner": "Fedora VM on same ESXi host and storage as source",
+  "architecture": "x86_64",
+  "kernel": "6.19.10-300.fc44.x86_64",
+  "glibc": "2.43",
+  "vcpus": 1,
+  "memory_kib": 2001840,
+  "filesystem": "xfs",
+  "filesystem_capacity_bytes": 16039018496,
+  "available_before_runs_bytes": 13446197248,
+  "qemu_img": "10.2.2 (qemu-10.2.2-1.fc44)",
+  "installed_packages": [
+    "qemu-img-2:10.2.2-1.fc44.x86_64"
+  ],
+  "source_power": "poweredOff",
+  "runner_power": "poweredOn",
+  "cache_policy": "OS defaults, no cache dropping; one transfer at a time; no QEMU decode during timed exports",
+  "network": "guest-to-host LAN; SSH control crosses original remote path; host/network load uncontrolled",
+  "cpu_model": "Intel(R) Xeon(R) Silver 4116 CPU @ 2.10GHz",
+  "guest_cpu_aes_flag": true,
+  "guest_cpu_sha_flag": false
+}

@@ -7,8 +7,9 @@ graceful shutdown when requested. Local disk crates and the public `rvddk` CLI d
 not depend on this crate.
 
 Continue live qualification on the existing ESXi 8.0.3 host. Its available license
-edition has changed; real lease acquisition and disk streaming now work. Complete
-artifacts and decoded bytes remain unqualified.
+edition has changed; lease acquisition, streaming, manifest verification and
+Complete/Logout now work. QEMU independently decodes the published image and
+verifies the mapped 8 MiB guest fixture; native compressed decoding remains unsupported.
 V0.3.2a prevents powered-on eligibility calls and adds read-only recent-task
 inspection after two earlier probes correlated with blocked export tasks.
 The user canceled both; inspection confirmed terminal canceled states.
@@ -16,6 +17,10 @@ See the [continuation plan](../../docs/vmware-access-plan.md#v032--licensed-live
 and [evidence](../../docs/benchmark-results/2026-10-01-v032a/README.md).
 V0.3.2b handles bounded opaque references and explicit auxiliary-file exclusion,
 with [live cancellation/deadline evidence](../../docs/benchmark-results/2026-10-01-v032b/README.md).
+V0.3.2c uses the user-authorized LAN runner for [completed exports and independent
+byte verification](../../docs/benchmark-results/2026-10-02-v032c/README.md). The runner
+shares the ESXi host/storage with the source; measurements are not an isolated
+physical-host or before/after tuning benchmark.
 vSphere 9 is **not yet admitted or qualified**.
 
 ## API and trust

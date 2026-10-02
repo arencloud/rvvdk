@@ -111,3 +111,38 @@ attempt, including failures, using elapsed time, accepted body bytes, CPU and RS
 It labels partial bytes explicitly and records report hashes. Differing diagnostic
 builds are not a tuning comparison. The V0.3.2b evidence uses this plot because no
 complete transfer is available yet; `plot_live_export.py` must reject those reports.
+
+
+`qualify_export_image.py` runs only against a published, manifest-verified artifact.
+It rechecks size/SHA-256, creates a new private work directory, uses QEMU to decode
+sparsely, compares the independently mapped guest fixture, hashes the RAW image
+privately, checks the encoded source is unchanged, and records native CLI admission.
+Raw QEMU/native diagnostics and image digests stay inside that private directory.
+The public report contains counts, exit status and oracle scope only. Native CLI
+rejection must be reviewed separately; a nonzero exit alone does not identify why.
+
+```bash
+umask 077
+python3 scripts/vsphere/qualify_export_image.py \
+  --report PRIVATE_EXPORT_REPORT.json --artifact PRIVATE_ARTIFACT_DIRECTORY \
+  --map PRIVATE_MAP.json --fixture PRIVATE_FIXTURE.bin \
+  --directory NEW_PRIVATE_DECODE_DIRECTORY --cli target/release/rvddk \
+  --public-report NEW_SAFE_REPORT.json
+```
+
+The decoder requires at least 2 GiB free initially and polls every 250 ms, stopping
+if free space falls below 1 GiB or conversion exceeds ten minutes. These checks
+provide headroom on the disposable runner; they are not an atomic disk quota.
+A failed decode leaves its private diagnostic directory for inspection. It never
+modifies the source image or invokes VMware APIs. Run decoding after, not during,
+timed export measurements. Whole-source equivalence is not established by the
+known-range oracle or by agreement between repeated exports.
+
+For repeated artifacts, supply all of `--reference-artifact`, `--reference-digests`
+and `--reference-qualification` from a prior full-decode qualification. The helper
+rechecks the reference's encoded SHA-256 and the new artifact, then uses QEMU's
+logical comparison across the two complete VMDKs. This decodes their content
+without materializing another RAW file. A successful comparison carries forward
+the independently verified known-range oracle; it does not establish whole-source
+identity. Encoded digests may differ while decoded logical content agrees. QEMU
+comparison has a ten-minute deadline and leaves its private diagnostics on failure.

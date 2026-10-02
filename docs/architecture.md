@@ -1419,3 +1419,25 @@ shutdown. Comparing it against a completed QEMU-decoded export remains pending.
 The provisional prefix reports version-3 compressed streamOptimized; full format
 validation and native Rust decoding remain separate gates. No production QEMU
 fallback is introduced. [Evidence and plots](benchmark-results/2026-10-01-v032b/README.md).
+
+
+## Qualified container transport and native decoding boundary (V0.3.2c)
+
+The live Rust client now completes a powered-off single-disk export, verifies its
+server manifest, acknowledges Complete/Logout and publishes a private artifact.
+An independent QEMU decode yields the expected 30 GiB disk; all independently
+mapped 8 MiB guest-fixture bytes match. This is a known-range proof, not independent
+whole-source disk equivalence. Repeated transfer qualification is tracked in the
+[LAN evidence](benchmark-results/2026-10-02-v032c/README.md).
+
+Actual output is version-3 compressed streamOptimized with 64 KiB grains. The
+native reader still rejects it at the version gate. Container export and logical
+read/RAW conversion remain different capabilities. QEMU is used only offline in
+qualification; the existing production dependency boundary is unchanged.
+
+The user authorized converting the former control VM into a LAN runner. Keep its
+shared-host CPU/storage effects explicit in benchmarks. Runtime CPU/RSS come from
+the Rust executable; independent decode/hash work is outside timed transfer runs.
+[ADR-0051](adr/0051-qualified-powered-off-export.md) selects HTTP NFC for the bounded
+export workflow and records native decompression, explicit public VM selection,
+durable resource ownership and crash reconciliation as separate follow-on work.

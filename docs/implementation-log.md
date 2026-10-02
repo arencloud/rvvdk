@@ -2132,15 +2132,55 @@ tests cover opaque references, escaped lease cleanup, auxiliary-file exclusion a
 bounded disk selection. Three offline oracle tests pass. No Python VMware API
 access, SDK/VDDK dependency or public CLI decoder expansion was introduced.
 
+## V0.3.2c — Repeated LAN exports and independent byte qualification (2026-10-02)
+
+Completed in this step's commit; baseline `4e57c87`.
+[ADR-0051](adr/0051-qualified-powered-off-export.md),
+[evidence and plots](benchmark-results/2026-10-02-v032c/README.md).
+
+The user approved using VM02, formerly the untouched 60 GiB control, as the LAN
+runner including qemu-img installation/private files. VM01 stays powered off.
+The unchanged Rust binaries completed three sequential exports, each receiving
+2,727,380,992 encoded bytes for the 30 GiB disk, verifying its manifest, acknowledging
+Complete/Logout and publishing the artifact. No LAN export attempt failed or was
+omitted. Prior remote-connection cancellation/deadline evidence remains intact.
+
+Whole-operation times: 238.611, 230.813 and 231.192 seconds. Encoded throughput:
+10.910, 11.280 and 11.262 MiB/s, median 11.262. CPU: 46.266, 44.463 and 44.447 seconds.
+Peak RSS: 8.188, 7.688 and 8.078 MiB. The one-vCPU runner shares ESXi host/storage
+with the source. These are setup observations, not a code speedup or regression
+clearance. Decode/hash work occurs outside measured exports.
+
+QEMU fully decoded run 1 to a 30 GiB sparse RAW; every independently mapped 8 MiB
+guest-fixture byte matched. The native CLI explicitly rejects version 3. Encoded
+digests differ on repeats; the run-2 identity shortcut was rejected and retained.
+QEMU compared complete decoded logical contents of runs 2/3 against run 1 and
+confirmed equality. This carries the known-range proof across runs; it does not
+prove independent whole-source equivalence. Private images/digests/credentials
+remain outside Git; public reports redact only per-image digests.
+
+Final task inspection returns a successful export task, no running/queued task in
+the returned history, and Logout. Three final discovery sessions confirm source
+off / runner on and Logout. No staging residue or new snapshots remain. The
+verified temporary RAW and run-2 disk were removed for space; private encoded
+runs 1/3, reports, fixture and runner tools remain for continuation.
+
+No production Rust source changed; this step reuses the 584-pass/one-ignored
+baseline and its passing Clippy result. CLI release build, three offline oracle
+tests, incomplete-export rejection, full-decode/reference-comparison helper modes,
+plot validation and visual inspection pass. V0 closes for this bounded export-only
+workflow, combining complete/known-byte evidence with V0.3.2b's real failure cleanup.
+Native compressed decoding, R6 integration/recovery and all prior performance
+follow-ups remain open.
+
 ## Next session
 
-Continue **V0.3.2** using the
-[saved qualification plan](vmware-access-plan.md#v032b-checkpoint-and-next-runner-decision).
-Choose VM02 as a LAN runner, a separate LAN machine, or a longer timeout over the
-existing slow connection. A local private package is prepared; changing VM02's
-untouched-control role is awaiting the user's choice. Obtain three completed
-same-build exports, independently decode with QEMU, verify the private mapped
-8 MiB fixture and qualify Complete/Logout and final power state. This known-range
-oracle does not prove whole-source equivalence. Keep native streamOptimized support,
-V0/R6, PERF.0/R4.4, V0.3.1's adverse individual pairs and the historical QEMU
-partial second-extent discrepancy open. Commit every completed bounded step.
+Start **R5.10 — bounded native streamOptimized admission**, following the
+[saved sequence](vmware-access-plan.md#v032c--authorized-lan-qualification-and-continuation).
+Specify supported version-3 headers/descriptors/markers and resource bounds; add
+synthetic/QEMU fixtures and preserve public rejection until native logical decoding
+is qualified. Then implement R5.11 reads/decompression, R5.12 CLI conversion, and
+R6.1 explicit source selection, artifact contracts and durable resource ownership.
+No production QEMU/VDDK fallback. Keep PERF.0/R4.4, V0.3.1 adverse discovery pairs,
+controlled-TLS investigation and the historical QEMU producer discrepancy open.
+Commit each completed bounded package with tests, benchmarks and updated plans.

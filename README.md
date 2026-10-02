@@ -62,7 +62,7 @@ VMware disk access and migration, extensible to other platforms.
 | **Hosted sparse reads** | [Read-only base monolithic/split sparse](docs/vmdk-sparse-disk.md), bounded metadata and [CLI inspect/plan/copy/verify](docs/cli-vmdk.md) |
 | **Parent chains** | [Read-only sparse parent fallback](docs/vmdk-chain-disk.md) with bounded metadata, whole-chain alias checks and [opt-in CLI support](docs/cli-vmdk-parents.md) |
 | **Admission fuzzing** | [Four bounded libFuzzer targets](fuzz/README.md), authored seeds, sanitizer campaigns and retained corpora |
-| **VMware access** | [Independent Rust authentication and inventory](crates/rvvdk-vsphere/README.md) qualified on ESXi 8.0.3; export proof pending; no VMware SDK/VDDK dependency |
+| **VMware access** | [Independent Rust authentication and inventory](crates/rvvdk-vsphere/README.md) qualified on ESXi 8.0.3; powered-off disk export and independent known-byte verification demonstrated; no VMware SDK/VDDK dependency |
 
 The [endpoint contract](docs/architecture.md#copy-endpoint-preflight-r05) describes
 preflight guarantees and custom-backend requirements. DataMover native request
@@ -237,8 +237,9 @@ The [V0.3.2a probe correction](docs/benchmark-results/2026-10-01-v032a/README.md
 adds a powered-off guard and read-only task inspection. Live transfer qualification
 continues on the existing host. The [V0.3.2b live attempt plots](docs/benchmark-results/2026-10-01-v032b/README.md)
 record opaque-reference and disk-selection fixes, guest oracle preparation, and
-real cancellation/deadline cleanup. Complete exports and throughput qualification
-remain pending.
+real cancellation/deadline cleanup. The [V0.3.2c LAN qualification](docs/benchmark-results/2026-10-02-v032c/README.md)
+adds completed exports and independently verified guest bytes; native compressed
+VMDK decoding remains a separate step.
 Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
 for sanitizer execution rates, memory and feedback across repeated campaigns.
 The [R5.8 CLI parent-chain timings](docs/benchmark-results/2026-09-30-r58/README.md)
