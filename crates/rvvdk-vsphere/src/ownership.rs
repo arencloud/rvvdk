@@ -38,6 +38,8 @@ pub enum OwnershipError {
     Transition,
     #[error("job persistence outcome is uncertain; reopen and reconcile")]
     Uncertain,
+    #[error("payload verification failed")]
+    Content,
     #[error("local job I/O failed")]
     Io,
 }
@@ -527,6 +529,12 @@ impl Job<'_> {
         });
         self.store.advance(&mut self.record, JobState::Staged)?;
         self.stage = Some(directory);
+        Ok(())
+    }
+    /// Recheck the owned stage, member identities and marker before a transition.
+    pub(crate) fn validate_stage(&self) -> Result<()> {
+        self.store.ready()?;
+        self.store.check_stage(&self.record, false)?;
         Ok(())
     }
     /// Caller writes through the pinned, newly created member. No path from a

@@ -102,10 +102,10 @@ requirements from [job ownership](durable-job-ownership.md) still apply.
 
 ## Continuation
 
-R6.1c.2b must transfer through these owned resource handles and qualify writer drain,
-TransferComplete/CompleteIntent ordering, lost completion responses and failure
-cleanup. Completion uncertainty must not trigger the legacy proof's automatic
-abort behavior. Verified container metadata, confined conversion and actual
+[R6.1c.2b](durable-owned-transfer.md) now transfers through the worker-owned payload,
+drains writes, independently checks bytes and qualifies conservative completion.
+It never aborts after submitting CompleteIntent. Next R6.1c.3 adds verified private
+artifact metadata and native VMDK admission. Verified container metadata, confined conversion and actual
 journal-bound no-replace publication remain subsequent work. Nothing here upgrades
 old manifests or qualifies full production recovery.
 

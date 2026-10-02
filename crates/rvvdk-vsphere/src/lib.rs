@@ -21,6 +21,10 @@ mod journal_worker;
 mod owned_probe;
 #[cfg(target_os = "linux")]
 pub use owned_probe::{OwnedProbeReport, probe_owned_export};
+#[cfg(target_os = "linux")]
+mod owned_transfer;
+#[cfg(target_os = "linux")]
+pub use owned_transfer::{OwnedTransferOptions, OwnedTransferReport, transfer_owned_export};
 mod inventory;
 mod transport;
 mod xml;

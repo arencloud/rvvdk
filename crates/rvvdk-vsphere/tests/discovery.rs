@@ -380,6 +380,7 @@ mod export_tests {
     use rvvdk_vsphere::{ExportOptions, LeaseCleanup, export_vm};
     use std::path::PathBuf;
     mod owned_probe;
+    mod owned_transfer;
     mod selected_benchmark;
     static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
     struct Output(PathBuf);

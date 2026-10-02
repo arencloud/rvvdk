@@ -2592,37 +2592,78 @@ No ESXi or guest operation was needed. This is an API-level durable probe, not f
 payload export, completion, conversion, publication or resumable production recovery.
 R6.1c.2 and R6.1c remain open; legacy exporters retain their separate lifecycle.
 
+## R6.1c.2b — Owned transfer and conservative completion
+
+Completed `transfer_owned_export`: bounded network batches are written through the
+journal owner's retained payload handle. Accepted writes drain before return or
+abort; cancellation cannot leave a detached writer. Manifest checks, file sync and
+independent full digest/length readback precede TransferComplete. Reports separate
+received, written and durable bytes, payload errors and remote/journal outcomes.
+
+CompleteIntent is submitted only after source revalidation and byte verification.
+The conservative guard starts before that submission: persistence errors, source
+drift, cancellation and lost completion responses never cause an automatic abort
+or retry. Completion acknowledgment and durable CompletedLease remain separate.
+Successful output stays private; its metadata file is empty. Container-byte checks
+do not establish VMDK structure or logical-disk validity.
+
+[Contract](durable-owned-transfer.md), [ADR-0061](adr/0061-owned-transfer-and-conservative-completion.md),
+[tests, raw timing and plots](benchmark-results/2026-10-02-r61c2b/README.md).
+Workspace **690 passed, five ignored**; all-target clippy and formatting pass.
+Fourteen added tests include one inert child-process helper. Coverage includes
+ordered completion, bounded writes, independent readback tampering, cancellation,
+source drift, slow worker operations, payload/journal failures, uncertain completion
+and actual SIGKILL at the completion boundary. Nine transfer integration tests also
+pass with Btrfs fixtures. An existing slow-journal test exposed a 300 ms mock idle
+race; only slow unit fixtures now allow three seconds. Five exact repeats pass.
+Production network timeouts and retry behavior are unchanged.
+
+The matched release matrix retains **288 transfers / 144 pairs**, 8 MiB each, on
+Btrfs and tmpfs, including longer repeats after adverse observations. Longer median
+wall is **219.680 ms owned / 93.275 ms proof on Btrfs** and **78.489 / 67.040 ms on
+tmpfs**. CPU is 41.896 / 24.541 ms and 34.479 / 23.455 ms respectively. The added
+readback, eight journal commits and other lifecycle differences have substantial
+combined cost; no durability barrier is removed. All bytes compare, each payload
+allocates 8 MiB, and checked cleanup reaches Cleaned. These synthetic prefix/body
+fixtures are not valid VMDKs or evidence of ESXi throughput.
+
+No ESXi or guest operation was needed. R6.1c.2 is complete at this API/container-byte
+scope; R6.1c remains open for metadata, native admission, conversion, publication
+and integrated live qualification. Legacy exporters retain their separate lifecycle.
+
 ## Next session
 
-Start **R6.1c.2b — Transfer through owned resources and qualify completion**:
+Start **R6.1c.3 — Private artifact metadata and native VMDK admission**:
 
-1. Extend the existing worker/coordinator to transfer through the journal-owned
-   payload handle. Keep bounded buffers, explicit source/pin binding, progress,
-   cancellation, byte budgets and source checks at all transfer boundaries. Do not
-   label the legacy Artifact writer as owned by assertion or promote old manifests.
-2. Coordinate payload writers and journal commands, drain accepted work on every
-   outcome, and distinguish received, written and durable bytes. Preserve inode/
-   marker checks and prevent publication or cleanup with outstanding writers.
-3. Validate/sync the completed container before recording TransferComplete. Persist
-   CompleteIntent before the completion RPC and revalidate source as required after
-   any slow local barrier. A lost response or uncertain persistence remains pending;
-   never follow an uncertain completion with the legacy proof's automatic abort.
-4. Fault-inject transfer failure, cancellation, source drift, slow disk/journal work,
-   dropped completion response, acknowledgment failure and process loss through the
-   combined workflow. Keep the live lease capability process-local and never replay
-   uncertain requests from a record.
-5. Follow with verified private artifact metadata, confined local conversion, and
-   actual descriptor-bound no-replace publication with file/directory durability.
-   Journal acknowledgment is not proof of container validity or publication.
-6. Benchmark matched CPU/RSS/allocation and byte correctness with standalone plots.
-   Preserve the measured journal fixed cost and previous storage/stream findings.
-   Use the authorized lab when the integrated path needs new host/guest evidence;
-   current synthetic tests do not qualify full live workflow compatibility.
+1. Bind the R6.1a ExportArtifact contract to the retained owned payload, explicit
+   source identity and actual verification evidence. Metadata remains private and
+   bounded; source/content hashes must never enter public diagnostic reports.
+   ContainerDigestVerified must not become LogicalReadbackVerified by assertion.
+2. Apply existing bounded native VMDK admission to header/version, grain map,
+   compressed payloads and encoded logical capacity. Qualify malformed and truncated
+   containers, size budgets and source/capacity mismatch before conversion consumes
+   them. A prefix, matching manifest or journal acknowledgment is insufficient.
+3. Choose a valid metadata persistence phase or introduce a separately admitted
+   read-only artifact capability. Job member access currently ends at TransferComplete;
+   CompletedLease does not reopen Job or a lease. Fresh admission must bind the
+   store, artifact, source, stage/member identities, ownership marker and bytes.
+   No metadata path/URL or recovered journal record confers authority.
+4. Preserve confined handles, bounded memory, heartbeat/cancellation, writer drain,
+   file/directory durability and conservative remote outcomes. Extend fault tests
+   across metadata writes/readback, replaced members and process loss. Follow with
+   local conversion and actual descriptor-bound no-replace publication, preserving
+   existing source/destination alias and sparse-output rules.
+5. Benchmark matched CPU/RSS/allocation and byte correctness with standalone plots.
+   Retain journal fixed cost and full readback cost alongside prior stream/storage
+   findings. Repeat adverse comparisons/spreads above 5% before drawing conclusions.
+6. Use the authorized lab when the composed path needs new host/guest evidence.
+   Current synthetic tests do not qualify full live workflow compatibility or
+   resumable export; never replay uncertain remote actions from a record.
 
 Keep PERF.0 visible: prior stream timing, CPU/SMT/frequency/layout controls, map/cache
 sensitivity, random whole-grain amplification, sparse-output Btrfs layout/flush cost,
-bounded parallel decoding and integrated durable-journal overhead. Retain R4.4 and
-discovery/TLS work. No universal timing or automatic remote-recovery clearance is
-claimed. VMFS sparse, seSparse, online snapshots, CBT, restore, vCenter and vSphere 9
-remain later qualified work. Commit every completed package with tests, benchmark
-results, architecture decisions and updated next-session notes.
+bounded parallel decoding and integrated durable-journal/readback overhead. Retain
+R4.4 and discovery/TLS work. No universal timing or automatic remote-recovery
+clearance is claimed. VMFS sparse, seSparse, online snapshots, CBT, restore, vCenter
+and vSphere 9 remain later qualified work. Commit every completed package with tests,
+benchmark results, architecture decisions and updated next-session notes.

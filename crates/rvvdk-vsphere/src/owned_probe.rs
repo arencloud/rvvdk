@@ -170,7 +170,7 @@ impl Session {
             .probe_ready(&lease, reference, source.logical_bytes(), cancellation)
             .await
         {
-            Ok(timeout) => Some(timeout),
+            Ok(info) => Some(info.timeout),
             Err(error) => {
                 report.primary_error.get_or_insert(error);
                 None
@@ -207,7 +207,7 @@ impl Session {
         }
         Ok(())
     }
-    async fn check_probe_source(
+    pub(crate) async fn check_probe_source(
         &mut self,
         source: &SourceSelection,
         reference: &Reference,
@@ -221,13 +221,13 @@ impl Session {
             .map_err(crate::export::selection_error)?;
         Ok(())
     }
-    async fn probe_ready(
+    pub(crate) async fn probe_ready(
         &mut self,
         lease: &Reference,
         vm: &Reference,
         capacity: u64,
         cancellation: &Cancellation,
-    ) -> Result<Duration> {
+    ) -> Result<crate::export::LeaseInfo> {
         loop {
             cancellation.check()?;
             let raw = self.properties(lease).await?;
@@ -235,9 +235,7 @@ impl Session {
             let props = Properties::parse(xml::response(&doc, "RetrievePropertiesEx")?, lease)?;
             match xml::text(props.get("state")?)? {
                 "ready" => {
-                    return self
-                        .lease_info(props.get("info")?, lease, vm, capacity)
-                        .map(|info| info.timeout);
+                    return self.lease_info(props.get("info")?, lease, vm, capacity);
                 }
                 "initializing" => {
                     if Instant::now() >= self.deadline {
@@ -249,7 +247,7 @@ impl Session {
             }
         }
     }
-    async fn probe_journal(
+    pub(crate) async fn probe_journal(
         &mut self,
         client: &Client,
         command: Command,

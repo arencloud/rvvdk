@@ -122,3 +122,34 @@ async fn worker_panic_returns_uncertainty_and_releases_owned_handles() {
         JobState::Prepared
     );
 }
+
+#[tokio::test]
+async fn payload_commands_bound_chunks_and_never_validate_failed_writes() {
+    for size in [0, 513, CHUNK_BYTES + 1] {
+        let f = Fixture::new();
+        let mut worker = Worker::start(f.store(), id(), source());
+        (&mut worker.ready).await.unwrap().unwrap();
+        for command in [
+            Command::Prepare,
+            Command::Acquire,
+            Command::Held(Zeroizing::new("synthetic".into())),
+            Command::PayloadOpen(512),
+        ] {
+            worker.client.apply(command).await.unwrap();
+        }
+        assert!(
+            worker
+                .client
+                .apply(Command::PayloadWrite(vec![0; size]))
+                .await
+                .is_err()
+        );
+        worker.client.apply(Command::Abort).await.unwrap();
+        worker.client.apply(Command::Aborted).await.unwrap();
+        let outcome = worker.finish_payload().await.unwrap();
+        assert_eq!(outcome.progress.written, 0);
+        assert!(!outcome.progress.verified);
+        assert!(outcome.payload_error.is_some());
+        assert_eq!(outcome.recovery.unwrap().state, JobState::AbortedLease);
+    }
+}

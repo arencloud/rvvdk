@@ -383,8 +383,10 @@ following bounded packages in order:
    **R6.1c.1 complete:** [explicit export selection](explicit-export-selection.md)
    derives the connection from source identity and rechecks it before acquisition,
    download and completion. **R6.1c.2a complete:** [durable acquire/abort](durable-export-probe.md) binds a
-   real probe lease to journal-owned resources. **Next R6.1c.2b:** transfer and
-   conservative completion, then verified metadata, conversion and publication. The
+   real probe lease to journal-owned resources. **R6.1c.2b complete:** [owned transfer/completion](durable-owned-transfer.md)
+   qualifies container-byte readback and the no-abort completion boundary.
+   **Next R6.1c.3:** private artifact metadata and native VMDK admission, then
+   conversion/publication. The
    capacity proof remains separate; full production R6.1c remains open.
 6. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9
    in later independently qualified steps. Keep PERF.0/R4.4 and the discovery

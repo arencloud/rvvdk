@@ -284,12 +284,12 @@ pub async fn export_vm(
     Err(Error::ExportScope)
 }
 
-struct Device {
-    key: String,
-    url: reqwest::Url,
+pub(crate) struct Device {
+    pub(crate) key: String,
+    pub(crate) url: reqwest::Url,
 }
 pub(crate) struct LeaseInfo {
-    device: Device,
+    pub(crate) device: Device,
     ignored_non_disk_devices: usize,
     pub(crate) timeout: Duration,
 }
@@ -929,7 +929,12 @@ fn one_disk<'a, 'i>(
     Ok((disk.ok_or(Error::ExportScope)?, ignored))
 }
 
-fn verify_manifest(raw: &str, key: &str, file: &ExportFile, capacity: u64) -> Result<()> {
+pub(crate) fn verify_manifest(
+    raw: &str,
+    key: &str,
+    file: &ExportFile,
+    capacity: u64,
+) -> Result<()> {
     let doc = xml::parse(raw)?;
     let response = xml::response(&doc, "HttpNfcLeaseGetManifest")?;
     let (entry, _) = one_disk(

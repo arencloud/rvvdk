@@ -1582,8 +1582,8 @@ with no journal-bound ownership, restart recovery or automatic conversion.
 
 [ADR-0059](adr/0059-explicit-export-selection.md), [contract](explicit-export-selection.md),
 [matched synthetic timing](benchmark-results/2026-10-02-r61c1/README.md).
-R6.1c.2a below now binds acquire/abort to durable intent. Next R6.1c.2b binds
-transfer/completion and writer lifetimes; full R6.1c remains open.
+R6.1c.2a below binds acquire/abort to durable intent; R6.1c.2b binds
+transfer/completion and writer lifetimes. Full R6.1c remains open.
 
 
 ### R6.1c.2a — Durable acquire/abort probe
@@ -1599,6 +1599,27 @@ intent states. The empty stage requires explicit checked cleanup after worker ex
 
 [ADR-0060](adr/0060-durable-export-lease-probe.md), [contract](durable-export-probe.md),
 [process-loss/slow-journal tests and timing](benchmark-results/2026-10-02-r61c2a/README.md).
-This does not transfer, complete, convert or publish. R6.1c.2b must join actual
+The probe does not transfer, complete, convert or publish. R6.1c.2b below joins
 payload writers and completion to these intents, including uncertain completion
 without automatic abort. Metadata/conversion/publication remain subsequent gates.
+
+
+### R6.1c.2b — Owned payload transfer and conservative completion
+
+`transfer_owned_export` writes bounded 1 MiB batches through the journal worker.
+A dropped data waiter leaves its accepted write owned; the serial abort command
+closes the writer before durable AbortIntent. Payload failures may still abort when
+journal persistence succeeds. Network hashes and the lease manifest are checked,
+then file sync and independent digest/length readback through a fresh checked
+handle precede TransferComplete. Stage/member identities and the marker are rechecked.
+
+The no-abort guard is set before submitting CompleteIntent. Any persistence failure,
+source drift, cancellation or dropped completion reply beyond that boundary stays
+pending. Acknowledged completion and its journal acknowledgment remain distinct.
+The worker drains before return; successful output remains a private owned stage.
+
+[ADR-0061](adr/0061-owned-transfer-and-conservative-completion.md),
+[contract](durable-owned-transfer.md), [tests and timing](benchmark-results/2026-10-02-r61c2b/README.md).
+These checks verify container bytes, not VMDK structure or logical content. R6.1c.3
+next adds private artifact metadata and native VMDK admission before conversion and
+actual publication. Existing manifests do not confer ownership or validation.

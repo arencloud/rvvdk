@@ -67,8 +67,10 @@ artifacts are not automatically promoted to durable jobs.
 
 [R6.1c.2a](durable-export-probe.md) now binds a separate acquire/abort probe to
 durable intent, with worker drain, heartbeats and conservative process-loss
-assessment. Next R6.1c.2b integrates payload writers and completion. Verified artifact metadata,
-confined conversion and actual journal-bound publication then complete R6.1c.
+assessment. [R6.1c.2b](durable-owned-transfer.md) now integrates owned payload writes,
+independent container-byte readback and conservative completion. R6.1c.3 next adds
+private metadata and native VMDK admission, followed by confined conversion and
+actual journal-bound publication.
 
 [ADR-0059](adr/0059-explicit-export-selection.md),
 [tests, matched timing and plots](benchmark-results/2026-10-02-r61c1/README.md).

@@ -163,6 +163,14 @@ impl Server {
         nodelay: bool,
         observer: Option<RequestObserver>,
     ) -> Self {
+        Self::start_with_idle(replies, nodelay, observer, Duration::from_millis(300))
+    }
+    fn start_with_idle(
+        replies: Vec<Reply>,
+        nodelay: bool,
+        observer: Option<RequestObserver>,
+        idle: Duration,
+    ) -> Self {
         let cert = rcgen::generate_simple_self_signed(vec!["localhost".to_owned()]).unwrap();
         let pin = Sha256::digest(cert.cert.der())
             .iter()
@@ -218,9 +226,7 @@ impl Server {
                     Err(e) => panic!("{e}"),
                 };
                 stream.set_nodelay(nodelay).unwrap();
-                stream
-                    .set_read_timeout(Some(Duration::from_millis(300)))
-                    .unwrap();
+                stream.set_read_timeout(Some(idle)).unwrap();
                 stream
                     .set_write_timeout(Some(Duration::from_millis(300)))
                     .unwrap();

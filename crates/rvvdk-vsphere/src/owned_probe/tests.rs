@@ -47,7 +47,7 @@ mod mock {
                 }
             }
         });
-        let server = Server::start_observed(replies, true, Some(observer));
+        let server = Server::start_with_idle(replies, true, Some(observer), Duration::from_secs(3));
         let source = SourceSelection::new(
             EndpointIdentity::pinned(
                 &server.endpoint,

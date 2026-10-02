@@ -111,8 +111,9 @@ record does not authorize remote or local actions.
 state transitions and conservative process-loss assessment/cleanup. Artifact claims
 never grant authority over a lease or staging directory. R6.1c.1 now connects
 explicit selection and revalidation to the export proof. R6.1c.2a now binds an acquire/abort probe to actual
-lease ownership and durable intent. R6.1c.2b next integrates transfer/completion,
-followed by artifact admission and conversion. Existing
+lease ownership and durable intent. [R6.1c.2b](durable-owned-transfer.md) now integrates
+container-byte transfer/completion. R6.1c.3 next binds private metadata and native
+VMDK admission, followed by conversion and publication. Existing
 capacity-only manifests are not automatically promoted. No new ESXi run is needed
 for R6.1a's pure contract tests and synthetic measurements.
 

@@ -138,8 +138,10 @@ tmpfs sync calls do not imply persistent storage durability.
 
 R6.1c.1 now adds [explicit export selection](explicit-export-selection.md) and
 fresh source checks to the proof. [R6.1c.2a](durable-export-probe.md) now binds acquire/abort to these intents and
-an owned empty stage. R6.1c.2b next integrates transfer/completion, followed by
-verified metadata, conversion and publication. The capacity-selected proof remains available.
+an owned empty stage. [R6.1c.2b](durable-owned-transfer.md) now integrates owned
+transfer, container-byte readback and conservative completion. R6.1c.3 next adds
+private metadata and native VMDK admission before conversion and publication.
+The capacity-selected proof remains available.
 Do not promote its manifest to job ownership or claim resumable remote export.
 
 [ADR-0058](adr/0058-durable-job-ownership.md),

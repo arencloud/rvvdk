@@ -7,10 +7,10 @@ use rvvdk_vsphere::{
 };
 use std::os::unix::fs::DirBuilderExt;
 
-fn artifact() -> ArtifactId {
+pub(super) fn artifact() -> ArtifactId {
     ArtifactId::new([42; 16]).unwrap()
 }
-fn store(out: &Output) -> JobStore {
+pub(super) fn store(out: &Output) -> JobStore {
     let path = out.0.join("jobs");
     std::fs::DirBuilder::new()
         .mode(0o700)
@@ -18,7 +18,7 @@ fn store(out: &Output) -> JobStore {
         .unwrap();
     JobStore::open(&path).unwrap()
 }
-fn record(path: &std::path::Path) -> serde_json::Value {
+pub(super) fn record(path: &std::path::Path) -> serde_json::Value {
     let files: Vec<_> = std::fs::read_dir(path)
         .unwrap()
         .map(|e| e.unwrap().path())

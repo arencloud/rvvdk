@@ -1,0 +1,27 @@
+   Compiling rvvdk-vsphere v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-vsphere)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.65s
+     Running unittests src/lib.rs (target/debug/deps/rvvdk_vsphere-bd050ffb210a946e)
+
+running 4 tests
+test owned_transfer::tests::cancellation_drains_pending_write_before_abort_and_return ... ok
+test owned_transfer::tests::payload_write_failure_still_allows_durable_abort_after_writer_closes ... ok
+test owned_transfer::tests::cancellation_during_seal_or_complete_intent_obeys_durable_boundary ... ok
+test owned_transfer::tests::slow_readback_and_completion_intent_keep_heartbeats_alive ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 39 filtered out; finished in 3.34s
+
+     Running tests/discovery.rs (target/debug/deps/discovery-9afa23b70b64d360)
+
+running 10 tests
+test export_tests::owned_transfer::benchmark::matched_owned_transfer ... ignored, opt-in matched owned transfer benchmark
+test export_tests::owned_transfer::transfer_crash_child ... ok
+test export_tests::owned_transfer::process_loss_at_completion_keeps_private_bytes_and_blocks_cleanup ... ok
+test export_tests::owned_transfer::completes_only_after_durable_bytes_readback_and_completion_intent ... ok
+test export_tests::owned_transfer::completion_persistence_failures_never_authorize_abort ... ok
+test export_tests::owned_transfer::cancellation_before_and_after_completion_intent_has_distinct_disposition ... ok
+test export_tests::owned_transfer::completion_fault_or_lost_reply_never_triggers_abort_or_retry ... ok
+test export_tests::owned_transfer::independent_readback_rejects_changed_file_and_preserves_foreign_members ... ok
+test export_tests::owned_transfer::truncated_over_budget_and_bad_manifest_transfers_abort_without_validation ... ok
+test export_tests::owned_transfer::source_drift_before_download_or_completion_blocks_next_rpc ... ok
+
+test result: ok. 9 passed; 0 failed; 1 ignored; 0 measured; 62 filtered out; finished in 1.13s
