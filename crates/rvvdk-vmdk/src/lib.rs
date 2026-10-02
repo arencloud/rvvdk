@@ -51,3 +51,6 @@ pub use stream::{
     StreamDirectory, StreamEnvelope, StreamError, StreamHeader, StreamLimits, StreamMarker,
     StreamRegion,
 };
+
+mod stream_map;
+pub use stream_map::{StreamGrain, StreamMap, StreamMapLimits, StreamMapStats};

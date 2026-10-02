@@ -245,7 +245,11 @@ show bounded Rust streamOptimized envelope costs and all descriptor regression
 pairs. The retained ESXi envelope passes; native compressed reads remain pending.
 [R5.10p comparison tuning](docs/benchmark-results/2026-10-02-r510p/README.md)
 recovers the measured small-descriptor cost; its plots retain adverse stream
-timings and identical-binary controls. Native grain-map validation is next.
+timings and identical-binary controls.
+[R5.11a grain-index validation](docs/vmdk-stream-map.md) now checks bounded record
+ownership against QEMU fixtures and the retained ESXi export;
+[benchmark plots](docs/benchmark-results/2026-10-02-r511a/README.md) track admission
+costs. Native decompression and logical reads are next (R5.11b).
 Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
 for sanitizer execution rates, memory and feedback across repeated campaigns.
 The [R5.8 CLI parent-chain timings](docs/benchmark-results/2026-09-30-r58/README.md)

@@ -1,0 +1,66 @@
+{
+  "rvvdk_vmdk::stream::StreamHeader::parse_inner": {
+    "before": {
+      "start": "0xca2f0",
+      "bytes": 1747,
+      "instruction_lines": 374,
+      "command": [
+        "objdump",
+        "-d",
+        "-C",
+        "--no-show-raw-insn",
+        "--start-address=828144",
+        "--stop-address=829891",
+        "target/r511a/reference/stream-before"
+      ]
+    },
+    "candidate": {
+      "start": "0xca2f0",
+      "bytes": 1747,
+      "instruction_lines": 374,
+      "command": [
+        "objdump",
+        "-d",
+        "-C",
+        "--no-show-raw-insn",
+        "--start-address=828144",
+        "--stop-address=829891",
+        "target/r511a/reference/stream-candidate"
+      ]
+    },
+    "normalized_instruction_shape_equal": true
+  },
+  "rvvdk_vmdk::stream::StreamMarker::parse": {
+    "before": {
+      "start": "0xca9e0",
+      "bytes": 918,
+      "instruction_lines": 198,
+      "command": [
+        "objdump",
+        "-d",
+        "-C",
+        "--no-show-raw-insn",
+        "--start-address=829920",
+        "--stop-address=830838",
+        "target/r511a/reference/stream-before"
+      ]
+    },
+    "candidate": {
+      "start": "0xca9e0",
+      "bytes": 918,
+      "instruction_lines": 198,
+      "command": [
+        "objdump",
+        "-d",
+        "-C",
+        "--no-show-raw-insn",
+        "--start-address=829920",
+        "--stop-address=830838",
+        "target/r511a/reference/stream-candidate"
+      ]
+    },
+    "normalized_instruction_shape_equal": true
+  },
+  "normalization": "Instruction/branch addresses become offsets; named external targets retain names; RIP-relative global displacements and comments removed.",
+  "limitation": "Not proof of identical data, whole-program execution or performance; layout effects are not excluded."
+}

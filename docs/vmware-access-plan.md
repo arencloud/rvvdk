@@ -352,14 +352,16 @@ following bounded packages in order:
 
 1. **R5.10 complete for metadata only:** separate bounded descriptor/header/footer/
    marker APIs admit QEMU front and VMware footer envelopes, including the retained
-   export. Maps/payloads remain unvalidated and public rejection persists.
+   export. That envelope API leaves maps/payloads unvalidated; public rejection persists.
    [Contract](vmdk-stream-admission.md), [evidence](benchmark-results/2026-10-02-r510/README.md).
    **R5.10p complete for scoped descriptor recovery:** the inline comparison hint
    recovers the measured small-input cost. [All controls and unresolved stream
    timing](benchmark-results/2026-10-02-r510p/README.md) remain visible. Continue
-   R5.11 while retaining the controlled-runner performance follow-up.
-2. **R5.11 — Bounded native grain decoding:** first validate map pointers, aliases,
-   redundancy, record ordering and LBA binding; then implement decompression and
+   R5.11b while retaining the controlled-runner performance follow-up.
+2. **R5.11a complete — Bounded grain index:** map pointers, aliases, redundancy,
+   record ordering and LBA binding pass synthetic and retained-export checks.
+   [Contract](vmdk-stream-map.md), [evidence](benchmark-results/2026-10-02-r511a/README.md).
+   **R5.11b next — Bounded native grain decoding:** bind source ownership and implement decompression and
    logical range reads with strict input/output and aggregate metadata bounds. Compare known bytes
    and QEMU output, test malformed/truncated streams and measure CPU/RSS/throughput.
    Keep guest images private; preserve unsupported VMFS sparse/seSparse variants.
@@ -377,7 +379,7 @@ following bounded packages in order:
 
 Commit each completed bounded package with tests, evidence, performance disposition
 and an updated next-session record. This sequence extends the R5/R6 roadmap; it
-claims R5.10 metadata admission and R5.10p scoped descriptor recovery as implemented;
+claims R5.10 metadata admission, R5.10p scoped descriptor recovery and R5.11a map validation as implemented;
 decoding, overall stream performance clearance and production integration remain open.
 
 ### Later — vSphere 9 compatibility (deferred)

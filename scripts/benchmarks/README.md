@@ -117,3 +117,11 @@ Recomputes all 6570 saved samples, primary paired changes and separate-core
 identical-binary controls. Produces descriptor, stream and control SVG/PNG figures,
 computed JSON and input/output hashes. It neither runs benchmarks nor accesses
 VMware. The scoped descriptor recovery does not clear all stream timing results.
+
+R5.11a grain-index admission and stream regression pairs (including longer adverse
+repeats) have a dedicated generator. It checks the complete run matrix and all
+sample-derived medians before writing SVG/PNG figures and hash audits:
+
+```sh
+python scripts/benchmarks/plot_stream_map.py docs/benchmark-results/2026-10-02-r511a
+```

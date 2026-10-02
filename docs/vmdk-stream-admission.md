@@ -75,11 +75,11 @@ Tests intentionally admit an envelope containing a bad directory pointer to make
 this boundary explicit. No result from these APIs authorizes logical reads yet.
 
 R5.10p [recovers the measured old descriptor cost](benchmark-results/2026-10-02-r510p/README.md),
-while retaining unresolved stream timing observations. R5.11 must implement a
-bounded map/record validator before exposing
-decompression: validate every followed pointer, structural ownership, aliasing,
-redundancy, record order and LBA binding; bound total metadata memory/work and
-compressed input/output; specify framing, truncation, trailing input and sparse
+while retaining unresolved stream timing observations. The separate
+[R5.11a map validator](vmdk-stream-map.md) now checks followed pointers, ownership,
+aliasing, redundancy, record ordering and LBA binding under aggregate limits.
+The envelope API itself retains the validation boundary above. R5.11b must bound
+compressed input/output and specify framing, truncation, trailing input and sparse
 zero semantics. Differentially compare logical bytes with authored RAW and QEMU,
 then use the private guest oracle. Measure sequential/random reads, CPU/RSS and
 throughput. R5.12 separately qualifies public CLI integration.

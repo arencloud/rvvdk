@@ -1,0 +1,321 @@
+{
+  "before_commit": "64d81a7",
+  "cpu_affinity": [
+    0
+  ],
+  "binary_sha256": {
+    "before": "91be2123d109583eb3efd707460029d0c14f476a868293efb626f1c7d1cd0e80",
+    "candidate": "0303c14f12c009275c55c6be87c4c7a34d4a32330828d76b661fc9590f562e6e",
+    "map": "b994d057661cab92c0ae6064f8177b3dcbe196b68ac67746fa655c8f65ea326f"
+  },
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)\nbinary: rustc\ncommit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860\ncommit-date: 2026-04-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.95.0\nLLVM version: 22.1.2",
+  "kernel": "7.2.5-200.fc44.x86_64",
+  "governor": "powersave",
+  "smt_siblings": "0,8",
+  "conditions": "Shared host; same CPU as R5.10; no CPU isolation, cache flushing or governor changes. Compilation, tests, QEMU, live probes and plotting outside timed matrix.",
+  "sample_size": 30,
+  "warmup_seconds": 0.5,
+  "measurement_seconds": 2,
+  "order": [
+    {
+      "key": "r511a-initial-stream_admission-before-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511a/reference/stream-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r511a-initial-stream_admission-before-1"
+      ],
+      "start_unix": 1790942242.3125348,
+      "end_unix": 1790942280.0056558
+    },
+    {
+      "key": "r511a-initial-stream_admission-candidate-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511a/reference/stream-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r511a-initial-stream_admission-candidate-1"
+      ],
+      "start_unix": 1790942280.0061147,
+      "end_unix": 1790942319.3959694
+    },
+    {
+      "key": "r511a-initial-stream_admission-candidate-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511a/reference/stream-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r511a-initial-stream_admission-candidate-2"
+      ],
+      "start_unix": 1790942319.3964922,
+      "end_unix": 1790942357.4813018
+    },
+    {
+      "key": "r511a-initial-stream_admission-before-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511a/reference/stream-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r511a-initial-stream_admission-before-2"
+      ],
+      "start_unix": 1790942357.4819443,
+      "end_unix": 1790942396.0901663
+    },
+    {
+      "key": "r511a-initial-stream_admission-before-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511a/reference/stream-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r511a-initial-stream_admission-before-3"
+      ],
+      "start_unix": 1790942396.0908594,
+      "end_unix": 1790942434.1560209
+    },
+    {
+      "key": "r511a-initial-stream_admission-candidate-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511a/reference/stream-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r511a-initial-stream_admission-candidate-3"
+      ],
+      "start_unix": 1790942434.1568604,
+      "end_unix": 1790942473.1706219
+    },
+    {
+      "key": "r511a-longer-stream_admission-candidate-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511a/reference/stream-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r511a-longer-stream_admission-candidate-1"
+      ],
+      "start_unix": 1790942473.171865,
+      "end_unix": 1790942525.0128374
+    },
+    {
+      "key": "r511a-longer-stream_admission-before-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511a/reference/stream-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r511a-longer-stream_admission-before-1"
+      ],
+      "start_unix": 1790942525.01382,
+      "end_unix": 1790942576.4563882
+    },
+    {
+      "key": "r511a-longer-stream_admission-before-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511a/reference/stream-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r511a-longer-stream_admission-before-2"
+      ],
+      "start_unix": 1790942576.4574971,
+      "end_unix": 1790942628.1650474
+    },
+    {
+      "key": "r511a-longer-stream_admission-candidate-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511a/reference/stream-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r511a-longer-stream_admission-candidate-2"
+      ],
+      "start_unix": 1790942628.1662984,
+      "end_unix": 1790942679.6003866
+    },
+    {
+      "key": "r511a-longer-stream_admission-candidate-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511a/reference/stream-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r511a-longer-stream_admission-candidate-3"
+      ],
+      "start_unix": 1790942679.6019557,
+      "end_unix": 1790942733.1969495
+    },
+    {
+      "key": "r511a-longer-stream_admission-before-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511a/reference/stream-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r511a-longer-stream_admission-before-3"
+      ],
+      "start_unix": 1790942733.1984086,
+      "end_unix": 1790942783.9165196
+    },
+    {
+      "key": "r511a-new-stream_map-map-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511a/reference/stream-map",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r511a-new-stream_map-map-1"
+      ],
+      "start_unix": 1790942783.918134,
+      "end_unix": 1790942833.5704014
+    },
+    {
+      "key": "r511a-new-stream_map-map-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511a/reference/stream-map",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r511a-new-stream_map-map-2"
+      ],
+      "start_unix": 1790942833.5725698,
+      "end_unix": 1790942885.602438
+    },
+    {
+      "key": "r511a-new-stream_map-map-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511a/reference/stream-map",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r511a-new-stream_map-map-3"
+      ],
+      "start_unix": 1790942885.6044302,
+      "end_unix": 1790942936.4573698
+    }
+  ]
+}

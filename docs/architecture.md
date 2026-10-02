@@ -1454,7 +1454,7 @@ VMware footer envelopes have explicit structural rules and resource budgets.
 Envelope acquisition checks header geometry, descriptor capacity, footer agreement
 and terminal markers before returning numeric metadata. It never opens embedded
 filenames or reads directory entries/tables/payloads. Global ordering, aliases,
-redundancy and grain ownership remain R5.11 gates before decoding. Caller-enforced
+redundancy and grain ownership are checked by the separate R5.11a map layer. Caller-enforced
 quiescence is required; length/header rechecks are not snapshots.
 
 [Contract](vmdk-stream-admission.md), [ADR-0052](adr/0052-bounded-stream-envelope.md),
@@ -1462,5 +1462,21 @@ quiescence is required; length/header rechecks are not snapshots.
 R5.10p adds an inline hint for fixed-key comparisons and recovers the measured
 flat-descriptor cost, with unchanged grammar/bounds. [Both-core evidence](benchmark-results/2026-10-02-r510p/README.md)
 retains unresolved stream timing observations and identical-binary controls.
-R5.11 remains the map-validation/decompression gate; global performance clearance
+R5.11b remains the decompression gate; global performance clearance
 requires more controlled measurement.
+
+
+### R5.11a — Bounded stream grain index
+
+`StreamMap` reacquires the envelope, checks followed GT regions before table I/O,
+counts allocated grains, then validates record ownership while filling a sparse
+index. Front redundancy must agree; footer GT markers must follow each group's
+grains. Physical sequence and exact LBA binding reject aliases, gaps and orphan
+records. Read, memory, table-work and allocated-grain limits compose with envelope
+bounds. Payloads are skipped, and no public logical-read path changes.
+
+The [contract](vmdk-stream-map.md) documents the strict ordered subset, two-pass
+cost, source quiescence and memory-accounting exclusions. QEMU/authored references
+and the retained ESXi export pass. [ADR-0053](adr/0053-bounded-stream-grain-index.md)
+records why decompression remains a separate R5.11b package. Public CLI admission
+stays gated on R5.12; PERF.0 timing follow-ups remain open.

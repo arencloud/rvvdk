@@ -1,0 +1,24 @@
+{
+  "scope": "retained_export_metadata_only",
+  "attempts": [
+    {
+      "artifact": "first_retained_export",
+      "exit_code": 0,
+      "report": "live-map.json"
+    },
+    {
+      "artifact": "second_retained_export",
+      "exit_code": 255,
+      "result": "SSH control connection was closed by the qualification driver before this supplemental read-only probe completed; no parser result was obtained."
+    },
+    {
+      "artifact": "second_retained_export",
+      "exit_code": 0,
+      "report": "live-map-second.json",
+      "result": "Retry completed before closing the SSH control connection."
+    }
+  ],
+  "vmware_api_calls": 0,
+  "new_exports": 0,
+  "payloads_validated": false
+}

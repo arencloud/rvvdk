@@ -1,0 +1,11 @@
+    Checking rvvdk-vmdk v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-vmdk)
+    Checking rvvdk-cli v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-cli)
+error: file is loaded as a module multiple times: `crates/rvvdk-vmdk/tests/support/stream.rs`
+  |
+  = help: replace all but one `mod` item with `use` items
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.95.0/index.html#duplicate_mod
+  = note: `-D clippy::duplicate-mod` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(clippy::duplicate_mod)]`
+
+error: could not compile `rvvdk-vmdk` (test "stream_map") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

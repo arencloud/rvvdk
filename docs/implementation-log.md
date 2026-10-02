@@ -2237,21 +2237,61 @@ failed one unchanged export-cleanup fixture (`Unconfirmed` versus `Aborted`). It
 exact focused rerun and full rerun passed. The failure is retained; cause remains
 unproven. No cleanup timeout/policy was changed. No live VMware access was needed.
 
+## R5.11a — Bounded stream grain index (2026-10-02)
+
+Completed in this step's commit; baseline `64d81a7`.
+[Contract](vmdk-stream-map.md), [ADR-0053](adr/0053-bounded-stream-grain-index.md),
+[measurements and plots](benchmark-results/2026-10-02-r511a/README.md).
+
+Split R5.11 into map validation (a) and bounded decompression/logical reads (b).
+`StreamMap` reads bounded directories, validates every followed table region
+before table I/O, then uses two table passes to count and fill a sparse index.
+Optional front redundancy agrees byte-for-byte. Footer GT markers, physical
+record sequence and exact LBA binding reject aliases, gaps and orphan records.
+Payloads and grain padding are skipped. Public compressed CLI rejection persists.
+
+Explicit limits cover requested map slot bytes, metadata reads, table work and
+populated grains. Fourteen new tests exercise those bounds, read traces and
+malformed inputs. An empty 1 TiB footer map needs 131,136 requested slot bytes
+and no table work. These counters exclude envelope/stack/allocator overhead and
+are not process RSS. Source quiescence is required; rechecks are not a snapshot.
+
+Six synthetic QEMU/authored maps match independent enumeration, and QEMU decoding
+matches authored RAW. Unaligned input and all seven public CLI inputs reject.
+The retained 30 GiB ESXi export validates 57,295 grains, requesting 1,205,620
+metadata bytes and 693,684 map slot bytes. No new export, lease, VM power operation
+or VMware API access was needed. A second retained export also passes; its first
+supplemental probe was interrupted by the driver closing SSH and was retried
+successfully. All attempts are recorded; only aggregate live counters are saved.
+
+Performance evidence retains three alternating stream-admission pairs against
+`64d81a7`, three longer repeats triggered by adverse observations, and three runs
+of nine new map/lookup cases. No decompression, storage-throughput or RSS claim.
+New median admission costs are 6.768/6.920 µs for sparse footer/front maps and
+188.810 µs for an empty 1 TiB footer map; sparse lookup is about 7 ns. Longer
+grain-marker pairs remain +5.74%, approximately 0%, +9.29%. Normalized header/marker
+instruction shapes match the baseline, with changed placement; this is not a
+performance proof. Existing stream timing/PERF.0 follow-ups remain open.
+
+Final workspace validation: 608 passed, one ignored; 14 new map tests included.
+Clippy across all targets with `-D warnings`, formatting and release builds pass.
+An initial Clippy duplicate-fixture-module error was corrected and retained.
+The earlier export-cleanup test failure did not recur.
+
 ## Next session
 
-Start **R5.11 — bounded stream grain maps and native reads**. First validate every
-followed directory/table pointer, structural ownership, aliases, redundancy,
-record ordering and grain-LBA binding with aggregate work/memory bounds. Then
-specify compressed framing, exact input/output limits, truncation/trailing input
-and sparse-zero behavior before exposing native decompression/range reads.
-Compare authored RAW/QEMU and the private guest oracle; measure sequential/random
-throughput, CPU and RSS. Keep public CLI rejection until R5.12 qualification.
+Start **R5.11b — bounded native stream decompression and logical reads**. Build on
+the validated map, bind source ownership, and specify compressed framing, exact
+input/output limits, truncation/trailing input and sparse-zero behavior. Implement
+cross-grain range reads with bounded scratch/cache memory. Compare authored RAW,
+QEMU output and the private guest oracle, then measure sequential/random reads,
+CPU and RSS. Keep public CLI rejection until R5.12 qualification.
 
-PERF.0 retains the unresolved stream timing observations: use a controlled core
-and SMT sibling, record frequency/load and layout/ASLR conditions, and preserve
-identical-binary controls. Do not discard either core's R5.10p observations or
-claim global clearance from descriptor recovery. Retain the unconfirmed-cleanup
-fixture failure for diagnosis if it recurs; do not weaken production cleanup.
-Earlier PERF.0/R4.4 and discovery/TLS follow-ups remain open. R6.1 still gates
-explicit source identity, artifact contracts and durable resource ownership.
-Commit each completed bounded package with tests, benchmarks and updated plans.
+PERF.0 retains unresolved stream timing observations: use a controlled core and
+SMT sibling, record frequency/load and layout/ASLR conditions, and preserve
+identical-binary controls. Keep prior R5.10/R5.10p observations and R5.11a repeats.
+Retain the prior unconfirmed-cleanup fixture failure for diagnosis if it recurs;
+do not weaken production cleanup. Earlier PERF.0/R4.4 and discovery/TLS follow-ups
+remain open. R6.1 still gates source identity, artifact contracts and durable
+resource ownership. Commit each completed bounded package with tests, benchmarks
+and updated plans.
