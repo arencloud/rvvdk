@@ -88,3 +88,6 @@ These guarantees belong to that loader; header admission alone remains unchanged
 
 [R5.3 SparseDisk](vmdk-sparse-disk.md) now adds read-only base sparse mapping with
 aggregate admission and alias protection. R5.4 now adds [CLI integration](cli-vmdk.md); parent-chain work remains separate.
+
+Compressed version-3 metadata now has a [separate stream envelope API](vmdk-stream-admission.md).
+This sparse header API continues to reject it; native compressed reads remain pending.

@@ -350,12 +350,15 @@ throughput is 11.262 MiB/s with 231.192 seconds median whole-operation time.
 V0 is now qualified for this export-only subset. R6 remains open. Take the
 following bounded packages in order:
 
-1. **R5.10 — Native streamOptimized admission:** specify the supported version-3
-   subset, descriptor/header/footer/marker structure, compression and resource
-   bounds. Add synthetic and QEMU-produced accepted/rejected fixtures. Preserve
-   public rejection until logical decoding is implemented and qualified.
-2. **R5.11 — Bounded native grain decoding:** implement decompression and logical
-   range reads with strict input/output and metadata bounds. Compare known bytes
+1. **R5.10 complete for metadata only:** separate bounded descriptor/header/footer/
+   marker APIs admit QEMU front and VMware footer envelopes, including the retained
+   export. Maps/payloads remain unvalidated and public rejection persists.
+   [Contract](vmdk-stream-admission.md), [evidence](benchmark-results/2026-10-02-r510/README.md).
+   **Next R5.10p:** investigate repeated +8–10% small-descriptor regressions before
+   R5.11, preserving all bounds, semantics and adverse samples.
+2. **R5.11 — Bounded native grain decoding:** first validate map pointers, aliases,
+   redundancy, record ordering and LBA binding; then implement decompression and
+   logical range reads with strict input/output and aggregate metadata bounds. Compare known bytes
    and QEMU output, test malformed/truncated streams and measure CPU/RSS/throughput.
    Keep guest images private; preserve unsupported VMFS sparse/seSparse variants.
 3. **R5.12 — Local CLI conversion qualification:** integrate only the admitted
@@ -372,7 +375,8 @@ following bounded packages in order:
 
 Commit each completed bounded package with tests, evidence, performance disposition
 and an updated next-session record. This sequence extends the R5/R6 roadmap; it
-does not claim any of these new native/production packages are already implemented.
+claims only R5.10 metadata admission as implemented; decoding and production
+integration remain open.
 
 ### Later — vSphere 9 compatibility (deferred)
 

@@ -1,5 +1,10 @@
 # rvvdk Benchmarks
 
+R5.10 adds [streamOptimized metadata plots and retained regressions](benchmark-results/2026-10-02-r510/README.md).
+Envelope admission is qualified for its metadata-only scope; the final existing
+small-descriptor benchmark remains +8–10% slower in three longer pairs. R5.10p
+investigates this before R5.11 decoding. No storage/decompression speedup is claimed.
+
 Latest step: [V0.2 Rust ESXi discovery](benchmark-results/2026-10-01-v02/README.md).
 Three alternating pairs compare fresh/reused TLS with the same release binary,
 14 SOAP requests and confirmed Logout per session. Reuse reduces median complete

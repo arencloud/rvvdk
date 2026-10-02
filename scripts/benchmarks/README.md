@@ -94,3 +94,15 @@ The supplemental generator validates normalized samples and reads
 logarithmic; latency and memory axes start at zero. Orange dots retain each run
 median. Error-path timing is labeled separately from successful query output.
 These memory-backed fixtures do not measure physical-storage throughput.
+
+## StreamOptimized metadata admission
+
+```sh
+target/benchmark-plots/bin/python scripts/benchmarks/plot_stream_admission.py docs/benchmark-results/2026-10-02-r510
+```
+
+Validates all 4140 retained samples and plots every initial/final descriptor pair,
+including longer adverse repeats, plus new in-memory metadata costs. Outputs
+SVG/PNG, recomputed JSON and input/output hashes. No benchmarks, storage access,
+guest data or VMware API calls occur during plotting. The small-descriptor
+performance disposition remains open; these figures do not qualify decoding.

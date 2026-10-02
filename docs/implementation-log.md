@@ -2173,14 +2173,52 @@ workflow, combining complete/known-byte evidence with V0.3.2b's real failure cle
 Native compressed decoding, R6 integration/recovery and all prior performance
 follow-ups remain open.
 
+## R5.10 — Bounded streamOptimized metadata envelope (2026-10-02)
+
+Completed in this step's commit; baseline `f756fb1`.
+[ADR-0052](adr/0052-bounded-stream-envelope.md),
+[contract](vmdk-stream-admission.md),
+[evidence and plots](benchmark-results/2026-10-02-r510/README.md).
+
+Separate Rust descriptor/header/marker/envelope types admit the specified clean
+version-3, 64 KiB-grain base subset with QEMU front directories or VMware footer
+markers. Bounds cover arithmetic, geometry, descriptor acquisition and exact read
+budgets. Existing public format enum/parsers/CLI preserve their supported subset.
+No grain directory entries, tables, global record order or payloads are validated;
+these APIs provide no logical reads. Header/length rechecks require quiescence.
+
+The retained live ESXi export passes with just 3584 metadata bytes read. Initial
+admission rejected its informational `ddb.toolsInstallType`; the final grammar
+accepts that key only for stream descriptors. The failure and regression test are
+retained. No new vSphere calls, power transitions or export leases were needed.
+Private guest artifacts and image digests stay outside Git.
+
+Workspace validation: 594 passed, one ignored; ten new stream tests; Clippy with
+`-D warnings` and release builds pass. Six QEMU/authored front/footer fixtures
+independently decode to the original RAW bytes and pass Rust envelope admission.
+Unaligned capacity fails; the current CLI rejects all seven compressed fixtures.
+
+Performance: three alternating paired runs per design followed by three longer
+pairs, all samples retained. Initial public enum expansion was removed; the final
+separate descriptor stores only its required fields. Final longer small-descriptor
+pairs still regress +8.45%, +10.05%, +8.83%. This remains **needs investigation**,
+not a cleared gate or an accepted correctness tradeoff. The shared host limits
+attribution. New in-memory front/footer envelope medians are 3.953/4.150 µs;
+header checks about 129–130 ns. No storage/decompression throughput or RSS claim.
+
 ## Next session
 
-Start **R5.10 — bounded native streamOptimized admission**, following the
-[saved sequence](vmware-access-plan.md#v032c--authorized-lan-qualification-and-continuation).
-Specify supported version-3 headers/descriptors/markers and resource bounds; add
-synthetic/QEMU fixtures and preserve public rejection until native logical decoding
-is qualified. Then implement R5.11 reads/decompression, R5.12 CLI conversion, and
-R6.1 explicit source selection, artifact contracts and durable resource ownership.
-No production QEMU/VDDK fallback. Keep PERF.0/R4.4, V0.3.1 adverse discovery pairs,
-controlled-TLS investigation and the historical QEMU producer discrepancy open.
+Start **R5.10p — descriptor performance investigation**, retaining the complete
+[R5.10 evidence](benchmark-results/2026-10-02-r510/README.md). Investigate the
+repeatable small-descriptor cost with identical harness/bounds and controlled
+paired measurements; isolate code-generation effects from host variance. Do not
+weaken grammar or discard adverse observations. Record a measured disposition.
+
+Then **R5.11** must validate bounded maps, metadata ownership/aliasing, redundancy,
+record order and grain-LBA binding before native decompression/range reads. Specify
+compressed framing, exact input/output bounds and sparse-zero behavior; compare
+synthetic RAW/QEMU and the private guest oracle; measure throughput, CPU and RSS.
+R5.12 gates CLI conversion. R6.1 gates explicit source selection, artifact contracts
+and durable resource ownership. No production QEMU/VDDK fallback. Keep prior
+PERF.0/R4.4, discovery variance/controlled-TLS and producer-discrepancy work open.
 Commit each completed bounded package with tests, benchmarks and updated plans.

@@ -240,6 +240,10 @@ record opaque-reference and disk-selection fixes, guest oracle preparation, and
 real cancellation/deadline cleanup. The [V0.3.2c LAN qualification](docs/benchmark-results/2026-10-02-v032c/README.md)
 adds completed exports and independently verified guest bytes; native compressed
 VMDK decoding remains a separate step.
+The [R5.10 metadata admission plots](docs/benchmark-results/2026-10-02-r510/README.md)
+show bounded Rust streamOptimized envelope costs and all descriptor regression
+pairs. The retained ESXi envelope passes; native compressed reads remain pending.
+The repeated small-descriptor regression is the next performance investigation.
 Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
 for sanitizer execution rates, memory and feedback across repeated campaigns.
 The [R5.8 CLI parent-chain timings](docs/benchmark-results/2026-09-30-r58/README.md)

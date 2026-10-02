@@ -237,7 +237,7 @@ inspect/plan/copy/verify; RAW destinations and existing publication contracts.
 **R4.5 complete**: [bounded terminal NUL acquisition](vmdk-padding.md), original
 byte preservation and unmodified generated hosted descriptor reference tests.
 Custom independent-decoder qualification remains separate and open.
-V0.3.2 now qualifies the bounded live export workflow. Next is **R5.10**, native streamOptimized admission; R6 production recovery remains open.
+V0.3.2 now qualifies the bounded live export workflow. R5.10 metadata admission is complete; next is **R5.10p**, descriptor performance investigation before R5.11; R6 production recovery remains open.
 Each completed package records validation and performance evidence and is committed
 locally. No ESXi was needed for local R4 qualification.
 
@@ -298,8 +298,9 @@ acceptance plan before activating a time-limited ESXi evaluation.
 - [x] Implement the documented clean version-1 base `monolithicSparse` and split sparse library subset; broader variants remain separate.
 - [x] Add parent identity/CID checks, missing-parent errors, cycle detection, and explicit parent resolution policy for sparse-only metadata chains.
 - [x] Resolve unallocated child grains through sparse parents; emit logical Zero only after the base confirms no allocation.
-- [ ] R5.10: admit a specified bounded version-3 streamOptimized subset with synthetic/QEMU header, descriptor and marker fixtures.
-- [ ] R5.11: implement bounded native decompression/range reads and independent byte/performance qualification.
+- [x] R5.10: bounded version-3 streamOptimized header/descriptor/marker envelope admission; maps and payloads remain unvalidated. [Contract](vmdk-stream-admission.md).
+- [ ] R5.10p: investigate the repeated +8–10% small-descriptor regression before R5.11; preserve all R5.10 evidence and grammar/bounds.
+- [ ] R5.11: validate bounded grain maps, aliases, redundancy and record ordering, then implement bounded native decompression/range reads and independent byte/performance qualification.
 - [ ] R5.12: qualify the admitted subset in local CLI inspect/plan/copy/verify. Keep VMFS sparse and seSparse separately qualified.
 - [x] Add bounded descriptor/header/grain/chain admission fuzz campaigns; reference byte qualification remains separately recorded in R5.3–R5.8.
 - [ ] Extend to sustained fuzz campaigns, larger resource profiles and logical-read differential fuzzing.
@@ -349,9 +350,12 @@ throughput is 11.262 MiB/s, median total time 231.192 seconds, peak RSS 7.69–8
 The user authorized the former control VM as runner; shared-host conditions and
 all prior failures remain explicit. [Evidence and plots](benchmark-results/2026-10-02-v032c/README.md).
 
-**Next bounded package — R5.10:** specify and admit the bounded version-3
-streamOptimized subset before implementing native decompression/range reads.
-Then qualify local CLI conversion (R5.11–R5.12), followed by R6 production artifact
+**R5.10 complete for metadata only:** separate bounded stream envelope types admit
+QEMU front and VMware footer profiles, including the retained live export. Maps
+and payloads remain unvalidated; the CLI still rejects compressed disks.
+[Evidence and plots](benchmark-results/2026-10-02-r510/README.md).
+**Next — R5.10p:** investigate repeated small-descriptor regressions. Then validate
+maps and implement native reads (R5.11), qualify CLI conversion (R5.12), and add R6 artifact
 integration and durable resource ownership. [Saved sequence](vmware-access-plan.md#v032c--authorized-lan-qualification-and-continuation),
 [ADR-0051](adr/0051-qualified-powered-off-export.md).
 Export remains a sequential container stream; native decoding and R6 remain open.
@@ -474,12 +478,13 @@ Decisions after ADR-0024. ADR-0025 is implemented for the bounded R0.1 scope; cr
 | [0045](adr/0045-bounded-admission-fuzzing.md) | Accepted: isolated bounded admission fuzz harnesses, process guards and retained qualification evidence |
 | [0046](adr/0046-independent-export-feasibility.md) | Accepted: powered-off HTTP NFC export candidate; Rust implementation and transport qualification pending |
 | [0047](adr/0047-bounded-rust-vsphere-discovery.md) | Accepted: bounded Rust authentication/inventory, explicit TLS trust, deadlines and observable cleanup |
+| [0052](adr/0052-bounded-stream-envelope.md) | Accepted: separate bounded streamOptimized metadata envelope; logical decoding and performance clearance remain open |
 | TBD | Changed-range selection and CBT baseline identity |
 | TBD | Durable journals, checkpoint ordering and resume |
 
 ## First implementation session — R0.1 completed
 
-The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete; R3.1 adds inspect/plan and R3.2 adds copy/verify; R3.3 adds lifecycle progress and cancellation; R4.1–R4.4 implement bounded local FLAT/ZERO VMDK sources; R4.5 qualifies bounded padded descriptor acquisition; R5.1 admits hosted sparse headers; R5.2 validates metadata and descriptor binding; R5.3 adds base sparse logical mapping; R5.4 integrates sparse CLI sources; R5.5 qualifies sparse bounds and scaling; R5.6 admits bounded sparse parent metadata; R5.7 resolves logical parent bytes; R5.8 integrates CLI parent commands; R5.9 qualifies bounded admission fuzzing; V0.1 completes feasibility planning and read-only lab discovery; V0.2 qualifies Rust session/inventory and cleanup; V0.3.1 supplies the Rust export foundation and observed license gate; V0.3.2 completes the bounded licensed live export proof; continue with R5.10 native streamOptimized admission.
+The following sequence is recorded in the [implementation log](implementation-log.md). R0.1–R0.5 are complete, with performance dispositions and remaining qualification work documented. R1.1 portable APIs, R1.2 shared semantic policy, R1.3 shared endpoint inspection, R1.4 logical/executor preparation separation, R1.5 contextual failures, and R1.6 copy payload budgets are also complete. R2.1 logical Hole guarantees, R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete; R3.1 adds inspect/plan and R3.2 adds copy/verify; R3.3 adds lifecycle progress and cancellation; R4.1–R4.4 implement bounded local FLAT/ZERO VMDK sources; R4.5 qualifies bounded padded descriptor acquisition; R5.1 admits hosted sparse headers; R5.2 validates metadata and descriptor binding; R5.3 adds base sparse logical mapping; R5.4 integrates sparse CLI sources; R5.5 qualifies sparse bounds and scaling; R5.6 admits bounded sparse parent metadata; R5.7 resolves logical parent bytes; R5.8 integrates CLI parent commands; R5.9 qualifies bounded admission fuzzing; V0.1 completes feasibility planning and read-only lab discovery; V0.2 qualifies Rust session/inventory and cleanup; V0.3.1 supplies the Rust export foundation and observed license gate; V0.3.2 completes the bounded licensed live export proof; R5.10 completes native streamOptimized metadata envelope admission; continue with R5.10p descriptor performance investigation before R5.11.
 
 R0.1 was the bounded change directly related to the observer work:
 
@@ -494,7 +499,7 @@ R0.1 was the bounded change directly related to the observer work:
    tradeoff in the implementation log. Update this checklist and ADR-0025 with
    the implemented behavior and remaining limitations.
 
-R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete. R3.1 inspect/plan and R3.2 copy/verify are complete. R3.3 progress and cancellation are complete. R4.1–R4.4 are complete within their documented subset. R4.5 bounded hosted descriptor acquisition compatibility is complete. R5.1 header admission, R5.2 metadata validation and R5.3 base sparse logical mapping are complete. R5.4 sparse CLI integration is complete. R5.5 deterministic adversarial validation and scaling benchmarks are complete. R5.6 bounded sparse parent metadata admission is complete. R5.7 read-only logical parent fallback is complete. R5.8 CLI parent integration is complete. R5.9 bounded admission fuzz qualification is complete. V0.1 feasibility planning and read-only lab discovery are complete. V0.2 Rust session/inventory and cleanup are complete. V0.3.1 export foundation and license probing are complete. V0.3.2 qualifies complete exports and the independent known-byte oracle. Continue **R5.10** native streamOptimized admission; R6 production integration/recovery remains open. Keep PERF.0 and the prior performance follow-ups open.
+R0 and R1.1–R1.6 are complete within their documented scopes. R2.1 logical Hole guarantees are complete. R2.2 local sparse output, R2.3 source discovery fallback, R2.4 native request compatibility, and R2.5 runtime resource preparation, and R2.6 concurrent alias admission are complete. R3.1 inspect/plan and R3.2 copy/verify are complete. R3.3 progress and cancellation are complete. R4.1–R4.4 are complete within their documented subset. R4.5 bounded hosted descriptor acquisition compatibility is complete. R5.1 header admission, R5.2 metadata validation and R5.3 base sparse logical mapping are complete. R5.4 sparse CLI integration is complete. R5.5 deterministic adversarial validation and scaling benchmarks are complete. R5.6 bounded sparse parent metadata admission is complete. R5.7 read-only logical parent fallback is complete. R5.8 CLI parent integration is complete. R5.9 bounded admission fuzz qualification is complete. V0.1 feasibility planning and read-only lab discovery are complete. V0.2 Rust session/inventory and cleanup are complete. V0.3.1 export foundation and license probing are complete. V0.3.2 qualifies complete exports and the independent known-byte oracle. R5.10 metadata envelope admission is complete. Continue **R5.10p** descriptor performance investigation before R5.11 maps/decompression; R6 production integration/recovery remains open. Keep PERF.0 and the prior performance follow-ups open.
 
 ## Decisions to record before their milestone
 

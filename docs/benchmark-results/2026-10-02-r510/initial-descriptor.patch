@@ -1,0 +1,68 @@
+--- a/crates/rvvdk-vmdk/src/descriptor.rs
++++ b/crates/rvvdk-vmdk/src/descriptor.rs
+@@ -34,0 +35 @@
++    StreamOptimized,
+@@ -251,4 +252,4 @@
+-        Self::parse_subset::<false, false>(input, limits).map(|(d, _)| d)
+-    }
+-
+-    fn parse_subset<const SPARSE: bool, const CHAIN: bool>(
++        Self::parse_subset::<false, false, false>(input, limits).map(|(d, _)| d)
++    }
++
++    fn parse_subset<const SPARSE: bool, const CHAIN: bool, const STREAM: bool>(
+@@ -328 +329,3 @@
+-                        let kind = if SPARSE && eq(v, "monolithicSparse") {
++                        let kind = if STREAM && eq(v, "streamOptimized") {
++                            CreateType::StreamOptimized
++                        } else if SPARSE && !STREAM && eq(v, "monolithicSparse") {
+@@ -330,0 +334 @@
++                            && !STREAM
+@@ -469 +473,5 @@
+-                Some(CreateType::MonolithicSparse | CreateType::TwoGbMaxExtentSparse) => {
++                Some(
++                    CreateType::MonolithicSparse
++                    | CreateType::TwoGbMaxExtentSparse
++                    | CreateType::StreamOptimized,
++                ) => {
+@@ -476 +484,5 @@
+-                    if create_type == Some(CreateType::MonolithicSparse) && !extents.is_empty() {
++                    if matches!(
++                        create_type,
++                        Some(CreateType::MonolithicSparse | CreateType::StreamOptimized)
++                    ) && !extents.is_empty()
++                    {
+@@ -548 +560 @@
+-        Descriptor::parse_subset::<true, false>(&input[..end], limits).map(|(d, _)| Self(d))
++        Descriptor::parse_subset::<true, false, false>(&input[..end], limits).map(|(d, _)| Self(d))
+@@ -594 +606,2 @@
+-        let (descriptor, parent) = Descriptor::parse_subset::<true, true>(&input[..end], limits)?;
++        let (descriptor, parent) =
++            Descriptor::parse_subset::<true, true, false>(&input[..end], limits)?;
+@@ -615,0 +629,26 @@
++
++/// Explicit metadata-only compressed base descriptor. Cannot be passed to SparseDisk.
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub struct StreamDescriptor<'a>(Descriptor<'a>);
++impl<'a> StreamDescriptor<'a> {
++    pub fn parse(input: &'a [u8]) -> Result<Self> {
++        Self::parse_with_limits(input, Limits::default())
++    }
++    pub fn parse_with_limits(input: &'a [u8], limits: Limits) -> Result<Self> {
++        if input.len() > limits.descriptor_bytes {
++            return Err(error(0, ErrorKind::Limit("descriptor bytes")));
++        }
++        let end = input.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
++        Descriptor::parse_subset::<true, false, true>(&input[..end], limits).map(|(d, _)| Self(d))
++    }
++    pub fn cid(&self) -> u32 {
++        self.0.cid()
++    }
++    pub fn size_bytes(&self) -> u64 {
++        self.0.size_bytes()
++    }
++    /// Untrusted embedded reference; parsing never follows it.
++    pub fn extent(&self) -> &Extent<'a> {
++        &self.0.extents()[0]
++    }
++}

@@ -9,6 +9,7 @@ mod descriptor;
 pub use descriptor::{
     Access, CreateType, Descriptor, DescriptorError, ErrorKind, Extent, ExtentBacking, Limits,
     Metadata, ParentReference, SECTOR_BYTES, SparseDescriptor, SparseLayerDescriptor,
+    StreamDescriptor,
 };
 
 mod backing;
@@ -44,3 +45,9 @@ pub use chain::{
 
 mod chain_disk;
 pub use chain_disk::{SparseChainDisk, SparseChainDiskLimits};
+
+mod stream;
+pub use stream::{
+    StreamDirectory, StreamEnvelope, StreamError, StreamHeader, StreamLimits, StreamMarker,
+    StreamRegion,
+};

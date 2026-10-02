@@ -248,10 +248,10 @@ impl<'a> Descriptor<'a> {
     }
 
     pub fn parse_with_limits(input: &'a [u8], limits: Limits) -> Result<Self> {
-        Self::parse_subset::<false, false>(input, limits).map(|(d, _)| d)
+        Self::parse_subset::<false, false, false>(input, limits).map(|(d, _)| d)
     }
 
-    fn parse_subset<const SPARSE: bool, const CHAIN: bool>(
+    fn parse_subset<const SPARSE: bool, const CHAIN: bool, const STREAM: bool>(
         input: &'a [u8],
         limits: Limits,
     ) -> Result<(Self, Option<ParentReference<'a>>)> {
@@ -289,7 +289,9 @@ impl<'a> Descriptor<'a> {
                         return Err(error(line, ErrorKind::Syntax("DDB before extents")));
                     }
                     section = 2;
-                    if !DDB_KEYS.iter().any(|allowed| eq(key, allowed)) {
+                    if !(DDB_KEYS.iter().any(|allowed| eq(key, allowed))
+                        || STREAM && eq(key, "ddb.toolsInstallType"))
+                    {
                         return Err(error(line, ErrorKind::Unsupported("DDB key")));
                     }
                     let Token::Quoted(value) = value else {
@@ -325,9 +327,14 @@ impl<'a> Descriptor<'a> {
                         set(&mut parent, value, line)?;
                     }
                     (k, Token::Quoted(v)) if eq(k, "createType") => {
-                        let kind = if SPARSE && eq(v, "monolithicSparse") {
+                        let kind = if STREAM && eq(v, "streamOptimized") {
+                            // Reuse single-SPARSE layout validation internally; the public
+                            // StreamDescriptor has its own type and exposes no Descriptor.
+                            CreateType::MonolithicSparse
+                        } else if SPARSE && !STREAM && eq(v, "monolithicSparse") {
                             CreateType::MonolithicSparse
                         } else if SPARSE
+                            && !STREAM
                             && (eq(v, "twoGbMaxExtentSparse") || eq(v, "2GbMaxExtentSparse"))
                         {
                             CreateType::TwoGbMaxExtentSparse
@@ -545,7 +552,7 @@ impl<'a> SparseDescriptor<'a> {
             return Err(error(0, ErrorKind::Limit("descriptor bytes")));
         }
         let end = input.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
-        Descriptor::parse_subset::<true, false>(&input[..end], limits).map(|(d, _)| Self(d))
+        Descriptor::parse_subset::<true, false, false>(&input[..end], limits).map(|(d, _)| Self(d))
     }
     pub fn cid(&self) -> u32 {
         self.0.cid()
@@ -591,7 +598,8 @@ impl<'a> SparseLayerDescriptor<'a> {
             return Err(error(0, ErrorKind::Limit("descriptor bytes")));
         }
         let end = input.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
-        let (descriptor, parent) = Descriptor::parse_subset::<true, true>(&input[..end], limits)?;
+        let (descriptor, parent) =
+            Descriptor::parse_subset::<true, true, false>(&input[..end], limits)?;
         Ok(Self {
             sparse: SparseDescriptor(descriptor),
             parent,
@@ -611,5 +619,39 @@ impl<'a> SparseLayerDescriptor<'a> {
     }
     pub fn extents(&self) -> &[Extent<'a>] {
         self.sparse.extents()
+    }
+}
+
+/// Explicit metadata-only compressed base descriptor. Cannot be passed to SparseDisk.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StreamDescriptor<'a> {
+    cid: u32,
+    size_bytes: u64,
+    extent: Extent<'a>,
+}
+impl<'a> StreamDescriptor<'a> {
+    pub fn parse(input: &'a [u8]) -> Result<Self> {
+        Self::parse_with_limits(input, Limits::default())
+    }
+    pub fn parse_with_limits(input: &'a [u8], limits: Limits) -> Result<Self> {
+        if input.len() > limits.descriptor_bytes {
+            return Err(error(0, ErrorKind::Limit("descriptor bytes")));
+        }
+        let end = input.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
+        Descriptor::parse_subset::<true, false, true>(&input[..end], limits).map(|(d, _)| Self {
+            cid: d.cid,
+            size_bytes: d.size_bytes,
+            extent: d.extents.into_iter().next().expect("one extent validated"),
+        })
+    }
+    pub fn cid(&self) -> u32 {
+        self.cid
+    }
+    pub fn size_bytes(&self) -> u64 {
+        self.size_bytes
+    }
+    /// Untrusted embedded reference; parsing never follows it.
+    pub fn extent(&self) -> &Extent<'a> {
+        &self.extent
     }
 }

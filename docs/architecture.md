@@ -1441,3 +1441,22 @@ the Rust executable; independent decode/hash work is outside timed transfer runs
 [ADR-0051](adr/0051-qualified-powered-off-export.md) selects HTTP NFC for the bounded
 export workflow and records native decompression, explicit public VM selection,
 durable resource ownership and crash reconciliation as separate follow-on work.
+
+
+## StreamOptimized metadata envelope (R5.10)
+
+Separate `StreamDescriptor`, `StreamHeader`, `StreamMarker` and `StreamEnvelope`
+types admit the bounded version-3 compressed base subset. They are not a logical
+map or `BlockDevice`; the public CLI still rejects compressed inputs. The existing
+format enum and parser acceptance remain unchanged. QEMU front directories and
+VMware footer envelopes have explicit structural rules and resource budgets.
+
+Envelope acquisition checks header geometry, descriptor capacity, footer agreement
+and terminal markers before returning numeric metadata. It never opens embedded
+filenames or reads directory entries/tables/payloads. Global ordering, aliases,
+redundancy and grain ownership remain R5.11 gates before decoding. Caller-enforced
+quiescence is required; length/header rechecks are not snapshots.
+
+[Contract](vmdk-stream-admission.md), [ADR-0052](adr/0052-bounded-stream-envelope.md),
+[qualification and unresolved descriptor regression](benchmark-results/2026-10-02-r510/README.md).
+R5.10p investigates the repeated small-descriptor cost before R5.11.

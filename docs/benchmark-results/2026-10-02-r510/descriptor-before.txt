@@ -1,0 +1,36 @@
+   Compiling rvvdk-vmdk v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-vmdk)
+    Finished `bench` profile [optimized] target(s) in 0.93s
+     Running benches/descriptor.rs (target/release/deps/descriptor-5da4a7465d2c7315)
+Gnuplot not found, using plotters backend
+Benchmarking descriptor/small
+Benchmarking descriptor/small: Warming up for 100.00 ms
+Benchmarking descriptor/small: Collecting 20 samples in estimated 300.02 ms (304k iterations)
+Benchmarking descriptor/small: Analyzing
+descriptor/small        time:   [1.0103 µs 1.0143 µs 1.0182 µs]
+Found 2 outliers among 20 measurements (10.00%)
+  1 (5.00%) low mild
+  1 (5.00%) high mild
+Benchmarking descriptor/1024_extents
+Benchmarking descriptor/1024_extents: Warming up for 100.00 ms
+Benchmarking descriptor/1024_extents: Collecting 20 samples in estimated 300.59 ms (2620 iterations)
+Benchmarking descriptor/1024_extents: Analyzing
+descriptor/1024_extents time:   [110.50 µs 111.00 µs 111.64 µs]
+Found 3 outliers among 20 measurements (15.00%)
+  1 (5.00%) low mild
+  2 (10.00%) high severe
+Benchmarking descriptor/late_extent_limit
+Benchmarking descriptor/late_extent_limit: Warming up for 100.00 ms
+Benchmarking descriptor/late_extent_limit: Collecting 20 samples in estimated 301.29 ms (2680 iterations)
+Benchmarking descriptor/late_extent_limit: Analyzing
+descriptor/late_extent_limit
+                        time:   [109.09 µs 109.34 µs 109.57 µs]
+Found 2 outliers among 20 measurements (10.00%)
+  1 (5.00%) low mild
+  1 (5.00%) high mild
+Benchmarking descriptor/oversize
+Benchmarking descriptor/oversize: Warming up for 100.00 ms
+Benchmarking descriptor/oversize: Collecting 20 samples in estimated 300.00 ms (28M iterations)
+Benchmarking descriptor/oversize: Analyzing
+descriptor/oversize     time:   [8.5998 ns 8.7438 ns 8.9085 ns]
+Found 2 outliers among 20 measurements (10.00%)
+  2 (10.00%) high mild
