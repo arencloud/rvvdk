@@ -354,8 +354,10 @@ following bounded packages in order:
    marker APIs admit QEMU front and VMware footer envelopes, including the retained
    export. Maps/payloads remain unvalidated and public rejection persists.
    [Contract](vmdk-stream-admission.md), [evidence](benchmark-results/2026-10-02-r510/README.md).
-   **Next R5.10p:** investigate repeated +8–10% small-descriptor regressions before
-   R5.11, preserving all bounds, semantics and adverse samples.
+   **R5.10p complete for scoped descriptor recovery:** the inline comparison hint
+   recovers the measured small-input cost. [All controls and unresolved stream
+   timing](benchmark-results/2026-10-02-r510p/README.md) remain visible. Continue
+   R5.11 while retaining the controlled-runner performance follow-up.
 2. **R5.11 — Bounded native grain decoding:** first validate map pointers, aliases,
    redundancy, record ordering and LBA binding; then implement decompression and
    logical range reads with strict input/output and aggregate metadata bounds. Compare known bytes
@@ -375,8 +377,8 @@ following bounded packages in order:
 
 Commit each completed bounded package with tests, evidence, performance disposition
 and an updated next-session record. This sequence extends the R5/R6 roadmap; it
-claims only R5.10 metadata admission as implemented; decoding and production
-integration remain open.
+claims R5.10 metadata admission and R5.10p scoped descriptor recovery as implemented;
+decoding, overall stream performance clearance and production integration remain open.
 
 ### Later — vSphere 9 compatibility (deferred)
 

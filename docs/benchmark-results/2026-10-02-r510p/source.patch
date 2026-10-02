@@ -1,0 +1,8 @@
+diff --git a/crates/rvvdk-vmdk/src/descriptor.rs b/crates/rvvdk-vmdk/src/descriptor.rs
+index 5cf154a..e423487 100644
+--- a/crates/rvvdk-vmdk/src/descriptor.rs
++++ b/crates/rvvdk-vmdk/src/descriptor.rs
+@@ -213,0 +214,3 @@ fn set<T>(slot: &mut Option<T>, value: T, line: usize) -> Result<()> {
++// Most callers compare against fixed grammar keys. Expose their lengths/bytes
++// to the optimizer instead of forcing a general string comparison call.
++#[inline]

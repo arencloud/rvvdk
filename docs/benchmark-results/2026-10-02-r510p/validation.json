@@ -1,0 +1,25 @@
+{
+  "workspace_passed": 594,
+  "workspace_ignored": 1,
+  "workspace_failed": 0,
+  "new_tests": 0,
+  "reason": "Inline hint preserves parser semantics; existing lexical/bounds/stream/parent cases exercise unchanged contracts.",
+  "clippy": "all targets; -D warnings; passed",
+  "fmt": "passed",
+  "qemu_cases": 7,
+  "live_access_this_step": false,
+  "initial_workspace_failure": "Unchanged rvvdk-vsphere export_tests::transfer_limit_redirect_and_truncation_abort_without_publication: expected Aborted, observed Unconfirmed. Exact focused rerun and full workspace rerun passed; cause unproven.",
+  "focused_rerun_command": [
+    "cargo",
+    "test",
+    "-p",
+    "rvvdk-vsphere",
+    "--test",
+    "discovery",
+    "export_tests::transfer_limit_redirect_and_truncation_abort_without_publication",
+    "--",
+    "--exact"
+  ],
+  "failure_evidence": "workspace-tests-initial-failure.txt",
+  "focused_rerun_evidence": "export-cleanup-focused.txt"
+}

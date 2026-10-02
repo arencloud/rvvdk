@@ -2206,19 +2206,52 @@ not a cleared gate or an accepted correctness tradeoff. The shared host limits
 attribution. New in-memory front/footer envelope medians are 3.953/4.150 µs;
 header checks about 129–130 ns. No storage/decompression throughput or RSS claim.
 
+## R5.10p — Descriptor comparison specialization and timing controls (2026-10-02)
+
+Completed in this step's commit; baseline `05b5fba`, earlier reference `f756fb1`.
+[All measurements, controls and plots](benchmark-results/2026-10-02-r510p/README.md).
+
+The old/current flat parser has the same normalized instruction sequence, with
+changed placement. An inline hint on fixed-key comparisons lets the optimizer
+specialize constants without changing grammar, errors or resource limits. The
+measured parser grows from 5628 to 8554 bytes; this code-size cost is explicit.
+
+Three primary rounds and three longer rounds compare all four descriptor cases
+against both prior builds. Longer small-descriptor changes against R5.10 are
+−7.83%, −18.87%, −12.38%; against the earlier baseline +0.60%, −11.23%, −0.43%.
+The repeated small-descriptor cost is recovered in this build. Initial oversize
+adverse observations did not persist in longer repeats.
+
+Stream measurements remain mixed: CPU0 longer medians exceed +5% for grain
+markers, 1 TiB headers and footer headers. Header/marker instruction shapes remain
+unchanged, but that does not rule out placement effects. Three further rounds on
+CPU4 include an identical-binary control, which itself varies by more than 5% on
+some cases. Candidate per-case medians there are below +5%, with individual adverse
+pairs retained. Accept the scoped descriptor optimization; **no blanket stream
+performance clearance**. PERF.0 retains controlled timing and layout investigation.
+All 219 runs / 6570 samples and both core conditions remain committed.
+
+Final workspace rerun: 594 passed, one ignored; Clippy across all targets, fmt,
+release builds and seven QEMU/public-CLI cases pass. Initial workspace validation
+failed one unchanged export-cleanup fixture (`Unconfirmed` versus `Aborted`). Its
+exact focused rerun and full rerun passed. The failure is retained; cause remains
+unproven. No cleanup timeout/policy was changed. No live VMware access was needed.
+
 ## Next session
 
-Start **R5.10p — descriptor performance investigation**, retaining the complete
-[R5.10 evidence](benchmark-results/2026-10-02-r510/README.md). Investigate the
-repeatable small-descriptor cost with identical harness/bounds and controlled
-paired measurements; isolate code-generation effects from host variance. Do not
-weaken grammar or discard adverse observations. Record a measured disposition.
+Start **R5.11 — bounded stream grain maps and native reads**. First validate every
+followed directory/table pointer, structural ownership, aliases, redundancy,
+record ordering and grain-LBA binding with aggregate work/memory bounds. Then
+specify compressed framing, exact input/output limits, truncation/trailing input
+and sparse-zero behavior before exposing native decompression/range reads.
+Compare authored RAW/QEMU and the private guest oracle; measure sequential/random
+throughput, CPU and RSS. Keep public CLI rejection until R5.12 qualification.
 
-Then **R5.11** must validate bounded maps, metadata ownership/aliasing, redundancy,
-record order and grain-LBA binding before native decompression/range reads. Specify
-compressed framing, exact input/output bounds and sparse-zero behavior; compare
-synthetic RAW/QEMU and the private guest oracle; measure throughput, CPU and RSS.
-R5.12 gates CLI conversion. R6.1 gates explicit source selection, artifact contracts
-and durable resource ownership. No production QEMU/VDDK fallback. Keep prior
-PERF.0/R4.4, discovery variance/controlled-TLS and producer-discrepancy work open.
+PERF.0 retains the unresolved stream timing observations: use a controlled core
+and SMT sibling, record frequency/load and layout/ASLR conditions, and preserve
+identical-binary controls. Do not discard either core's R5.10p observations or
+claim global clearance from descriptor recovery. Retain the unconfirmed-cleanup
+fixture failure for diagnosis if it recurs; do not weaken production cleanup.
+Earlier PERF.0/R4.4 and discovery/TLS follow-ups remain open. R6.1 still gates
+explicit source identity, artifact contracts and durable resource ownership.
 Commit each completed bounded package with tests, benchmarks and updated plans.

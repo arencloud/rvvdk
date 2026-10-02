@@ -74,8 +74,9 @@ does not prove that a scan can reach it. Marker padding is ignored as specified.
 Tests intentionally admit an envelope containing a bad directory pointer to make
 this boundary explicit. No result from these APIs authorizes logical reads yet.
 
-Before R5.11, investigate the repeated old small-descriptor regression recorded
-in the evidence. Then implement a bounded map/record validator before exposing
+R5.10p [recovers the measured old descriptor cost](benchmark-results/2026-10-02-r510p/README.md),
+while retaining unresolved stream timing observations. R5.11 must implement a
+bounded map/record validator before exposing
 decompression: validate every followed pointer, structural ownership, aliasing,
 redundancy, record order and LBA binding; bound total metadata memory/work and
 compressed input/output; specify framing, truncation, trailing input and sparse

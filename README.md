@@ -243,7 +243,9 @@ VMDK decoding remains a separate step.
 The [R5.10 metadata admission plots](docs/benchmark-results/2026-10-02-r510/README.md)
 show bounded Rust streamOptimized envelope costs and all descriptor regression
 pairs. The retained ESXi envelope passes; native compressed reads remain pending.
-The repeated small-descriptor regression is the next performance investigation.
+[R5.10p comparison tuning](docs/benchmark-results/2026-10-02-r510p/README.md)
+recovers the measured small-descriptor cost; its plots retain adverse stream
+timings and identical-binary controls. Native grain-map validation is next.
 Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
 for sanitizer execution rates, memory and feedback across repeated campaigns.
 The [R5.8 CLI parent-chain timings](docs/benchmark-results/2026-09-30-r58/README.md)

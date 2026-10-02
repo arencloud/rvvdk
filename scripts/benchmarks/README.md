@@ -106,3 +106,14 @@ including longer adverse repeats, plus new in-memory metadata costs. Outputs
 SVG/PNG, recomputed JSON and input/output hashes. No benchmarks, storage access,
 guest data or VMware API calls occur during plotting. The small-descriptor
 performance disposition remains open; these figures do not qualify decoding.
+
+## Descriptor comparison specialization and identical-binary controls
+
+```sh
+target/benchmark-plots/bin/python scripts/benchmarks/plot_descriptor_specialization.py docs/benchmark-results/2026-10-02-r510p
+```
+
+Recomputes all 6570 saved samples, primary paired changes and separate-core
+identical-binary controls. Produces descriptor, stream and control SVG/PNG figures,
+computed JSON and input/output hashes. It neither runs benchmarks nor accesses
+VMware. The scoped descriptor recovery does not clear all stream timing results.

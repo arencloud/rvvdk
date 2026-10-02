@@ -1459,4 +1459,8 @@ quiescence is required; length/header rechecks are not snapshots.
 
 [Contract](vmdk-stream-admission.md), [ADR-0052](adr/0052-bounded-stream-envelope.md),
 [qualification and unresolved descriptor regression](benchmark-results/2026-10-02-r510/README.md).
-R5.10p investigates the repeated small-descriptor cost before R5.11.
+R5.10p adds an inline hint for fixed-key comparisons and recovers the measured
+flat-descriptor cost, with unchanged grammar/bounds. [Both-core evidence](benchmark-results/2026-10-02-r510p/README.md)
+retains unresolved stream timing observations and identical-binary controls.
+R5.11 remains the map-validation/decompression gate; global performance clearance
+requires more controlled measurement.

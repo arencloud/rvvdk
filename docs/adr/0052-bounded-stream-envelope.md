@@ -39,3 +39,14 @@ Both measured designs, all adverse pairs and longer repeats are preserved in the
 longer pairs remain +8.45%, +10.05% and +8.83%; this is unresolved, not a justified
 correctness cost or a cleared gate. Investigate it in R5.10p before R5.11. The
 shared host limits causal attribution; the revision alone does not prove a speedup.
+
+
+## R5.10p follow-up
+
+The [scoped comparison specialization](../benchmark-results/2026-10-02-r510p/README.md)
+recovers the measured flat-descriptor cost without changing grammar or limits.
+The parser gains 2926 bytes of generated code. Primary stream timing remains
+mixed; separate-core identical-binary controls expose substantial measurement
+variability but do not clear the primary observations. Accept the scoped
+optimization with that code-size cost; retain PERF.0 controlled measurement and
+layout investigation. No change to the metadata-only architectural boundary.

@@ -1,0 +1,53 @@
+{
+  "original": {
+    "start": "0xc1450",
+    "bytes": 5628,
+    "instruction_lines": 1177,
+    "general_eq_symbol_present": true,
+    "command": [
+      "objdump",
+      "-d",
+      "-C",
+      "--no-show-raw-insn",
+      "--start-address=791632",
+      "--stop-address=797260",
+      "target/r510-reference/descriptor-baseline"
+    ],
+    "elf_size": "   text\t   data\t    bss\t    dec\t    hex\tfilename\n2785732\t  65064\t   2464\t2853260\t 2b898c\ttarget/r510-reference/descriptor-baseline\n"
+  },
+  "before": {
+    "start": "0xc1480",
+    "bytes": 5628,
+    "instruction_lines": 1177,
+    "general_eq_symbol_present": true,
+    "command": [
+      "objdump",
+      "-d",
+      "-C",
+      "--no-show-raw-insn",
+      "--start-address=791680",
+      "--stop-address=797308",
+      "target/r510p/reference/descriptor-before"
+    ],
+    "elf_size": "   text\t   data\t    bss\t    dec\t    hex\tfilename\n2785780\t  65064\t   2416\t2853260\t 2b898c\ttarget/r510p/reference/descriptor-before\n"
+  },
+  "candidate": {
+    "start": "0xc14d0",
+    "bytes": 8554,
+    "instruction_lines": 2071,
+    "general_eq_symbol_present": false,
+    "command": [
+      "objdump",
+      "-d",
+      "-C",
+      "--no-show-raw-insn",
+      "--start-address=791760",
+      "--stop-address=800314",
+      "target/r510p/reference/descriptor-candidate"
+    ],
+    "elf_size": "   text\t   data\t    bss\t    dec\t    hex\tfilename\n2789024\t  65064\t   3280\t2857368\t 2b9998\ttarget/r510p/reference/descriptor-candidate\n"
+  },
+  "original_before_instruction_shape_equal": true,
+  "normalization": "function instruction/branch addresses become offsets; named external targets retain symbol names; RIP-relative global displacements and comments removed",
+  "limitation": "Not proof of identical data, whole-program execution or performance. Layout and relocation effects remain hypotheses."
+}

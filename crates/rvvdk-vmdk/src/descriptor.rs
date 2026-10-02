@@ -211,6 +211,9 @@ fn set<T>(slot: &mut Option<T>, value: T, line: usize) -> Result<()> {
     *slot = Some(value);
     Ok(())
 }
+// Most callers compare against fixed grammar keys. Expose their lengths/bytes
+// to the optimizer instead of forcing a general string comparison call.
+#[inline]
 fn eq(a: &str, b: &str) -> bool {
     a.eq_ignore_ascii_case(b)
 }

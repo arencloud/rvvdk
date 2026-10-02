@@ -1,0 +1,17 @@
+{
+  "cpu_affinity": [
+    4
+  ],
+  "smt_siblings": "4,12",
+  "governor": "powersave",
+  "binary_sha256": {
+    "before": "0567c25eb4af7609833efe4dfb621a08553caeba010a046308f780a75fddad31",
+    "control": "0567c25eb4af7609833efe4dfb621a08553caeba010a046308f780a75fddad31",
+    "candidate": "91be2123d109583eb3efd707460029d0c14f476a868293efb626f1c7d1cd0e80"
+  },
+  "reason": "Preserved adverse CPU0 observations; test a different core and a bit-identical before/control executable to quantify within-build variance. This does not replace CPU0 evidence.",
+  "conditions": "Shared host, no CPU isolation, unchanged governor/ASLR; compilation and test work outside timings.",
+  "warmup_seconds": 0.5,
+  "measurement_seconds": 4,
+  "sample_size": 30
+}

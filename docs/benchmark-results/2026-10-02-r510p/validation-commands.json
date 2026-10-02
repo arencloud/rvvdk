@@ -1,0 +1,97 @@
+[
+  {
+    "name": "workspace-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--workspace"
+    ],
+    "exit_code": 0,
+    "start_unix": 1790939569.4489353,
+    "end_unix": 1790939577.9003975
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "start_unix": 1790939577.9008808,
+    "end_unix": 1790939578.937599
+  },
+  {
+    "name": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit_code": 0,
+    "start_unix": 1790939578.93797,
+    "end_unix": 1790939579.3706741
+  },
+  {
+    "name": "release-helper",
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "-p",
+      "rvvdk-vmdk",
+      "--example",
+      "inspect_stream_envelope"
+    ],
+    "exit_code": 0,
+    "start_unix": 1790939579.371038,
+    "end_unix": 1790939579.6133134
+  },
+  {
+    "name": "release-cli",
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "-p",
+      "rvvdk-cli"
+    ],
+    "exit_code": 0,
+    "start_unix": 1790939579.6136777,
+    "end_unix": 1790939581.0739963
+  },
+  {
+    "name": "qemu-reference",
+    "command": [
+      "python3",
+      "scripts/vmdk/compare_stream_envelope.py",
+      "--inspect",
+      "target/release/examples/inspect_stream_envelope",
+      "--cli",
+      "target/release/rvddk",
+      "--directory",
+      "target/r510p/reference/qemu-fixtures",
+      "--report",
+      "target/r510p/observations/qemu-reference.json"
+    ],
+    "exit_code": 0,
+    "start_unix": 1790939581.074458,
+    "end_unix": 1790939581.5541387
+  },
+  {
+    "name": "codegen",
+    "command": [
+      "python3",
+      "target/r510p/reference/inspect_codegen.py"
+    ],
+    "exit_code": 0,
+    "start_unix": 1790939581.5545087,
+    "end_unix": 1790939581.6851668
+  }
+]

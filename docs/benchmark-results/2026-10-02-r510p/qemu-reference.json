@@ -1,0 +1,135 @@
+{
+  "schema": 1,
+  "scope": "metadata_admission_not_rust_decoding",
+  "qemu_version": "qemu-img version 10.2.2 (qemu-10.2.2-1.fc44)",
+  "cases": [
+    {
+      "case": "zero",
+      "profile": "front",
+      "envelope": {
+        "scope": "metadata_envelope_only",
+        "profile": "front",
+        "capacity_bytes": 4194304,
+        "extent_bytes": 65536,
+        "grain_bytes": 65536,
+        "descriptor_bytes": 10240,
+        "directory_bytes": 512,
+        "metadata_bytes_read": 11264,
+        "payload_validated": false,
+        "grain_map_validated": false
+      },
+      "qemu_bytes_match": true,
+      "native_rejected": true,
+      "image_sha256": "7593ca8123d7c50b9a6b349d892d137a0131b4df28ba1aae4b67148afb0dc8da",
+      "fixture_source": "QEMU output"
+    },
+    {
+      "case": "zero",
+      "profile": "footer",
+      "envelope": {
+        "scope": "metadata_envelope_only",
+        "profile": "footer",
+        "capacity_bytes": 4194304,
+        "extent_bytes": 70656,
+        "grain_bytes": 65536,
+        "descriptor_bytes": 10240,
+        "directory_bytes": 512,
+        "metadata_bytes_read": 13312,
+        "payload_validated": false,
+        "grain_map_validated": false
+      },
+      "qemu_bytes_match": true,
+      "native_rejected": true,
+      "image_sha256": "05605d3d8a93fd33df250686b78decfb0b9bb32ce053a10592e0e36dd47a900f",
+      "fixture_source": "authored footer layout, QEMU compressed records"
+    },
+    {
+      "case": "data",
+      "profile": "front",
+      "envelope": {
+        "scope": "metadata_envelope_only",
+        "profile": "front",
+        "capacity_bytes": 4194304,
+        "extent_bytes": 197632,
+        "grain_bytes": 65536,
+        "descriptor_bytes": 10240,
+        "directory_bytes": 512,
+        "metadata_bytes_read": 11264,
+        "payload_validated": false,
+        "grain_map_validated": false
+      },
+      "qemu_bytes_match": true,
+      "native_rejected": true,
+      "image_sha256": "ddbafcd712dc3780437176cf78b71f706bc614cf484c2956bdcedd134b1f4c79",
+      "fixture_source": "QEMU output"
+    },
+    {
+      "case": "data",
+      "profile": "footer",
+      "envelope": {
+        "scope": "metadata_envelope_only",
+        "profile": "footer",
+        "capacity_bytes": 4194304,
+        "extent_bytes": 202752,
+        "grain_bytes": 65536,
+        "descriptor_bytes": 10240,
+        "directory_bytes": 512,
+        "metadata_bytes_read": 13312,
+        "payload_validated": false,
+        "grain_map_validated": false
+      },
+      "qemu_bytes_match": true,
+      "native_rejected": true,
+      "image_sha256": "6dc8618c98992af95215bf0d1e92fa79350f715eac4f9fc5999f3d3e4cf9abb7",
+      "fixture_source": "authored footer layout, QEMU compressed records"
+    },
+    {
+      "case": "two_tables",
+      "profile": "front",
+      "envelope": {
+        "scope": "metadata_envelope_only",
+        "profile": "front",
+        "capacity_bytes": 67108864,
+        "extent_bytes": 197632,
+        "grain_bytes": 65536,
+        "descriptor_bytes": 10240,
+        "directory_bytes": 512,
+        "metadata_bytes_read": 11264,
+        "payload_validated": false,
+        "grain_map_validated": false
+      },
+      "qemu_bytes_match": true,
+      "native_rejected": true,
+      "image_sha256": "b12c6b20440fb08b9df5e6cb106d696b6a075056299234134866b61ac97357a9",
+      "fixture_source": "QEMU output"
+    },
+    {
+      "case": "two_tables",
+      "profile": "footer",
+      "envelope": {
+        "scope": "metadata_envelope_only",
+        "profile": "footer",
+        "capacity_bytes": 67108864,
+        "extent_bytes": 205312,
+        "grain_bytes": 65536,
+        "descriptor_bytes": 10240,
+        "directory_bytes": 512,
+        "metadata_bytes_read": 13312,
+        "payload_validated": false,
+        "grain_map_validated": false
+      },
+      "qemu_bytes_match": true,
+      "native_rejected": true,
+      "image_sha256": "2ae484a3cdca645dede2c2629b15698540b6df544c2c43a7664b44fec91209fd",
+      "fixture_source": "authored footer layout, QEMU compressed records"
+    },
+    {
+      "case": "unaligned",
+      "profile": "front",
+      "admitted": false,
+      "native_rejected": true
+    }
+  ],
+  "generator_sha256": "6ad04cc725556cfd61c2626c3fbed9bc1658e6204426f58910bd6570885dd209",
+  "helper_sha256": "ca39a2801b1d6d19963ea812ad9b7bbe4e3f92d65df987c0935ad3a7897988aa"
+}

@@ -1,0 +1,624 @@
+{
+  "original_commit": "f756fb1",
+  "before_commit": "05b5fba",
+  "cpu_affinity": [
+    0
+  ],
+  "binary_sha256": {
+    "original": "589c5748720cff4b0712f7c5bc43a5d3b3a47d78f79a66ab75d3e06b774d60ff",
+    "before": "d101e42361b58b7294a66d637c14eb6c6b7958a7085d4eb00c3333882d5840ac",
+    "candidate": "37af31b14683667e90bc2b92bdb071a6279013955437443b0a9d08db1d9205d2",
+    "stream_before": "0567c25eb4af7609833efe4dfb621a08553caeba010a046308f780a75fddad31",
+    "stream_candidate": "91be2123d109583eb3efd707460029d0c14f476a868293efb626f1c7d1cd0e80"
+  },
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)\nbinary: rustc\ncommit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860\ncommit-date: 2026-04-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.95.0\nLLVM version: 22.1.2",
+  "kernel": "7.2.5-200.fc44.x86_64",
+  "governor": "powersave",
+  "smt_siblings": "0,8",
+  "conditions": "Shared host; same CPU as R5.10; no CPU isolation, cache flushing or governor changes. Compilation and QEMU outside timed matrix.",
+  "sample_size": 30,
+  "warmup_seconds": 0.5,
+  "measurement_seconds": 2,
+  "order": [
+    {
+      "key": "r510p-initial-descriptor-original-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510-reference/descriptor-baseline",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-initial-descriptor-original-1"
+      ],
+      "start_unix": 1790938410.5153139,
+      "end_unix": 1790938432.3705513
+    },
+    {
+      "key": "r510p-initial-descriptor-before-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/descriptor-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-initial-descriptor-before-1"
+      ],
+      "start_unix": 1790938432.3708658,
+      "end_unix": 1790938454.2877312
+    },
+    {
+      "key": "r510p-initial-descriptor-candidate-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/descriptor-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-initial-descriptor-candidate-1"
+      ],
+      "start_unix": 1790938454.2882652,
+      "end_unix": 1790938476.291184
+    },
+    {
+      "key": "r510p-initial-descriptor-candidate-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/descriptor-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-initial-descriptor-candidate-2"
+      ],
+      "start_unix": 1790938476.2917054,
+      "end_unix": 1790938498.9121902
+    },
+    {
+      "key": "r510p-initial-descriptor-before-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/descriptor-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-initial-descriptor-before-2"
+      ],
+      "start_unix": 1790938498.9127016,
+      "end_unix": 1790938520.8104897
+    },
+    {
+      "key": "r510p-initial-descriptor-original-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510-reference/descriptor-baseline",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-initial-descriptor-original-2"
+      ],
+      "start_unix": 1790938520.8113143,
+      "end_unix": 1790938543.160622
+    },
+    {
+      "key": "r510p-initial-descriptor-before-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/descriptor-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-initial-descriptor-before-3"
+      ],
+      "start_unix": 1790938543.1613078,
+      "end_unix": 1790938565.5583959
+    },
+    {
+      "key": "r510p-initial-descriptor-original-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510-reference/descriptor-baseline",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-initial-descriptor-original-3"
+      ],
+      "start_unix": 1790938565.5592978,
+      "end_unix": 1790938586.8946102
+    },
+    {
+      "key": "r510p-initial-descriptor-candidate-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/descriptor-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-initial-descriptor-candidate-3"
+      ],
+      "start_unix": 1790938586.8956144,
+      "end_unix": 1790938609.1596336
+    },
+    {
+      "key": "r510p-initial-stream_admission-before-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/stream-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-initial-stream_admission-before-1"
+      ],
+      "start_unix": 1790938609.160585,
+      "end_unix": 1790938647.47154
+    },
+    {
+      "key": "r510p-initial-stream_admission-candidate-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/stream-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-initial-stream_admission-candidate-1"
+      ],
+      "start_unix": 1790938647.4725149,
+      "end_unix": 1790938684.8198671
+    },
+    {
+      "key": "r510p-initial-stream_admission-candidate-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/stream-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-initial-stream_admission-candidate-2"
+      ],
+      "start_unix": 1790938684.8209205,
+      "end_unix": 1790938724.900598
+    },
+    {
+      "key": "r510p-initial-stream_admission-before-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/stream-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-initial-stream_admission-before-2"
+      ],
+      "start_unix": 1790938724.9021163,
+      "end_unix": 1790938763.1406462
+    },
+    {
+      "key": "r510p-initial-stream_admission-before-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/stream-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-initial-stream_admission-before-3"
+      ],
+      "start_unix": 1790938763.141955,
+      "end_unix": 1790938800.713286
+    },
+    {
+      "key": "r510p-initial-stream_admission-candidate-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/stream-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-initial-stream_admission-candidate-3"
+      ],
+      "start_unix": 1790938800.7145443,
+      "end_unix": 1790938838.184485
+    },
+    {
+      "key": "r510p-longer-descriptor-candidate-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/descriptor-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-longer-descriptor-candidate-1"
+      ],
+      "start_unix": 1790938838.1861193,
+      "end_unix": 1790938868.6597106
+    },
+    {
+      "key": "r510p-longer-descriptor-before-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/descriptor-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-longer-descriptor-before-1"
+      ],
+      "start_unix": 1790938868.6613567,
+      "end_unix": 1790938898.5609558
+    },
+    {
+      "key": "r510p-longer-descriptor-original-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510-reference/descriptor-baseline",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-longer-descriptor-original-1"
+      ],
+      "start_unix": 1790938898.5624602,
+      "end_unix": 1790938929.0306134
+    },
+    {
+      "key": "r510p-longer-descriptor-original-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510-reference/descriptor-baseline",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-longer-descriptor-original-2"
+      ],
+      "start_unix": 1790938929.0323763,
+      "end_unix": 1790938960.337653
+    },
+    {
+      "key": "r510p-longer-descriptor-before-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/descriptor-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-longer-descriptor-before-2"
+      ],
+      "start_unix": 1790938960.3395221,
+      "end_unix": 1790938990.2001727
+    },
+    {
+      "key": "r510p-longer-descriptor-candidate-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/descriptor-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-longer-descriptor-candidate-2"
+      ],
+      "start_unix": 1790938990.2019277,
+      "end_unix": 1790939020.6331952
+    },
+    {
+      "key": "r510p-longer-descriptor-candidate-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/descriptor-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-longer-descriptor-candidate-3"
+      ],
+      "start_unix": 1790939020.6349895,
+      "end_unix": 1790939051.916227
+    },
+    {
+      "key": "r510p-longer-descriptor-original-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510-reference/descriptor-baseline",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-longer-descriptor-original-3"
+      ],
+      "start_unix": 1790939051.9183044,
+      "end_unix": 1790939082.1236897
+    },
+    {
+      "key": "r510p-longer-descriptor-before-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/descriptor-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-longer-descriptor-before-3"
+      ],
+      "start_unix": 1790939082.1257048,
+      "end_unix": 1790939111.9341996
+    },
+    {
+      "key": "r510p-longer-stream_admission-candidate-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/stream-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-longer-stream_admission-candidate-1"
+      ],
+      "start_unix": 1790939111.9361374,
+      "end_unix": 1790939163.3432443
+    },
+    {
+      "key": "r510p-longer-stream_admission-before-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/stream-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-longer-stream_admission-before-1"
+      ],
+      "start_unix": 1790939163.3452559,
+      "end_unix": 1790939216.3968842
+    },
+    {
+      "key": "r510p-longer-stream_admission-before-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/stream-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-longer-stream_admission-before-2"
+      ],
+      "start_unix": 1790939216.3991268,
+      "end_unix": 1790939267.1099198
+    },
+    {
+      "key": "r510p-longer-stream_admission-candidate-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/stream-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-longer-stream_admission-candidate-2"
+      ],
+      "start_unix": 1790939267.113879,
+      "end_unix": 1790939319.6511357
+    },
+    {
+      "key": "r510p-longer-stream_admission-candidate-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/stream-candidate",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-longer-stream_admission-candidate-3"
+      ],
+      "start_unix": 1790939319.6539783,
+      "end_unix": 1790939373.519088
+    },
+    {
+      "key": "r510p-longer-stream_admission-before-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r510p/reference/stream-before",
+        "--bench",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--sample-size",
+        "30",
+        "--save-baseline",
+        "r510p-longer-stream_admission-before-3"
+      ],
+      "start_unix": 1790939373.521505,
+      "end_unix": 1790939425.9886127
+    }
+  ]
+}
