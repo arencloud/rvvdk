@@ -27,7 +27,10 @@ impl Default for RetainedOptions {
     }
 }
 mod output;
-pub use output::{OutputId, OutputRecovery, OutputReport, OutputState};
+pub use output::{
+    OutputId, OutputLocation, OutputRecovery, OutputReport, OutputState, PublicationDirectory,
+    PublicationRecovery, PublicationReport, VerifiedOutput,
+};
 
 struct Control<'a> {
     options: &'a RetainedOptions,

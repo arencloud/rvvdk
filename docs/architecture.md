@@ -1668,8 +1668,8 @@ to flush; a later wrapper check may fail. The source journal is never changed.
 [contract](retained-artifact-conversion.md), [tests and timing](benchmark-results/2026-10-02-r61c4/README.md).
 Drop closes the source before unlocking; no Job or source handle escapes. Process
 loss leaves CompletedLease and potentially partial caller-owned output, with no
-new resume authority. R6.1c.5a below adds separate output ownership; R6.1c.5b must
-define actual no-replace publication before composed live qualification. The existing private-store,
+new resume authority. R6.1c.5a below adds separate output ownership; R6.1c.5b below
+adds actual no-replace publication before composed live qualification. The existing private-store,
 trusted-ancestor and cooperating-writer assumptions remain.
 
 ### R6.1c.5a — Private owned RAW output and logical verification
@@ -1690,6 +1690,36 @@ remain on every outcome. The cooperating private-store model is unchanged.
 
 [ADR-0064](adr/0064-private-owned-raw-output.md), [contract](owned-raw-output.md),
 [tests and timing](benchmark-results/2026-10-02-r61c5a/README.md).
-R6.1c.5b will add fresh output admission, no-replace publication and checked cleanup;
+R6.1c.5b below adds fresh output admission, no-replace publication and checked cleanup;
 R6.1c.5c will qualify the composed live workflow. Full readback is O(logical capacity)
 and seven output journal commits add cost; PERF.0 retains these follow-ups.
+
+### R6.1c.5b — Fresh output admission, atomic publication and explicit cleanup
+
+VerifiedOutput retains the source store lock and requires the source to remain
+CompletedLease/admissible. Fresh full logical comparison, RAW digest, bounded metadata,
+canonical source binding and journal/stage identities precede capability creation;
+publication revalidates them again. PublicationDirectory pins/locks an explicit
+private destination outside the job store on the same filesystem. The generated
+OutputId bundle name contains RAW, metadata and marker; unknown members fail closed.
+
+Sync bundle members/directory, persist PublishIntent, rename the whole directory
+with RENAME_NOREPLACE, sync both parent directories and acknowledge Published. The
+source artifact journal never changes. Conversion records remain version 1; new
+publication/cleanup states use version 2 with destination parent or cleanup origin.
+Canonical v1 hashes remain compatible and unknown versions fail closed.
+
+Read-only assessment separates observed namespace ownership from data/durability.
+Explicit cleanup checks stamped private partial outputs or acknowledged Published
+bundles and can finish checked partial CleanupIntent removal. It syncs the parent
+even if a recovered directory is absent. Unknown entries/foreign replacements,
+PublishIntent, pending transactions and unstamped stages are never adopted or
+removed automatically. No remote ownership or replay follows from a record.
+
+[ADR-0065](adr/0065-durable-raw-bundle-publication.md),
+[contract](durable-output-publication.md), [tests and timing](benchmark-results/2026-10-02-r61c5b/README.md).
+R6.1c.5c will wire/qualify the composed live Rust workflow. General reconciliation
+and production recovery remain open. Two extra full logical verification passes,
+publication member/parent syncs and two journal commits add measured cost; cleanup
+has two separately timed commits. PERF.0 retains cumulative verification/durability
+cost, and removing checks requires an explicit lifetime/trust argument.

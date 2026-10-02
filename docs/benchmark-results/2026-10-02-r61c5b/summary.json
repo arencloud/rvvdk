@@ -1,0 +1,166 @@
+{
+  "repeated_filesystems": [
+    "btrfs",
+    "tmpfs"
+  ],
+  "runs": 12,
+  "conversions": 288,
+  "results": {
+    "btrfs": {
+      "initial": {
+        "wall_ms": {
+          "owned": 223.464787,
+          "published": 411.5991795,
+          "overhead_percent": 84.18972627665046,
+          "spread_percent": {
+            "owned": 1.0053278148945743,
+            "published": 1.640012064289742
+          }
+        },
+        "cpu_ms": {
+          "owned": 93.1654999999998,
+          "published": 215.8280000000001,
+          "overhead_percent": 131.66086158502938,
+          "spread_percent": {
+            "owned": 3.5363403994463694,
+            "published": 2.974495625948359
+          }
+        },
+        "phase_ms": {
+          "owned": {
+            "admission_ms": 7.8616925,
+            "conversion_and_checks_ms": 215.65038249999998,
+            "publication_admission_ms": 0.0,
+            "publication_ms": 0.0,
+            "cleanup_ms": 40.203207500000005,
+            "cleanup_cpu_ms": 2.9405000000000125
+          },
+          "published": {
+            "admission_ms": 7.935447,
+            "conversion_and_checks_ms": 215.4237225,
+            "publication_admission_ms": 63.811774,
+            "publication_ms": 122.8728585,
+            "cleanup_ms": 41.7904,
+            "cleanup_cpu_ms": 5.097999999999936
+          }
+        }
+      },
+      "longer": {
+        "wall_ms": {
+          "owned": 222.06024250000002,
+          "published": 411.461665,
+          "overhead_percent": 85.292810801105,
+          "spread_percent": {
+            "owned": 0.6170729537321673,
+            "published": 1.8651594039926112
+          }
+        },
+        "cpu_ms": {
+          "owned": 91.0795000000002,
+          "published": 212.21750000000006,
+          "overhead_percent": 133.00248683842094,
+          "spread_percent": {
+            "owned": 1.739938388704454,
+            "published": 0.9943144756724864
+          }
+        },
+        "phase_ms": {
+          "owned": {
+            "admission_ms": 7.693367,
+            "conversion_and_checks_ms": 214.362801,
+            "publication_admission_ms": 0.0,
+            "publication_ms": 0.0,
+            "cleanup_ms": 39.978545999999994,
+            "cleanup_cpu_ms": 2.7544999999997155
+          },
+          "published": {
+            "admission_ms": 7.666266,
+            "conversion_and_checks_ms": 213.71221450000002,
+            "publication_admission_ms": 63.010166999999996,
+            "publication_ms": 122.360435,
+            "cleanup_ms": 41.608225,
+            "cleanup_cpu_ms": 4.4319999999998805
+          }
+        }
+      }
+    },
+    "tmpfs": {
+      "initial": {
+        "wall_ms": {
+          "owned": 80.00651350000001,
+          "published": 193.6228505,
+          "overhead_percent": 142.00885906620587,
+          "spread_percent": {
+            "owned": 0.7881027411526187,
+            "published": 1.321333106027467
+          }
+        },
+        "cpu_ms": {
+          "owned": 79.61449999999998,
+          "published": 192.77050000000008,
+          "overhead_percent": 142.12988839972635,
+          "spread_percent": {
+            "owned": 0.6655017757227544,
+            "published": 1.2712527380827954
+          }
+        },
+        "phase_ms": {
+          "owned": {
+            "admission_ms": 8.726092,
+            "conversion_and_checks_ms": 71.3227435,
+            "publication_admission_ms": 0.0,
+            "publication_ms": 0.0,
+            "cleanup_ms": 0.806422,
+            "cleanup_cpu_ms": 0.7994999999998975
+          },
+          "published": {
+            "admission_ms": 8.782821,
+            "conversion_and_checks_ms": 70.92063250000001,
+            "publication_admission_ms": 60.8483085,
+            "publication_ms": 52.809426,
+            "cleanup_ms": 0.8198350000000001,
+            "cleanup_cpu_ms": 0.811500000000076
+          }
+        }
+      },
+      "longer": {
+        "wall_ms": {
+          "owned": 80.5835725,
+          "published": 196.39290649999998,
+          "overhead_percent": 143.7133281724386,
+          "spread_percent": {
+            "owned": 1.6698380651468892,
+            "published": 1.598806264089525
+          }
+        },
+        "cpu_ms": {
+          "owned": 80.06150000000001,
+          "published": 195.2059999999998,
+          "overhead_percent": 143.82006332631758,
+          "spread_percent": {
+            "owned": 1.5852006122504037,
+            "published": 1.5748541969748286
+          }
+        },
+        "phase_ms": {
+          "owned": {
+            "admission_ms": 8.8374105,
+            "conversion_and_checks_ms": 71.882387,
+            "publication_admission_ms": 0.0,
+            "publication_ms": 0.0,
+            "cleanup_ms": 0.76284,
+            "cleanup_cpu_ms": 0.7529999999997261
+          },
+          "published": {
+            "admission_ms": 8.860702999999999,
+            "conversion_and_checks_ms": 72.403061,
+            "publication_admission_ms": 61.157861499999996,
+            "publication_ms": 53.314799,
+            "cleanup_ms": 0.833928,
+            "cleanup_cpu_ms": 0.819499999999973
+          }
+        }
+      }
+    }
+  }
+}

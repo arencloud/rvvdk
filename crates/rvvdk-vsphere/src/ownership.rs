@@ -21,7 +21,8 @@ use std::{
 
 mod retained;
 pub use retained::{
-    OutputId, OutputRecovery, OutputReport, OutputState, RetainedArtifact, RetainedOptions,
+    OutputId, OutputLocation, OutputRecovery, OutputReport, OutputState, PublicationDirectory,
+    PublicationRecovery, PublicationReport, RetainedArtifact, RetainedOptions, VerifiedOutput,
 };
 
 const MAX_RECORD: u64 = 8192;

@@ -102,8 +102,8 @@ CompletedLease and the caller-owned RAW file remains, potentially partial. That
 file has no new checkpoint, ownership record or automatic resume authority. A new
 explicit consumer must re-admit the source and independently handle its destination.
 
-R6.1c.5b must define publication intent/acknowledgment, file/directory durability
-and descriptor-bound no-replace publication for the separately owned output. Do not label
+R6.1c.5b now supplies [publication and explicit checked cleanup](durable-output-publication.md)
+for separately owned output, with fresh admission and durable intent/acknowledgment. Do not label
 this borrowed destination as journal-owned. Compose and qualify the live workflow
 only after those boundaries exist; uncertain remote requests must never be replayed.
 
@@ -113,4 +113,5 @@ only after those boundaries exist; uncertain remote requests must never be repla
 R6.1c.5a now supplies a separate [owned RAW operation](owned-raw-output.md) that
 consumes this retained capability, journals private output, verifies every logical
 byte and persists metadata. The borrowed `convert_to` contract above is unchanged.
-No-replace publication and explicit output recovery actions continue in R6.1c.5b.
+R6.1c.5b adds no-replace bundle publication and explicit checked cleanup; composed
+live qualification continues in R6.1c.5c.

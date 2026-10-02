@@ -87,13 +87,17 @@ throughout the operation. Advisory locks do not exclude hostile same-user writer
 and checksums do not prevent offline rollback. tmpfs testing establishes behavior,
 not power-loss persistence. Fault hooks and SIGKILL do not emulate storage controllers.
 
-## Continuation
+## Follow-up implemented in R6.1c.5b
 
-R6.1c.5b must freshly admit output into an explicit local capability, validate data
-and metadata rather than trusting Verified, and define descriptor-bound no-replace
-publication with durable intent, file/directory sync and acknowledgment. It must
-also define conservative assessment and explicit checked cleanup for partial and
-uncertain states. Composed live ESXi qualification follows as R6.1c.5c.
+[Durable output publication](durable-output-publication.md) now adds a separate
+VerifiedOutput capability, fresh source/RAW verification, atomic no-replace bundle
+publication, conservative namespace assessment and explicit checked cleanup. It
+preserves the version-1 conversion contract and introduces version 2 only for new
+publication/cleanup transitions. The conversion operation itself still retains
+output on every outcome and never publishes or deletes it automatically.
+
+Composed live qualification follows as R6.1c.5c. Pending transactions, uncertain
+publication and unstamped stages remain ineligible for automatic recovery actions.
 
 [ADR-0064](adr/0064-private-owned-raw-output.md),
 [tests, timing and plots](benchmark-results/2026-10-02-r61c5a/README.md),

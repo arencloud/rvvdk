@@ -2798,7 +2798,7 @@ are retained; no barriers were removed.
 No ESXi or guest operation was needed. RAW output remains private; R6.1c.5 as a
 whole and production integration/recovery remain incomplete.
 
-## Next session
+## R6.1c.5b plan recorded after R6.1c.5a
 
 Start **R6.1c.5b — Fresh output admission, durable no-replace publication and checked recovery actions**:
 
@@ -2838,3 +2838,95 @@ bounded parallel decoding, repeated retained admission/hash cost, full logical R
 readback and output journal durability cost. Retain R4.4 and discovery/TLS work.
 VMFS sparse, seSparse, online snapshots, CBT, restore, vCenter and vSphere 9 remain
 later qualified work. Commit every completed package with evidence and updated plans.
+
+## R6.1c.5b — Fresh output admission, atomic bundle publication and checked cleanup
+
+VerifiedOutput now consumes the source store and freshly validates retained source,
+output bindings, RAW metadata/digest and every logical source/output byte. Source
+must remain CompletedLease and admissible. Publication consumes this capability and
+a separately locked explicit private destination, revalidates content, syncs the
+bundle, persists PublishIntent and atomically renames RAW/metadata/marker together
+with RENAME_NOREPLACE. Both parent directories sync before Published acknowledgment.
+The source journal stays unchanged; no writer or remote capability escapes.
+
+Destination must be outside the store and on the same filesystem, under stable
+trusted ancestors. Names are generated from explicit OutputId; no journal/metadata
+path is followed. Collisions preserve existing destinations. Version-1 conversion
+records retain their canonical checksum; new publication/cleanup transitions use
+version 2, binding destination parent identity or an eligible cleanup origin.
+Read-only namespace assessment distinguishes absent, owned and foreign/invalid
+locations without inferring content or rename durability.
+
+Explicit cleanup now handles stamped private partial states and acknowledged
+Published bundles, with fresh member/marker/namespace checks, no recursive removal,
+and checked partial CleanupIntent retry. The parent is synced before Cleaned even
+when a recovered directory is already absent. Source cleanup is separate. Pending
+transactions, unstamped stages and PublishIntent remain retained and blocked; no
+rollback, automatic deletion, transaction replay or remote action is inferred.
+
+[Contract](durable-output-publication.md), [ADR-0065](adr/0065-durable-raw-bundle-publication.md),
+[tests, timings and plots](benchmark-results/2026-10-02-r61c5b/README.md).
+Workspace **730 passed, nine ignored**, with clean all-target clippy and formatting.
+Eleven new tests (including an inert crash helper) cover admission/forged claims,
+legacy/version gates, destination constraints/collisions, ten publication and eight
+cleanup journal fault combinations, cancellation, namespace substitution and partial
+cleanup. Six SIGKILL boundaries cover pre/post-rename and interrupted cleanup. All
+19 output tests (including the prior eight) pass on Btrfs. The synthetic TLS export
+integration now continues through actual publication, a full authored logical oracle
+comparison and explicit output cleanup.
+
+The matched release matrix retains **288 conversions / 144 pairs and 288 explicit
+cleanups**, with longer repeats on Btrfs/tmpfs. All full 64 MiB logical comparisons
+pass; RAW output allocation stays 8 MiB. Longer wall medians rise from **222.060 to
+411.462 ms on Btrfs** and **80.584 to 196.393 ms on tmpfs** with publication. Output
+admission is **63.010 / 61.158 ms**, publication including revalidation **122.360 /
+53.315 ms**. Published cleanup is separately **41.608 / 0.834 ms**. Whole-operation
+spread stays below 1.87%, but cleanup CPU spread reaches **20.41% on Btrfs** and
+cleanup wall/CPU exceeds 5% on tmpfs after repeats. All samples and whole-operation/
+phase plots are retained. Keep repeated full verification, durability and cleanup
+variance in PERF.0; no barrier or hash pass was removed.
+
+No ESXi or guest operation was needed. This completes local R6.1c.5b within its
+specified recovery subset; overall R6.1c.5 and production recovery remain open.
+
+## Next session
+
+Start **R6.1c.5c — Rust runner and bounded composed live qualification**:
+
+1. Wire an explicit Rust entry point for source selection, owned export/artifact
+   transfer, fresh retained admission, owned conversion, VerifiedOutput admission,
+   no-replace bundle publication and explicit cleanup. Use configured artifact/output
+   IDs, private store and destination; credentials/tickets must remain runtime-only.
+   Await blocking local work and handle cancellation without losing worker/lock
+   lifetimes. Preserve report boundaries and the no-abort-after-completion-intent rule.
+2. Qualify the runner synthetically before live use. Exercise whole-pipeline success,
+   output collision, cancellation and local failure with correct source/output
+   retention and conservative diagnostic reports. A failure after publication intent
+   must not trigger automatic rollback, deletion or remote request replay.
+3. Use existing authorized lab access for read-only preflight: confirm current host
+   identity/version/license/export capability, explicit VM/disk binding, power state
+   and active-task ownership. Reuse private configuration without putting endpoints,
+   credentials, guest identities or private image hashes in Git. Recheck actual state;
+   previously observed host/guest state is not current evidence.
+4. Run a bounded composed export on a suitable authorized VM. Preserve existing
+   guest/power controls, avoid unrelated active exports, compare the published RAW
+   with the source and independently established guest known-byte oracle, and retain
+   private evidence. Verify metadata and namespace/durability reports. Never label a
+   shared-decoder comparison alone independent decoder qualification.
+5. Exercise explicit checked cleanup of this run's resources only after all handles
+   drain and evidence is saved. Keep source cleanup separate from output cleanup;
+   refuse pending transactions, unstamped stages and uncertain publication. Do not
+   repair or delete unfamiliar existing journals/stages based on naming alone.
+6. Record wall/phase/CPU/RSS/allocation, network versus local conversion/publication
+   timing and correctness with sanitized standalone plots. Repeat adverse matched
+   observations/spreads over 5%; retain raw samples. Treat host/VM/version or storage
+   changes as a new baseline rather than an implementation speedup.
+7. Document the exact completed live scope and remaining recovery limitations. General
+   uncertain-publication reconciliation, transaction repair and unstamped-stage
+   adoption require separate designed capabilities and fault tests; they remain open.
+
+Keep PERF.0 open: cumulative source/RAW verification, journal/flush and cleanup costs,
+CPU/SMT/frequency/storage controls, stream/map/cache sensitivity and parallel decoding.
+Retain R4.4 and discovery/TLS work. VMFS sparse, seSparse, online snapshots, CBT,
+restore, vCenter and vSphere 9 remain later independently qualified work. Commit
+this bounded package with sanitized evidence, architecture decisions and next steps.

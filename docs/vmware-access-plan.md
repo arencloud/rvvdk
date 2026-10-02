@@ -389,8 +389,9 @@ following bounded packages in order:
    checks structure and every present grain before completion. **R6.1c.4 complete:**
    [retained admission/local conversion](retained-artifact-conversion.md) preserves
    store/handle lifetimes. **R6.1c.5a complete:** [private owned RAW conversion](owned-raw-output.md) and full logical verification.
-   **Next R6.1c.5b:** output publication and explicit checked recovery actions, then
-   composed live qualification. The
+   **R6.1c.5b complete:** [atomic bundle publication and explicit checked cleanup](durable-output-publication.md).
+   **Next R6.1c.5c:** Rust runner and composed live qualification; uncertain publication
+   reconciliation remains outside current recovery actions. The
    capacity proof remains separate; full production R6.1c remains open.
 6. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9
    in later independently qualified steps. Keep PERF.0/R4.4 and the discovery

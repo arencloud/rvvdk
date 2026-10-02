@@ -7,10 +7,10 @@ use std::{
     os::unix::fs::{FileExt, MetadataExt},
     path::PathBuf,
 };
-fn oid() -> OutputId {
+pub(super) fn oid() -> OutputId {
     OutputId::new([23; 16]).unwrap()
 }
-fn raw_stage(t: &Temp) -> PathBuf {
+pub(super) fn raw_stage(t: &Temp) -> PathBuf {
     fs::read_dir(t.jobs())
         .unwrap()
         .map(|e| e.unwrap().path())
@@ -23,12 +23,12 @@ fn raw_stage(t: &Temp) -> PathBuf {
         })
         .unwrap()
 }
-fn record(t: &Temp) -> OutputRecord {
+pub(super) fn record(t: &Temp) -> OutputRecord {
     serde_json::from_slice::<OutputEnvelope>(&fs::read(t.jobs().join(name(&oid().0))).unwrap())
         .unwrap()
         .record
 }
-fn run(t: &Temp, hook: impl FnMut(OutputState, &str) -> Result<()>) -> OutputReport {
+pub(super) fn run(t: &Temp, hook: impl FnMut(OutputState, &str) -> Result<()>) -> OutputReport {
     open(t, source(32 * 65536)).unwrap().convert_owned_hook(
         oid(),
         CopyOptions::default(),
@@ -37,12 +37,12 @@ fn run(t: &Temp, hook: impl FnMut(OutputState, &str) -> Result<()>) -> OutputRep
         hook,
     )
 }
-fn setup() -> Temp {
+pub(super) fn setup() -> Temp {
     let t = Temp::new();
     t.populate(&data(), 32 * 65536);
     t
 }
-fn verify(path: &std::path::Path, grains: u64, present: impl Fn(u64) -> bool) {
+pub(super) fn verify(path: &std::path::Path, grains: u64, present: impl Fn(u64) -> bool) {
     let f = File::open(path).unwrap();
     let mut b = vec![0; 65536];
     for i in 0..grains {

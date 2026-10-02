@@ -181,9 +181,12 @@ async fn transferred_artifact_reopens_for_confined_native_conversion() {
     use rvvdk_local::LocalFileBlockDevice;
     use rvvdk_vsphere::{
         contract::{EndpointIdentity, PinProvenance, SourceSelection},
-        ownership::{JobStore, OutputId, RetainedArtifact, RetainedOptions},
+        ownership::{
+            JobStore, OutputId, PublicationDirectory, RetainedArtifact, RetainedOptions,
+            VerifiedOutput,
+        },
     };
-    use std::os::unix::fs::OpenOptionsExt;
+    use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
     let out = Output::new();
     let store = store(&out);
     let data = fixture::image(
@@ -226,7 +229,7 @@ async fn transferred_artifact_reopens_for_confined_native_conversion() {
         let mut admitted = RetainedArtifact::open(
             JobStore::open(&root.join("jobs")).unwrap(),
             artifact(),
-            source,
+            source.clone(),
             RetainedOptions::default(),
         )
         .unwrap();
@@ -286,6 +289,53 @@ async fn transferred_artifact_reopens_for_confined_native_conversion() {
                 assert!(buffer.iter().all(|&v| v == 0));
             }
         }
+        drop(raw);
+        let destination = root.join("published");
+        std::fs::DirBuilder::new()
+            .mode(0o700)
+            .create(&destination)
+            .unwrap();
+        let output = OutputId::new([41; 16]).unwrap();
+        let verified = VerifiedOutput::open(
+            JobStore::open(&root.join("jobs")).unwrap(),
+            output,
+            artifact(),
+            source.clone(),
+            RetainedOptions::default(),
+        )
+        .unwrap();
+        let result = verified.publish(
+            PublicationDirectory::open(&destination).unwrap(),
+            RetainedOptions::default(),
+        );
+        assert!(result.is_success(), "{result:?}");
+        assert!(!stage.exists());
+        let raw = RawDisk::new(
+            LocalFileBlockDevice::open_read_only(
+                destination.join(output.bundle_name()).join("disk.raw"),
+            )
+            .unwrap(),
+        );
+        for i in 0..128 {
+            raw.read_exact_at(i * 65536, &mut buffer).unwrap();
+            if i == 0 || i == 7 {
+                assert_eq!(buffer, fixture::bytes(i));
+            } else {
+                assert!(buffer.iter().all(|&v| v == 0));
+            }
+        }
+        drop(raw);
+        JobStore::open(&root.join("jobs"))
+            .unwrap()
+            .cleanup_output(
+                output,
+                artifact(),
+                &source,
+                Some(&PublicationDirectory::open(&destination).unwrap()),
+                RetainedOptions::default(),
+            )
+            .unwrap();
+        assert!(!destination.join(output.bundle_name()).exists());
     })
     .await
     .unwrap();

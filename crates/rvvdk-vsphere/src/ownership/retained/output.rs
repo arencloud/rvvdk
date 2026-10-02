@@ -1,9 +1,18 @@
-//! Separate durable RAW output ownership. No publication or remote capability.
+//! Durable RAW ownership with separate fresh publication and explicit cleanup.
 use super::*;
+mod publication;
+pub use publication::{
+    OutputLocation, PublicationDirectory, PublicationRecovery, PublicationReport, VerifiedOutput,
+};
+
 const OUTPUT_MEMBERS: [&str; 3] = ["disk.raw", "output.json", "owner"];
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct OutputId([u8; 16]);
 impl OutputId {
+    /// Generated final bundle component; this name alone grants no authority.
+    pub fn bundle_name(self) -> String {
+        format!("raw-{}", crate::transport::hex_string(&self.0))
+    }
     pub fn new(bytes: [u8; 16]) -> Result<Self> {
         if bytes == [0; 16] {
             Err(OwnershipError::Record)
@@ -27,6 +36,10 @@ pub enum OutputState {
     Converted,
     VerifyIntent,
     Verified,
+    PublishIntent,
+    Published,
+    CleanupIntent,
+    Cleaned,
 }
 impl OutputState {
     fn sequence(self) -> u64 {
@@ -38,6 +51,9 @@ impl OutputState {
             Self::Converted => 4,
             Self::VerifyIntent => 5,
             Self::Verified => 6,
+            Self::PublishIntent => 7,
+            Self::Published => 8,
+            Self::CleanupIntent | Self::Cleaned => u64::MAX,
         }
     }
 }
@@ -68,7 +84,7 @@ impl OutputReport {
                 .is_some_and(|r| r.state == OutputState::Verified && !r.pending_transaction)
     }
 }
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct OutputRecord {
     version: u32,
@@ -83,6 +99,11 @@ struct OutputRecord {
     sequence: u64,
     stage: Option<Stage>,
     raw_sha256: Option<[u8; 32]>,
+    // Absent fields preserve the canonical v1 checksum representation.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    publication_parent: Option<Identity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    cleanup_from: Option<OutputState>,
 }
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -147,6 +168,25 @@ impl JobStore {
         artifact: ArtifactId,
         source: &SourceSelection,
     ) -> Result<OutputRecovery> {
+        let r = self.read_output(id, artifact, source)?;
+        if r.stage.is_some() && r.publication_parent.is_none() && r.cleanup_from.is_none() {
+            drop(check_stage(self, &r)?);
+        }
+        self.output_recovery(&r)
+    }
+    fn output_recovery(&self, r: &OutputRecord) -> Result<OutputRecovery> {
+        Ok(OutputRecovery {
+            state: r.state,
+            sequence: r.sequence,
+            pending_transaction: exists(&self.directory, &txn(&r.output))?,
+        })
+    }
+    fn read_output(
+        &self,
+        id: OutputId,
+        artifact: ArtifactId,
+        source: &SourceSelection,
+    ) -> Result<OutputRecord> {
         self.ready()?;
         let mut file = open_at(&self.directory, &name(&id.0), false, false, false)?;
         private(&file, false)?;
@@ -156,27 +196,17 @@ impl JobStore {
         let r = envelope.record;
         let data = serde_json::to_vec(&r).map_err(|_| OwnershipError::Record)?;
         if envelope.sha256 != <[u8; 32]>::from(Sha256::digest(data))
-            || r.version != 1
             || r.output != id.0
             || r.artifact != *artifact.as_bytes()
             || r.store != self.identity
             || r.source != source.ownership_binding()
             || r.logical_bytes != source.logical_bytes()
             || r.operation == [0; 16]
-            || r.sequence != r.state.sequence()
-            || r.stage.is_some() != (r.sequence >= 2)
-            || r.raw_sha256.is_some() != (r.state == OutputState::Verified)
+            || !publication::valid_record(&r)
         {
             return Err(OwnershipError::Record);
         }
-        if r.stage.is_some() {
-            drop(check_stage(self, &r)?);
-        }
-        Ok(OutputRecovery {
-            state: r.state,
-            sequence: r.sequence,
-            pending_transaction: exists(&self.directory, &txn(&id.0))?,
-        })
+        Ok(r)
     }
 }
 impl RetainedArtifact {
@@ -231,6 +261,8 @@ impl RetainedArtifact {
                 sequence: 0,
                 stage: None,
                 raw_sha256: None,
+                publication_parent: None,
+                cleanup_from: None,
             };
             let mut owner = Owner {
                 artifact: self,
@@ -308,69 +340,7 @@ impl<H: FnMut(OutputState, &str) -> Result<()>> Owner<'_, H> {
         if self.poisoned {
             return Err(OwnershipError::Uncertain);
         }
-        let result = (|| {
-            self.artifact.store.ready()?;
-            let data = serde_json::to_vec(&self.record).map_err(|_| OwnershipError::Record)?;
-            let envelope = OutputEnvelope {
-                record: self.record.clone(),
-                sha256: Sha256::digest(&data).into(),
-            };
-            let data = serde_json::to_vec(&envelope).map_err(|_| OwnershipError::Record)?;
-            if data.len() as u64 > MAX_RECORD {
-                return Err(OwnershipError::Record);
-            }
-            if !initial {
-                private(
-                    &open_at(
-                        &self.artifact.store.directory,
-                        &name(&self.record.output),
-                        false,
-                        false,
-                        false,
-                    )?,
-                    false,
-                )?;
-            }
-            let mut file = open_at(
-                &self.artifact.store.directory,
-                &txn(&self.record.output),
-                true,
-                true,
-                false,
-            )?;
-            let middle = data.len() / 2;
-            file.write_all(&data[..middle])
-                .map_err(|_| OwnershipError::Io)?;
-            self.point("record_partial")?;
-            file.write_all(&data[middle..])
-                .map_err(|_| OwnershipError::Io)?;
-            self.point("record_written")?;
-            file.sync_all().map_err(|_| OwnershipError::Io)?;
-            self.point("record_synced")?;
-            let from = cstr(&txn(&self.record.output))?;
-            let to = cstr(&name(&self.record.output))?;
-            // SAFETY: pinned directory, generated single-component names; initial record is no-replace.
-            if unsafe {
-                libc::renameat2(
-                    self.artifact.store.directory.as_raw_fd(),
-                    from.as_ptr(),
-                    self.artifact.store.directory.as_raw_fd(),
-                    to.as_ptr(),
-                    if initial { libc::RENAME_NOREPLACE } else { 0 },
-                )
-            } != 0
-            {
-                return Err(OwnershipError::Io);
-            }
-            self.point("record_renamed")?;
-            self.artifact
-                .store
-                .directory
-                .sync_all()
-                .map_err(|_| OwnershipError::Io)?;
-            self.point("record_durable")?;
-            Ok(())
-        })();
+        let result = commit_output(&self.artifact.store, &self.record, initial, &mut self.hook);
         if result.is_err() {
             self.poisoned = true;
             return Err(OwnershipError::Uncertain);
@@ -527,5 +497,61 @@ impl<H: FnMut(OutputState, &str) -> Result<()>> Owner<'_, H> {
         Ok(())
     }
 }
+fn commit_output(
+    store: &JobStore,
+    record: &OutputRecord,
+    initial: bool,
+    hook: &mut impl FnMut(OutputState, &str) -> Result<()>,
+) -> Result<()> {
+    (|| {
+        store.ready()?;
+        let data = serde_json::to_vec(&record).map_err(|_| OwnershipError::Record)?;
+        let envelope = OutputEnvelope {
+            record: record.clone(),
+            sha256: Sha256::digest(&data).into(),
+        };
+        let data = serde_json::to_vec(&envelope).map_err(|_| OwnershipError::Record)?;
+        if data.len() as u64 > MAX_RECORD {
+            return Err(OwnershipError::Record);
+        }
+        if !initial {
+            private(
+                &open_at(&store.directory, &name(&record.output), false, false, false)?,
+                false,
+            )?;
+        }
+        let mut file = open_at(&store.directory, &txn(&record.output), true, true, false)?;
+        let middle = data.len() / 2;
+        file.write_all(&data[..middle])
+            .map_err(|_| OwnershipError::Io)?;
+        hook(record.state, "record_partial")?;
+        file.write_all(&data[middle..])
+            .map_err(|_| OwnershipError::Io)?;
+        hook(record.state, "record_written")?;
+        file.sync_all().map_err(|_| OwnershipError::Io)?;
+        hook(record.state, "record_synced")?;
+        let from = cstr(&txn(&record.output))?;
+        let to = cstr(&name(&record.output))?;
+        // SAFETY: pinned directory, generated single-component names; initial record is no-replace.
+        if unsafe {
+            libc::renameat2(
+                store.directory.as_raw_fd(),
+                from.as_ptr(),
+                store.directory.as_raw_fd(),
+                to.as_ptr(),
+                if initial { libc::RENAME_NOREPLACE } else { 0 },
+            )
+        } != 0
+        {
+            return Err(OwnershipError::Io);
+        }
+        hook(record.state, "record_renamed")?;
+        store.directory.sync_all().map_err(|_| OwnershipError::Io)?;
+        hook(record.state, "record_durable")?;
+        Ok(())
+    })()
+    .map_err(|_| OwnershipError::Uncertain)
+}
+
 #[cfg(test)]
 mod tests;
