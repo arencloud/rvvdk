@@ -136,9 +136,10 @@ qualify process-loss behavior, not physical power-cut/controller fault recovery.
 Btrfs and volatile tmpfs timing are separate synthetic baselines; successful
 tmpfs sync calls do not imply persistent storage durability.
 
-R6.1c next connects explicit source revalidation, the actual sequential export
-lease, payload verification, artifact metadata and no-replace publication to these
-boundaries. The current capacity-selected qualification exporter remains unchanged.
+R6.1c.1 now adds [explicit export selection](explicit-export-selection.md) and
+fresh source checks to the proof. R6.1c.2 next binds the actual export lease and
+owned resources to these intents, followed by verified metadata, conversion and
+publication. The capacity-selected proof remains available.
 Do not promote its manifest to job ownership or claim resumable remote export.
 
 [ADR-0058](adr/0058-durable-job-ownership.md),

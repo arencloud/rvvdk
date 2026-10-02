@@ -1,0 +1,303 @@
+{
+  "binary_sha256": "c0437ad3fae17b18e6289de3042efd3cb6d9533a5944829e414e6c68c053480a",
+  "kernel": "7.2.5-200.fc44.x86_64",
+  "cpu": 0,
+  "server_nodelay": true,
+  "conditions": "Same release executable, alternating per-pair legacy/explicit order. CPU 0 affinity; shared host; SMT not isolated. /tmp tmpfs; no real VMDK decode or VMware host. Per-export CPU includes mock server threads, excludes fixture construction and readback/removal. Peak RSS is process lifetime. Builds/tests/plots outside timed matrix.",
+  "commands": [
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c1/tcp-nodelay/initial-1-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c1/reference/discovery-nodelay",
+        "--exact",
+        "export_tests::selected_benchmark::matched_selected_export",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 32,
+      "before": {
+        "unix_seconds": 1790959419.911219,
+        "load": [
+          6.9033203125,
+          5.09912109375,
+          4.30615234375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "3190763",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790959422.8311322,
+        "load": [
+          6.9033203125,
+          5.09912109375,
+          4.30615234375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "1990277",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 2.87,
+        "user_seconds": 0.13,
+        "system_seconds": 0.13,
+        "max_rss_kib": 8632
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c1/tcp-nodelay/initial-2-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c1/reference/discovery-nodelay",
+        "--exact",
+        "export_tests::selected_benchmark::matched_selected_export",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 32,
+      "before": {
+        "unix_seconds": 1790959422.831937,
+        "load": [
+          6.9033203125,
+          5.09912109375,
+          4.30615234375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "1990277",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790959425.7519715,
+        "load": [
+          6.9912109375,
+          5.1474609375,
+          4.326171875
+        ],
+        "frequency": {
+          "scaling_cur_freq": "4074512",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 2.88,
+        "user_seconds": 0.14,
+        "system_seconds": 0.12,
+        "max_rss_kib": 8412
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c1/tcp-nodelay/initial-3-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c1/reference/discovery-nodelay",
+        "--exact",
+        "export_tests::selected_benchmark::matched_selected_export",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 32,
+      "before": {
+        "unix_seconds": 1790959425.7530718,
+        "load": [
+          6.9912109375,
+          5.1474609375,
+          4.326171875
+        ],
+        "frequency": {
+          "scaling_cur_freq": "3100356",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790959428.6736035,
+        "load": [
+          6.9912109375,
+          5.1474609375,
+          4.326171875
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2483831",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 2.88,
+        "user_seconds": 0.13,
+        "system_seconds": 0.13,
+        "max_rss_kib": 8484
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c1/tcp-nodelay/longer-1-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c1/reference/discovery-nodelay",
+        "--exact",
+        "export_tests::selected_benchmark::matched_selected_export",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 64,
+      "before": {
+        "unix_seconds": 1790959428.6749775,
+        "load": [
+          6.9912109375,
+          5.1474609375,
+          4.326171875
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2234669",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790959434.452291,
+        "load": [
+          6.83154296875,
+          5.14453125,
+          4.330078125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2217515",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 5.73,
+        "user_seconds": 0.28,
+        "system_seconds": 0.23,
+        "max_rss_kib": 8860
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c1/tcp-nodelay/longer-2-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c1/reference/discovery-nodelay",
+        "--exact",
+        "export_tests::selected_benchmark::matched_selected_export",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 64,
+      "before": {
+        "unix_seconds": 1790959434.4547892,
+        "load": [
+          6.83154296875,
+          5.14453125,
+          4.330078125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2058324",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790959440.1819012,
+        "load": [
+          7.0048828125,
+          5.23876953125,
+          4.3701171875
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2587833",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 5.72,
+        "user_seconds": 0.27,
+        "system_seconds": 0.25,
+        "max_rss_kib": 8988
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c1/tcp-nodelay/longer-3-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "target/r61c1/reference/discovery-nodelay",
+        "--exact",
+        "export_tests::selected_benchmark::matched_selected_export",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 64,
+      "before": {
+        "unix_seconds": 1790959440.183967,
+        "load": [
+          7.0048828125,
+          5.23876953125,
+          4.3701171875
+        ],
+        "frequency": {
+          "scaling_cur_freq": "868169",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790959445.9608676,
+        "load": [
+          6.84423828125,
+          5.234375,
+          4.37353515625
+        ],
+        "frequency": {
+          "scaling_cur_freq": "800000",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 5.75,
+        "user_seconds": 0.27,
+        "system_seconds": 0.26,
+        "max_rss_kib": 8712
+      }
+    }
+  ]
+}

@@ -150,6 +150,9 @@ struct Server {
 }
 impl Server {
     fn start(replies: Vec<Reply>) -> Self {
+        Self::start_with_nodelay(replies, false)
+    }
+    fn start_with_nodelay(replies: Vec<Reply>, nodelay: bool) -> Self {
         let cert = rcgen::generate_simple_self_signed(vec!["localhost".to_owned()]).unwrap();
         let pin = Sha256::digest(cert.cert.der())
             .iter()
@@ -202,6 +205,7 @@ impl Server {
                     }
                     Err(e) => panic!("{e}"),
                 };
+                stream.set_nodelay(nodelay).unwrap();
                 stream
                     .set_read_timeout(Some(Duration::from_millis(300)))
                     .unwrap();
@@ -324,6 +328,26 @@ fn scoped_operation_futures_remain_send() {
         policy.clone(),
         &credentials,
         InventoryLimits::default(),
+    ));
+    let endpoint = rvvdk_vsphere::contract::EndpointIdentity::pinned(
+        "https://example.invalid",
+        &"a".repeat(64),
+        rvvdk_vsphere::contract::PinProvenance::TrustOnFirstUse,
+    )
+    .unwrap();
+    let source = rvvdk_vsphere::contract::SourceSelection::new(
+        endpoint,
+        "synthetic-vm",
+        "01234567-89ab-cdef-0123-456789abcdef",
+        2000,
+        "synthetic-backing",
+        1024,
+    )
+    .unwrap();
+    require_send(rvvdk_vsphere::export_selected_vm(
+        source,
+        &credentials,
+        rvvdk_vsphere::ExportOptions::probe(1024),
     ));
     require_send(rvvdk_vsphere::export_vm(
         policy,
@@ -674,6 +698,7 @@ mod export_tests {
     use super::*;
     use rvvdk_vsphere::{ExportOptions, LeaseCleanup, export_vm};
     use std::path::PathBuf;
+    mod selected_benchmark;
     static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
     struct Output(PathBuf);
     impl Output {
@@ -714,6 +739,385 @@ mod export_tests {
             "ExportVm",
             "<returnval type='HttpNfcLease'>lease-private</returnval>",
         )
+    }
+
+    fn explicit_source(server: &Server) -> rvvdk_vsphere::contract::SourceSelection {
+        use rvvdk_vsphere::contract::{EndpointIdentity, PinProvenance, SourceSelection};
+        SourceSelection::new(
+            EndpointIdentity::pinned(
+                &server.endpoint,
+                &server.pin,
+                PinProvenance::TrustOnFirstUse,
+            )
+            .unwrap(),
+            "vm-private",
+            "01234567-89ab-cdef-0123-456789abcdef",
+            2000,
+            "PRIVATE-path",
+            30 * 1024 * 1024 * 1024,
+        )
+        .unwrap()
+    }
+    fn explicit_replies() -> Vec<Reply> {
+        let mut replies = selected("poweredOff");
+        for reply in &mut replies {
+            reply.body = reply.body.replace("<string>ExportVm</string>", "");
+        }
+        let vm = replies[6].clone();
+        replies.extend([
+            vm.clone(),
+            granted(),
+            ready("ENDPOINT/nfc/PRIVATE-ticket", "THUMBPRINT"),
+            vm.clone(),
+            data(),
+            manifest(),
+            vm,
+            complete(),
+            logout(),
+        ]);
+        replies
+    }
+
+    #[tokio::test]
+    async fn explicit_identity_selects_among_equal_capacity_vms_and_revalidates_in_order() {
+        let mut replies = explicit_replies();
+        replies[3].body = replies[3].body.replace("</val>",
+            "<ManagedObjectReference type='VirtualMachine'>vm-impostor</ManagedObjectReference></val>");
+        let mut impostor = replies[6].clone();
+        impostor.body = impostor.body.replace("vm-private", "vm-impostor").replace(
+            "01234567-89ab-cdef-0123-456789abcdef",
+            "fedcba98-7654-3210-fedc-ba9876543210",
+        );
+        replies.insert(7, impostor);
+        let server = Server::start(replies);
+        let out = Output::new();
+        let report = rvvdk_vsphere::export_selected_vm(
+            explicit_source(&server),
+            &credentials(),
+            options(&out),
+        )
+        .await
+        .unwrap();
+        assert!(report.is_success(), "{report:?}");
+        assert_eq!(
+            std::fs::read(out.dest().join("disk-1.vmdk")).unwrap(),
+            payload().as_bytes()
+        );
+        let requests = server.requests();
+        let reads: Vec<_> = requests
+            .iter()
+            .enumerate()
+            .filter(|(_, r)| {
+                r.contains("<RetrievePropertiesEx ") && r.contains(">vm-private</obj>")
+            })
+            .map(|(i, _)| i)
+            .collect();
+        assert_eq!(reads.len(), 5); // inventory, fresh, before acquisition/download/completion
+        let pos = |needle: &str| requests.iter().position(|r| r.contains(needle)).unwrap();
+        assert!(reads[2] < pos("<ExportVm ") && pos("<ExportVm ") < reads[3]);
+        assert!(reads[3] < pos("GET ") && pos("<HttpNfcLeaseGetManifest ") < reads[4]);
+        assert!(reads[4] < pos("<HttpNfcLeaseComplete "));
+        assert!(requests[pos("<ExportVm ")].contains(">vm-private</_this>"));
+        assert!(!requests.iter().any(|r| r.contains("<ShutdownGuest ")));
+        assert!(!serde_json::to_string(&report).unwrap().contains("PRIVATE"));
+    }
+
+    #[tokio::test]
+    async fn explicit_drift_at_every_boundary_blocks_the_next_mutation_and_cleans_up() {
+        for phase in [6, 7, 8, 11, 14] {
+            for (old, new, error) in [
+                (
+                    "01234567-89ab-cdef-0123-456789abcdef",
+                    "fedcba98-7654-3210-fedc-ba9876543210",
+                    Error::Identity,
+                ),
+                ("<key>2000</key>", "<key>2001</key>", Error::Identity),
+                ("PRIVATE-path", "PRIVATE-replacement", Error::Identity),
+                (
+                    "<capacityInBytes>32212254720</capacityInBytes>",
+                    "<capacityInBytes>32212255232</capacityInBytes>",
+                    Error::ExportScope,
+                ),
+                ("poweredOff", "poweredOn", Error::ExportScope),
+                (
+                    "<name>disabledMethod</name><val></val>",
+                    "<name>disabledMethod</name><val><string>ExportVm</string></val>",
+                    Error::ExportScope,
+                ),
+            ] {
+                let mut replies = explicit_replies();
+                assert!(replies[phase].body.contains(old));
+                replies[phase].body = replies[phase].body.replace(old, new);
+                replies.truncate(phase + 1);
+                if phase > 8 {
+                    replies.push(abort());
+                }
+                replies.push(logout());
+                let server = Server::start(replies);
+                let out = Output::new();
+                let report = rvvdk_vsphere::export_selected_vm(
+                    explicit_source(&server),
+                    &credentials(),
+                    options(&out),
+                )
+                .await
+                .unwrap();
+                assert_eq!(
+                    report.primary_error,
+                    Some(error),
+                    "phase={phase} change={old}"
+                );
+                assert_eq!(
+                    report.lease_cleanup,
+                    if phase > 8 {
+                        LeaseCleanup::Aborted
+                    } else {
+                        LeaseCleanup::NotAcquired
+                    }
+                );
+                assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+                assert!(!out.dest().exists());
+                assert_eq!(std::fs::read_dir(&out.0).unwrap().count(), 0);
+                let requests = server.requests();
+                assert!(
+                    !requests
+                        .iter()
+                        .any(|r| r.contains("<HttpNfcLeaseComplete ")
+                            || r.contains("<ShutdownGuest "))
+                );
+                if phase <= 8 {
+                    assert!(!requests.iter().any(|r| r.contains("<ExportVm ")));
+                }
+                if phase <= 11 {
+                    assert!(!requests.iter().any(|r| r.starts_with("GET ")));
+                }
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn explicit_missing_identity_does_not_fall_back_to_capacity() {
+        let mut replies = explicit_replies();
+        replies.truncate(7);
+        for reply in &mut replies {
+            reply.body = reply.body.replace("vm-private", "vm-impostor");
+        }
+        replies.push(logout());
+        let server = Server::start(replies);
+        let out = Output::new();
+        let report = rvvdk_vsphere::export_selected_vm(
+            explicit_source(&server),
+            &credentials(),
+            options(&out),
+        )
+        .await
+        .unwrap();
+        assert_eq!(report.primary_error, Some(Error::Identity));
+        assert_eq!(report.lease_cleanup, LeaseCleanup::NotAcquired);
+        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+        assert!(!out.dest().exists());
+        assert!(!server.requests().iter().any(|r| r.contains("<ExportVm ")));
+    }
+
+    #[tokio::test]
+    async fn explicit_invalid_options_fail_before_connecting() {
+        let server = Server::start(vec![]);
+        for shutdown in [false, true] {
+            let mut opts = ExportOptions::probe(30 * 1024 * 1024 * 1024);
+            if shutdown {
+                opts.allow_graceful_shutdown = true;
+            } else {
+                opts.single_disk_capacity_bytes += 512;
+            }
+            let result =
+                rvvdk_vsphere::export_selected_vm(explicit_source(&server), &credentials(), opts)
+                    .await;
+            assert_eq!(result.unwrap_err(), Error::InvalidInput);
+        }
+        assert!(server.requests().is_empty());
+    }
+
+    #[tokio::test]
+    async fn explicit_cancellation_during_fresh_checks_prevents_acquire_download_or_complete() {
+        for phase in [8, 11, 14] {
+            let mut replies = explicit_replies();
+            replies[phase].delay = Duration::from_millis(200);
+            replies.truncate(phase + 1);
+            if phase > 8 {
+                replies.push(abort());
+            }
+            replies.push(logout());
+            let server = Server::start(replies);
+            let out = Output::new();
+            let opts = options(&out);
+            let cancel = opts.cancellation.clone();
+            let observed = server.requests.clone();
+            let read_count = match phase {
+                8 => 3,
+                11 => 4,
+                _ => 5,
+            };
+            let trigger = tokio::spawn(async move {
+                loop {
+                    if observed
+                        .lock()
+                        .unwrap()
+                        .iter()
+                        .filter(|r| {
+                            r.contains("<RetrievePropertiesEx ") && r.contains(">vm-private</obj>")
+                        })
+                        .count()
+                        == read_count
+                    {
+                        cancel.cancel();
+                        break;
+                    }
+                    tokio::time::sleep(Duration::from_millis(1)).await;
+                }
+            });
+            let report =
+                rvvdk_vsphere::export_selected_vm(explicit_source(&server), &credentials(), opts)
+                    .await
+                    .unwrap();
+            tokio::time::timeout(Duration::from_secs(2), trigger)
+                .await
+                .unwrap()
+                .unwrap();
+            assert_eq!(report.primary_error, Some(Error::Cancelled));
+            assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+            assert_eq!(
+                report.lease_cleanup,
+                if phase == 8 {
+                    LeaseCleanup::NotAcquired
+                } else {
+                    LeaseCleanup::Aborted
+                }
+            );
+            let requests = server.requests();
+            assert!(
+                !requests
+                    .iter()
+                    .any(|r| r.contains("<HttpNfcLeaseComplete "))
+            );
+            if phase == 8 {
+                assert!(!requests.iter().any(|r| r.contains("<ExportVm ")));
+            }
+            if phase <= 11 {
+                assert!(!requests.iter().any(|r| r.starts_with("GET ")));
+            }
+            assert_eq!(std::fs::read_dir(&out.0).unwrap().count(), 0);
+        }
+    }
+
+    #[tokio::test]
+    async fn explicit_live_lease_revalidation_has_a_bounded_request_budget() {
+        let mut replies = explicit_replies();
+        replies[10].body = replies[10]
+            .body
+            .replace("<leaseTimeout>30", "<leaseTimeout>3");
+        replies[11].delay = Duration::from_millis(1200);
+        replies.truncate(12);
+        replies.extend([abort(), logout()]);
+        let server = Server::start(replies);
+        let out = Output::new();
+        let report = rvvdk_vsphere::export_selected_vm(
+            explicit_source(&server),
+            &credentials(),
+            options(&out),
+        )
+        .await
+        .unwrap();
+        assert_eq!(report.primary_error, Some(Error::Deadline));
+        assert_eq!(report.lease_cleanup, LeaseCleanup::Aborted);
+        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+        assert!(!server.requests().iter().any(|r| r.starts_with("GET ")));
+        assert!(!out.dest().exists());
+    }
+
+    #[tokio::test]
+    async fn explicit_source_pin_is_enforced_before_credentials_are_sent() {
+        use rvvdk_vsphere::contract::{EndpointIdentity, PinProvenance, SourceSelection};
+        let server = Server::start(explicit_replies());
+        let source = SourceSelection::new(
+            EndpointIdentity::pinned(
+                &server.endpoint,
+                &"a".repeat(64),
+                PinProvenance::TrustOnFirstUse,
+            )
+            .unwrap(),
+            "vm-private",
+            "01234567-89ab-cdef-0123-456789abcdef",
+            2000,
+            "PRIVATE-path",
+            30 << 30,
+        )
+        .unwrap();
+        let out = Output::new();
+        let result = rvvdk_vsphere::export_selected_vm(source, &credentials(), options(&out)).await;
+        let report = result.unwrap();
+        assert_eq!(report.primary_error, Some(Error::Transport));
+        assert_eq!(report.session_cleanup, Cleanup::NotNeeded);
+        assert!(server.requests().is_empty());
+        assert!(!out.dest().exists());
+    }
+
+    #[tokio::test]
+    async fn explicit_revalidation_cancels_unexpected_pagination_before_lease_abort() {
+        let mut replies = explicit_replies();
+        replies[11].body = replies[11]
+            .body
+            .replace("</returnval>", "<token>PRIVATE-cursor</token></returnval>");
+        replies.truncate(12);
+        replies.extend([
+            Reply::soap("CancelRetrievePropertiesEx", ""),
+            abort(),
+            logout(),
+        ]);
+        let server = Server::start(replies);
+        let out = Output::new();
+        let report = rvvdk_vsphere::export_selected_vm(
+            explicit_source(&server),
+            &credentials(),
+            options(&out),
+        )
+        .await
+        .unwrap();
+        assert_eq!(report.primary_error, Some(Error::Pagination));
+        assert_eq!(report.pagination_cleanup_error, None);
+        assert_eq!(report.lease_cleanup, LeaseCleanup::Aborted);
+        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+        let requests = server.requests();
+        let cancel = requests
+            .iter()
+            .position(|r| r.contains("<CancelRetrievePropertiesEx "))
+            .unwrap();
+        let abort = requests
+            .iter()
+            .position(|r| r.contains("<HttpNfcLeaseAbort "))
+            .unwrap();
+        assert!(cancel < abort);
+        assert!(!requests.iter().any(|r| r.starts_with("GET ")));
+        assert_eq!(std::fs::read_dir(&out.0).unwrap().count(), 0);
+    }
+
+    #[tokio::test]
+    async fn explicit_probe_acquires_and_aborts_without_artifact_or_download() {
+        let mut replies = explicit_replies();
+        replies.truncate(10);
+        replies.extend([abort(), logout()]);
+        let server = Server::start(replies);
+        let report = rvvdk_vsphere::export_selected_vm(
+            explicit_source(&server),
+            &credentials(),
+            ExportOptions::probe(30 * 1024 * 1024 * 1024),
+        )
+        .await
+        .unwrap();
+        assert_eq!(report.primary_error, None);
+        assert_eq!(report.lease_cleanup, LeaseCleanup::Aborted);
+        assert_eq!(report.session_cleanup, Cleanup::LoggedOut);
+        assert!(!report.artifact_published);
+        assert!(!server.requests().iter().any(|r| r.starts_with("GET ")));
     }
 
     #[tokio::test]

@@ -1,5 +1,6 @@
 use crate::{
     About, Cleanup, ConnectionPolicy, Credentials, Error, InventoryLimits, Result, Session,
+    contract::SourceSelection,
     inventory::{Kind, Properties, Reference, Vm},
     session_work,
     transport::{Method, hex_string},
@@ -191,11 +192,57 @@ pub async fn export_vm(
     credentials: &Credentials,
     options: ExportOptions,
 ) -> Result<ExportReport> {
+    export_with_selection(policy, credentials, options, None).await
+}
+
+/// Explicit-identity export proof, restricted to an already powered-off VM.
+/// The connection is derived exclusively from `source`; capacity must agree and
+/// graceful shutdown must be disabled. Fresh checks bracket acquisition and
+/// transfer, but do not lock the remote VM against concurrent changes.
+///
+/// This still uses the qualification artifact lifecycle: no durable job journal,
+/// restart recovery, conversion or R6 artifact metadata is implied. Await to
+/// completion and request cancellation through `options.cancellation`.
+pub async fn export_selected_vm(
+    source: SourceSelection,
+    credentials: &Credentials,
+    options: ExportOptions,
+) -> Result<ExportReport> {
+    options.validate()?;
+    if options.single_disk_capacity_bytes != source.logical_bytes()
+        || options.allow_graceful_shutdown
+    {
+        return Err(Error::InvalidInput);
+    }
+    #[cfg(target_os = "linux")]
+    {
+        export_with_selection(
+            source.endpoint().connection_policy(),
+            credentials,
+            options,
+            Some(source),
+        )
+        .await
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = credentials;
+        Err(Error::ExportScope)
+    }
+}
+
+#[cfg(target_os = "linux")]
+async fn export_with_selection(
+    policy: ConnectionPolicy,
+    credentials: &Credentials,
+    options: ExportOptions,
+    source: Option<SourceSelection>,
+) -> Result<ExportReport> {
     let started = Instant::now();
     options.validate()?;
     let mut report = ExportReport::new(&options);
     let outcome = session_work(policy, credentials, move |session, about| {
-        Box::pin(session.export_attempt(about, options))
+        Box::pin(session.export_attempt(about, options, source))
     })
     .await?;
     let mut artifact = None;
@@ -316,14 +363,19 @@ impl Session {
             16,
         )
     }
-    async fn export_attempt(&mut self, about: About, options: ExportOptions) -> Result<Attempt> {
+    async fn export_attempt(
+        &mut self,
+        about: About,
+        options: ExportOptions,
+        source: Option<SourceSelection>,
+    ) -> Result<Attempt> {
         let mut attempt = Attempt {
             report: ExportReport::new(&options),
             artifact: None,
         };
         let mut lease = None;
         let result = self
-            .export_inner(about, &options, &mut attempt, &mut lease)
+            .export_inner(about, &options, source.as_ref(), &mut attempt, &mut lease)
             .await;
         attempt.report.primary_error = result.err();
         if let Some(lease) = lease
@@ -351,18 +403,27 @@ impl Session {
         &mut self,
         about: About,
         options: &ExportOptions,
+        source: Option<&SourceSelection>,
         attempt: &mut Attempt,
         owned: &mut Option<Reference>,
     ) -> Result<()> {
         options.cancellation.check()?;
         let inventory = self.inventory(about, InventoryLimits::default()).await?;
-        let mut candidates = inventory.vms.into_iter().filter(|vm| {
-            vm.disks.len() == 1 && vm.disks[0].capacity_bytes == options.single_disk_capacity_bytes
-        });
-        let selected = candidates.next().ok_or(Error::Identity)?;
-        if candidates.next().is_some() {
-            return Err(Error::Identity);
-        }
+        let selected = if let Some(source) = source {
+            source
+                .select_vm(source.endpoint(), &inventory)
+                .map_err(selection_error)?
+        } else {
+            let mut candidates = inventory.vms.iter().filter(|vm| {
+                vm.disks.len() == 1
+                    && vm.disks[0].capacity_bytes == options.single_disk_capacity_bytes
+            });
+            let selected = candidates.next().ok_or(Error::Identity)?;
+            if candidates.next().is_some() {
+                return Err(Error::Identity);
+            }
+            selected
+        };
         let reference = selected.identity.reference.clone();
         let mut vm = self.selected_vm(&reference).await?;
         if vm.identity.bios_uuid() != selected.identity.bios_uuid()
@@ -372,6 +433,11 @@ impl Session {
             return Err(Error::Identity);
         }
         admit_vm(&vm, options.single_disk_capacity_bytes)?;
+        if let Some(source) = source {
+            source
+                .check_vm(source.endpoint(), &vm)
+                .map_err(selection_error)?;
+        }
         attempt.report.initial_power_state = Some(vm.power_state.clone());
         attempt.report.last_observed_power_state = Some(vm.power_state.clone());
         if options.inspect_only {
@@ -425,6 +491,16 @@ impl Session {
             if vm.disks[0].identity != selected.disks[0].identity {
                 return Err(Error::Identity);
             }
+        }
+        if let Some(source) = source {
+            self.revalidate_source(
+                source,
+                &reference,
+                &mut attempt.report,
+                &options.cancellation,
+                self.deadline,
+            )
+            .await?;
         }
         options.cancellation.check()?;
         let acquired = self
@@ -495,6 +571,17 @@ impl Session {
                 deadline,
             )
             .await?;
+        if let Some(source) = source {
+            self.revalidate_source(
+                source,
+                &reference,
+                &mut attempt.report,
+                &options.cancellation,
+                deadline.min(Instant::now() + (info.timeout / 3).min(Duration::from_secs(10))),
+            )
+            .await?;
+        }
+        options.cancellation.check()?;
         let request = self
             .transport
             .data_request(info.device.url.clone(), deadline)?;
@@ -553,6 +640,25 @@ impl Session {
             },
         )
         .await?;
+        if let Some(source) = source {
+            options.cancellation.check()?;
+            self.transport
+                .call(
+                    Method::HttpNfcLeaseProgress,
+                    format!("{}<percent>0</percent>", lease.element("_this")),
+                    deadline.min(Instant::now() + (info.timeout / 3).min(Duration::from_secs(10))),
+                )
+                .await?;
+            self.revalidate_source(
+                source,
+                &reference,
+                &mut attempt.report,
+                &options.cancellation,
+                deadline.min(Instant::now() + (info.timeout / 3).min(Duration::from_secs(10))),
+            )
+            .await?;
+        }
+        options.cancellation.check()?;
         self.transport
             .call(
                 Method::HttpNfcLeaseComplete,
@@ -561,6 +667,30 @@ impl Session {
             )
             .await?;
         attempt.report.lease_cleanup = LeaseCleanup::Completed;
+        Ok(())
+    }
+    /// Finish each read (including continuation cleanup) before observing cancel.
+    /// With a live lease the caller first refreshes progress and bounds the read
+    /// to one third of its timeout, capped at ten seconds. Never retry this read.
+    async fn revalidate_source(
+        &mut self,
+        source: &SourceSelection,
+        reference: &Reference,
+        report: &mut ExportReport,
+        cancellation: &Cancellation,
+        deadline: Instant,
+    ) -> Result<()> {
+        cancellation.check()?;
+        let previous = self.deadline;
+        self.deadline = previous.min(deadline);
+        let result = self.selected_vm(reference).await;
+        self.deadline = previous;
+        cancellation.check()?;
+        let vm = result?;
+        report.last_observed_power_state = Some(vm.power_state.clone());
+        source
+            .check_vm(source.endpoint(), &vm)
+            .map_err(selection_error)?;
         Ok(())
     }
     fn lease_info(
@@ -831,6 +961,14 @@ fn verify_manifest(raw: &str, key: &str, file: &ExportFile, capacity: u64) -> Re
         return Err(Error::Manifest);
     }
     Ok(())
+}
+
+#[cfg(target_os = "linux")]
+fn selection_error(error: crate::contract::ContractError) -> Error {
+    match error {
+        crate::contract::ContractError::UnsupportedScope => Error::ExportScope,
+        _ => Error::Identity,
+    }
 }
 
 #[cfg(test)]

@@ -1548,8 +1548,7 @@ Length/digest and source comparisons do not authorize resume, abort or cleanup.
 
 [ADR-0057](adr/0057-source-identity-and-artifact-contract.md),
 [contract](export-artifact-contract.md), [qualification](benchmark-results/2026-10-02-r61a/README.md).
-The qualification exporter remains unchanged. R6.1b now supplies the durable local foundation below; R6.1c integrates the
-workflow. Private source/content hashes remain outside diagnostic reports.
+The capacity proof remains available. R6.1c.1 adds an explicit selection path below; R6.1b supplies the durable local foundation. R6.1c.2 integrates real lease ownership. Private source/content hashes remain outside diagnostic reports.
 
 
 ### R6.1b — Durable local ownership and recovery assessment
@@ -1568,3 +1567,20 @@ R6.1c must bind the real export, content validation, conversion and publication 
 these intents, preserve heartbeat/cancellation under journal delays, and qualify
 uncertain outcomes. Private ancestor trust, cooperating writers, local filesystem
 semantics and store-wide serialization are explicit boundaries.
+
+
+### R6.1c.1 — Explicit selection in the export proof
+
+`export_selected_vm` derives its connection from the source identity and rechecks
+reference/UUID/key/backing/capacity and the powered-off scope before acquisition,
+download and completion. Equal-capacity VMs are disambiguated by identity. The
+new API rejects shutdown and conflicting capacity options before connection.
+Ready-lease reads follow progress refresh and a bounded request budget; cancellation
+is checked before the next action, preserving cursor cleanup. Observations cannot
+exclude remote races. The existing writer/manifest remain a qualification artifact,
+with no journal-bound ownership, restart recovery or automatic conversion.
+
+[ADR-0059](adr/0059-explicit-export-selection.md), [contract](explicit-export-selection.md),
+[matched synthetic timing](benchmark-results/2026-10-02-r61c1/README.md).
+Next R6.1c.2 binds real leases and owned resources to durable intents and qualifies
+uncertain outcomes and writer lifetimes; full R6.1c remains open.

@@ -380,9 +380,11 @@ following bounded packages in order:
    metadata](export-artifact-contract.md) distinguish runtime selection from untrusted
    persistence. **R6.1b complete:** [durable local ownership](durable-job-ownership.md)
    and conservative crash assessment/cleanup; records grant no remote capability.
-   **Next R6.1c** integrates
-   the proven sequential export and conversion, replacing capacity-only selection
-   in the production path. The qualification harness remains separate.
+   **R6.1c.1 complete:** [explicit export selection](explicit-export-selection.md)
+   derives the connection from source identity and rechecks it before acquisition,
+   download and completion. **Next R6.1c.2:** connect real lease/resource ownership
+   to durable intents, then verified metadata, conversion and publication. The
+   capacity proof remains separate; full production R6.1c remains open.
 6. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9
    in later independently qualified steps. Keep PERF.0/R4.4 and the discovery
    variance/controlled-TLS investigation visible while adding new features.

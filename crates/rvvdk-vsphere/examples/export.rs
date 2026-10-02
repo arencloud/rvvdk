@@ -1,5 +1,8 @@
 //! Internal standalone-host export proof. No password command arguments or env.
-use rvvdk_vsphere::{ConnectionPolicy, Credentials, Error, ExportOptions, export_vm};
+use rvvdk_vsphere::contract::{EndpointIdentity, PinProvenance, SourceSelection};
+use rvvdk_vsphere::{
+    ConnectionPolicy, Credentials, Error, ExportOptions, export_selected_vm, export_vm,
+};
 use std::{path::PathBuf, time::Duration};
 #[cfg(target_os = "linux")]
 fn usage() -> (Option<f64>, Option<i64>) {
@@ -40,6 +43,8 @@ fn run() -> Result<(), Error> {
     let mut user = "root".to_owned();
     let mut options = ExportOptions::probe(30 * 1024 * 1024 * 1024);
     let mut cancel_after = None;
+    let (mut vm_reference, mut vm_uuid, mut disk_key, mut disk_backing, mut provenance) =
+        (None, None, None, None, None);
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--endpoint" => endpoint = args.next(),
@@ -55,6 +60,24 @@ fn run() -> Result<(), Error> {
             "--output" => {
                 options.output = PathBuf::from(args.next().ok_or(Error::InvalidInput)?);
                 options.probe_only = false;
+            }
+            "--vm-reference" => vm_reference = Some(args.next().ok_or(Error::InvalidInput)?),
+            "--vm-uuid" => vm_uuid = Some(args.next().ok_or(Error::InvalidInput)?),
+            "--disk-key" => {
+                disk_key = Some(
+                    args.next()
+                        .ok_or(Error::InvalidInput)?
+                        .parse::<u64>()
+                        .map_err(|_| Error::InvalidInput)?,
+                )
+            }
+            "--disk-backing" => disk_backing = Some(args.next().ok_or(Error::InvalidInput)?),
+            "--pin-provenance" => {
+                provenance = Some(match args.next().as_deref() {
+                    Some("tofu") => PinProvenance::TrustOnFirstUse,
+                    Some("externally-verified") => PinProvenance::ExternallyVerified,
+                    _ => return Err(Error::InvalidInput),
+                })
             }
             "--allow-shutdown" => options.allow_graceful_shutdown = true,
             "--inspect" => options.inspect_only = true,
@@ -85,15 +108,37 @@ fn run() -> Result<(), Error> {
                 println!(
                     "export --endpoint HTTPS_URL --certificate-sha256 SHA256 [--user USER] [--capacity-bytes N] [--inspect] [--output NEW_DIRECTORY --allow-shutdown] [--max-bytes N] [--timeout-seconds N] [--cancel-after-ms N]\nDefault: one 30 GiB disk VM eligibility probe; requires poweredOff, no power change or download. --inspect reads recent tasks without acquiring a lease and permits poweredOn. Supplying output enables export. Shutdown is graceful only and requires its flag. The selected VM is left in its last observed state. Ctrl-C requests cooperative abort/logout."
                 );
+                println!(
+                    "Explicit selection: supply all of --vm-reference ID --vm-uuid UUID --disk-key N --disk-backing ID --pin-provenance tofu|externally-verified. Capacity remains an expected identity field. This mode requires poweredOff and rejects --allow-shutdown. It adds fresh identity checks; durable workflow recovery and conversion remain pending. Identities and export reports are private operational data."
+                );
                 return Ok(());
             }
             _ => return Err(Error::InvalidInput),
         }
     }
-    let policy = ConnectionPolicy::pinned(
-        &endpoint.ok_or(Error::InvalidInput)?,
-        &pin.ok_or(Error::InvalidInput)?,
-    )?;
+    let endpoint = endpoint.ok_or(Error::InvalidInput)?;
+    let pin = pin.ok_or(Error::InvalidInput)?;
+    let policy = ConnectionPolicy::pinned(&endpoint, &pin)?;
+    let source = match (vm_reference, vm_uuid, disk_key, disk_backing, provenance) {
+        (None, None, None, None, None) => None,
+        (Some(reference), Some(uuid), Some(key), Some(backing), Some(provenance))
+            if !options.allow_graceful_shutdown =>
+        {
+            Some(
+                SourceSelection::new(
+                    EndpointIdentity::pinned(&endpoint, &pin, provenance)
+                        .map_err(|_| Error::InvalidInput)?,
+                    &reference,
+                    &uuid,
+                    key,
+                    &backing,
+                    options.single_disk_capacity_bytes,
+                )
+                .map_err(|_| Error::InvalidInput)?,
+            )
+        }
+        _ => return Err(Error::InvalidInput),
+    };
     let credentials = Credentials::new(
         user,
         rpassword::prompt_password("ESXi password (memory only): ")
@@ -118,7 +163,10 @@ fn run() -> Result<(), Error> {
                 cancellation.cancel();
             })
         });
-        let report = export_vm(policy, &credentials, options).await;
+        let report = match source {
+            Some(source) => export_selected_vm(source, &credentials, options).await,
+            None => export_vm(policy, &credentials, options).await,
+        };
         handler.abort();
         if let Some(timer) = timer {
             timer.abort();

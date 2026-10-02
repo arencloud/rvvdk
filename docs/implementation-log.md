@@ -2522,28 +2522,64 @@ measure this overhead during integration. No prior implementation exists, so the
 are new baselines. No benchmark overlaps builds/tests/standalone plotting. No ESXi
 or guest access was needed; synthetic fixtures are removed and private data excluded.
 
+## R6.1c.1 — Explicit selection in the export proof
+
+Completed the first bounded R6.1c package. `export_selected_vm` derives its pinned
+connection from `SourceSelection` and selects by reference, UUID, disk key/backing
+and expected capacity. Equal-capacity VMs are supported without fallback selection.
+The Rust export example has an all-or-nothing explicit identity mode. Invalid
+capacity/shutdown options fail before connecting; the new path requires powered-off
+scope and preserves the existing capacity proof as a separate entry point.
+
+Fresh observations after output admission, before download and before completion
+check identity, topology, power and disabled ExportVm. Ready-lease reads follow a
+progress refresh and are bounded by one third of the lease timeout, capped at ten
+seconds and the operation deadline. Cancellation prevents the next action after
+a property RPC; pagination cleanup is awaited. These observations do not exclude
+remote races or make the current artifact writer durably owned.
+
+[Contract](explicit-export-selection.md), [ADR-0059](adr/0059-explicit-export-selection.md),
+[tests and matched benchmark plots](benchmark-results/2026-10-02-r61c1/README.md).
+Nine new integration tests cover equal-capacity disambiguation, exact operation
+ordering, 30 identity/state mutations at five boundaries, missing selection,
+invalid options, cancellation at all three added checks, slow live-lease reads,
+pagination cleanup, certificate rejection and probe cleanup. Workspace: **658
+passed, three ignored** (two storage tests and one opt-in performance matrix).
+All-target clippy and formatting pass. The final mock-server adjustment also
+passes all 48 discovery/export integration tests.
+
+Synthetic timing compares both paths in the same release executable, with
+alternating per-pair order, byte checks, CPU/RSS/allocation and longer repeats for
+adverse pairs. The original mock's TCP delay is retained as evidence alongside a
+TCP_NODELAY control; see the report for measured overhead and remaining variation.
+No VMware host, guest, power operation or private image is used for this package.
+R6.1c as a whole remains open: this is still the qualification artifact lifecycle,
+not production durable export, recovery, verified R6 metadata or conversion.
+
 ## Next session
 
-Start **R6.1c — Integrate explicit selection, export and conversion**, in reviewable
-bounded packages if needed:
+Start **R6.1c.2 — Bind real lease and resource ownership to durable intents**:
 
-1. Add the production source-selection path using R6.1a identities instead of
-   capacity-only selection. Revalidate on the admitted connection before acquisition
-   and around state changes; preserve existing scope and power/cancellation rules.
-2. Connect R6.1b intents to the actual export lease and owned resource handles.
-   Await durable intent before RPC; keep the live lease capability process-local.
-   Do not resurrect ownership from records or retry uncertain requests. Qualify
-   cancellation/heartbeat behavior when local journal writes stall.
-3. Finish and independently check container bytes, persist private artifact metadata,
-   connect confined local conversion, and implement actual no-replace publication
-   with file/directory durability and no outstanding writers. Journal acknowledgments
-   alone do not prove payload validation or publication. Keep uncertain states pending.
-4. Fault-inject ordering, publication races, dropped responses, cleanup and process
-   loss through the combined workflow. Keep the old capacity-selected proof separate;
-   never automatically promote its manifest to job ownership.
-5. Repeat matched performance/CPU/RSS/allocation and byte checks, then qualify the
-   integrated workflow on the already authorized lab when new host evidence is needed.
-   Preserve the journal's measured storage overhead; do not remove barriers to tune it.
+1. Preserve R6.1c.1's explicit source binding and boundary checks while connecting
+   R6.1b intents to the actual export lease and owned resource handles. The current
+   proof writer must not be represented as a journal-owned stage by assertion.
+2. Await durable intent before RPC; keep live lease capability process-local. Do
+   not resurrect ownership from records or retry uncertain requests. Replace the
+   proof's abort-after-completion-error behavior with conservative uncertain-state
+   handling in the journal-bound path. Keep the legacy proof separate.
+3. Coordinate blocking journal work with heartbeat/cancellation and await all
+   outstanding writers. The borrowing synchronous Job API needs a concrete worker
+   or owned coordinator design; dropping a future must not leave untracked writers.
+4. Qualify intent/RPC ordering, dropped acquisition/completion responses, slow local
+   storage, cleanup failure and process loss. Keep uncertain states pending; journal
+   acknowledgments alone are not proof of payload validation or publication.
+5. Subsequent bounded packages must independently check container bytes, persist
+   private artifact metadata, connect confined conversion, and implement actual
+   no-replace publication with file/directory durability. Never automatically promote
+   a capacity-proof manifest into job ownership.
+6. Repeat matched CPU/RSS/allocation and byte checks. Qualify the complete integrated
+   workflow on the authorized lab when new host evidence is needed. Keep measured
+   journal storage overhead and selection RPC costs; do not remove barriers to tune.
 
 Keep PERF.0 visible: prior stream timing, CPU/SMT/frequency/layout controls, map/cache
 sensitivity, random whole-grain amplification, sparse-output Btrfs layout/flush cost,

@@ -1,0 +1,53 @@
+--- a/crates/rvvdk-vsphere/tests/discovery.rs
++++ b/crates/rvvdk-vsphere/tests/discovery.rs
+@@ -150,9 +150,6 @@
+ }
+ impl Server {
+     fn start(replies: Vec<Reply>) -> Self {
+-        Self::start_with_nodelay(replies, false)
+-    }
+-    fn start_with_nodelay(replies: Vec<Reply>, nodelay: bool) -> Self {
+         let cert = rcgen::generate_simple_self_signed(vec!["localhost".to_owned()]).unwrap();
+         let pin = Sha256::digest(cert.cert.der())
+             .iter()
+@@ -205,7 +202,6 @@
+                     }
+                     Err(e) => panic!("{e}"),
+                 };
+-                stream.set_nodelay(nodelay).unwrap();
+                 stream
+                     .set_read_timeout(Some(Duration::from_millis(300)))
+                     .unwrap();
+--- a/crates/rvvdk-vsphere/tests/export_tests/selected_benchmark.rs
++++ b/crates/rvvdk-vsphere/tests/export_tests/selected_benchmark.rs
+@@ -28,11 +28,6 @@
+         .unwrap();
+     assert!((1..=128).contains(&count));
+     let output = std::env::var_os("RVVDK_SELECTION_REPORT").unwrap();
+-    let nodelay = match std::env::var("RVVDK_SELECTION_NODELAY").as_deref() {
+-        Ok("1") => true,
+-        Ok("0") | Err(_) => false,
+-        _ => panic!("invalid synthetic server TCP_NODELAY option"),
+-    };
+     let mut results = Vec::new();
+     for pair in 0..count {
+         for explicit in if pair % 2 == 0 {
+@@ -44,9 +39,6 @@
+                 explicit_replies()
+             } else {
+                 let mut replies = selected("poweredOff");
+-                for reply in &mut replies {
+-                    reply.body = reply.body.replace("<string>ExportVm</string>", "");
+-                }
+                 replies.extend([
+                     granted(),
+                     ready("ENDPOINT/nfc/PRIVATE-ticket", "THUMBPRINT"),
+@@ -57,7 +49,7 @@
+                 ]);
+                 replies
+             };
+-            let server = Server::start_with_nodelay(replies, nodelay);
++            let server = Server::start(replies);
+             let out = Output::new();
+             let opts = options(&out);
+             let credentials = credentials();

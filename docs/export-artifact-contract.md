@@ -2,8 +2,9 @@
 
 `rvvdk_vsphere::contract` supplies bounded runtime selection and private artifact
 metadata without network or filesystem operations. This is the contract for the
-future production workflow. The existing `export` example remains a separate
-capacity-selected qualification harness until R6.1c integration.
+future production workflow. The existing `export` example remains a qualification harness with its legacy
+capacity-selected mode. [R6.1c.1](explicit-export-selection.md)
+adds an explicit-identity export path; durable workflow integration remains open.
 
 ## Runtime identity
 
@@ -108,8 +109,9 @@ record does not authorize remote or local actions.
 
 [R6.1b](durable-job-ownership.md) supplies the private durable ownership journal,
 state transitions and conservative process-loss assessment/cleanup. Artifact claims
-never grant authority over a lease or staging directory. R6.1c connects explicit source revalidation,
-sequential export, durable artifact admission and local conversion. Existing
+never grant authority over a lease or staging directory. R6.1c.1 now connects
+explicit selection and revalidation to the export proof. R6.1c.2 connects actual
+lease ownership to durable intents, followed by artifact admission and conversion. Existing
 capacity-only manifests are not automatically promoted. No new ESXi run is needed
 for R6.1a's pure contract tests and synthetic measurements.
 

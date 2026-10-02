@@ -1,0 +1,56 @@
+   Compiling rvvdk-vsphere v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-vsphere)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.21s
+     Running tests/discovery.rs (target/debug/deps/discovery-9afa23b70b64d360)
+
+running 49 tests
+test export_tests::explicit_invalid_options_fail_before_connecting ... ok
+test export_tests::explicit_missing_identity_does_not_fall_back_to_capacity ... ok
+test export_tests::explicit_probe_acquires_and_aborts_without_artifact_or_download ... ok
+test export_tests::explicit_source_pin_is_enforced_before_credentials_are_sent ... ok
+test export_tests::explicit_revalidation_cancels_unexpected_pagination_before_lease_abort ... ok
+test a_successful_inventory_with_failed_logout_is_not_success ... ok
+test authentication_and_cleanup_faults_remain_separate_and_redacted ... ok
+test actual_body_limit_does_not_trust_content_length ... ok
+test export_tests::inspection_bounds_and_validates_all_references_before_task_queries ... ok
+test export_tests::graceful_shutdown_revalidates_disk_before_acquisition ... ok
+test export_tests::inspection_rejects_task_identity_change_and_always_logs_out ... ok
+test export_tests::explicit_identity_selects_among_equal_capacity_vms_and_revalidates_in_order ... ok
+test export_tests::auxiliary_non_disk_entries_are_not_downloaded_or_verified_as_disks ... ok
+test export_tests::malformed_acquisition_is_uncertain_and_not_retried ... ok
+test export_tests::opaque_lease_reference_is_escaped_and_aborted ... ok
+test export_tests::inspection_reads_tasks_without_acquiring_or_cancelling_them ... ok
+test duplicate_wrong_object_and_missing_traversal_fail ... ok
+test export_tests::selected_benchmark::matched_selected_export ... ignored, opt-in synthetic performance matrix; requires a new output file
+test export_tests::shutdown_failure_never_falls_back_to_hard_power_off ... ok
+test export_tests::inspection_does_not_serialize_arbitrary_task_strings ... ok
+test export_tests::output_collision_precedes_power_and_lease_calls ... ok
+test export_tests::powered_on_probe_never_acquires_a_lease_or_changes_power ... ok
+test export_tests::complete_or_logout_failure_prevents_publication ... ok
+test export_tests::probe_aborts_any_granted_lease ... ok
+test export_tests::endpoint_or_pin_rejection_aborts_without_get ... ok
+test missing_property_reports_primary_and_logout_failure ... ok
+test fresh_policy_rechecks_pin_for_each_request ... ok
+test redirect_is_never_followed ... ok
+test scoped_operation_futures_remain_send ... ok
+test pagination_cancels_cursor_and_preserves_cleanup_error ... ok
+test size_encoding_and_truncated_responses_fail_closed ... ok
+test unsupported_server_is_rejected_before_login ... ok
+test malformed_login_still_uses_received_cookie_for_logout ... ok
+test missing_cookie_is_not_reported_as_authenticated ... ok
+test wrong_pin_sends_no_http_or_credentials ... ok
+test deadlines_expire_and_still_allow_logout ... ok
+test tls_inventory_identity_redaction_and_reuse ... ok
+test export_tests::wildcard_and_legacy_sha1_are_bound_to_the_sha256_pinned_endpoint ... ok
+test inventory_and_disk_limits_logout_without_partial_success ... ok
+test export_tests::probe_distinguishes_license_and_power_without_shutdown ... ok
+test export_tests::digest_mismatch_retains_both_cleanup_outcomes_without_publication ... ok
+test export_tests::full_transfer_verifies_manifest_completes_logs_out_and_publishes ... ok
+test whole_discovery_deadline_has_an_independent_cleanup_budget ... ok
+test export_tests::cancel_pending_download_aborts_and_removes_private_files ... ok
+test export_tests::transfer_limit_redirect_and_truncation_abort_without_publication ... ok
+test export_tests::explicit_cancellation_during_fresh_checks_prevents_acquire_download_or_complete ... ok
+test export_tests::explicit_live_lease_revalidation_has_a_bounded_request_budget ... ok
+test export_tests::explicit_drift_at_every_boundary_blocks_the_next_mutation_and_cleans_up ... ok
+test export_tests::heartbeats_renew_lease_while_data_response_is_pending ... ok
+
+test result: ok. 48 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 2.43s

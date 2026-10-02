@@ -158,6 +158,15 @@ impl SourceSelection {
         observed_endpoint: &EndpointIdentity,
         inventory: &'a Inventory,
     ) -> Result<&'a Disk> {
+        let vm = self.select_vm(observed_endpoint, inventory)?;
+        Ok(&vm.disks[0])
+    }
+
+    pub(crate) fn select_vm<'a>(
+        &self,
+        observed_endpoint: &EndpointIdentity,
+        inventory: &'a Inventory,
+    ) -> Result<&'a Vm> {
         if inventory.vms.len() > crate::InventoryLimits::default().max_objects {
             return Err(ContractError::InvalidInput);
         }
@@ -169,7 +178,8 @@ impl SourceSelection {
         if matches.next().is_some() {
             return Err(ContractError::Selection);
         }
-        self.check_vm(observed_endpoint, vm)
+        self.check_vm(observed_endpoint, vm)?;
+        Ok(vm)
     }
 
     pub fn check_vm<'a>(
