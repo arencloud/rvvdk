@@ -1530,5 +1530,9 @@ discard assumption or new-file write omission is introduced.
 
 [ADR-0056](adr/0056-space-efficient-local-zero-output.md),
 [contract](local-sparse-output.md), [measurements](benchmark-results/2026-10-02-r512p/README.md).
-R5.12q investigates retained-export full-copy latency next, preserving the
-allocation improvement. R6.1a source identity and artifact contracts follow.
+[R5.12q](benchmark-results/2026-10-02-r512q/README.md) locates the extra retained-export
+Btrfs latency mainly in the engine durability flush. Physical extent count is
+associated with the output policy; causality and a portable mitigation remain
+open. Keep sparse zero output and every durability barrier. PERF.0 will qualify
+storage/layout changes independently. R6.1a source identity and artifact contracts
+are next.

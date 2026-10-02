@@ -117,3 +117,9 @@ shared unsupported-mode caching and real-error propagation for both public
 operations. Allocation tests cover populated and fresh sparse files as well as
 partial-block sentinels. [ADR-0056](adr/0056-space-efficient-local-zero-output.md),
 [complete storage qualification and performance disposition](benchmark-results/2026-10-02-r512p/README.md).
+
+[R5.12q diagnostics](benchmark-results/2026-10-02-r512q/README.md) locate the extra
+Btrfs copy time mainly in the engine durability flush, with higher physical extent
+counts on sparse output. This association does not establish filesystem causality.
+Retain punch-first behavior and all flush/sync barriers; further storage/layout
+optimization remains a separately measured PERF.0 task.

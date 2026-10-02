@@ -149,3 +149,15 @@ and physical allocation. The XFS runner is plotted separately from local pairs:
 ```sh
 python scripts/benchmarks/plot_zero_output.py docs/benchmark-results/2026-10-02-r512p
 ```
+
+R5.12q audits every retained-export copy/readback, phase sum, policy/control pair,
+allocation and selected syscall count. It plots phase deltas, identical-binary and
+progress controls, physical extent counts and separate native read timings:
+
+```sh
+python scripts/benchmarks/plot_copy_phases.py docs/benchmark-results/2026-10-02-r512q
+```
+
+`measure_copy_phases.py --help` describes offline measurement inputs. Use private
+source/work paths and a fresh public report directory. Native Rust binaries do all
+disk operations; the harness records aggregates and keeps raw CLI paths private.

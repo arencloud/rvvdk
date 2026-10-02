@@ -1,0 +1,17 @@
+{
+  "kernel": "7.2.5-200.fc44.x86_64",
+  "machine": "x86_64",
+  "cpu_model": "11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz",
+  "smt_siblings": "0,8",
+  "filesystem": "btrfs",
+  "strace": "strace -- version 7.2",
+  "python": "3.14.7",
+  "conditions": "Shared host; CPU 0 affinity; SMT not isolated; buffered existing caches; no cache dropping, storage tuning, or concurrent agent builds/tests/plotting. Full native readback and filefrag between timed copies. All command attempts retained.",
+  "commands": {
+    "copy": "taskset -c 0 FROZEN_CLI copy PRIVATE_SOURCE PRIVATE_RAW --format vmdk --json --backend auto [--progress]",
+    "trace": "strace -f -qq -c -w -e trace=pread64,pwrite64,fallocate,fdatasync,fsync -o REPORT COPY_COMMAND",
+    "read": "taskset -c 0 FROZEN_PROBE PRIVATE_SOURCE sequential",
+    "readback": "taskset -c 0 FROZEN_SPARSE_CLI verify PRIVATE_SOURCE PRIVATE_RAW --format vmdk --json",
+    "metrics": "/usr/bin/time wall,user,system,maxrss around the entire taskset command"
+  }
+}

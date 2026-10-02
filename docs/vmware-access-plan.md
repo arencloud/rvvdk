@@ -373,8 +373,9 @@ following bounded packages in order:
 4. **R5.12p complete — Output-space qualification:** punch-first local zero output
    preserves logical semantics and reduces allocation on qualified XFS/Btrfs.
    [Repeated conversions and timing controls](benchmark-results/2026-10-02-r512p/README.md)
-   retain unresolved adverse observations. R5.12q investigates the remaining
-   local full-copy latency before R6.1a.
+   retain unresolved adverse observations. [R5.12q phase diagnostics](benchmark-results/2026-10-02-r512q/README.md)
+   locate the remaining local cost mainly in engine flush; keep the sparse-output
+   default and storage/layout performance follow-up. R6.1a is next.
 5. **R6.1 — Container export contract and ownership:** replace capacity-only
    experimental selection with explicit source identity/trust inputs. Define
    versioned artifact and durable lease-ownership records, then test process-loss

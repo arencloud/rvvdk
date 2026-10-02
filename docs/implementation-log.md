@@ -2413,27 +2413,48 @@ stay ignored and only aggregate observations are committed.
 Allocation and runtime have separate meanings; fallback still provides no
 universal output-space guarantee.
 
+## R5.12q — Retained-export full-copy latency investigation
+
+Completed with no production Rust changes. [Report, raw measurements and plots](benchmark-results/2026-10-02-r512q/README.md)
+retain 28 full copies/readbacks, six native source-only controls, CPU/RSS/allocation,
+physical extent counts, phase events, host observations and executable hashes.
+The fixed private image and exact R5.12p executables are unchanged; all 28 full
+native readbacks pass. No VMware/guest action or XFS change was needed. Temporary
+RAWs are removed. Existing independent QEMU/guest and workspace qualification is
+retained, not presented as newly executed tests.
+
+Six alternating untraced policy pairs on CPU 0 give +7.98%, +1.68%, +4.68%,
++12.64%, +8.15%, +6.50% copy time (median +7.24%). Initial median +4.68%; extra
+three-pair median +8.15%. Keep the earlier unpinned +8.28% evidence separately.
+Median engine flush increases 0.202 → 0.961 s, while transfer is 6.198 → 6.014 s
+and CPU 6.400 → 6.375 s. Subsequent file/directory sync remains small. Sparse
+output retains 3,754,885,120-byte allocation versus 30 GiB; physical extent count
+is 10,047–10,079 versus 116–133. This associates the policy/layout with extra
+flush cost; it does not establish a Btrfs cause or a portable fix.
+
+Same-executable pairs −0.20%, −2.49%, +1.51% and progress on/off pairs +4.88%,
+−1.03%, +0.61% preserve observed variation. Two separately traced pairs show
+similar destination pwrite wall time and longer sparse fdatasync, with 22 cheap
+successful fallocate calls. Native probe median map admission is 0.0418 s and
+allocated-grain read/decode 5.630 s. No subtraction is claimed as pure decoder CPU.
+The shared host retains powersave and an unisolated SMT sibling; all cache/storage
+conditions and tracing limitations are recorded. Builds/tests/plotting do not
+interleave the timed matrix. Plot generation initially found no matplotlib in
+system Python, then passed in the existing plotting environment. Audit validates
+all 28 outcomes, phase sums, allocations, six read controls and four syscall logs;
+three figures are saved in SVG/PNG. Only sanitized aggregates are committed.
+
+Retain punch-first zero semantics, bounded memory, fallback/error handling,
+cancellation, exact-range overwrite and all publication/durability barriers.
+PERF.0 now has an explicit controlled-storage layout/writeback follow-up, with
+bounded Data-range reservation as an experiment requiring independent correctness,
+allocation and Btrfs/XFS qualification. No allocating Zero default or omitted sync
+is accepted as a latency fix. R5.12q closes the bounded investigation, not the
+remaining performance tradeoff.
+
 ## Next session
 
-Start **R5.12q — Retained-export full-copy latency investigation**. Preserve the
-qualified sparse-allocation gain while investigating the +8.28% median in the
-additional Btrfs copy-only pairs:
-
-- Measure map/decode, destination Data writes and flush/durability phases separately
-  with bounded diagnostic instrumentation. Use the same fixed image, binary/CPU
-  controls and alternating order; record storage/cache conditions and all attempts.
-  The 22-call fallocate profile alone does not establish where wall time went.
-- Correlate allocation/layout and write/flush costs before choosing an optimization.
-  Compare identical binaries and decoder controls to distinguish workload/layout
-  variance from a reproducible implementation cost. Do not restore allocating
-  zero-range as the default merely to improve one latency number.
-- Retain arbitrary-range zero bytes, existing nonzero overwrite/tails, access
-  exclusion, bounded memory, capability fallbacks, cancellation and publication.
-  Re-run complete QEMU/guest comparisons and matched copy-only/readback/CPU/RSS/
-  allocation measurements for any implementation change. Keep XFS and Btrfs
-  results separate. Commit the measured disposition, even if a tradeoff remains.
-
-Then start **R6.1a — Explicit source identity and export artifact contract**. Split the
+Start **R6.1a — Explicit source identity and export artifact contract**. Split the
 larger R6.1 ownership/integration gate into reviewable committed packages:
 
 1. Specify versioned artifact metadata and bounded Rust types for explicit endpoint
@@ -2449,10 +2470,12 @@ larger R6.1 ownership/integration gate into reviewable committed packages:
    Qualify on the authorized lab only when the workflow needs new host evidence.
 
 Keep PERF.0 visible: prior stream timing, controlled CPU/SMT/frequency/layout work,
-map admission/cache sensitivity, random whole-grain amplification and measured
-bounded parallel decoding. Do not grow scratch state with unbounded worker count.
-Retain R4.4 and discovery/TLS follow-ups. The historical CLI-copy slowdown did not
-reproduce in this bounded recheck; preserve both datasets without causal claims.
+map admission/cache sensitivity, random whole-grain amplification, sparse-output
+Btrfs layout/flush cost and measured bounded parallel decoding. Do not grow scratch
+state with unbounded worker count. Retain R4.4 and discovery/TLS follow-ups. The
+historical monolithic sparse CLI-copy slowdown did not reproduce in R5.12p; the
+retained-export Btrfs slowdown remains visible in R5.12q. Preserve all datasets
+without unsupported causal claims.
 VMFS sparse, seSparse, online snapshots, CBT, restore, vCenter and vSphere 9 remain
 separately qualified later work. Commit every completed package with tests,
 benchmark disposition, evidence and updated next-session notes.

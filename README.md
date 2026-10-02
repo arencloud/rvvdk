@@ -253,7 +253,7 @@ ownership against QEMU fixtures and the retained ESXi export;
 [benchmark plots](docs/benchmark-results/2026-10-02-r511a/README.md) track admission
 costs. [R5.11b native reads](docs/vmdk-stream-reads.md) now pass complete QEMU
 byte comparison and the independent guest oracle, with [read/CPU/RSS plots](docs/benchmark-results/2026-10-02-r511b/README.md).
-[R5.12 CLI conversion](docs/cli-vmdk.md) is qualified; [conversion plots and controls](docs/benchmark-results/2026-10-02-r512/README.md) are retained. [R5.12p](docs/benchmark-results/2026-10-02-r512p/README.md) adds space-efficient local zero output with measured allocation. R5.12q investigates remaining full-copy latency next; R6.1 artifact identity and durable ownership follow.
+[R5.12 CLI conversion](docs/cli-vmdk.md) is qualified; [conversion plots and controls](docs/benchmark-results/2026-10-02-r512/README.md) are retained. [R5.12p](docs/benchmark-results/2026-10-02-r512p/README.md) adds space-efficient local zero output with measured allocation. [R5.12q phase diagnostics](docs/benchmark-results/2026-10-02-r512q/README.md) locate the remaining Btrfs cost mainly in durability flush; the allocation gain is retained. Next: R6.1a artifact identity, followed by durable ownership.
 Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
 for sanitizer execution rates, memory and feedback across repeated campaigns.
 The [R5.8 CLI parent-chain timings](docs/benchmark-results/2026-09-30-r58/README.md)
