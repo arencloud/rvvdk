@@ -1,0 +1,607 @@
+{
+  "environment": "local",
+  "additional_copy_pairs": 3,
+  "conditions": "Buffered retained export, shared host, default one worker and 1 MiB blocks, no affinity or cache flushing. Local before/candidate pairs alternate; runner candidate only, prior baseline ENOSPC retained in R5.12. Time/CPU/RSS cover the complete Rust command. QEMU/oracle and standalone verification occur outside timed copies. Logical throughput includes zero ranges.",
+  "binary_sha256": {
+    "candidate": "a67aa9767e1148580e97e4dfec1008505a0d4fbd12425eea6dae92b285aba35b",
+    "before": "e0f2b86c340dc6128049e06351dbc1172a985c7d51bf4dd97e10817eb1afbe60"
+  },
+  "rows": [
+    {
+      "variant": "before",
+      "mode": "copy",
+      "round": 1,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 6.46,
+        "user_seconds": 5.03,
+        "system_seconds": 1.31,
+        "max_rss_kib": 5380
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": null,
+      "elapsed_seconds": 6.466441386,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 32212254720
+    },
+    {
+      "variant": "candidate",
+      "mode": "copy",
+      "round": 1,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 7.26,
+        "user_seconds": 5.11,
+        "system_seconds": 1.46,
+        "max_rss_kib": 5512
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": null,
+      "elapsed_seconds": 7.26185168,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 3754885120
+    },
+    {
+      "variant": "before",
+      "mode": "copy_verify",
+      "round": 1,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 23.98,
+        "user_seconds": 14.56,
+        "system_seconds": 9.09,
+        "max_rss_kib": 7384
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": {
+        "bytes_verified": 32212254720,
+        "elapsed_seconds": 16.639128984
+      },
+      "elapsed_seconds": 23.982201109000002,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 32212254720
+    },
+    {
+      "variant": "candidate",
+      "mode": "copy_verify",
+      "round": 1,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 24.46,
+        "user_seconds": 14.18,
+        "system_seconds": 9.12,
+        "max_rss_kib": 7204
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": {
+        "bytes_verified": 32212254720,
+        "elapsed_seconds": 16.497200983
+      },
+      "elapsed_seconds": 24.458822995,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 3754885120
+    },
+    {
+      "variant": "candidate",
+      "mode": "copy_verify",
+      "round": 2,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 24.69,
+        "user_seconds": 14.48,
+        "system_seconds": 9.27,
+        "max_rss_kib": 7512
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": {
+        "bytes_verified": 32212254720,
+        "elapsed_seconds": 16.43153629
+      },
+      "elapsed_seconds": 24.690284662,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 3754885120
+    },
+    {
+      "variant": "before",
+      "mode": "copy_verify",
+      "round": 2,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 24.02,
+        "user_seconds": 14.32,
+        "system_seconds": 8.91,
+        "max_rss_kib": 7420
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": {
+        "bytes_verified": 32212254720,
+        "elapsed_seconds": 16.587253811
+      },
+      "elapsed_seconds": 24.023053673,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 32212254720
+    },
+    {
+      "variant": "candidate",
+      "mode": "copy",
+      "round": 2,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 7.94,
+        "user_seconds": 5.29,
+        "system_seconds": 1.65,
+        "max_rss_kib": 5384
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": null,
+      "elapsed_seconds": 7.941047565,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 3754885120
+    },
+    {
+      "variant": "before",
+      "mode": "copy",
+      "round": 2,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 7.18,
+        "user_seconds": 5.65,
+        "system_seconds": 1.36,
+        "max_rss_kib": 5244
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": null,
+      "elapsed_seconds": 7.184096484,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 32212254720
+    },
+    {
+      "variant": "before",
+      "mode": "copy",
+      "round": 3,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 7.49,
+        "user_seconds": 5.34,
+        "system_seconds": 1.66,
+        "max_rss_kib": 5216
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": null,
+      "elapsed_seconds": 7.489696051,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 32212254720
+    },
+    {
+      "variant": "candidate",
+      "mode": "copy",
+      "round": 3,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 8.33,
+        "user_seconds": 5.83,
+        "system_seconds": 1.65,
+        "max_rss_kib": 5232
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": null,
+      "elapsed_seconds": 8.337931293,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 3754885120
+    },
+    {
+      "variant": "before",
+      "mode": "copy_verify",
+      "round": 3,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 24.12,
+        "user_seconds": 14.24,
+        "system_seconds": 9.04,
+        "max_rss_kib": 7296
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": {
+        "bytes_verified": 32212254720,
+        "elapsed_seconds": 16.707833767
+      },
+      "elapsed_seconds": 24.122053663,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 32212254720
+    },
+    {
+      "variant": "candidate",
+      "mode": "copy_verify",
+      "round": 3,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 24.79,
+        "user_seconds": 14.53,
+        "system_seconds": 9.29,
+        "max_rss_kib": 7452
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": {
+        "bytes_verified": 32212254720,
+        "elapsed_seconds": 16.985728152
+      },
+      "elapsed_seconds": 24.794881511,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 3754885120
+    },
+    {
+      "variant": "candidate",
+      "mode": "copy",
+      "round": 4,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 7.08,
+        "user_seconds": 5.01,
+        "system_seconds": 1.46,
+        "max_rss_kib": 5316
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": null,
+      "elapsed_seconds": 7.08280075,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 3754885120
+    },
+    {
+      "variant": "before",
+      "mode": "copy",
+      "round": 4,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 7.08,
+        "user_seconds": 5.18,
+        "system_seconds": 1.45,
+        "max_rss_kib": 5280
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": null,
+      "elapsed_seconds": 7.087741754,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 32212254720
+    },
+    {
+      "variant": "before",
+      "mode": "copy",
+      "round": 5,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 7.47,
+        "user_seconds": 5.38,
+        "system_seconds": 1.53,
+        "max_rss_kib": 5140
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": null,
+      "elapsed_seconds": 7.478191913,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 32212254720
+    },
+    {
+      "variant": "candidate",
+      "mode": "copy",
+      "round": 5,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 8.23,
+        "user_seconds": 5.72,
+        "system_seconds": 1.71,
+        "max_rss_kib": 5408
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": null,
+      "elapsed_seconds": 8.233078967,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 3754885120
+    },
+    {
+      "variant": "candidate",
+      "mode": "copy",
+      "round": 6,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 7.99,
+        "user_seconds": 5.43,
+        "system_seconds": 1.65,
+        "max_rss_kib": 5356
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": null,
+      "elapsed_seconds": 7.992449841,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 3754885120
+    },
+    {
+      "variant": "before",
+      "mode": "copy",
+      "round": 6,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 7.38,
+        "user_seconds": 5.31,
+        "system_seconds": 1.4,
+        "max_rss_kib": 5368
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": null,
+      "elapsed_seconds": 7.381357853,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 32212254720
+    }
+  ],
+  "checks": [
+    {
+      "variant": "before",
+      "case": "qemu_full_logical",
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "variant": "before",
+      "case": "independent_guest_oracle",
+      "matched": true,
+      "logical_bytes": 8388608
+    },
+    {
+      "variant": "before",
+      "case": "standalone_verify",
+      "round": 1,
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "variant": "candidate",
+      "case": "qemu_full_logical",
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "variant": "candidate",
+      "case": "independent_guest_oracle",
+      "matched": true,
+      "logical_bytes": 8388608
+    },
+    {
+      "variant": "candidate",
+      "case": "standalone_verify",
+      "round": 1,
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "variant": "candidate",
+      "case": "standalone_verify",
+      "round": 2,
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "variant": "before",
+      "case": "standalone_verify",
+      "round": 2,
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "variant": "before",
+      "case": "standalone_verify",
+      "round": 3,
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "variant": "candidate",
+      "case": "standalone_verify",
+      "round": 3,
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "variant": "candidate",
+      "case": "standalone_verify",
+      "round": 4,
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "variant": "before",
+      "case": "standalone_verify",
+      "round": 4,
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "variant": "before",
+      "case": "standalone_verify",
+      "round": 5,
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "variant": "candidate",
+      "case": "standalone_verify",
+      "round": 5,
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "variant": "candidate",
+      "case": "standalone_verify",
+      "round": 6,
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "variant": "before",
+      "case": "standalone_verify",
+      "round": 6,
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    }
+  ]
+}

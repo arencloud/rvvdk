@@ -144,11 +144,11 @@ Inspect and plan do not decompress payloads. Copy detects corrupt allocated grai
 `copy --verify` additionally compares the entire logical output before publication.
 Standalone verify compares the logical source with the RAW destination prefix.
 Sparse absent grains become zeros; allocated zero-filled grains remain Data.
-Logical Zero output currently uses the local backend's `ZERO_RANGE` (or zero-write
-fallback), which can allocate storage for the entire logical range. The encoded
-container size and Data-byte total do not bound destination allocation. The
-retained-export test exhausted a small XFS root for this reason; plan sufficient
-space for logical capacity until the separate R5.12p optimization is qualified.
+Logical Zero output uses the local backend's punch-first zero path (R5.12p),
+with zero-range or bounded-write fallbacks for unsupported kernel modes. Qualified
+filesystems can preserve holes and reclaim complete blocks. Partial blocks and
+fallbacks may allocate, so encoded size and Data-byte totals still do not promise
+a universal destination-space bound. See [local output semantics](local-sparse-output.md).
 Explicit `io-uring` rejects before destination preparation; `auto` uses threaded.
 
 Source quiescence, retained inode observations, hardlink alias rejection, cancellation

@@ -1,0 +1,100 @@
+Compiling rvvdk-local v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-local)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.40s
+     Running unittests src/lib.rs (target/debug/deps/rvvdk_local-1c25f92ba816d1fc)
+
+running 23 tests
+test file::discovery::tests::interrupted_queries_retry_the_same_offset_and_whence ... ok
+test file::discovery::tests::discovery_holds_admission_across_seeks_and_releases_after_error ... ok
+test file::discovery::tests::dense_fallback_reads_all_logical_bytes_including_real_holes_and_nonzero_tail ... ok
+test file::discovery::tests::backwards_nonprogressing_and_past_eof_offsets_are_rejected ... ok
+test file::discovery::tests::missing_hole_after_known_data_is_an_error ... ok
+test file::discovery::tests::invalid_and_empty_ranges_do_not_seek_and_observed_truncation_is_rejected ... ok
+test file::discovery::tests::real_errors_propagate_even_after_a_successful_prefix ... ok
+test file::discovery::tests::unsupported_discovery_does_not_hide_later_errors_or_map_changes ... ok
+test file::discovery::tests::trailing_holes_and_data_beyond_the_query_are_clipped ... ok
+test file::discovery::tests::unsupported_at_either_seek_or_after_a_partial_map_replaces_the_whole_query ... ok
+test file::preflight_tests::inspection_rejects_other_descriptor_even_for_same_inode ... ok
+test file::preflight_tests::inspection_preserves_logical_restrictions_and_current_capacity ... ok
+test file::preflight_tests::refreshes_append_flags_before_portable_copy ... ok
+test file::preflight_tests::rejects_mismatched_direct_and_buffered_handles ... ok
+test file::sparse::alias_tests::independent_buffered_alias_append_flag_is_rejected ... ok
+test file::discovery::tests::shrink_during_discovery_cannot_return_a_hole_or_dense_map ... ok
+test file::sparse::tests::empty_and_invalid_ranges_never_reach_the_kernel_operation ... ok
+test file::sparse::tests::successful_punch_finishes_zero_without_allocating_zero_range ... ok
+test file::sparse::tests::fallback_rechecks_append_flags_even_after_mode_is_cached ... ok
+test file::sparse::tests::zero_prefers_punch_and_unsupported_punch_retains_zero_range ... ok
+test file::sparse::tests::sparse_guard_covers_syscall_fallback_and_error_unwinding ... ok
+test file::sparse::tests::unsupported_modes_fall_back_in_bounded_chunks_and_cache_independently ... ok
+test file::sparse::tests::interrupted_calls_retry_but_real_errors_are_not_hidden_or_cached ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/adopt.rs (target/debug/deps/adopt-e052a19aa7ba2146)
+
+running 1 test
+test adoption_derives_rights_and_retains_unlinked_file ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/direct_io.rs (target/debug/deps/direct_io-597fe03760126c60)
+
+running 6 tests
+test buffered_device_has_no_direct_io_alignment ... ok
+test direct_io_handles_aligned_bulk_and_unaligned_tail ... ok
+test discovers_direct_io_alignment ... ok
+test opens_direct_io_device ... ok
+test direct_io_falls_back_for_unaligned_offset ... ok
+test direct_io_reads_and_writes_aligned_buffer ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/linux_backend.rs (target/debug/deps/linux_backend-a7b8895766e12f83)
+
+running 2 tests
+test buffered_file_reports_buffered_capability ... ok
+test direct_file_reports_direct_capability ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/local_file.rs (target/debug/deps/local_file-7692dcae5e3614b0)
+
+running 6 tests
+test opens_file_read_only ... ok
+test reads_at_offset ... ok
+test does_not_depend_on_file_cursor ... ok
+test rejects_out_of_bounds_read ... ok
+test rejects_write_on_read_only_device ... ok
+test writes_at_offset ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/raw_disk.rs (target/debug/deps/raw_disk-049814adce560e52)
+
+running 1 test
+test raw_disk_works_with_local_file_backend ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sparse.rs (target/debug/deps/sparse-ae009c10cf0abc0a)
+
+running 2 tests
+test discovers_sparse_file_extents ... ok
+test raw_disk_exposes_sparse_extents ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sparse_write.rs (target/debug/deps/sparse_write-022d295f77e9addb)
+
+running 4 tests
+test storage_hole_punch_reclaims_blocks_and_preserves_data ... ignored, requires RVVDK_TEST_DIR on a storage filesystem supporting hole punching
+test storage_zero_preserves_sparse_allocation_and_partial_edge_sentinels ... ignored, requires RVVDK_TEST_DIR on a storage filesystem supporting hole punching
+test sparse_writes_reject_read_only_invalid_and_truncated_ranges_without_growth ... ok
+test zero_and_punch_preserve_unaligned_edges_size_and_readback_for_both_open_modes ... ok
+
+test result: ok. 2 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+   Doc-tests rvvdk_local
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

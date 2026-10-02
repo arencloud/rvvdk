@@ -1,0 +1,2139 @@
+{
+  "baseline_commit": "0ed0a09",
+  "historical_commit": "d65b098",
+  "cpu_affinity": [
+    0
+  ],
+  "smt_siblings": "0,8",
+  "governor": "powersave",
+  "kernel": "7.2.5-200.fc44.x86_64",
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)\nbinary: rustc\ncommit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860\ncommit-date: 2026-04-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.95.0\nLLVM version: 22.1.2",
+  "binary_sha256": {
+    "sparse-before": "1065c33a93ce013177d228336c7b9859de6e560cbbdde3264a1732559f21e9db",
+    "sparse-candidate": "c7b8cfbb14eb323314ab48dba1c5cb8dbb59bad297c4fee221cd439f9c07748f",
+    "vmdk-before": "0e7947fdeda1bef2f73bebe9cf879c536d8fa08e198d9bb183e7f1cb7891c183",
+    "vmdk-candidate": "35b55683dcf3967e9e24620cca5b1931a190b3f85f3ee75ff0e25117a375e1d0",
+    "transfer-before": "b29dc011abf56643fafd670fca1b6904616d50019a5c859d16989eb828aec407",
+    "transfer-candidate": "a4e2bb8b6c8a94d6fc7290a710115d9fce306d9e562c750ca5af04745e807a3a",
+    "stream-before": "36b169321f0df838fb23e7a97fd2135437fd35b6078849dadb96260a2a74109d",
+    "stream-candidate": "b73559188e4260efc6bcbbcb51b9a60afa61528d49be5c0c00d8fdb2fd0fbdf6",
+    "sparse-historical": "a34c906f3aaf1414f14466b9241f3da095f8e89c81b1fc51dcc708806f4a5140",
+    "sparse-identical_a": "1065c33a93ce013177d228336c7b9859de6e560cbbdde3264a1732559f21e9db",
+    "sparse-identical_b": "1065c33a93ce013177d228336c7b9859de6e560cbbdde3264a1732559f21e9db"
+  },
+  "conditions": "Shared development host, tmpfs fixtures, CPU 0 affinity; no isolation, governor changes or cache flushing. Frequency/load/ticks sampled around each process, not continuous telemetry. No builds/tests/QEMU/live work/plots concurrent with matrix. Identical checks use exactly the same executable path.",
+  "commands": [
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-before",
+        "--bench",
+        "cli_sparse/(copy_mono_verify|copy_split_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-sparse-before-1"
+      ],
+      "start_unix": 1790949635.8470294,
+      "before": {
+        "frequency_khz": "3047811",
+        "load": [
+          "4.05",
+          "3.07",
+          "2.15"
+        ],
+        "cpu_ticks": [
+          "cpu0 1141123 42479 304040 21847206 44934 67236 211778 0 0 0",
+          "cpu8 884828 40399 300505 22542037 50589 59132 33888 0 0 0"
+        ]
+      },
+      "end_unix": 1790949646.8087976,
+      "after": {
+        "frequency_khz": "4399955",
+        "load": [
+          "4.91",
+          "3.28",
+          "2.23"
+        ],
+        "cpu_ticks": [
+          "cpu0 1141795 42479 304454 21847206 44934 67240 211783 0 0 0",
+          "cpu8 884867 40399 300515 22543098 50589 59134 33889 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-candidate",
+        "--bench",
+        "cli_sparse/(copy_mono_verify|copy_split_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-sparse-candidate-1"
+      ],
+      "start_unix": 1790949646.809663,
+      "before": {
+        "frequency_khz": "4400074",
+        "load": [
+          "4.91",
+          "3.28",
+          "2.23"
+        ],
+        "cpu_ticks": [
+          "cpu0 1141795 42479 304454 21847206 44934 67240 211783 0 0 0",
+          "cpu8 884867 40399 300515 22543098 50589 59134 33889 0 0 0"
+        ]
+      },
+      "end_unix": 1790949657.628766,
+      "after": {
+        "frequency_khz": "4399954",
+        "load": [
+          "5.40",
+          "3.44",
+          "2.29"
+        ],
+        "cpu_ticks": [
+          "cpu0 1142531 42479 304791 21847206 44934 67245 211788 0 0 0",
+          "cpu8 884889 40400 300517 22544165 50589 59135 33890 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/vmdk-before",
+        "--bench",
+        "cli_vmdk/(copy_flat_verify|copy_mixed_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-vmdk-before-1"
+      ],
+      "start_unix": 1790949657.6296287,
+      "before": {
+        "frequency_khz": "4400000",
+        "load": [
+          "5.40",
+          "3.44",
+          "2.29"
+        ],
+        "cpu_ticks": [
+          "cpu0 1142531 42479 304791 21847206 44934 67245 211788 0 0 0",
+          "cpu8 884889 40400 300517 22544165 50589 59135 33890 0 0 0"
+        ]
+      },
+      "end_unix": 1790949668.4582994,
+      "after": {
+        "frequency_khz": "4377208",
+        "load": [
+          "4.93",
+          "3.43",
+          "2.31"
+        ],
+        "cpu_ticks": [
+          "cpu0 1143210 42479 305185 21847206 44934 67249 211792 0 0 0",
+          "cpu8 884920 40400 300521 22545233 50589 59136 33890 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/vmdk-candidate",
+        "--bench",
+        "cli_vmdk/(copy_flat_verify|copy_mixed_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-vmdk-candidate-1"
+      ],
+      "start_unix": 1790949668.4590921,
+      "before": {
+        "frequency_khz": "4335284",
+        "load": [
+          "4.93",
+          "3.43",
+          "2.31"
+        ],
+        "cpu_ticks": [
+          "cpu0 1143210 42479 305185 21847206 44934 67249 211792 0 0 0",
+          "cpu8 884920 40400 300521 22545233 50589 59136 33890 0 0 0"
+        ]
+      },
+      "end_unix": 1790949679.40702,
+      "after": {
+        "frequency_khz": "4385660",
+        "load": [
+          "4.78",
+          "3.45",
+          "2.33"
+        ],
+        "cpu_ticks": [
+          "cpu0 1143907 42479 305573 21847207 44935 67254 211797 0 0 0",
+          "cpu8 884947 40400 300533 22546306 50589 59138 33891 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/transfer-before",
+        "--bench",
+        "cli_transfer/(threaded_new_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-transfer-before-1"
+      ],
+      "start_unix": 1790949679.408165,
+      "before": {
+        "frequency_khz": "4300000",
+        "load": [
+          "4.78",
+          "3.45",
+          "2.33"
+        ],
+        "cpu_ticks": [
+          "cpu0 1143907 42479 305573 21847207 44935 67254 211797 0 0 0",
+          "cpu8 884947 40400 300533 22546306 50589 59138 33891 0 0 0"
+        ]
+      },
+      "end_unix": 1790949684.8789222,
+      "after": {
+        "frequency_khz": "4391281",
+        "load": [
+          "4.72",
+          "3.46",
+          "2.34"
+        ],
+        "cpu_ticks": [
+          "cpu0 1144233 42479 305791 21847207 44935 67256 211798 0 0 0",
+          "cpu8 884956 40400 300535 22546850 50589 59139 33891 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/transfer-candidate",
+        "--bench",
+        "cli_transfer/(threaded_new_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-transfer-candidate-1"
+      ],
+      "start_unix": 1790949684.879734,
+      "before": {
+        "frequency_khz": "4400000",
+        "load": [
+          "4.72",
+          "3.46",
+          "2.34"
+        ],
+        "cpu_ticks": [
+          "cpu0 1144233 42479 305791 21847207 44935 67256 211798 0 0 0",
+          "cpu8 884956 40400 300535 22546850 50589 59139 33891 0 0 0"
+        ]
+      },
+      "end_unix": 1790949690.4184723,
+      "after": {
+        "frequency_khz": "4329939",
+        "load": [
+          "4.66",
+          "3.47",
+          "2.35"
+        ],
+        "cpu_ticks": [
+          "cpu0 1144559 42479 306016 21847207 44935 67257 211799 0 0 0",
+          "cpu8 884965 40400 300536 22547399 50589 59139 33891 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/stream-before",
+        "--bench",
+        "cli_stream/(copy_dense|copy_dense_verify|copy_sparse_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-stream-before-1"
+      ],
+      "start_unix": 1790949690.4194896,
+      "before": {
+        "frequency_khz": "4322260",
+        "load": [
+          "4.66",
+          "3.47",
+          "2.35"
+        ],
+        "cpu_ticks": [
+          "cpu0 1144559 42479 306016 21847207 44935 67257 211799 0 0 0",
+          "cpu8 884965 40400 300536 22547399 50589 59139 33891 0 0 0"
+        ]
+      },
+      "end_unix": 1790949707.6305594,
+      "after": {
+        "frequency_khz": "4100000",
+        "load": [
+          "4.96",
+          "3.59",
+          "2.40"
+        ],
+        "cpu_ticks": [
+          "cpu0 1145928 42479 306357 21847207 44935 67263 211804 0 0 0",
+          "cpu8 885003 40400 300564 22549090 50590 59141 33892 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/stream-candidate",
+        "--bench",
+        "cli_stream/(copy_dense|copy_dense_verify|copy_sparse_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-stream-candidate-1"
+      ],
+      "start_unix": 1790949707.6317902,
+      "before": {
+        "frequency_khz": "4046674",
+        "load": [
+          "4.96",
+          "3.59",
+          "2.40"
+        ],
+        "cpu_ticks": [
+          "cpu0 1145928 42479 306357 21847207 44935 67263 211804 0 0 0",
+          "cpu8 885003 40400 300564 22549090 50590 59141 33892 0 0 0"
+        ]
+      },
+      "end_unix": 1790949724.5255,
+      "after": {
+        "frequency_khz": "4199957",
+        "load": [
+          "4.63",
+          "3.61",
+          "2.43"
+        ],
+        "cpu_ticks": [
+          "cpu0 1147349 42479 306614 21847207 44936 67268 211809 0 0 0",
+          "cpu8 885034 40400 300577 22550770 50590 59143 33893 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-candidate",
+        "--bench",
+        "cli_sparse/(copy_mono_verify|copy_split_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-sparse-candidate-2"
+      ],
+      "start_unix": 1790949724.5268312,
+      "before": {
+        "frequency_khz": "4140240",
+        "load": [
+          "4.63",
+          "3.61",
+          "2.43"
+        ],
+        "cpu_ticks": [
+          "cpu0 1147349 42479 306614 21847208 44936 67268 211809 0 0 0",
+          "cpu8 885034 40400 300577 22550770 50590 59143 33893 0 0 0"
+        ]
+      },
+      "end_unix": 1790949736.366813,
+      "after": {
+        "frequency_khz": "4199957",
+        "load": [
+          "4.78",
+          "3.67",
+          "2.47"
+        ],
+        "cpu_ticks": [
+          "cpu0 1148163 42479 306973 21847208 44936 67274 211815 0 0 0",
+          "cpu8 885060 40400 300587 22551928 50591 59144 33893 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-before",
+        "--bench",
+        "cli_sparse/(copy_mono_verify|copy_split_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-sparse-before-2"
+      ],
+      "start_unix": 1790949736.3682601,
+      "before": {
+        "frequency_khz": "800000",
+        "load": [
+          "4.78",
+          "3.67",
+          "2.47"
+        ],
+        "cpu_ticks": [
+          "cpu0 1148163 42479 306973 21847208 44936 67274 211815 0 0 0",
+          "cpu8 885060 40400 300587 22551929 50591 59144 33893 0 0 0"
+        ]
+      },
+      "end_unix": 1790949747.869689,
+      "after": {
+        "frequency_khz": "4400000",
+        "load": [
+          "4.97",
+          "3.77",
+          "2.52"
+        ],
+        "cpu_ticks": [
+          "cpu0 1148864 42479 307411 21847208 44936 67279 211821 0 0 0",
+          "cpu8 885105 40400 300594 22553042 50591 59146 33894 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/vmdk-candidate",
+        "--bench",
+        "cli_vmdk/(copy_flat_verify|copy_mixed_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-vmdk-candidate-2"
+      ],
+      "start_unix": 1790949747.870768,
+      "before": {
+        "frequency_khz": "4399911",
+        "load": [
+          "4.97",
+          "3.77",
+          "2.52"
+        ],
+        "cpu_ticks": [
+          "cpu0 1148864 42479 307411 21847208 44936 67279 211821 0 0 0",
+          "cpu8 885105 40400 300594 22553042 50591 59146 33894 0 0 0"
+        ]
+      },
+      "end_unix": 1790949758.8627162,
+      "after": {
+        "frequency_khz": "4300000",
+        "load": [
+          "4.97",
+          "3.81",
+          "2.55"
+        ],
+        "cpu_ticks": [
+          "cpu0 1149560 42479 307805 21847208 44936 67284 211825 0 0 0",
+          "cpu8 885138 40400 300605 22554110 50591 59148 33894 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/vmdk-before",
+        "--bench",
+        "cli_vmdk/(copy_flat_verify|copy_mixed_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-vmdk-before-2"
+      ],
+      "start_unix": 1790949758.8638904,
+      "before": {
+        "frequency_khz": "4299824",
+        "load": [
+          "4.97",
+          "3.81",
+          "2.55"
+        ],
+        "cpu_ticks": [
+          "cpu0 1149560 42479 307805 21847208 44936 67284 211825 0 0 0",
+          "cpu8 885138 40400 300605 22554110 50591 59148 33894 0 0 0"
+        ]
+      },
+      "end_unix": 1790949770.5062072,
+      "after": {
+        "frequency_khz": "4099955",
+        "load": [
+          "4.75",
+          "3.80",
+          "2.56"
+        ],
+        "cpu_ticks": [
+          "cpu0 1150281 42479 308238 21847208 44936 67289 211830 0 0 0",
+          "cpu8 885218 40400 300619 22555191 50592 59150 33895 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/transfer-candidate",
+        "--bench",
+        "cli_transfer/(threaded_new_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-transfer-candidate-2"
+      ],
+      "start_unix": 1790949770.5074885,
+      "before": {
+        "frequency_khz": "4103228",
+        "load": [
+          "4.75",
+          "3.80",
+          "2.56"
+        ],
+        "cpu_ticks": [
+          "cpu0 1150281 42479 308238 21847209 44936 67289 211830 0 0 0",
+          "cpu8 885218 40400 300619 22555191 50592 59150 33895 0 0 0"
+        ]
+      },
+      "end_unix": 1790949776.2345524,
+      "after": {
+        "frequency_khz": "4100000",
+        "load": [
+          "4.69",
+          "3.80",
+          "2.56"
+        ],
+        "cpu_ticks": [
+          "cpu0 1150604 42479 308484 21847209 44937 67290 211831 0 0 0",
+          "cpu8 885227 40400 300621 22555753 50592 59150 33895 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/transfer-before",
+        "--bench",
+        "cli_transfer/(threaded_new_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-transfer-before-2"
+      ],
+      "start_unix": 1790949776.2360241,
+      "before": {
+        "frequency_khz": "4043868",
+        "load": [
+          "4.69",
+          "3.80",
+          "2.56"
+        ],
+        "cpu_ticks": [
+          "cpu0 1150604 42479 308484 21847209 44937 67290 211831 0 0 0",
+          "cpu8 885227 40400 300621 22555754 50592 59150 33895 0 0 0"
+        ]
+      },
+      "end_unix": 1790949782.1443923,
+      "after": {
+        "frequency_khz": "4199958",
+        "load": [
+          "4.80",
+          "3.84",
+          "2.58"
+        ],
+        "cpu_ticks": [
+          "cpu0 1150941 42479 308734 21847209 44937 67292 211833 0 0 0",
+          "cpu8 885248 40400 300626 22556326 50592 59151 33895 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/stream-candidate",
+        "--bench",
+        "cli_stream/(copy_dense|copy_dense_verify|copy_sparse_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-stream-candidate-2"
+      ],
+      "start_unix": 1790949782.1456606,
+      "before": {
+        "frequency_khz": "4107888",
+        "load": [
+          "4.80",
+          "3.84",
+          "2.58"
+        ],
+        "cpu_ticks": [
+          "cpu0 1150941 42479 308734 21847209 44937 67292 211833 0 0 0",
+          "cpu8 885248 40400 300626 22556327 50592 59151 33895 0 0 0"
+        ]
+      },
+      "end_unix": 1790949798.99217,
+      "after": {
+        "frequency_khz": "4200047",
+        "load": [
+          "4.99",
+          "3.95",
+          "2.65"
+        ],
+        "cpu_ticks": [
+          "cpu0 1152335 42479 309014 21847209 44937 67297 211837 0 0 0",
+          "cpu8 885298 40400 300644 22557956 50596 59153 33896 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/stream-before",
+        "--bench",
+        "cli_stream/(copy_dense|copy_dense_verify|copy_sparse_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-stream-before-2"
+      ],
+      "start_unix": 1790949798.9935296,
+      "before": {
+        "frequency_khz": "3939352",
+        "load": [
+          "4.99",
+          "3.95",
+          "2.65"
+        ],
+        "cpu_ticks": [
+          "cpu0 1152335 42479 309014 21847209 44937 67297 211837 0 0 0",
+          "cpu8 885298 40400 300644 22557956 50596 59153 33896 0 0 0"
+        ]
+      },
+      "end_unix": 1790949815.743049,
+      "after": {
+        "frequency_khz": "4100000",
+        "load": [
+          "4.69",
+          "3.93",
+          "2.66"
+        ],
+        "cpu_ticks": [
+          "cpu0 1153675 42479 309340 21847210 44938 67303 211842 0 0 0",
+          "cpu8 885348 40400 300649 22559584 50596 59154 33897 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-before",
+        "--bench",
+        "cli_sparse/(copy_mono_verify|copy_split_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-sparse-before-3"
+      ],
+      "start_unix": 1790949815.7445908,
+      "before": {
+        "frequency_khz": "2682478",
+        "load": [
+          "4.69",
+          "3.93",
+          "2.66"
+        ],
+        "cpu_ticks": [
+          "cpu0 1153675 42479 309340 21847210 44938 67303 211842 0 0 0",
+          "cpu8 885348 40400 300649 22559584 50596 59154 33897 0 0 0"
+        ]
+      },
+      "end_unix": 1790949827.5816536,
+      "after": {
+        "frequency_khz": "4200048",
+        "load": [
+          "4.82",
+          "3.99",
+          "2.69"
+        ],
+        "cpu_ticks": [
+          "cpu0 1154409 42479 309777 21847210 44938 67308 211848 0 0 0",
+          "cpu8 885427 40400 300665 22560684 50599 59157 33897 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-candidate",
+        "--bench",
+        "cli_sparse/(copy_mono_verify|copy_split_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-sparse-candidate-3"
+      ],
+      "start_unix": 1790949827.583267,
+      "before": {
+        "frequency_khz": "961946",
+        "load": [
+          "4.82",
+          "3.99",
+          "2.69"
+        ],
+        "cpu_ticks": [
+          "cpu0 1154409 42479 309777 21847210 44938 67308 211848 0 0 0",
+          "cpu8 885427 40400 300665 22560684 50599 59157 33897 0 0 0"
+        ]
+      },
+      "end_unix": 1790949838.9816165,
+      "after": {
+        "frequency_khz": "4100051",
+        "load": [
+          "4.77",
+          "4.02",
+          "2.73"
+        ],
+        "cpu_ticks": [
+          "cpu0 1155189 42479 310125 21847210 44938 67314 211854 0 0 0",
+          "cpu8 885464 40400 300677 22561786 50599 59159 33898 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/vmdk-before",
+        "--bench",
+        "cli_vmdk/(copy_flat_verify|copy_mixed_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-vmdk-before-3"
+      ],
+      "start_unix": 1790949838.9829607,
+      "before": {
+        "frequency_khz": "4054509",
+        "load": [
+          "4.77",
+          "4.02",
+          "2.73"
+        ],
+        "cpu_ticks": [
+          "cpu0 1155189 42479 310125 21847210 44938 67314 211854 0 0 0",
+          "cpu8 885464 40400 300677 22561786 50599 59159 33898 0 0 0"
+        ]
+      },
+      "end_unix": 1790949849.8427596,
+      "after": {
+        "frequency_khz": "4200000",
+        "load": [
+          "4.57",
+          "4.00",
+          "2.74"
+        ],
+        "cpu_ticks": [
+          "cpu0 1155880 42479 310510 21847210 44939 67318 211859 0 0 0",
+          "cpu8 885523 40400 300690 22562816 50600 59160 33899 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/vmdk-candidate",
+        "--bench",
+        "cli_vmdk/(copy_flat_verify|copy_mixed_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-vmdk-candidate-3"
+      ],
+      "start_unix": 1790949849.8441541,
+      "before": {
+        "frequency_khz": "800000",
+        "load": [
+          "4.57",
+          "4.00",
+          "2.74"
+        ],
+        "cpu_ticks": [
+          "cpu0 1155880 42479 310510 21847210 44939 67318 211859 0 0 0",
+          "cpu8 885523 40400 300691 22562816 50600 59160 33899 0 0 0"
+        ]
+      },
+      "end_unix": 1790949861.0549917,
+      "after": {
+        "frequency_khz": "3999946",
+        "load": [
+          "5.02",
+          "4.12",
+          "2.79"
+        ],
+        "cpu_ticks": [
+          "cpu0 1156618 42479 310882 21847211 44939 67323 211864 0 0 0",
+          "cpu8 885589 40400 300701 22563866 50605 59163 33899 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/transfer-before",
+        "--bench",
+        "cli_transfer/(threaded_new_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-transfer-before-3"
+      ],
+      "start_unix": 1790949861.0570176,
+      "before": {
+        "frequency_khz": "2800722",
+        "load": [
+          "5.02",
+          "4.12",
+          "2.79"
+        ],
+        "cpu_ticks": [
+          "cpu0 1156618 42479 310882 21847211 44939 67323 211864 0 0 0",
+          "cpu8 885589 40400 300701 22563866 50605 59163 33899 0 0 0"
+        ]
+      },
+      "end_unix": 1790949866.831815,
+      "after": {
+        "frequency_khz": "3800000",
+        "load": [
+          "4.86",
+          "4.10",
+          "2.79"
+        ],
+        "cpu_ticks": [
+          "cpu0 1156948 42479 311127 21847211 44939 67325 211866 0 0 0",
+          "cpu8 885594 40400 300702 22564439 50611 59163 33899 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/transfer-candidate",
+        "--bench",
+        "cli_transfer/(threaded_new_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-transfer-candidate-3"
+      ],
+      "start_unix": 1790949866.8334332,
+      "before": {
+        "frequency_khz": "2375483",
+        "load": [
+          "4.86",
+          "4.10",
+          "2.79"
+        ],
+        "cpu_ticks": [
+          "cpu0 1156948 42479 311127 21847211 44939 67325 211866 0 0 0",
+          "cpu8 885594 40400 300702 22564439 50611 59163 33899 0 0 0"
+        ]
+      },
+      "end_unix": 1790949872.690381,
+      "after": {
+        "frequency_khz": "4200041",
+        "load": [
+          "4.95",
+          "4.13",
+          "2.81"
+        ],
+        "cpu_ticks": [
+          "cpu0 1157284 42479 311373 21847211 44939 67326 211867 0 0 0",
+          "cpu8 885608 40400 300705 22565014 50611 59163 33900 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/stream-before",
+        "--bench",
+        "cli_stream/(copy_dense|copy_dense_verify|copy_sparse_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-stream-before-3"
+      ],
+      "start_unix": 1790949872.691979,
+      "before": {
+        "frequency_khz": "4069256",
+        "load": [
+          "4.95",
+          "4.13",
+          "2.81"
+        ],
+        "cpu_ticks": [
+          "cpu0 1157284 42479 311373 21847211 44939 67326 211867 0 0 0",
+          "cpu8 885608 40400 300705 22565015 50611 59163 33900 0 0 0"
+        ]
+      },
+      "end_unix": 1790949889.800735,
+      "after": {
+        "frequency_khz": "4199950",
+        "load": [
+          "4.74",
+          "4.14",
+          "2.84"
+        ],
+        "cpu_ticks": [
+          "cpu0 1158649 42479 311708 21847211 44940 67332 211872 0 0 0",
+          "cpu8 885685 40400 300726 22566654 50611 59166 33900 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/stream-candidate",
+        "--bench",
+        "cli_stream/(copy_dense|copy_dense_verify|copy_sparse_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r512p-initial-stream-candidate-3"
+      ],
+      "start_unix": 1790949889.8025625,
+      "before": {
+        "frequency_khz": "4198275",
+        "load": [
+          "4.74",
+          "4.14",
+          "2.84"
+        ],
+        "cpu_ticks": [
+          "cpu0 1158649 42479 311708 21847212 44940 67332 211872 0 0 0",
+          "cpu8 885685 40400 300726 22566654 50611 59166 33900 0 0 0"
+        ]
+      },
+      "end_unix": 1790949906.5871775,
+      "after": {
+        "frequency_khz": "4100000",
+        "load": [
+          "4.96",
+          "4.21",
+          "2.88"
+        ],
+        "cpu_ticks": [
+          "cpu0 1160060 42479 311964 21847212 44940 67337 211877 0 0 0",
+          "cpu8 885728 40400 300738 22568297 50611 59167 33901 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/vmdk-candidate",
+        "--bench",
+        "cli_vmdk/(copy_flat_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-longer-vmdk-candidate-1"
+      ],
+      "start_unix": 1790949906.589099,
+      "before": {
+        "frequency_khz": "4100000",
+        "load": [
+          "4.96",
+          "4.21",
+          "2.88"
+        ],
+        "cpu_ticks": [
+          "cpu0 1160060 42479 311964 21847212 44940 67337 211877 0 0 0",
+          "cpu8 885729 40400 300738 22568297 50611 59167 33901 0 0 0"
+        ]
+      },
+      "end_unix": 1790949914.5658555,
+      "after": {
+        "frequency_khz": "4200000",
+        "load": [
+          "5.26",
+          "4.30",
+          "2.93"
+        ],
+        "cpu_ticks": [
+          "cpu0 1160452 42479 312361 21847212 44940 67341 211882 0 0 0",
+          "cpu8 885761 40400 300744 22569072 50611 59167 33901 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/vmdk-before",
+        "--bench",
+        "cli_vmdk/(copy_flat_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-longer-vmdk-before-1"
+      ],
+      "start_unix": 1790949914.5673723,
+      "before": {
+        "frequency_khz": "4204883",
+        "load": [
+          "5.26",
+          "4.30",
+          "2.93"
+        ],
+        "cpu_ticks": [
+          "cpu0 1160452 42479 312361 21847212 44940 67341 211882 0 0 0",
+          "cpu8 885761 40400 300744 22569072 50611 59167 33901 0 0 0"
+        ]
+      },
+      "end_unix": 1790949921.6662843,
+      "after": {
+        "frequency_khz": "4200000",
+        "load": [
+          "5.16",
+          "4.30",
+          "2.93"
+        ],
+        "cpu_ticks": [
+          "cpu0 1160818 42479 312697 21847212 44940 67345 211886 0 0 0",
+          "cpu8 885789 40400 300753 22569749 50612 59170 33901 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/stream-candidate",
+        "--bench",
+        "cli_stream/(copy_dense_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-longer-stream-candidate-1"
+      ],
+      "start_unix": 1790949921.6679606,
+      "before": {
+        "frequency_khz": "3991243",
+        "load": [
+          "5.16",
+          "4.30",
+          "2.93"
+        ],
+        "cpu_ticks": [
+          "cpu0 1160818 42479 312697 21847212 44940 67345 211886 0 0 0",
+          "cpu8 885789 40400 300753 22569749 50612 59170 33901 0 0 0"
+        ]
+      },
+      "end_unix": 1790949929.459475,
+      "after": {
+        "frequency_khz": "4200000",
+        "load": [
+          "5.05",
+          "4.30",
+          "2.95"
+        ],
+        "cpu_ticks": [
+          "cpu0 1161497 42479 312793 21847212 44940 67347 211888 0 0 0",
+          "cpu8 885802 40400 300755 22570518 50612 59170 33902 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/stream-before",
+        "--bench",
+        "cli_stream/(copy_dense_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-longer-stream-before-1"
+      ],
+      "start_unix": 1790949929.461359,
+      "before": {
+        "frequency_khz": "800000",
+        "load": [
+          "5.05",
+          "4.30",
+          "2.95"
+        ],
+        "cpu_ticks": [
+          "cpu0 1161497 42479 312793 21847213 44940 67347 211888 0 0 0",
+          "cpu8 885802 40400 300755 22570518 50612 59170 33902 0 0 0"
+        ]
+      },
+      "end_unix": 1790949937.083438,
+      "after": {
+        "frequency_khz": "4199954",
+        "load": [
+          "4.89",
+          "4.28",
+          "2.95"
+        ],
+        "cpu_ticks": [
+          "cpu0 1162162 42479 312887 21847213 44941 67349 211889 0 0 0",
+          "cpu8 885804 40400 300755 22571277 50612 59171 33902 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/vmdk-before",
+        "--bench",
+        "cli_vmdk/(copy_flat_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-longer-vmdk-before-2"
+      ],
+      "start_unix": 1790949937.0851307,
+      "before": {
+        "frequency_khz": "800000",
+        "load": [
+          "4.89",
+          "4.28",
+          "2.95"
+        ],
+        "cpu_ticks": [
+          "cpu0 1162162 42479 312887 21847213 44941 67349 211889 0 0 0",
+          "cpu8 885804 40400 300755 22571277 50612 59171 33902 0 0 0"
+        ]
+      },
+      "end_unix": 1790949944.733811,
+      "after": {
+        "frequency_khz": "4300000",
+        "load": [
+          "5.19",
+          "4.37",
+          "3.00"
+        ],
+        "cpu_ticks": [
+          "cpu0 1162547 42479 313258 21847213 44941 67353 211894 0 0 0",
+          "cpu8 885816 40445 300761 22571984 50613 59172 33902 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/vmdk-candidate",
+        "--bench",
+        "cli_vmdk/(copy_flat_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-longer-vmdk-candidate-2"
+      ],
+      "start_unix": 1790949944.7354388,
+      "before": {
+        "frequency_khz": "2290244",
+        "load": [
+          "5.19",
+          "4.37",
+          "3.00"
+        ],
+        "cpu_ticks": [
+          "cpu0 1162547 42479 313258 21847213 44941 67353 211894 0 0 0",
+          "cpu8 885816 40445 300761 22571984 50613 59172 33902 0 0 0"
+        ]
+      },
+      "end_unix": 1790949952.147704,
+      "after": {
+        "frequency_khz": "4200000",
+        "load": [
+          "5.09",
+          "4.36",
+          "3.00"
+        ],
+        "cpu_ticks": [
+          "cpu0 1162929 42479 313608 21847213 44941 67357 211899 0 0 0",
+          "cpu8 885853 40445 300777 22572687 50613 59174 33903 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/stream-before",
+        "--bench",
+        "cli_stream/(copy_dense_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-longer-stream-before-2"
+      ],
+      "start_unix": 1790949952.1495595,
+      "before": {
+        "frequency_khz": "1437019",
+        "load": [
+          "5.09",
+          "4.36",
+          "3.00"
+        ],
+        "cpu_ticks": [
+          "cpu0 1162929 42479 313608 21847214 44941 67357 211899 0 0 0",
+          "cpu8 885853 40445 300777 22572687 50613 59174 33903 0 0 0"
+        ]
+      },
+      "end_unix": 1790949959.8289084,
+      "after": {
+        "frequency_khz": "4000000",
+        "load": [
+          "4.76",
+          "4.32",
+          "3.00"
+        ],
+        "cpu_ticks": [
+          "cpu0 1163598 42479 313702 21847214 44941 67359 211900 0 0 0",
+          "cpu8 885862 40445 300780 22573447 50613 59175 33903 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/stream-candidate",
+        "--bench",
+        "cli_stream/(copy_dense_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-longer-stream-candidate-2"
+      ],
+      "start_unix": 1790949959.8308964,
+      "before": {
+        "frequency_khz": "4000622",
+        "load": [
+          "4.76",
+          "4.32",
+          "3.00"
+        ],
+        "cpu_ticks": [
+          "cpu0 1163598 42479 313702 21847214 44941 67359 211900 0 0 0",
+          "cpu8 885862 40445 300780 22573447 50613 59175 33903 0 0 0"
+        ]
+      },
+      "end_unix": 1790949967.563479,
+      "after": {
+        "frequency_khz": "4200000",
+        "load": [
+          "4.70",
+          "4.31",
+          "3.01"
+        ],
+        "cpu_ticks": [
+          "cpu0 1164272 42479 313798 21847214 44942 67361 211902 0 0 0",
+          "cpu8 885878 40445 300784 22574210 50613 59175 33903 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/vmdk-candidate",
+        "--bench",
+        "cli_vmdk/(copy_flat_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-longer-vmdk-candidate-3"
+      ],
+      "start_unix": 1790949967.5652828,
+      "before": {
+        "frequency_khz": "948677",
+        "load": [
+          "4.70",
+          "4.31",
+          "3.01"
+        ],
+        "cpu_ticks": [
+          "cpu0 1164272 42479 313798 21847214 44942 67361 211902 0 0 0",
+          "cpu8 885878 40445 300784 22574210 50613 59175 33903 0 0 0"
+        ]
+      },
+      "end_unix": 1790949975.013388,
+      "after": {
+        "frequency_khz": "4200047",
+        "load": [
+          "4.80",
+          "4.35",
+          "3.03"
+        ],
+        "cpu_ticks": [
+          "cpu0 1164655 42479 314152 21847214 44942 67364 211906 0 0 0",
+          "cpu8 885911 40445 300791 22574926 50613 59177 33903 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/vmdk-before",
+        "--bench",
+        "cli_vmdk/(copy_flat_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-longer-vmdk-before-3"
+      ],
+      "start_unix": 1790949975.01505,
+      "before": {
+        "frequency_khz": "4196796",
+        "load": [
+          "4.80",
+          "4.35",
+          "3.03"
+        ],
+        "cpu_ticks": [
+          "cpu0 1164655 42479 314152 21847214 44942 67364 211906 0 0 0",
+          "cpu8 885911 40445 300791 22574926 50613 59177 33903 0 0 0"
+        ]
+      },
+      "end_unix": 1790949982.2809463,
+      "after": {
+        "frequency_khz": "4100053",
+        "load": [
+          "4.90",
+          "4.38",
+          "3.05"
+        ],
+        "cpu_ticks": [
+          "cpu0 1165025 42479 314499 21847215 44942 67368 211911 0 0 0",
+          "cpu8 885941 40445 300802 22575610 50618 59179 33904 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/stream-candidate",
+        "--bench",
+        "cli_stream/(copy_dense_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-longer-stream-candidate-3"
+      ],
+      "start_unix": 1790949982.2828157,
+      "before": {
+        "frequency_khz": "4094823",
+        "load": [
+          "4.90",
+          "4.38",
+          "3.05"
+        ],
+        "cpu_ticks": [
+          "cpu0 1165025 42479 314499 21847215 44942 67368 211911 0 0 0",
+          "cpu8 885941 40445 300802 22575610 50618 59179 33904 0 0 0"
+        ]
+      },
+      "end_unix": 1790949990.195247,
+      "after": {
+        "frequency_khz": "4200000",
+        "load": [
+          "4.61",
+          "4.33",
+          "3.05"
+        ],
+        "cpu_ticks": [
+          "cpu0 1165710 42479 314601 21847215 44942 67371 211913 0 0 0",
+          "cpu8 885973 40445 300810 22576380 50618 59180 33905 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/stream-before",
+        "--bench",
+        "cli_stream/(copy_dense_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-longer-stream-before-3"
+      ],
+      "start_unix": 1790949990.197245,
+      "before": {
+        "frequency_khz": "4195942",
+        "load": [
+          "4.61",
+          "4.33",
+          "3.05"
+        ],
+        "cpu_ticks": [
+          "cpu0 1165710 42479 314601 21847215 44942 67371 211913 0 0 0",
+          "cpu8 885973 40445 300810 22576380 50618 59180 33905 0 0 0"
+        ]
+      },
+      "end_unix": 1790949997.754827,
+      "after": {
+        "frequency_khz": "4200000",
+        "load": [
+          "4.80",
+          "4.38",
+          "3.07"
+        ],
+        "cpu_ticks": [
+          "cpu0 1166370 42479 314693 21847215 44942 67373 211914 0 0 0",
+          "cpu8 885977 40445 300812 22577134 50618 59180 33905 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-historical",
+        "--bench",
+        "cli_sparse/(copy_mono_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-historical-sparse-historical-1"
+      ],
+      "start_unix": 1790949997.7566283,
+      "before": {
+        "frequency_khz": "4200000",
+        "load": [
+          "4.65",
+          "4.35",
+          "3.07"
+        ],
+        "cpu_ticks": [
+          "cpu0 1166370 42479 314693 21847215 44942 67373 211914 0 0 0",
+          "cpu8 885977 40445 300812 22577134 50618 59180 33905 0 0 0"
+        ]
+      },
+      "end_unix": 1790950005.661875,
+      "after": {
+        "frequency_khz": "3500000",
+        "load": [
+          "4.76",
+          "4.38",
+          "3.08"
+        ],
+        "cpu_ticks": [
+          "cpu0 1166772 42479 315072 21847215 44942 67377 211919 0 0 0",
+          "cpu8 886019 40445 300821 22577886 50619 59182 33905 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-before",
+        "--bench",
+        "cli_sparse/(copy_mono_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-historical-sparse-before-1"
+      ],
+      "start_unix": 1790950005.6648555,
+      "before": {
+        "frequency_khz": "3500000",
+        "load": [
+          "4.76",
+          "4.38",
+          "3.08"
+        ],
+        "cpu_ticks": [
+          "cpu0 1166772 42479 315073 21847215 44942 67377 211919 0 0 0",
+          "cpu8 886019 40445 300821 22577886 50619 59182 33905 0 0 0"
+        ]
+      },
+      "end_unix": 1790950012.3807178,
+      "after": {
+        "frequency_khz": "4200100",
+        "load": [
+          "4.78",
+          "4.39",
+          "3.10"
+        ],
+        "cpu_ticks": [
+          "cpu0 1167131 42479 315377 21847215 44942 67380 211923 0 0 0",
+          "cpu8 886036 40445 300831 22578525 50624 59184 33906 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-before",
+        "--bench",
+        "cli_sparse/(copy_mono_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-identical-sparse-identical_a-1"
+      ],
+      "start_unix": 1790950012.3825696,
+      "before": {
+        "frequency_khz": "800000",
+        "load": [
+          "4.78",
+          "4.39",
+          "3.10"
+        ],
+        "cpu_ticks": [
+          "cpu0 1167131 42479 315377 21847216 44942 67380 211923 0 0 0",
+          "cpu8 886036 40445 300831 22578525 50624 59184 33906 0 0 0"
+        ]
+      },
+      "end_unix": 1790950020.3937445,
+      "after": {
+        "frequency_khz": "4200000",
+        "load": [
+          "4.95",
+          "4.44",
+          "3.13"
+        ],
+        "cpu_ticks": [
+          "cpu0 1167537 42479 315764 21847216 44942 67385 211928 0 0 0",
+          "cpu8 886075 40445 300836 22579285 50624 59185 33907 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-before",
+        "--bench",
+        "cli_sparse/(copy_mono_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-identical-sparse-identical_b-1"
+      ],
+      "start_unix": 1790950020.3955774,
+      "before": {
+        "frequency_khz": "800000",
+        "load": [
+          "4.95",
+          "4.44",
+          "3.13"
+        ],
+        "cpu_ticks": [
+          "cpu0 1167537 42479 315764 21847216 44942 67385 211928 0 0 0",
+          "cpu8 886075 40445 300836 22579285 50624 59185 33907 0 0 0"
+        ]
+      },
+      "end_unix": 1790950028.2029138,
+      "after": {
+        "frequency_khz": "4200042",
+        "load": [
+          "4.87",
+          "4.45",
+          "3.14"
+        ],
+        "cpu_ticks": [
+          "cpu0 1167936 42479 316135 21847216 44943 67389 211933 0 0 0",
+          "cpu8 886131 40445 300842 22580012 50624 59187 33907 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-before",
+        "--bench",
+        "cli_sparse/(copy_mono_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-historical-sparse-before-2"
+      ],
+      "start_unix": 1790950028.2049088,
+      "before": {
+        "frequency_khz": "4200000",
+        "load": [
+          "4.87",
+          "4.45",
+          "3.14"
+        ],
+        "cpu_ticks": [
+          "cpu0 1167936 42479 316135 21847216 44943 67389 211933 0 0 0",
+          "cpu8 886131 40445 300842 22580012 50624 59187 33907 0 0 0"
+        ]
+      },
+      "end_unix": 1790950035.98251,
+      "after": {
+        "frequency_khz": "3400000",
+        "load": [
+          "4.96",
+          "4.47",
+          "3.16"
+        ],
+        "cpu_ticks": [
+          "cpu0 1168325 42479 316516 21847216 44943 67393 211937 0 0 0",
+          "cpu8 886151 40445 300848 22580763 50627 59189 33908 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-historical",
+        "--bench",
+        "cli_sparse/(copy_mono_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-historical-sparse-historical-2"
+      ],
+      "start_unix": 1790950035.9850438,
+      "before": {
+        "frequency_khz": "800000",
+        "load": [
+          "4.96",
+          "4.47",
+          "3.16"
+        ],
+        "cpu_ticks": [
+          "cpu0 1168325 42479 316516 21847217 44943 67393 211937 0 0 0",
+          "cpu8 886151 40445 300848 22580763 50627 59189 33908 0 0 0"
+        ]
+      },
+      "end_unix": 1790950042.8358452,
+      "after": {
+        "frequency_khz": "4300000",
+        "load": [
+          "4.97",
+          "4.49",
+          "3.18"
+        ],
+        "cpu_ticks": [
+          "cpu0 1168709 42479 316809 21847217 44943 67397 211941 0 0 0",
+          "cpu8 886178 40445 300865 22581418 50627 59190 33908 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-before",
+        "--bench",
+        "cli_sparse/(copy_mono_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-identical-sparse-identical_b-2"
+      ],
+      "start_unix": 1790950042.838001,
+      "before": {
+        "frequency_khz": "4274858",
+        "load": [
+          "4.97",
+          "4.49",
+          "3.18"
+        ],
+        "cpu_ticks": [
+          "cpu0 1168709 42479 316809 21847217 44943 67397 211941 0 0 0",
+          "cpu8 886178 40445 300865 22581419 50627 59190 33908 0 0 0"
+        ]
+      },
+      "end_unix": 1790950050.7006154,
+      "after": {
+        "frequency_khz": "4200000",
+        "load": [
+          "5.13",
+          "4.53",
+          "3.20"
+        ],
+        "cpu_ticks": [
+          "cpu0 1169102 42479 317193 21847217 44943 67401 211946 0 0 0",
+          "cpu8 886216 40445 300874 22582171 50627 59191 33908 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-before",
+        "--bench",
+        "cli_sparse/(copy_mono_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-identical-sparse-identical_a-2"
+      ],
+      "start_unix": 1790950050.7024896,
+      "before": {
+        "frequency_khz": "2169536",
+        "load": [
+          "5.13",
+          "4.53",
+          "3.20"
+        ],
+        "cpu_ticks": [
+          "cpu0 1169102 42479 317193 21847217 44943 67401 211946 0 0 0",
+          "cpu8 886216 40445 300874 22582171 50627 59191 33908 0 0 0"
+        ]
+      },
+      "end_unix": 1790950058.7161355,
+      "after": {
+        "frequency_khz": "4300000",
+        "load": [
+          "4.96",
+          "4.51",
+          "3.21"
+        ],
+        "cpu_ticks": [
+          "cpu0 1169513 42479 317574 21847218 44943 67405 211951 0 0 0",
+          "cpu8 886247 40446 300884 22582946 50629 59193 33909 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-historical",
+        "--bench",
+        "cli_sparse/(copy_mono_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-historical-sparse-historical-3"
+      ],
+      "start_unix": 1790950058.7180054,
+      "before": {
+        "frequency_khz": "2290036",
+        "load": [
+          "4.96",
+          "4.51",
+          "3.21"
+        ],
+        "cpu_ticks": [
+          "cpu0 1169513 42479 317574 21847218 44943 67405 211951 0 0 0",
+          "cpu8 886247 40446 300884 22582946 50629 59193 33909 0 0 0"
+        ]
+      },
+      "end_unix": 1790950066.6801548,
+      "after": {
+        "frequency_khz": "3200037",
+        "load": [
+          "5.12",
+          "4.55",
+          "3.23"
+        ],
+        "cpu_ticks": [
+          "cpu0 1169923 42479 317951 21847218 44943 67409 211956 0 0 0",
+          "cpu8 886261 40446 300892 22583725 50632 59194 33909 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-before",
+        "--bench",
+        "cli_sparse/(copy_mono_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-historical-sparse-before-3"
+      ],
+      "start_unix": 1790950066.68259,
+      "before": {
+        "frequency_khz": "1431333",
+        "load": [
+          "5.12",
+          "4.55",
+          "3.23"
+        ],
+        "cpu_ticks": [
+          "cpu0 1169923 42479 317951 21847218 44943 67409 211956 0 0 0",
+          "cpu8 886261 40446 300892 22583725 50632 59194 33909 0 0 0"
+        ]
+      },
+      "end_unix": 1790950073.1022334,
+      "after": {
+        "frequency_khz": "4300049",
+        "load": [
+          "5.24",
+          "4.60",
+          "3.26"
+        ],
+        "cpu_ticks": [
+          "cpu0 1170288 42479 318221 21847218 44943 67413 211959 0 0 0",
+          "cpu8 886285 40447 300903 22584334 50634 59195 33909 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-before",
+        "--bench",
+        "cli_sparse/(copy_mono_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-identical-sparse-identical_a-3"
+      ],
+      "start_unix": 1790950073.104254,
+      "before": {
+        "frequency_khz": "800653",
+        "load": [
+          "5.24",
+          "4.60",
+          "3.26"
+        ],
+        "cpu_ticks": [
+          "cpu0 1170288 42479 318221 21847218 44943 67413 211959 0 0 0",
+          "cpu8 886285 40447 300903 22584334 50634 59195 33909 0 0 0"
+        ]
+      },
+      "end_unix": 1790950080.9693766,
+      "after": {
+        "frequency_khz": "4100044",
+        "load": [
+          "5.38",
+          "4.64",
+          "3.28"
+        ],
+        "cpu_ticks": [
+          "cpu0 1170689 42479 318597 21847218 44943 67417 211964 0 0 0",
+          "cpu8 886317 40447 300907 22585084 50635 59197 33910 0 0 0"
+        ]
+      }
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r512p/reference/sparse-before",
+        "--bench",
+        "cli_sparse/(copy_mono_verify)$",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r512p-identical-sparse-identical_b-3"
+      ],
+      "start_unix": 1790950080.9713807,
+      "before": {
+        "frequency_khz": "800000",
+        "load": [
+          "5.38",
+          "4.64",
+          "3.28"
+        ],
+        "cpu_ticks": [
+          "cpu0 1170689 42479 318597 21847218 44943 67417 211964 0 0 0",
+          "cpu8 886317 40447 300907 22585084 50635 59197 33910 0 0 0"
+        ]
+      },
+      "end_unix": 1790950088.7121954,
+      "after": {
+        "frequency_khz": "4300000",
+        "load": [
+          "5.55",
+          "4.70",
+          "3.31"
+        ],
+        "cpu_ticks": [
+          "cpu0 1171085 42479 318967 21847219 44943 67421 211969 0 0 0",
+          "cpu8 886332 40447 300909 22585836 50640 59198 33911 0 0 0"
+        ]
+      }
+    }
+  ]
+}

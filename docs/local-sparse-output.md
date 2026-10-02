@@ -1,4 +1,4 @@
-# Local sparse output (R2.2)
+# Local sparse output (R2.2, R5.12p)
 
 Linux writable LocalFileBlockDevice handles now advertise WRITE_ZERO, DISCARD,
 and DISCARD_ZEROES. Both operations guarantee zero-reading logical contents
@@ -8,16 +8,19 @@ empty mutation requests. RawDisk forwards the capabilities.
 
 ## Execution and fallback
 
-`write_zero_at` uses `fallocate(ZERO_RANGE | KEEP_SIZE)`;
-`discard` uses `fallocate(PUNCH_HOLE | KEEP_SIZE)`. Linux defines zero reads for
+R5.12p makes `write_zero_at` try `fallocate(PUNCH_HOLE | KEEP_SIZE)` first.
+If punching returns EOPNOTSUPP or ENOSYS, it tries `ZERO_RANGE | KEEP_SIZE`;
+if that is also unsupported, it uses bounded writes. `discard` continues to try
+`PUNCH_HOLE | KEEP_SIZE` followed by bounded writes. Linux defines zero reads for
 successful calls and zeroes partial blocks within punched ranges. We pass the
 exact byte range instead of rounding into neighboring data. See the primary
 [fallocate manual](https://man7.org/linux/man-pages/man2/fallocate.2.html).
 
 The backend handles EOPNOTSUPP and ENOSYS with ordinary positional zero writes
 of at most 64 KiB. A shared immutable zero array supplies the bytes without a
-per-operation zero buffer. Admission bookkeeping may grow its range vector. Unsupported acceleration is cached independently
-for zeroing and punching on each open device using atomic flags. Concurrent first
+per-operation zero buffer. Admission bookkeeping may grow its range vector. Unsupported kernel modes are cached independently
+on each open device using atomic flags. Zero and discard share the punch-mode bit;
+the zero-range bit remains separate. Concurrent first
 calls may each probe; later calls use the fallback. Reopening probes again.
 Capabilities describe logical support, so they remain advertised after fallback.
 
@@ -51,7 +54,7 @@ truncation or flag changes after inspection are outside this contract.
 
 Hole punching can release complete filesystem blocks; unaligned edge bytes are
 zeroed without requiring neighboring blocks to disappear. Unsupported operation
-fallback preserves contents but may allocate storage. ZERO_RANGE may allocate
+fallback preserves contents but may allocate storage. The secondary ZERO_RANGE path may allocate
 unwritten extents rather than release space. Therefore SPARSE/DISCARD_ZEROES
 are not promises that every call reclaims physical space.
 
@@ -76,8 +79,8 @@ real errors with partial effects, empty/overflow/truncated ranges, append flags
 on primary and buffered aliases, read-only rejection, odd boundaries/readback,
 and mixed Data/Zero/Hole copies through one/four-worker and native executors.
 
-The ordinary workspace run leaves one explicit allocation test ignored because
-it requires a supporting storage filesystem. Run all three local output tests,
+The ordinary workspace run leaves two explicit allocation tests ignored because
+it requires a supporting storage filesystem. Run all four local output tests,
 including that allocation check, with:
 
 ```bash
@@ -97,3 +100,20 @@ contains commands, raw output, matched timings, and performance limitations.
 compatibility and runtime resource reuse are implemented by R2.4/R2.5. R2.6
 covers cooperative concurrent alias admission.
 The [logical Hole contract](adr/0026-logical-hole-guarantee.md) remains authoritative.
+
+
+## R5.12p qualification
+
+The retained-export ENOSPC failure exposed why logical Zero writes should avoid
+unnecessary allocation. The change is local to the regular-file backend; source
+Zero/Hole extents, endpoint capabilities and operation-based copy statistics stay
+the same. A successful zero call may deallocate complete blocks; it does not reserve
+space for later writes. Existing nonzero destinations and partial edges use the
+same exact-range semantics. One access guard spans punching, zero-range fallback
+and bounded writes. Real errors are never retried through a different mode.
+
+New unit cases qualify punch-first completion, secondary zero-range support,
+shared unsupported-mode caching and real-error propagation for both public
+operations. Allocation tests cover populated and fresh sparse files as well as
+partial-block sentinels. [ADR-0056](adr/0056-space-efficient-local-zero-output.md),
+[complete storage qualification and performance disposition](benchmark-results/2026-10-02-r512p/README.md).

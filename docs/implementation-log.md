@@ -2365,28 +2365,76 @@ causality is unresolved. Six new stream CLI cases establish complete-command
 baselines on tmpfs. No blanket performance clearance is claimed. Source quiescence and existing
 PERF.0/R4.4/discovery follow-ups remain required.
 
+## R5.12p — Space-efficient local zero output (2026-10-02)
+
+Completed in this step's commit; baseline `0ed0a09`.
+[Contract](local-sparse-output.md), [ADR-0056](adr/0056-space-efficient-local-zero-output.md),
+[qualification, samples and plots](benchmark-results/2026-10-02-r512p/README.md).
+
+Linux regular-file zero output now tries punching first, then zero-range when
+punching is explicitly unsupported, then bounded writes when both kernel modes
+are unsupported. The punch support bit is shared with discard; one access guard
+covers every attempt. EINTR retries the same mode; real errors propagate, including
+ENOSPC and partial effects. Source Zero/Hole labels and copy counters are unchanged.
+No new-file write omission, general device-discard assumption or extra worker
+scratch state is introduced.
+
+Workspace: 625 passed, two filesystem-specific tests ignored by default. All four
+storage integration tests pass explicitly on Btrfs and the unchanged XFS runner.
+Both show 8 MiB populated files falling to 2 MiB allocation after zeroing the middle
+6 MiB, and fresh sparse files retaining 8 KiB with partial-block sentinels intact.
+Final Clippy across all targets and formatting pass. Six synthetic CLI conversions
+match authored RAW and QEMU. The earlier export-cleanup flake did not recur.
+
+The matrix retains 72 runs / 2,160 samples across eight unchanged RAW/FLAT/sparse/
+stream cases, longer adverse repeats, historical and identical-binary controls.
+Sparse/mixed-zero tmpfs copy/readback medians improve 12.80–54.74%; dense/RAW cases
+remain close to baseline. Two initially adverse data-only rounds trigger longer
+measurements; all longer pairs remain below +5%. Prior monolithic sparse +6.48%
+regression does not reproduce: historical pairs −0.44%, −1.51%, +0.80%; identical
+executable pairs −2.63%, +1.87%, −0.69%. Preserve the older result without claiming
+that this proves a cause. Frequency/load snapshots and SMT limitations are retained.
+
+The full retained-export before/candidate measurements and oracle checks are in
+the linked report. Local Btrfs output falls from 30 GiB to 3.497 GiB. Initial
+copy-only pairs remain +11.33% by median; three extra pairs remain +8.28%.
+Copy/readback is +2.78% by median. A separate strace diagnostic finds 22 successful
+fallocate calls per binary, with lower candidate syscall CPU in that observation;
+it does not explain end-to-end latency or delayed filesystem work. Do not infer
+a cause. R5.12q now precedes R6.1a to investigate the full-copy tradeoff.
+On the unchanged XFS runner, all six candidate conversions and full readbacks
+pass; the first output also matches all 30 GiB against QEMU and all 8 MiB against
+the independent guest oracle. Every XFS output allocates 3,754,889,216 bytes;
+median copy/copy-readback elapsed is 60.628/117.311 s. This resolves the prior
+ENOSPC outcome for the qualified image without a filesystem resize. Local and
+runner timings are separate. Temporary RAW outputs were removed and SSH closed;
+no VMware API, new export, lease or VM power change was needed. Private inputs
+stay ignored and only aggregate observations are committed.
+Allocation and runtime have separate meanings; fallback still provides no
+universal output-space guarantee.
+
 ## Next session
 
-Start **R5.12p — Space-efficient zero output and conversion performance**. The
-first retained-export CLI attempt exhausted the runner's small XFS filesystem:
-logical Zero extents use `ZERO_RANGE`, which may allocate their full length.
-Cleanup removed the private output correctly. Qualify a bounded optimization
-before advancing production export integration:
+Start **R5.12q — Retained-export full-copy latency investigation**. Preserve the
+qualified sparse-allocation gain while investigating the +8.28% median in the
+additional Btrfs copy-only pairs:
 
-- Evaluate zero-to-discard only when the destination explicitly guarantees
-  zero-reading discard, or prove when a newly created destination needs no zero I/O.
-  Preserve arbitrary-range zero semantics, nonzero overwrite contents, tails,
-  access exclusion, error accounting and capability fallbacks. Do not relabel
-  source Zero extents as Hole merely to alter the planner.
-- Test physical allocation as well as full logical bytes on XFS and Btrfs; include
-  partial blocks, unsupported fallocate, cancellation and ENOSPC cleanup. Re-run
-  the retained 30 GiB conversion on the unchanged runner after the optimization.
-- Measure copy-only and copy/readback, CPU/RSS, allocated bytes and unchanged RAW,
-  FLAT and sparse controls. Investigate the retained +6.48% monolithic copy/readback
-  median with controlled conditions and identical-binary pairs. Retain every attempt.
+- Measure map/decode, destination Data writes and flush/durability phases separately
+  with bounded diagnostic instrumentation. Use the same fixed image, binary/CPU
+  controls and alternating order; record storage/cache conditions and all attempts.
+  The 22-call fallocate profile alone does not establish where wall time went.
+- Correlate allocation/layout and write/flush costs before choosing an optimization.
+  Compare identical binaries and decoder controls to distinguish workload/layout
+  variance from a reproducible implementation cost. Do not restore allocating
+  zero-range as the default merely to improve one latency number.
+- Retain arbitrary-range zero bytes, existing nonzero overwrite/tails, access
+  exclusion, bounded memory, capability fallbacks, cancellation and publication.
+  Re-run complete QEMU/guest comparisons and matched copy-only/readback/CPU/RSS/
+  allocation measurements for any implementation change. Keep XFS and Btrfs
+  results separate. Commit the measured disposition, even if a tradeoff remains.
 
-Then start **R6.1a — Explicit source identity and export artifact contract**. Split
-the larger R6.1 ownership/integration gate into reviewable committed packages:
+Then start **R6.1a — Explicit source identity and export artifact contract**. Split the
+larger R6.1 ownership/integration gate into reviewable committed packages:
 
 1. Specify versioned artifact metadata and bounded Rust types for explicit endpoint
    trust, VM/disk selection, container versus logical sizes, completeness and
@@ -2400,10 +2448,11 @@ the larger R6.1 ownership/integration gate into reviewable committed packages:
    those contracts, retaining cancellation, redaction and publication semantics.
    Qualify on the authorized lab only when the workflow needs new host evidence.
 
-Keep PERF.0 work visible: repeated CLI/stream timing, controlled CPU/SMT/frequency
-and identical-binary/layout controls; map admission/cache sensitivity; random
-whole-grain amplification; and measured bounded parallel decoding. Do not grow
-scratch state with unbounded worker count. Retain existing R4.4 and discovery/TLS
-follow-ups. VMFS sparse, seSparse, online snapshots, CBT, restore, vCenter and
-vSphere 9 remain separately qualified later work. Commit every completed package
-with tests, benchmark disposition, evidence and updated next-session notes.
+Keep PERF.0 visible: prior stream timing, controlled CPU/SMT/frequency/layout work,
+map admission/cache sensitivity, random whole-grain amplification and measured
+bounded parallel decoding. Do not grow scratch state with unbounded worker count.
+Retain R4.4 and discovery/TLS follow-ups. The historical CLI-copy slowdown did not
+reproduce in this bounded recheck; preserve both datasets without causal claims.
+VMFS sparse, seSparse, online snapshots, CBT, restore, vCenter and vSphere 9 remain
+separately qualified later work. Commit every completed package with tests,
+benchmark disposition, evidence and updated next-session notes.

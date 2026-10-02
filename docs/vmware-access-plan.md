@@ -358,7 +358,7 @@ following bounded packages in order:
    **R5.10p complete for scoped descriptor recovery:** the inline comparison hint
    recovers the measured small-input cost. [All controls and unresolved stream
    timing](benchmark-results/2026-10-02-r510p/README.md) remain visible. Continue
-   R5.12p/R6.1 while retaining the controlled-runner performance follow-up.
+   R6.1 while retaining the controlled-runner performance follow-up.
 2. **R5.11a complete — Bounded grain index:** map pointers, aliases, redundancy,
    record ordering and LBA binding pass synthetic and retained-export checks.
    [Contract](vmdk-stream-map.md), [evidence](benchmark-results/2026-10-02-r511a/README.md).
@@ -370,10 +370,11 @@ following bounded packages in order:
 3. **R5.12 complete — Local CLI conversion qualification:** admitted subset
    integrated into inspect/plan/copy/verify, including cross-grain reads, durability
    and cancellation. [Tests and repeated plots](benchmark-results/2026-10-02-r512/README.md).
-4. **R5.12p — Output-space and performance qualification:** prioritize bounded
-   zero-output allocation improvements after the runner ENOSPC attempt. Preserve
-   logical zero semantics and repeat the retained conversion on its unchanged XFS
-   filesystem. [Detailed next package](implementation-log.md#next-session).
+4. **R5.12p complete — Output-space qualification:** punch-first local zero output
+   preserves logical semantics and reduces allocation on qualified XFS/Btrfs.
+   [Repeated conversions and timing controls](benchmark-results/2026-10-02-r512p/README.md)
+   retain unresolved adverse observations. R5.12q investigates the remaining
+   local full-copy latency before R6.1a.
 5. **R6.1 — Container export contract and ownership:** replace capacity-only
    experimental selection with explicit source identity/trust inputs. Define
    versioned artifact and durable lease-ownership records, then test process-loss

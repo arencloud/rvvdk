@@ -117,6 +117,6 @@ orchestrates references/plots; VMware access and logical reads remain Rust.
 are qualified in the [CLI contract](cli-vmdk.md). Use `compare_stream_cli.py` for
 current CLI conversion checks; historical envelope/read scripts deliberately
 retain their pre-integration CLI rejection gate. Retain PERF.0 and prior stream
-timing follow-ups. R5.12p next qualifies space-efficient zero output; then R6.1
-defines artifact identity and durable ownership before
+timing follow-ups. R5.12p qualifies space-efficient local zero output; R5.12q next investigates
+full-copy latency. R6.1a then defines artifact identity and durable ownership before
 production VMware workflow integration.

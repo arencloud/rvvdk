@@ -1,0 +1,10 @@
+running 4 tests
+test sparse_writes_reject_read_only_invalid_and_truncated_ranges_without_growth ... ok
+test storage_hole_punch_reclaims_blocks_and_preserves_data ... punch=false: allocated 512-byte blocks before=16384, after=4096
+punch=true: allocated 512-byte blocks before=16384, after=4096
+ok
+test storage_zero_preserves_sparse_allocation_and_partial_edge_sentinels ... fresh zero: allocated 512-byte blocks before=16, after=16
+ok
+test zero_and_punch_preserve_unaligned_edges_size_and_readback_for_both_open_modes ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.46s

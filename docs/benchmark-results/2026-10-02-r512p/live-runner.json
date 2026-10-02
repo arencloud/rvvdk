@@ -1,0 +1,209 @@
+{
+  "environment": "runner",
+  "conditions": "Buffered retained export, shared host, default one worker and 1 MiB blocks, no affinity or cache flushing. Local before/candidate pairs alternate; runner candidate only, prior baseline ENOSPC retained in R5.12. Time/CPU/RSS cover the complete Rust command. QEMU/oracle and standalone verification occur outside timed copies. Logical throughput includes zero ranges.",
+  "binary_sha256": {
+    "candidate": "a67aa9767e1148580e97e4dfec1008505a0d4fbd12425eea6dae92b285aba35b"
+  },
+  "rows": [
+    {
+      "variant": "candidate",
+      "mode": "copy",
+      "round": 1,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 72.22,
+        "user_seconds": 14.68,
+        "system_seconds": 8.29,
+        "max_rss_kib": 5364
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": null,
+      "elapsed_seconds": 72.216102948,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 3754889216
+    },
+    {
+      "variant": "candidate",
+      "mode": "copy_verify",
+      "round": 1,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 117.31,
+        "user_seconds": 32.79,
+        "system_seconds": 21.37,
+        "max_rss_kib": 7452
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": {
+        "bytes_verified": 32212254720,
+        "elapsed_seconds": 57.630912683
+      },
+      "elapsed_seconds": 117.311295283,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 3754889216
+    },
+    {
+      "variant": "candidate",
+      "mode": "copy_verify",
+      "round": 2,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 119.58,
+        "user_seconds": 34.05,
+        "system_seconds": 21.5,
+        "max_rss_kib": 7412
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": {
+        "bytes_verified": 32212254720,
+        "elapsed_seconds": 58.650210743
+      },
+      "elapsed_seconds": 119.575831063,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 3754889216
+    },
+    {
+      "variant": "candidate",
+      "mode": "copy",
+      "round": 2,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 60.63,
+        "user_seconds": 14.95,
+        "system_seconds": 5.3,
+        "max_rss_kib": 5500
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": null,
+      "elapsed_seconds": 60.628104585,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 3754889216
+    },
+    {
+      "variant": "candidate",
+      "mode": "copy",
+      "round": 3,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 60.38,
+        "user_seconds": 15.19,
+        "system_seconds": 5.63,
+        "max_rss_kib": 5392
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": null,
+      "elapsed_seconds": 60.376324449,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 3754889216
+    },
+    {
+      "variant": "candidate",
+      "mode": "copy_verify",
+      "round": 3,
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 112.54,
+        "user_seconds": 32.82,
+        "system_seconds": 20.14,
+        "max_rss_kib": 7376
+      },
+      "logical_bytes": 32212254720,
+      "stats": {
+        "blocks_copied": 3596,
+        "bytes_discarded": 0,
+        "bytes_read": 3754885120,
+        "bytes_written": 3754885120,
+        "bytes_zeroed": 28457369600,
+        "extents_processed": 45
+      },
+      "verification": {
+        "bytes_verified": 32212254720,
+        "elapsed_seconds": 55.91021697
+      },
+      "elapsed_seconds": 112.543458199,
+      "backend": "threaded",
+      "durability": "file_and_directory_synced",
+      "output_allocated_bytes": 3754889216
+    }
+  ],
+  "checks": [
+    {
+      "variant": "candidate",
+      "case": "qemu_full_logical",
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "variant": "candidate",
+      "case": "independent_guest_oracle",
+      "matched": true,
+      "logical_bytes": 8388608
+    },
+    {
+      "variant": "candidate",
+      "case": "standalone_verify",
+      "round": 1,
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "variant": "candidate",
+      "case": "standalone_verify",
+      "round": 2,
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    },
+    {
+      "variant": "candidate",
+      "case": "standalone_verify",
+      "round": 3,
+      "exit_code": 0,
+      "logical_bytes": 32212254720
+    }
+  ]
+}

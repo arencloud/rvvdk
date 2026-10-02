@@ -1513,6 +1513,22 @@ validation. Worker count does not multiply decoder storage or parallelize its lo
 
 [ADR-0055](adr/0055-local-cli-stream-conversion.md), [CLI contract](cli-vmdk.md),
 [conversion qualification](benchmark-results/2026-10-02-r512/README.md).
-R5.12p next qualifies space-efficient zero output after the runner ENOSPC attempt.
+R5.12p qualifies space-efficient local zero output after the runner ENOSPC attempt.
 R6.1 then defines explicit source selection/trust, artifact identity and durable
 ownership; existing PERF.0 and stream timing follow-ups remain open.
+
+
+### R5.12p — Space-efficient local zero output
+
+Local regular-file zero operations prefer hole punching, retain zero-range
+acceleration when punching is unsupported, and then fall back to bounded writes.
+One access guard covers all modes. Unsupported bits are per kernel mode and shared
+between zero and discard for punching. Real errors propagate without alternate
+mode retries. Logical source topology and bytes_zeroed/bytes_discarded meanings
+are unchanged; physical allocation is separate evidence. No general block-device
+discard assumption or new-file write omission is introduced.
+
+[ADR-0056](adr/0056-space-efficient-local-zero-output.md),
+[contract](local-sparse-output.md), [measurements](benchmark-results/2026-10-02-r512p/README.md).
+R5.12q investigates retained-export full-copy latency next, preserving the
+allocation improvement. R6.1a source identity and artifact contracts follow.

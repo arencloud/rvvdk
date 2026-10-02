@@ -107,9 +107,19 @@ impl LocalFileBlockDevice {
         if length == 0 {
             return Ok(());
         }
-        if self.sparse_unsupported.load(Ordering::Relaxed) & operation.bit() == 0 {
+        // Both modes guarantee exact-range zero reads on regular files. Prefer
+        // releasing whole blocks; keep allocation-based zeroing for filesystems
+        // that explicitly reject punching. One guard spans every attempt/write.
+        let operations: &[Operation] = match operation {
+            Operation::Zero => &[Operation::Punch, Operation::Zero],
+            Operation::Punch => &[Operation::Punch],
+        };
+        for &candidate in operations {
+            if self.sparse_unsupported.load(Ordering::Relaxed) & candidate.bit() != 0 {
+                continue;
+            }
             loop {
-                match allocate(operation.mode(), native_offset, native_length) {
+                match allocate(candidate.mode(), native_offset, native_length) {
                     Ok(()) => return Ok(()),
                     Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
                     Err(error)
@@ -121,7 +131,7 @@ impl LocalFileBlockDevice {
                         // Cache per operation on this open file. Logical support
                         // remains available through bounded writes.
                         self.sparse_unsupported
-                            .fetch_or(operation.bit(), Ordering::Relaxed);
+                            .fetch_or(candidate.bit(), Ordering::Relaxed);
                         break;
                     }
                     Err(error) => return Err(Error::Io(error)),
@@ -173,7 +183,14 @@ mod tests {
             for op in [Operation::Zero, Operation::Punch] {
                 disk.sparse_with(op, 3, 199_997, |mode, offset, length| {
                     calls += 1;
-                    assert_eq!(mode, op.mode());
+                    assert_eq!(
+                        mode,
+                        if calls == 1 {
+                            Operation::Punch.mode()
+                        } else {
+                            Operation::Zero.mode()
+                        }
+                    );
                     assert_eq!(offset, 3);
                     assert_eq!(length, 199_997);
                     Err(std::io::Error::from_raw_os_error(errno))
@@ -188,6 +205,51 @@ mod tests {
     }
 
     #[test]
+    fn zero_prefers_punch_and_unsupported_punch_retains_zero_range() {
+        let disk = fixture();
+        let mut modes = Vec::new();
+        disk.sparse_with(Operation::Zero, 3, 1000, |mode, _, _| {
+            modes.push(mode);
+            if mode == Operation::Punch.mode() {
+                return Err(std::io::Error::from_raw_os_error(libc::EOPNOTSUPP));
+            }
+            disk.buffered_file().write_all_at(&[0; 1000], 3)
+        })
+        .unwrap();
+        assert_eq!(modes, [Operation::Punch.mode(), Operation::Zero.mode()]);
+        check(&disk, 3, 1003);
+        assert_eq!(
+            disk.sparse_unsupported.load(Ordering::Relaxed),
+            Operation::Punch.bit()
+        );
+        disk.sparse_with(Operation::Zero, 1003, 10, |mode, _, _| {
+            assert_eq!(mode, Operation::Zero.mode());
+            disk.buffered_file().write_all_at(&[0; 10], 1003)
+        })
+        .unwrap();
+        // Cached unsupported punch does not disable zero-range acceleration;
+        // discard still has its own bounded-write fallback.
+        disk.sparse_with(Operation::Punch, 1013, 10, |_, _, _| panic!("cached punch"))
+            .unwrap();
+        check(&disk, 3, 1023);
+    }
+
+    #[test]
+    fn successful_punch_finishes_zero_without_allocating_zero_range() {
+        let disk = fixture();
+        let mut calls = 0;
+        disk.sparse_with(Operation::Zero, 3, 1000, |mode, _, _| {
+            calls += 1;
+            assert_eq!(mode, Operation::Punch.mode());
+            disk.buffered_file().write_all_at(&[0; 1000], 3)
+        })
+        .unwrap();
+        assert_eq!(calls, 1);
+        assert_eq!(disk.sparse_unsupported.load(Ordering::Relaxed), 0);
+        check(&disk, 3, 1003);
+    }
+
+    #[test]
     fn interrupted_calls_retry_but_real_errors_are_not_hidden_or_cached() {
         for errno in [
             libc::EIO,
@@ -196,23 +258,26 @@ mod tests {
             libc::EINVAL,
             libc::EFBIG,
         ] {
-            let disk = fixture();
-            let mut calls = 0;
-            let error = disk
-                .sparse_with(Operation::Punch, 3, 1000, |_, _, _| {
-                    calls += 1;
-                    if calls == 1 {
-                        return Err(std::io::Error::from_raw_os_error(libc::EINTR));
-                    }
-                    // A failed operation may already have changed some bytes.
-                    disk.buffered_file().write_all_at(&[0], 3).unwrap();
-                    Err(std::io::Error::from_raw_os_error(errno))
-                })
-                .unwrap_err();
-            assert!(matches!(error, Error::Io(e) if e.raw_os_error() == Some(errno)));
-            assert_eq!(calls, 2);
-            assert_eq!(disk.sparse_unsupported.load(Ordering::Relaxed), 0);
-            check(&disk, 3, 4);
+            for operation in [Operation::Zero, Operation::Punch] {
+                let disk = fixture();
+                let mut calls = 0;
+                let error = disk
+                    .sparse_with(operation, 3, 1000, |mode, _, _| {
+                        assert_eq!(mode, Operation::Punch.mode());
+                        calls += 1;
+                        if calls == 1 {
+                            return Err(std::io::Error::from_raw_os_error(libc::EINTR));
+                        }
+                        // A failed operation may already have changed some bytes.
+                        disk.buffered_file().write_all_at(&[0], 3).unwrap();
+                        Err(std::io::Error::from_raw_os_error(errno))
+                    })
+                    .unwrap_err();
+                assert!(matches!(error, Error::Io(e) if e.raw_os_error() == Some(errno)));
+                assert_eq!(calls, 2);
+                assert_eq!(disk.sparse_unsupported.load(Ordering::Relaxed), 0);
+                check(&disk, 3, 4);
+            }
         }
     }
 

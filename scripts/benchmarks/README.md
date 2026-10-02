@@ -141,3 +141,11 @@ pair and longer repeat remains visible; logical throughput includes sparse holes
 ```sh
 python scripts/benchmarks/plot_stream_cli.py docs/benchmark-results/2026-10-02-r512
 ```
+
+R5.12p verifies paired RAW/FLAT/sparse/stream controls, longer adverse repeats,
+historical and identical-binary comparisons, plus retained-export elapsed/CPU/RSS
+and physical allocation. The XFS runner is plotted separately from local pairs:
+
+```sh
+python scripts/benchmarks/plot_zero_output.py docs/benchmark-results/2026-10-02-r512p
+```

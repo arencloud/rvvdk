@@ -135,21 +135,60 @@ fn sparse_writes_reject_read_only_invalid_and_truncated_ranges_without_growth() 
 fn storage_hole_punch_reclaims_blocks_and_preserves_data() {
     use std::os::unix::fs::MetadataExt;
     assert!(std::env::var_os("RVVDK_TEST_DIR").is_some());
+    for punch in [false, true] {
+        let path = path();
+        let mut expected = contents(8 * 1024 * 1024);
+        fs::write(&path, &expected).unwrap();
+        let disk = LocalFileBlockDevice::open_read_write(&path).unwrap();
+        disk.flush().unwrap();
+        let before = fs::metadata(&path).unwrap().blocks();
+        if punch {
+            disk.discard(1024 * 1024, 6 * 1024 * 1024)
+        } else {
+            disk.write_zero_at(1024 * 1024, 6 * 1024 * 1024)
+        }
+        .unwrap();
+        disk.flush().unwrap();
+        let after = fs::metadata(&path).unwrap().blocks();
+        println!("punch={punch}: allocated 512-byte blocks before={before}, after={after}");
+        assert!(
+            after < before / 2,
+            "filesystem did not demonstrate substantial reclamation"
+        );
+        expected[1024 * 1024..7 * 1024 * 1024].fill(0);
+        assert_eq!(fs::read(&path).unwrap(), expected);
+        fs::remove_file(path).unwrap();
+    }
+}
+
+#[test]
+#[ignore = "requires RVVDK_TEST_DIR on a storage filesystem supporting hole punching"]
+fn storage_zero_preserves_sparse_allocation_and_partial_edge_sentinels() {
+    use std::os::unix::fs::{FileExt, MetadataExt};
+    assert!(std::env::var_os("RVVDK_TEST_DIR").is_some());
     let path = path();
-    let mut expected = contents(8 * 1024 * 1024);
-    fs::write(&path, &expected).unwrap();
+    let size = 8 * 1024 * 1024;
+    let file = fs::OpenOptions::new()
+        .create_new(true)
+        .read(true)
+        .write(true)
+        .open(&path)
+        .unwrap();
+    file.set_len(size).unwrap();
+    file.write_all_at(&[0xa5], 0).unwrap();
+    file.write_all_at(&[0xa5], size - 1).unwrap();
+    file.sync_all().unwrap();
+    let before = file.metadata().unwrap().blocks();
     let disk = LocalFileBlockDevice::open_read_write(&path).unwrap();
+    disk.write_zero_at(1, size - 2).unwrap();
     disk.flush().unwrap();
-    let before = fs::metadata(&path).unwrap().blocks();
-    disk.discard(1024 * 1024, 6 * 1024 * 1024).unwrap();
-    disk.flush().unwrap();
-    let after = fs::metadata(&path).unwrap().blocks();
-    println!("allocated 512-byte blocks before={before}, after={after}");
-    assert!(
-        after < before / 2,
-        "filesystem did not demonstrate substantial reclamation"
-    );
-    expected[1024 * 1024..7 * 1024 * 1024].fill(0);
-    assert_eq!(fs::read(&path).unwrap(), expected);
+    let after = file.metadata().unwrap().blocks();
+    println!("fresh zero: allocated 512-byte blocks before={before}, after={after}");
+    assert!(after <= before + 16 && after < size / 512 / 8);
+    let bytes = fs::read(&path).unwrap();
+    assert_eq!(bytes.len(), size as usize);
+    assert_eq!(bytes[0], 0xa5);
+    assert_eq!(bytes[bytes.len() - 1], 0xa5);
+    assert!(bytes[1..bytes.len() - 1].iter().all(|b| *b == 0));
     fs::remove_file(path).unwrap();
 }
