@@ -181,7 +181,7 @@ async fn transferred_artifact_reopens_for_confined_native_conversion() {
     use rvvdk_local::LocalFileBlockDevice;
     use rvvdk_vsphere::{
         contract::{EndpointIdentity, PinProvenance, SourceSelection},
-        ownership::{JobStore, RetainedArtifact, RetainedOptions},
+        ownership::{JobStore, OutputId, RetainedArtifact, RetainedOptions},
     };
     use std::os::unix::fs::OpenOptionsExt;
     let out = Output::new();
@@ -250,6 +250,36 @@ async fn transferred_artifact_reopens_for_confined_native_conversion() {
         let mut buffer = vec![0; 65536];
         for i in 0..128 {
             dest.read_exact_at(i * 65536, &mut buffer).unwrap();
+            if i == 0 || i == 7 {
+                assert_eq!(buffer, fixture::bytes(i));
+            } else {
+                assert!(buffer.iter().all(|&v| v == 0));
+            }
+        }
+        drop(dest);
+        let report = admitted.convert_owned(
+            OutputId::new([41; 16]).unwrap(),
+            CopyOptions::default(),
+            RetainedOptions::default(),
+            &|_: &CopyEvent| {},
+        );
+        assert!(report.is_success(), "{report:?}");
+        assert_eq!(report.logical_bytes_verified, 8 << 20);
+        let stage = std::fs::read_dir(root.join("jobs"))
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .find(|p| {
+                p.file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .starts_with("raw-stage-")
+            })
+            .unwrap();
+        let raw =
+            RawDisk::new(LocalFileBlockDevice::open_read_only(stage.join("disk.raw")).unwrap());
+        for i in 0..128 {
+            raw.read_exact_at(i * 65536, &mut buffer).unwrap();
             if i == 0 || i == 7 {
                 assert_eq!(buffer, fixture::bytes(i));
             } else {

@@ -1668,6 +1668,28 @@ to flush; a later wrapper check may fail. The source journal is never changed.
 [contract](retained-artifact-conversion.md), [tests and timing](benchmark-results/2026-10-02-r61c4/README.md).
 Drop closes the source before unlocking; no Job or source handle escapes. Process
 loss leaves CompletedLease and potentially partial caller-owned output, with no
-new resume authority. R6.1c.5 must define output ownership and actual no-replace
-publication before composed live qualification. The existing private-store,
+new resume authority. R6.1c.5a below adds separate output ownership; R6.1c.5b must
+define actual no-replace publication before composed live qualification. The existing private-store,
 trusted-ancestor and cooperating-writer assumptions remain.
+
+### R6.1c.5a — Private owned RAW output and logical verification
+
+Consume RetainedArtifact into a separate output owner under the held store lock.
+The source journal stays CompletedLease. A version-1 output journal binds explicit
+output/artifact/source identities, capacity, canonical container metadata and private
+stage member identities. Seven intent/acknowledgment transitions reserve, stage,
+convert and verify; uncertain commits stop mutation. Copy uses the existing retained
+checks and closes writable RAW handles before acknowledging Converted.
+
+Full logical readback compares source and RAW, including zeros, with two 1 MiB
+buffers. A RAW hash and private metadata are synced and read back before Verified.
+The verification shares the native decoder; independently authored expected bytes
+qualify tests. Read-only output assessment reports journal state and pending
+transactions, granting no writer, cleanup, resume or publication authority. Stages
+remain on every outcome. The cooperating private-store model is unchanged.
+
+[ADR-0064](adr/0064-private-owned-raw-output.md), [contract](owned-raw-output.md),
+[tests and timing](benchmark-results/2026-10-02-r61c5a/README.md).
+R6.1c.5b will add fresh output admission, no-replace publication and checked cleanup;
+R6.1c.5c will qualify the composed live workflow. Full readback is O(logical capacity)
+and seven output journal commits add cost; PERF.0 retains these follow-ups.

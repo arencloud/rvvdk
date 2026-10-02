@@ -20,7 +20,9 @@ use std::{
 };
 
 mod retained;
-pub use retained::{RetainedArtifact, RetainedOptions};
+pub use retained::{
+    OutputId, OutputRecovery, OutputReport, OutputState, RetainedArtifact, RetainedOptions,
+};
 
 const MAX_RECORD: u64 = 8192;
 const MEMBERS: [&str; 3] = ["disk-1.vmdk", "manifest.json", "owner"];

@@ -7,9 +7,9 @@ use std::{
     os::unix::fs::{DirBuilderExt, FileExt},
     path::PathBuf,
 };
-struct Temp(PathBuf);
+pub(super) struct Temp(pub(super) PathBuf);
 impl Temp {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let root = std::env::var_os("RVVDK_RETAINED_PARENT")
             .map(PathBuf::from)
@@ -22,20 +22,20 @@ impl Temp {
         fs::DirBuilder::new().mode(0o700).create(&path).unwrap();
         Self(path)
     }
-    fn jobs(&self) -> PathBuf {
+    pub(super) fn jobs(&self) -> PathBuf {
         self.0.join("jobs")
     }
-    fn store(&self) -> JobStore {
+    pub(super) fn store(&self) -> JobStore {
         JobStore::open(&self.jobs()).unwrap()
     }
-    fn stage(&self) -> PathBuf {
+    pub(super) fn stage(&self) -> PathBuf {
         fs::read_dir(self.jobs())
             .unwrap()
             .map(|e| e.unwrap().path())
             .find(|p| p.is_dir())
             .unwrap()
     }
-    fn output(&self, size: u64) -> RawDisk<LocalFileBlockDevice> {
+    pub(super) fn output(&self, size: u64) -> RawDisk<LocalFileBlockDevice> {
         let file = OpenOptions::new()
             .read(true)
             .write(true)
@@ -46,7 +46,7 @@ impl Temp {
         file.set_len(size).unwrap();
         RawDisk::new(LocalFileBlockDevice::from_buffered_file(file).unwrap())
     }
-    fn populate(&self, data: &[u8], capacity: u64) -> SourceSelection {
+    pub(super) fn populate(&self, data: &[u8], capacity: u64) -> SourceSelection {
         fs::DirBuilder::new()
             .mode(0o700)
             .create(self.jobs())
@@ -87,10 +87,10 @@ impl Drop for Temp {
         fs::remove_dir_all(&self.0).unwrap();
     }
 }
-fn id() -> ArtifactId {
+pub(super) fn id() -> ArtifactId {
     ArtifactId::new([17; 16]).unwrap()
 }
-fn source(capacity: u64) -> SourceSelection {
+pub(super) fn source(capacity: u64) -> SourceSelection {
     SourceSelection::new(
         crate::contract::EndpointIdentity::pinned(
             "https://example.invalid",
@@ -106,7 +106,7 @@ fn source(capacity: u64) -> SourceSelection {
     )
     .unwrap()
 }
-fn data() -> Vec<u8> {
+pub(super) fn data() -> Vec<u8> {
     fixture::image(
         true,
         32,
@@ -116,7 +116,7 @@ fn data() -> Vec<u8> {
         ],
     )
 }
-fn open(t: &Temp, s: SourceSelection) -> Result<RetainedArtifact> {
+pub(super) fn open(t: &Temp, s: SourceSelection) -> Result<RetainedArtifact> {
     RetainedArtifact::open(t.store(), id(), s, RetainedOptions::default())
 }
 fn verify_output(t: &Temp, grains: u64, present: impl Fn(u64) -> bool) {

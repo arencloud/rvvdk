@@ -2714,7 +2714,7 @@ No ESXi or guest operation was needed. This local consumer and converter is comp
 within its scope; the borrowed RAW destination is not journal-owned or published.
 Actual output ownership/publication and composed live qualification remain open.
 
-## Next session
+## R6.1c.5 plan recorded after R6.1c.4
 
 Start **R6.1c.5 — Output ownership and durable no-replace publication**:
 
@@ -2754,3 +2754,87 @@ bounded parallel decoding and repeated retained admission/hash cost. Retain R4.4
 and discovery/TLS work. VMFS sparse, seSparse, online snapshots, CBT, restore,
 vCenter and vSphere 9 remain later qualified work. Commit every completed package
 with tests, benchmark plots, architecture decisions and updated continuation notes.
+
+## R6.1c.5a — Private owned RAW output and full logical verification
+
+Split R6.1c.5 at its first durable prerequisite: implement separate output ownership
+before actual publication. Consume the locked retained source into a private RAW
+stage and a version-1 output journal; leave the source CompletedLease record intact.
+Seven intent/acknowledgment states reserve, create, convert and verify. Member
+identities, private permissions, operation marker and explicit bindings constrain
+all accesses. Conversion uses the existing admission/alias/budget/zero/flush checks;
+all RAW writers close before Converted. Full logical source/output readback includes
+zeros, hashes RAW and checks the source again. Bounded private metadata is synced
+and read back before Verified. Two fixed verification buffers add 2 MiB outside
+copy/native-map budgets. No output writer or mutable source Job escapes.
+
+Output assessment is read-only and returns no cleanup, resume, publication or remote
+authority. Unknown journal versions/fields and inconsistent bindings fail closed.
+Uncertain transactions and every stage are retained. A visible Verified after an
+interrupted rename/acknowledgment remains a record observation; future admission
+must check actual content and durability. Same-user hostile writes/offline rollback
+remain outside the existing cooperating private-store model.
+
+[Contract](owned-raw-output.md), [ADR-0064](adr/0064-private-owned-raw-output.md),
+[tests, raw timings and plots](benchmark-results/2026-10-02-r61c5a/README.md).
+Workspace **719 passed, eight ignored**; all-target clippy and formatting pass.
+Eight added tests (including the inert crash helper) cover 35 journal boundary
+fault combinations, cancellation/deadline, engine completion versus wrapper success,
+changed RAW bytes/length/inode/marker/metadata, record corruption/binding/privacy,
+collisions, stage/metadata interruption and actual SIGKILL at four boundaries.
+All eight pass on Btrfs as well. The existing synthetic TLS transfer/conversion
+test now also completes owned RAW conversion with an independent full-byte oracle.
+
+The matched release matrix retains **288 conversions / 144 pairs** across Btrfs and
+tmpfs, including longer repeats on both. All 64 MiB logical oracle comparisons pass;
+outputs allocate 8 MiB. Longer wall medians are **31.421 → 221.464 ms on Btrfs** and
+**26.909 → 80.366 ms on tmpfs**; owned CPU is **91.129 / 79.921 ms**. Seven output
+journal commits, full logical readback and extra hashing add substantial cost; this
+matrix measures their aggregate. Keep a phase-profiling PERF.0 follow-up. Longer
+tmpfs owned wall/CPU spread remains **6.00% / 6.05%** after repeats. Private output
+metadata is 607 bytes; process peak RSS is 24,204–32,900 KiB. All samples and plots
+are retained; no barriers were removed.
+
+No ESXi or guest operation was needed. RAW output remains private; R6.1c.5 as a
+whole and production integration/recovery remain incomplete.
+
+## Next session
+
+Start **R6.1c.5b — Fresh output admission, durable no-replace publication and checked recovery actions**:
+
+1. Admit an explicit artifact/output/source binding into a confined local capability.
+   Freshly validate output record/stage/member/marker, canonical container contract,
+   metadata, exact capacity and RAW digest/content evidence. An assessed Verified
+   record alone grants no authority. Define whether source must still be retained;
+   reject missing prerequisites rather than assuming ownership or rollback safety.
+2. Define publication destination and ancestor constraints, same-filesystem policy,
+   pinned parent descriptors, fixed/generated staging names and output bundle versus
+   single-file contract. Keep RAW identity and private metadata coherent. Decide a
+   journal schema/version transition explicitly; never reinterpret unknown states.
+3. Persist publication intent before actual no-replace rename/link effects; sync
+   required files and both affected directories, then acknowledge. Preserve existing
+   destination content on collision. Track observed rename separately from durable
+   acknowledgment, including process loss and cancellation after publication starts.
+4. Implement read-only conservative assessment and explicit checked local cleanup.
+   Revalidate resource identities immediately before mutation. Never automatically
+   delete uncertain published destinations, foreign replacements or unstamped
+   StageIntent members; define a bounded outcome for these cases. Do not infer a
+   remote lease, mutable Job, resume point or replayable request from local records.
+5. Exercise collision, foreign replacement, partial journal/metadata I/O, file/dir
+   sync boundaries, cancellation and SIGKILL. Ensure every accepted worker/writer
+   drains before publication, cleanup or lock release. Repeat filesystem checks.
+6. Benchmark full publication cost, phase/CPU/RSS/allocation and byte correctness with
+   standalone plots. Keep all samples and repeat adverse observations/spreads above
+   5%. Profile the accumulated readback/hash/journal cost before proposing changes;
+   no barriers may disappear without an explicit trust/lifetime argument and tests.
+7. Continue **R6.1c.5c** with the authorized ESXi lab only after the composed path is
+   ready: fresh export, owned conversion, verified publication and explicit cleanup.
+   Preserve guest/power controls and credential privacy; uncertain remote complete/
+   abort calls must never be replayed merely because a local record suggests them.
+
+Keep PERF.0 visible: stream timing, CPU/SMT/frequency/layout controls, map/cache
+sensitivity, whole-grain amplification, Btrfs sparse-output layout/flush cost,
+bounded parallel decoding, repeated retained admission/hash cost, full logical RAW
+readback and output journal durability cost. Retain R4.4 and discovery/TLS work.
+VMFS sparse, seSparse, online snapshots, CBT, restore, vCenter and vSphere 9 remain
+later qualified work. Commit every completed package with evidence and updated plans.

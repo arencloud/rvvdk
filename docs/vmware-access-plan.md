@@ -388,7 +388,8 @@ following bounded packages in order:
    **R6.1c.3 complete:** [private metadata/native admission](owned-artifact-admission.md)
    checks structure and every present grain before completion. **R6.1c.4 complete:**
    [retained admission/local conversion](retained-artifact-conversion.md) preserves
-   store/handle lifetimes. **Next R6.1c.5:** output ownership and publication, then
+   store/handle lifetimes. **R6.1c.5a complete:** [private owned RAW conversion](owned-raw-output.md) and full logical verification.
+   **Next R6.1c.5b:** output publication and explicit checked recovery actions, then
    composed live qualification. The
    capacity proof remains separate; full production R6.1c remains open.
 6. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9

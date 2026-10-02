@@ -102,10 +102,15 @@ CompletedLease and the caller-owned RAW file remains, potentially partial. That
 file has no new checkpoint, ownership record or automatic resume authority. A new
 explicit consumer must re-admit the source and independently handle its destination.
 
-R6.1c.5 must define actual output ownership, publication intent/acknowledgment,
-file/directory durability and descriptor-bound no-replace publication. Do not label
+R6.1c.5b must define publication intent/acknowledgment, file/directory durability
+and descriptor-bound no-replace publication for the separately owned output. Do not label
 this borrowed destination as journal-owned. Compose and qualify the live workflow
 only after those boundaries exist; uncertain remote requests must never be replayed.
 
 [ADR-0063](adr/0063-retained-artifact-local-conversion.md),
 [tests, timing and plots](benchmark-results/2026-10-02-r61c4/README.md).
+
+R6.1c.5a now supplies a separate [owned RAW operation](owned-raw-output.md) that
+consumes this retained capability, journals private output, verifies every logical
+byte and persists metadata. The borrowed `convert_to` contract above is unchanged.
+No-replace publication and explicit output recovery actions continue in R6.1c.5b.

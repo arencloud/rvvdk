@@ -26,6 +26,9 @@ impl Default for RetainedOptions {
         }
     }
 }
+mod output;
+pub use output::{OutputId, OutputRecovery, OutputReport, OutputState};
+
 struct Control<'a> {
     options: &'a RetainedOptions,
     deadline: Instant,

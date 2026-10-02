@@ -1,0 +1,596 @@
+{
+  "binary_sha256": "09a38e5f1f781883a98d0b9ea90a7a2402767b45cca3ea242d7af7827e61b824",
+  "kernel": "7.2.5-200.fc44.x86_64",
+  "cpu": 0,
+  "commands": [
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c5a/initial-btrfs-1-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r61c5a/reference/vsphere",
+        "--exact",
+        "ownership::retained::output::tests::benchmark::matched_owned_output",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 8,
+      "before": {
+        "unix_seconds": 1790971272.0480635,
+        "load": [
+          4.39208984375,
+          4.01318359375,
+          3.2294921875
+        ],
+        "frequency": {
+          "scaling_cur_freq": "800873",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790971277.322838,
+        "load": [
+          4.44091796875,
+          4.02978515625,
+          3.2392578125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "802024",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 5.26,
+        "user_seconds": 1.02,
+        "system_seconds": 0.63,
+        "max_rss_kib": 32696
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c5a/initial-tmpfs-1-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r61c5a/reference/vsphere",
+        "--exact",
+        "ownership::retained::output::tests::benchmark::matched_owned_output",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 8,
+      "before": {
+        "unix_seconds": 1790971277.3236785,
+        "load": [
+          4.44091796875,
+          4.02978515625,
+          3.2392578125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "800000",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790971278.6412163,
+        "load": [
+          4.44091796875,
+          4.02978515625,
+          3.2392578125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "4797408",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 1.31,
+        "user_seconds": 0.95,
+        "system_seconds": 0.34,
+        "max_rss_kib": 32584
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c5a/initial-tmpfs-2-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r61c5a/reference/vsphere",
+        "--exact",
+        "ownership::retained::output::tests::benchmark::matched_owned_output",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 8,
+      "before": {
+        "unix_seconds": 1790971278.6423755,
+        "load": [
+          4.44091796875,
+          4.02978515625,
+          3.2392578125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2279685",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790971280.0091753,
+        "load": [
+          4.44091796875,
+          4.02978515625,
+          3.2392578125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "801093",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 1.36,
+        "user_seconds": 0.98,
+        "system_seconds": 0.35,
+        "max_rss_kib": 32528
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c5a/initial-btrfs-2-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r61c5a/reference/vsphere",
+        "--exact",
+        "ownership::retained::output::tests::benchmark::matched_owned_output",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 8,
+      "before": {
+        "unix_seconds": 1790971280.0103128,
+        "load": [
+          4.44091796875,
+          4.02978515625,
+          3.2392578125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "1053863",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790971285.03531,
+        "load": [
+          4.48583984375,
+          4.0458984375,
+          3.2490234375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "1530883",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 4.98,
+        "user_seconds": 0.99,
+        "system_seconds": 0.59,
+        "max_rss_kib": 32720
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c5a/initial-btrfs-3-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r61c5a/reference/vsphere",
+        "--exact",
+        "ownership::retained::output::tests::benchmark::matched_owned_output",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 8,
+      "before": {
+        "unix_seconds": 1790971285.0366774,
+        "load": [
+          4.48583984375,
+          4.0458984375,
+          3.2490234375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "1332604",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790971290.0119076,
+        "load": [
+          4.36669921875,
+          4.0283203125,
+          3.24755859375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2022062",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 4.97,
+        "user_seconds": 0.99,
+        "system_seconds": 0.6,
+        "max_rss_kib": 32660
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c5a/initial-tmpfs-3-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r61c5a/reference/vsphere",
+        "--exact",
+        "ownership::retained::output::tests::benchmark::matched_owned_output",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 8,
+      "before": {
+        "unix_seconds": 1790971290.0131333,
+        "load": [
+          4.36669921875,
+          4.0283203125,
+          3.24755859375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2078277",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790971291.3305655,
+        "load": [
+          4.36669921875,
+          4.0283203125,
+          3.24755859375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "765619",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 1.31,
+        "user_seconds": 0.97,
+        "system_seconds": 0.31,
+        "max_rss_kib": 32500
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c5a/longer-btrfs-1-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r61c5a/reference/vsphere",
+        "--exact",
+        "ownership::retained::output::tests::benchmark::matched_owned_output",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 16,
+      "before": {
+        "unix_seconds": 1790971291.3318346,
+        "load": [
+          4.36669921875,
+          4.0283203125,
+          3.24755859375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "801819",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790971301.3177102,
+        "load": [
+          4.83935546875,
+          4.14306640625,
+          3.29345703125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "1596495",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 9.94,
+        "user_seconds": 1.94,
+        "system_seconds": 1.22,
+        "max_rss_kib": 32676
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c5a/longer-tmpfs-1-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r61c5a/reference/vsphere",
+        "--exact",
+        "ownership::retained::output::tests::benchmark::matched_owned_output",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 16,
+      "before": {
+        "unix_seconds": 1790971301.3196979,
+        "load": [
+          4.83935546875,
+          4.14306640625,
+          3.29345703125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "1266190",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790971304.089908,
+        "load": [
+          4.77197265625,
+          4.140625,
+          3.29736328125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2730661",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 2.74,
+        "user_seconds": 2.02,
+        "system_seconds": 0.69,
+        "max_rss_kib": 32600
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c5a/longer-tmpfs-2-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r61c5a/reference/vsphere",
+        "--exact",
+        "ownership::retained::output::tests::benchmark::matched_owned_output",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 16,
+      "before": {
+        "unix_seconds": 1790971304.0915241,
+        "load": [
+          4.77197265625,
+          4.140625,
+          3.29736328125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "2730661",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790971306.761714,
+        "load": [
+          4.77197265625,
+          4.140625,
+          3.29736328125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "1372207",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 2.64,
+        "user_seconds": 1.99,
+        "system_seconds": 0.61,
+        "max_rss_kib": 32900
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c5a/longer-btrfs-2-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r61c5a/reference/vsphere",
+        "--exact",
+        "ownership::retained::output::tests::benchmark::matched_owned_output",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 16,
+      "before": {
+        "unix_seconds": 1790971306.7645428,
+        "load": [
+          4.77197265625,
+          4.140625,
+          3.29736328125
+        ],
+        "frequency": {
+          "scaling_cur_freq": "800000",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790971316.7011776,
+        "load": [
+          4.8076171875,
+          4.16943359375,
+          3.31591796875
+        ],
+        "frequency": {
+          "scaling_cur_freq": "1343866",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 9.93,
+        "user_seconds": 1.95,
+        "system_seconds": 1.19,
+        "max_rss_kib": 32692
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c5a/longer-btrfs-3-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r61c5a/reference/vsphere",
+        "--exact",
+        "ownership::retained::output::tests::benchmark::matched_owned_output",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 16,
+      "before": {
+        "unix_seconds": 1790971316.703243,
+        "load": [
+          4.8076171875,
+          4.16943359375,
+          3.31591796875
+        ],
+        "frequency": {
+          "scaling_cur_freq": "3727843",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790971326.639994,
+        "load": [
+          4.9111328125,
+          4.2138671875,
+          3.33984375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "801003",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 9.9,
+        "user_seconds": 1.98,
+        "system_seconds": 1.15,
+        "max_rss_kib": 32724
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-f",
+        "{\"wall_seconds\":%e,\"user_seconds\":%U,\"system_seconds\":%S,\"max_rss_kib\":%M}",
+        "-o",
+        "docs/benchmark-results/2026-10-02-r61c5a/longer-tmpfs-3-time.json",
+        "taskset",
+        "-c",
+        "0",
+        "/home/egevorky/RustroverProjects/rvvdk/target/r61c5a/reference/vsphere",
+        "--exact",
+        "ownership::retained::output::tests::benchmark::matched_owned_output",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "pairs": 16,
+      "before": {
+        "unix_seconds": 1790971326.6420076,
+        "load": [
+          4.9111328125,
+          4.2138671875,
+          3.33984375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "801003",
+          "scaling_governor": "powersave"
+        }
+      },
+      "after": {
+        "unix_seconds": 1790971329.311888,
+        "load": [
+          4.837890625,
+          4.2099609375,
+          3.34375
+        ],
+        "frequency": {
+          "scaling_cur_freq": "801196",
+          "scaling_governor": "powersave"
+        }
+      },
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 2.64,
+        "user_seconds": 1.97,
+        "system_seconds": 0.63,
+        "max_rss_kib": 32820
+      }
+    }
+  ],
+  "conditions": "Same release executable, alternating per-pair order, shared CPU0, powersave, SMT not isolated. No builds/tests/plots overlap timing. Authored VMDK: 128 stored-DEFLATE grains in 64 MiB logical capacity. Both paths admit RetainedArtifact and use convert_to with source re-admission, copy, flush and source rechecks. Owned path includes private output preparation, seven journal commits, full logical source/output readback, SHA256 and durable private metadata. Retained baseline caller-owned destination creation/sizing precedes timing. Source fixture/store preparation and lock acquisition precede timing for both; full independent logical and encoded source comparisons, allocation checks and synthetic fixture-tree deletion follow timing. No production output cleanup API exists. Both include source/destination handle release. Per-call CPU includes workers; process CPU/RSS also includes preparation and oracle checks. Ordinary caches, no live host or publication. tmpfs is volatile."
+}
