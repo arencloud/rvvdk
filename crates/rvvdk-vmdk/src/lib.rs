@@ -54,3 +54,6 @@ pub use stream::{
 
 mod stream_map;
 pub use stream_map::{StreamGrain, StreamMap, StreamMapLimits, StreamMapStats};
+
+mod stream_disk;
+pub use stream_disk::{StreamDisk, StreamDiskError, StreamDiskLimits};

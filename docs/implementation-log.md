@@ -2278,20 +2278,68 @@ Clippy across all targets with `-D warnings`, formatting and release builds pass
 An initial Clippy duplicate-fixture-module error was corrected and retained.
 The earlier export-cleanup test failure did not recur.
 
+## R5.11b — Owned bounded native stream reads (2026-10-02)
+
+Completed in this step's commit; baseline `ea94b1d`.
+[Contract](vmdk-stream-reads.md), [ADR-0054](adr/0054-bounded-native-stream-reads.md),
+[reference checks and plots](benchmark-results/2026-10-02-r511b/README.md).
+
+`StreamDisk` retains the exact admitted physical source and implements read-only
+logical reads and coalesced Data/Zero extents. It rechecks uncached grain prefixes,
+requires exactly one checksummed zlib stream with exact input consumption and
+64 KiB output, and rejects invalid framing/lengths/checksums. Native Rust
+`miniz_oxide` core uses fixed state with default features disabled; no C/vendor
+SDK or growing output buffer. One shared scratch slot and last-grain cache bound
+memory across callers. Data reads serialize. Sparse holes need no decode I/O.
+Explicit limits cover decode storage, requests, encoded input, grain work and
+output extents. Cache replacement/revalidation invalidate keys before failures.
+
+Nine focused tests cover independent stored/zlib fixtures, malformed and high-ratio
+streams, resource bounds, cross-grain/zero reads, cache failure, partial backend
+reads, alias/endpoint checks, large holes and concurrent callers. Final workspace:
+617 passed, one ignored; Clippy all targets and formatting pass. The first
+concatenation test accidentally exceeded the map's compressed-size bound; a small
+second valid zlib stream now reaches the intended decoder check. The initial test
+failure is retained. The prior export-cleanup flake did not recur.
+
+Six complete synthetic images match authored RAW. Public CLI rejection of all
+seven compressed fixtures remains. On the authorized runner, every logical byte
+of the retained 30 GiB export matches QEMU, and all 8 MiB of the independently
+mapped guest fixture matches. The temporary sparse RAW reference was removed
+after comparison; no VMware API, export, lease or power operation was needed.
+Only sanitized counters and the helper binary hash are retained in Git.
+
+Three live runs per workload give median read-phase throughput of 152.957 MiB/s
+for allocated-grain sequential reads and 6.009 MiB/s for 4 KiB random requests.
+Per-miss random reads decode a full grain. Read-workload peak RSS is 3.11–3.36 MiB;
+requested decode storage is 141,679 bytes. CPU/RSS include process startup and
+map acquisition. Read throughput excludes admission, which varies 4.76–20.95 s
+across these runs. Preserve the cache/order sensitivity; do not claim cold-cache,
+whole-job or parallel-decode performance from these numbers.
+
+Three paired rounds for four existing map cases, longer repeats on adverse >5%
+observations, and three runs of seven new in-memory read cases establish controls
+and baselines. All 69 runs / 2070 samples remain visible. Longer empty-1-TiB
+map and lookup medians remain adverse at +5.17% and +6.70%; instruction shapes
+match with changed placement, which is not performance proof. These and prior
+stream timing/PERF.0 concerns remain open; read correctness does not clear them.
+
 ## Next session
 
-Start **R5.11b — bounded native stream decompression and logical reads**. Build on
-the validated map, bind source ownership, and specify compressed framing, exact
-input/output limits, truncation/trailing input and sparse-zero behavior. Implement
-cross-grain range reads with bounded scratch/cache memory. Compare authored RAW,
-QEMU output and the private guest oracle, then measure sequential/random reads,
-CPU and RSS. Keep public CLI rejection until R5.12 qualification.
+Start **R5.12 — Local CLI streamOptimized integration and conversion qualification**.
+Route only the admitted base profiles through confined, retained file acquisition.
+Integrate inspect/plan/copy/verify while preserving version/format rejection for
+unsupported variants, alias checks, request limits, cancellation and durable
+publication. Test complete conversions and cross-grain ranges against authored
+RAW/QEMU and the private guest oracle. Retain source quiescence requirements and
+do not advertise compressed containers as native RAW endpoints.
 
-PERF.0 retains unresolved stream timing observations: use a controlled core and
-SMT sibling, record frequency/load and layout/ASLR conditions, and preserve
-identical-binary controls. Keep prior R5.10/R5.10p observations and R5.11a repeats.
-Retain the prior unconfirmed-cleanup fixture failure for diagnosis if it recurs;
-do not weaken production cleanup. Earlier PERF.0/R4.4 and discovery/TLS follow-ups
-remain open. R6.1 still gates source identity, artifact contracts and durable
-resource ownership. Commit each completed bounded package with tests, benchmarks
-and updated plans.
+Benchmark end-to-end conversion separately from decoding and map acquisition.
+Investigate the observed admission/cache sensitivity and random whole-grain
+amplification; measure any optimization against the recorded baseline before
+changing I/O budgets or cache bounds. Keep bounded parallel decoding as a measured
+follow-up, not an unbounded per-thread scratch allocation. PERF.0 also retains
+prior marker/stream timing observations, controlled-core/SMT/layout work and
+identical-binary controls. Earlier R4.4 and discovery/TLS follow-ups remain open.
+R6.1 still gates source identity, artifact contracts and durable resource ownership.
+Commit each completed bounded package with tests, benchmarks and updated plans.

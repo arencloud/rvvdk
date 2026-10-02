@@ -1,0 +1,30 @@
+Gnuplot not found, using plotters backend
+Benchmarking stream_map/sparse_footer
+Benchmarking stream_map/sparse_footer: Warming up for 500.00 ms
+Benchmarking stream_map/sparse_footer: Collecting 30 samples in estimated 4.0001 s (454k iterations)
+Benchmarking stream_map/sparse_footer: Analyzing
+stream_map/sparse_footer
+                        time:   [8.0837 µs 8.2938 µs 8.5633 µs]
+Found 2 outliers among 30 measurements (6.67%)
+  2 (6.67%) high severe
+Benchmarking stream_map/dense_footer
+Benchmarking stream_map/dense_footer: Warming up for 500.00 ms
+Benchmarking stream_map/dense_footer: Collecting 30 samples in estimated 4.0003 s (409k iterations)
+Benchmarking stream_map/dense_footer: Analyzing
+stream_map/dense_footer time:   [9.2343 µs 9.4629 µs 9.7290 µs]
+Found 1 outliers among 30 measurements (3.33%)
+  1 (3.33%) high mild
+Benchmarking stream_map/empty_1t_footer
+Benchmarking stream_map/empty_1t_footer: Warming up for 500.00 ms
+Benchmarking stream_map/empty_1t_footer: Collecting 30 samples in estimated 4.0061 s (19k iterations)
+Benchmarking stream_map/empty_1t_footer: Analyzing
+stream_map/empty_1t_footer
+                        time:   [193.93 µs 201.92 µs 211.00 µs]
+Found 1 outliers among 30 measurements (3.33%)
+  1 (3.33%) high mild
+Benchmarking stream_map/lookup_sparse
+Benchmarking stream_map/lookup_sparse: Warming up for 500.00 ms
+Benchmarking stream_map/lookup_sparse: Collecting 30 samples in estimated 4.0000 s (457M iterations)
+Benchmarking stream_map/lookup_sparse: Analyzing
+stream_map/lookup_sparse
+                        time:   [7.0671 ns 7.2359 ns 7.4154 ns]

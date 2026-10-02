@@ -1,0 +1,30 @@
+   Compiling adler2 v2.0.1
+   Compiling miniz_oxide v0.9.1
+   Compiling rvvdk-vmdk v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-vmdk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.18s
+     Running tests/stream_disk.rs (target/debug/deps/stream_disk-6df32e6e85cc5069)
+
+running 7 tests
+test endpoint_changes_aliases_prefix_mutations_and_partial_backend ... ok
+test empty_large_sparse_capacity_and_extent_limits ... ok
+test cache_hits_failed_replacements_and_revalidation ... ok
+test rejects_truncation_checksum_raw_gzip_dictionary_trailing_concatenation_and_wrong_output ... FAILED
+test per_read_limits_precede_io_and_buffer_mutation ... ok
+test native_bytes_ranges_zeros_extents_and_read_only_capabilities ... ok
+test concurrent_callers_share_bounded_cache_without_mixing_grains ... ok
+
+failures:
+
+---- rejects_truncation_checksum_raw_gzip_dictionary_trailing_concatenation_and_wrong_output stdout ----
+
+thread 'rejects_truncation_checksum_raw_gzip_dictionary_trailing_concatenation_and_wrong_output' (3914165) panicked at crates/rvvdk-vmdk/tests/stream_disk.rs:62:74:
+called `Result::unwrap()` on an `Err` value: Map(Limit("compressed grain bytes"))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    rejects_truncation_checksum_raw_gzip_dictionary_trailing_concatenation_and_wrong_output
+
+test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+error: test failed, to rerun pass `-p rvvdk-vmdk --test stream_disk`

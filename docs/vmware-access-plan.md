@@ -357,13 +357,14 @@ following bounded packages in order:
    **R5.10p complete for scoped descriptor recovery:** the inline comparison hint
    recovers the measured small-input cost. [All controls and unresolved stream
    timing](benchmark-results/2026-10-02-r510p/README.md) remain visible. Continue
-   R5.11b while retaining the controlled-runner performance follow-up.
+   R5.12 while retaining the controlled-runner performance follow-up.
 2. **R5.11a complete — Bounded grain index:** map pointers, aliases, redundancy,
    record ordering and LBA binding pass synthetic and retained-export checks.
    [Contract](vmdk-stream-map.md), [evidence](benchmark-results/2026-10-02-r511a/README.md).
-   **R5.11b next — Bounded native grain decoding:** bind source ownership and implement decompression and
-   logical range reads with strict input/output and aggregate metadata bounds. Compare known bytes
-   and QEMU output, test malformed/truncated streams and measure CPU/RSS/throughput.
+   **R5.11b complete — Bounded native grain decoding:** owned source, exact
+   checksummed zlib framing, fixed scratch/cache and logical range reads pass
+   complete QEMU/guest-oracle comparison. [Contract](vmdk-stream-reads.md),
+   [CPU/RSS/throughput](benchmark-results/2026-10-02-r511b/README.md).
    Keep guest images private; preserve unsupported VMFS sparse/seSparse variants.
 3. **R5.12 — Local CLI conversion qualification:** integrate only the admitted
    subset into inspect/plan/copy/verify, test cross-grain reads, durability and
@@ -379,8 +380,9 @@ following bounded packages in order:
 
 Commit each completed bounded package with tests, evidence, performance disposition
 and an updated next-session record. This sequence extends the R5/R6 roadmap; it
-claims R5.10 metadata admission, R5.10p scoped descriptor recovery and R5.11a map validation as implemented;
-decoding, overall stream performance clearance and production integration remain open.
+claims R5.10 metadata admission, R5.10p scoped descriptor recovery, R5.11a map
+validation and R5.11b native reads as implemented. CLI conversion, overall stream
+performance clearance and production integration remain open.
 
 ### Later — vSphere 9 compatibility (deferred)
 

@@ -1,0 +1,121 @@
+{
+  "schema": 1,
+  "scope": "synthetic_native_logical_bytes",
+  "cases": [
+    {
+      "case": "data-footer",
+      "report": {
+        "scope": "native_stream_reads",
+        "mode": "compare",
+        "capacity_bytes": 4194304,
+        "allocated_grains": 2,
+        "logical_bytes": 4194304,
+        "read_calls": 4,
+        "admission_seconds": 0.000190467,
+        "read_seconds": 0.002207691,
+        "decode_memory_bytes": 141681,
+        "reference_matched": true
+      },
+      "cli_rejected": true,
+      "image_sha256": "2e1bc9909c2d94a30ca0c035cdea1023491776a1913f894d836f20c2264c6793",
+      "raw_sha256": "cf55dccb4e388ad962fd56a3a9abd3cb1d193ad84601dd0a5fb70ed75c293b38"
+    },
+    {
+      "case": "data",
+      "report": {
+        "scope": "native_stream_reads",
+        "mode": "compare",
+        "capacity_bytes": 4194304,
+        "allocated_grains": 2,
+        "logical_bytes": 4194304,
+        "read_calls": 4,
+        "admission_seconds": 0.000149958,
+        "read_seconds": 0.001955011,
+        "decode_memory_bytes": 141681,
+        "reference_matched": true
+      },
+      "cli_rejected": true,
+      "image_sha256": "b29ab02d8ada879540fa533de2ef2ec11fa65af3c4730f68a305c82b7ebe037d",
+      "raw_sha256": "cf55dccb4e388ad962fd56a3a9abd3cb1d193ad84601dd0a5fb70ed75c293b38"
+    },
+    {
+      "case": "two_tables-footer",
+      "report": {
+        "scope": "native_stream_reads",
+        "mode": "compare",
+        "capacity_bytes": 67108864,
+        "allocated_grains": 2,
+        "logical_bytes": 67108864,
+        "read_calls": 64,
+        "admission_seconds": 0.000159674,
+        "read_seconds": 0.016965497,
+        "decode_memory_bytes": 141681,
+        "reference_matched": true
+      },
+      "cli_rejected": true,
+      "image_sha256": "f12b8d403c46d8db8c2deb96031212a1518dc7cdf643890885f7def2bce0a090",
+      "raw_sha256": "9c3ae79f588d34791829c9e4a1cc0a0bee2871b011e5df3481475e120f7be603"
+    },
+    {
+      "case": "two_tables",
+      "report": {
+        "scope": "native_stream_reads",
+        "mode": "compare",
+        "capacity_bytes": 67108864,
+        "allocated_grains": 2,
+        "logical_bytes": 67108864,
+        "read_calls": 64,
+        "admission_seconds": 0.000132047,
+        "read_seconds": 0.01623314,
+        "decode_memory_bytes": 141681,
+        "reference_matched": true
+      },
+      "cli_rejected": true,
+      "image_sha256": "d2ba7d61214975b4d38c8b3ddf65dc4984e867669751997e9af0d2d9670a4e21",
+      "raw_sha256": "9c3ae79f588d34791829c9e4a1cc0a0bee2871b011e5df3481475e120f7be603"
+    },
+    {
+      "case": "unaligned",
+      "unsupported_rejected": true,
+      "cli_rejected": true
+    },
+    {
+      "case": "zero-footer",
+      "report": {
+        "scope": "native_stream_reads",
+        "mode": "compare",
+        "capacity_bytes": 4194304,
+        "allocated_grains": 0,
+        "logical_bytes": 4194304,
+        "read_calls": 4,
+        "admission_seconds": 0.000141541,
+        "read_seconds": 0.002403383,
+        "decode_memory_bytes": 76105,
+        "reference_matched": true
+      },
+      "cli_rejected": true,
+      "image_sha256": "9452e8584699ac81193f476ad7797828f5a7927cb51a43a0587bdfdd6e172366",
+      "raw_sha256": "bb9f8df61474d25e71fa00722318cd387396ca1736605e1248821cc0de3d3af8"
+    },
+    {
+      "case": "zero",
+      "report": {
+        "scope": "native_stream_reads",
+        "mode": "compare",
+        "capacity_bytes": 4194304,
+        "allocated_grains": 0,
+        "logical_bytes": 4194304,
+        "read_calls": 4,
+        "admission_seconds": 0.000116406,
+        "read_seconds": 0.001732211,
+        "decode_memory_bytes": 76105,
+        "reference_matched": true
+      },
+      "cli_rejected": true,
+      "image_sha256": "27bbbccbe76ed94e2f5c66ad41cd5963c065c5f8fe3b115abb3329e4f0a367f2",
+      "raw_sha256": "bb9f8df61474d25e71fa00722318cd387396ca1736605e1248821cc0de3d3af8"
+    }
+  ],
+  "helper_sha256": "6f87bd3f1ef0b870ce16e82a3c87f86724efb99788de2c1185e4713c6c9ffea8",
+  "script_sha256": "d5a8c630014c1d02e63111c91084074eebf51468f7bc154ad9a03ca7ffa1c7f7"
+}

@@ -36,7 +36,8 @@ VMware disk access and migration, extensible to other platforms.
 > VMDK disks are readable through Rust APIs and [all four CLI commands](docs/cli-vmdk.md), with RAW output and
 > [bounded terminal-padding support](docs/vmdk-padding.md). Hosted sparse parents are
 > available through [explicit CLI opt-in](docs/cli-vmdk-parents.md).
-> VMware remote access, CBT, and durable resume are planned.
+> [Native streamOptimized reads](docs/vmdk-stream-reads.md) are available through Rust APIs; compressed CLI support is next.
+> Production VMware workflows, CBT, and durable resume remain planned.
 > The [roadmap](docs/roadmap.md) tracks completed fixes and remaining work;
 > the [dated review](docs/project-review-2026-09-28.md) records the starting assessment.
 
@@ -60,6 +61,7 @@ VMware disk access and migration, extensible to other platforms.
 | **Copy memory budget** | Configurable 256 MiB default for buffers, queue entries, and extent metadata; [scope and limits](docs/copy-memory.md) |
 | **VMDK descriptors** | [Hosted base FLAT/ZERO metadata](docs/vmdk-descriptor.md), bounded parsing, [confined backing resolution](docs/vmdk-backing.md) and [logical reads](docs/vmdk-logical.md) |
 | **Hosted sparse reads** | [Read-only base monolithic/split sparse](docs/vmdk-sparse-disk.md), bounded metadata and [CLI inspect/plan/copy/verify](docs/cli-vmdk.md) |
+| **Compressed VMDK reads** | [Bounded streamOptimized Rust reader](docs/vmdk-stream-reads.md), fixed decode storage, checksummed grains and sparse zeros; CLI integration pending |
 | **Parent chains** | [Read-only sparse parent fallback](docs/vmdk-chain-disk.md) with bounded metadata, whole-chain alias checks and [opt-in CLI support](docs/cli-vmdk-parents.md) |
 | **Admission fuzzing** | [Four bounded libFuzzer targets](fuzz/README.md), authored seeds, sanitizer campaigns and retained corpora |
 | **VMware access** | [Independent Rust authentication and inventory](crates/rvvdk-vsphere/README.md) qualified on ESXi 8.0.3; powered-off disk export and independent known-byte verification demonstrated; no VMware SDK/VDDK dependency |
@@ -239,17 +241,19 @@ continues on the existing host. The [V0.3.2b live attempt plots](docs/benchmark-
 record opaque-reference and disk-selection fixes, guest oracle preparation, and
 real cancellation/deadline cleanup. The [V0.3.2c LAN qualification](docs/benchmark-results/2026-10-02-v032c/README.md)
 adds completed exports and independently verified guest bytes; native compressed
-VMDK decoding remains a separate step.
+VMDK decoding is qualified separately in R5.11b below.
 The [R5.10 metadata admission plots](docs/benchmark-results/2026-10-02-r510/README.md)
 show bounded Rust streamOptimized envelope costs and all descriptor regression
-pairs. The retained ESXi envelope passes; native compressed reads remain pending.
+pairs. The retained ESXi envelope passes; that API validates metadata only.
 [R5.10p comparison tuning](docs/benchmark-results/2026-10-02-r510p/README.md)
 recovers the measured small-descriptor cost; its plots retain adverse stream
 timings and identical-binary controls.
 [R5.11a grain-index validation](docs/vmdk-stream-map.md) now checks bounded record
 ownership against QEMU fixtures and the retained ESXi export;
 [benchmark plots](docs/benchmark-results/2026-10-02-r511a/README.md) track admission
-costs. Native decompression and logical reads are next (R5.11b).
+costs. [R5.11b native reads](docs/vmdk-stream-reads.md) now pass complete QEMU
+byte comparison and the independent guest oracle, with [read/CPU/RSS plots](docs/benchmark-results/2026-10-02-r511b/README.md).
+Public CLI integration is next (R5.12).
 Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
 for sanitizer execution rates, memory and feedback across repeated campaigns.
 The [R5.8 CLI parent-chain timings](docs/benchmark-results/2026-09-30-r58/README.md)

@@ -1,0 +1,252 @@
+{
+  "schema": 1,
+  "pairs": [
+    {
+      "benchmark": "stream_map/dense_footer",
+      "phase": "initial",
+      "round": 1,
+      "change_percent": -2.723279272987833
+    },
+    {
+      "benchmark": "stream_map/empty_1t_footer",
+      "phase": "initial",
+      "round": 1,
+      "change_percent": 0.9196051962272245
+    },
+    {
+      "benchmark": "stream_map/lookup_sparse",
+      "phase": "initial",
+      "round": 1,
+      "change_percent": -7.023798442925067
+    },
+    {
+      "benchmark": "stream_map/sparse_footer",
+      "phase": "initial",
+      "round": 1,
+      "change_percent": -5.755674032387059
+    },
+    {
+      "benchmark": "stream_map/dense_footer",
+      "phase": "initial",
+      "round": 2,
+      "change_percent": -20.399890121049257
+    },
+    {
+      "benchmark": "stream_map/empty_1t_footer",
+      "phase": "initial",
+      "round": 2,
+      "change_percent": -3.1649895407420803
+    },
+    {
+      "benchmark": "stream_map/lookup_sparse",
+      "phase": "initial",
+      "round": 2,
+      "change_percent": 8.896667356972277
+    },
+    {
+      "benchmark": "stream_map/sparse_footer",
+      "phase": "initial",
+      "round": 2,
+      "change_percent": 13.175935358555124
+    },
+    {
+      "benchmark": "stream_map/dense_footer",
+      "phase": "initial",
+      "round": 3,
+      "change_percent": -2.2464912571975804
+    },
+    {
+      "benchmark": "stream_map/empty_1t_footer",
+      "phase": "initial",
+      "round": 3,
+      "change_percent": -22.47087067780984
+    },
+    {
+      "benchmark": "stream_map/lookup_sparse",
+      "phase": "initial",
+      "round": 3,
+      "change_percent": 27.322916339422342
+    },
+    {
+      "benchmark": "stream_map/sparse_footer",
+      "phase": "initial",
+      "round": 3,
+      "change_percent": -1.2624258054213744
+    },
+    {
+      "benchmark": "stream_map/dense_footer",
+      "phase": "longer",
+      "round": 1,
+      "change_percent": -0.8005284568948334
+    },
+    {
+      "benchmark": "stream_map/empty_1t_footer",
+      "phase": "longer",
+      "round": 1,
+      "change_percent": 5.167595658269031
+    },
+    {
+      "benchmark": "stream_map/lookup_sparse",
+      "phase": "longer",
+      "round": 1,
+      "change_percent": 2.451161225283549
+    },
+    {
+      "benchmark": "stream_map/sparse_footer",
+      "phase": "longer",
+      "round": 1,
+      "change_percent": -4.695154510629718
+    },
+    {
+      "benchmark": "stream_map/dense_footer",
+      "phase": "longer",
+      "round": 2,
+      "change_percent": -14.057341734283124
+    },
+    {
+      "benchmark": "stream_map/empty_1t_footer",
+      "phase": "longer",
+      "round": 2,
+      "change_percent": -5.5559937826179855
+    },
+    {
+      "benchmark": "stream_map/lookup_sparse",
+      "phase": "longer",
+      "round": 2,
+      "change_percent": 6.702464624934801
+    },
+    {
+      "benchmark": "stream_map/sparse_footer",
+      "phase": "longer",
+      "round": 2,
+      "change_percent": -16.58755742704603
+    },
+    {
+      "benchmark": "stream_map/dense_footer",
+      "phase": "longer",
+      "round": 3,
+      "change_percent": -12.98982875694944
+    },
+    {
+      "benchmark": "stream_map/empty_1t_footer",
+      "phase": "longer",
+      "round": 3,
+      "change_percent": 26.59086077309256
+    },
+    {
+      "benchmark": "stream_map/lookup_sparse",
+      "phase": "longer",
+      "round": 3,
+      "change_percent": 24.076384157580843
+    },
+    {
+      "benchmark": "stream_map/sparse_footer",
+      "phase": "longer",
+      "round": 3,
+      "change_percent": -19.327856265492038
+    }
+  ],
+  "native_run_medians_ns": {
+    "cached_4k": [
+      75.78400742975457,
+      67.04450833635532,
+      84.45375377247899
+    ],
+    "compressed_random_4k": [
+      103745.10990712074,
+      105395.31796502385,
+      105725.78048780488
+    ],
+    "compressed_sequential_1m": [
+      1705141.6447368423,
+      1725241.5256410255,
+      1732099.1578947369
+    ],
+    "cross_grain_4k": [
+      207303.48825503356,
+      209278.8814102564,
+      255045.4200819672
+    ],
+    "sparse_zero_1m": [
+      14220.168363722472,
+      12911.452120105498,
+      18199.02666130761
+    ],
+    "stored_random_4k": [
+      11606.635275754423,
+      11109.795112123335,
+      14391.70026672594
+    ],
+    "stored_sequential_1m": [
+      220353.74,
+      267756.3768939394,
+      215537.01870748302
+    ]
+  },
+  "native_median_ns": {
+    "cached_4k": 75.78400742975457,
+    "compressed_random_4k": 105395.31796502385,
+    "compressed_sequential_1m": 1725241.5256410255,
+    "cross_grain_4k": 209278.8814102564,
+    "sparse_zero_1m": 14220.168363722472,
+    "stored_random_4k": 11606.635275754423,
+    "stored_sequential_1m": 220353.74
+  },
+  "live_values": {
+    "sequential": {
+      "read_mib_s": [
+        128.64494401110107,
+        152.95712310926842,
+        157.3123918445882
+      ],
+      "read_seconds": [
+        27.835819958,
+        23.411381093,
+        22.763225821
+      ],
+      "admission_seconds": [
+        20.946662082,
+        4.832723462,
+        4.858940571
+      ],
+      "process_cpu_seconds": [
+        18.13,
+        16.32,
+        15.57
+      ],
+      "process_rss_mib": [
+        3.15234375,
+        3.3046875,
+        3.35546875
+      ]
+    },
+    "random": {
+      "read_mib_s": [
+        5.920592040435767,
+        6.27540191013523,
+        6.008932615584409
+      ],
+      "read_seconds": [
+        2.702432441,
+        2.5496374939999997,
+        2.662702517
+      ],
+      "admission_seconds": [
+        5.802235692,
+        4.7622017450000005,
+        4.764792232
+      ],
+      "process_cpu_seconds": [
+        1.71,
+        1.56,
+        1.61
+      ],
+      "process_rss_mib": [
+        3.28515625,
+        3.2265625,
+        3.10546875
+      ]
+    }
+  },
+  "scope": "In-memory read costs; buffered live allocated-grain sequential/random reads. No zero-capacity throughput inflation or whole-source speedup claim."
+}

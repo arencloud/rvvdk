@@ -1,0 +1,183 @@
+{
+  "scope": "native_rust_retained_export_reads",
+  "conditions": "Buffered reads on shared VM02 runner; no cache flushing. Comparisons precede repeated read workloads; CPU/RSS include map acquisition and process startup.",
+  "helper_sha256": "6f87bd3f1ef0b870ce16e82a3c87f86724efb99788de2c1185e4713c6c9ffea8",
+  "rows": [
+    {
+      "case": "guest-oracle",
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 11.91,
+        "user_seconds": 0.11,
+        "system_seconds": 1.6,
+        "max_rss_kib": 5352
+      },
+      "report": {
+        "scope": "native_stream_reads",
+        "mode": "ranges",
+        "capacity_bytes": 32212254720,
+        "allocated_grains": 57295,
+        "logical_bytes": 8388608,
+        "read_calls": 8,
+        "admission_seconds": 11.821613296,
+        "read_seconds": 0.084883191,
+        "decode_memory_bytes": 141679,
+        "reference_matched": true
+      }
+    },
+    {
+      "case": "qemu-full-logical",
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 80.16,
+        "user_seconds": 18.42,
+        "system_seconds": 17.51,
+        "max_rss_kib": 5204
+      },
+      "report": {
+        "scope": "native_stream_reads",
+        "mode": "compare",
+        "capacity_bytes": 32212254720,
+        "allocated_grains": 57295,
+        "logical_bytes": 32212254720,
+        "read_calls": 30720,
+        "admission_seconds": 21.038726694,
+        "read_seconds": 59.110943571,
+        "decode_memory_bytes": 141679,
+        "reference_matched": true
+      }
+    },
+    {
+      "case": "sequential-1",
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 48.78,
+        "user_seconds": 13.91,
+        "system_seconds": 4.22,
+        "max_rss_kib": 3228
+      },
+      "report": {
+        "scope": "native_stream_reads",
+        "mode": "sequential",
+        "capacity_bytes": 32212254720,
+        "allocated_grains": 57295,
+        "logical_bytes": 3754885120,
+        "read_calls": 57295,
+        "admission_seconds": 20.946662082,
+        "read_seconds": 27.835819958,
+        "decode_memory_bytes": 141679,
+        "reference_matched": false
+      }
+    },
+    {
+      "case": "random-1",
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 8.5,
+        "user_seconds": 1.03,
+        "system_seconds": 0.68,
+        "max_rss_kib": 3364
+      },
+      "report": {
+        "scope": "native_stream_reads",
+        "mode": "random",
+        "capacity_bytes": 32212254720,
+        "allocated_grains": 57295,
+        "logical_bytes": 16777216,
+        "read_calls": 4096,
+        "admission_seconds": 5.802235692,
+        "read_seconds": 2.702432441,
+        "decode_memory_bytes": 141679,
+        "reference_matched": false
+      }
+    },
+    {
+      "case": "random-2",
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 7.31,
+        "user_seconds": 1.06,
+        "system_seconds": 0.5,
+        "max_rss_kib": 3304
+      },
+      "report": {
+        "scope": "native_stream_reads",
+        "mode": "random",
+        "capacity_bytes": 32212254720,
+        "allocated_grains": 57295,
+        "logical_bytes": 16777216,
+        "read_calls": 4096,
+        "admission_seconds": 4.7622017450000005,
+        "read_seconds": 2.5496374939999997,
+        "decode_memory_bytes": 141679,
+        "reference_matched": false
+      }
+    },
+    {
+      "case": "sequential-2",
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 28.24,
+        "user_seconds": 13.38,
+        "system_seconds": 2.94,
+        "max_rss_kib": 3384
+      },
+      "report": {
+        "scope": "native_stream_reads",
+        "mode": "sequential",
+        "capacity_bytes": 32212254720,
+        "allocated_grains": 57295,
+        "logical_bytes": 3754885120,
+        "read_calls": 57295,
+        "admission_seconds": 4.832723462,
+        "read_seconds": 23.411381093,
+        "decode_memory_bytes": 141679,
+        "reference_matched": false
+      }
+    },
+    {
+      "case": "sequential-3",
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 27.62,
+        "user_seconds": 13.18,
+        "system_seconds": 2.39,
+        "max_rss_kib": 3436
+      },
+      "report": {
+        "scope": "native_stream_reads",
+        "mode": "sequential",
+        "capacity_bytes": 32212254720,
+        "allocated_grains": 57295,
+        "logical_bytes": 3754885120,
+        "read_calls": 57295,
+        "admission_seconds": 4.858940571,
+        "read_seconds": 22.763225821,
+        "decode_memory_bytes": 141679,
+        "reference_matched": false
+      }
+    },
+    {
+      "case": "random-3",
+      "exit_code": 0,
+      "metrics": {
+        "wall_seconds": 7.43,
+        "user_seconds": 1.07,
+        "system_seconds": 0.54,
+        "max_rss_kib": 3180
+      },
+      "report": {
+        "scope": "native_stream_reads",
+        "mode": "random",
+        "capacity_bytes": 32212254720,
+        "allocated_grains": 57295,
+        "logical_bytes": 16777216,
+        "read_calls": 4096,
+        "admission_seconds": 4.764792232,
+        "read_seconds": 2.662702517,
+        "decode_memory_bytes": 141679,
+        "reference_matched": false
+      }
+    }
+  ]
+}

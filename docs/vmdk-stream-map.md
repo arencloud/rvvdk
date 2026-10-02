@@ -80,11 +80,11 @@ Six QEMU/authored images agree with independent table enumeration; QEMU decoding
 still matches authored RAW. The retained ESXi export also passes map admission.
 Only aggregate live counters enter Git; guest content and disk identities stay private.
 
-R5.11b must bind source ownership to the reader, specify compressed framing,
-limit exact input/output, reject truncation and unwanted trailing input, implement
-sparse-zero and cross-grain reads, and qualify logical bytes against QEMU and the
-private guest oracle. Measure sequential/random throughput, CPU and RSS. R5.12
-separately gates public CLI integration. Existing PERF.0 follow-ups remain open.
+[R5.11b native reads](vmdk-stream-reads.md) now retain source ownership, validate
+exact checksummed zlib input/output and provide sparse-zero/cross-grain reads.
+Complete QEMU and guest-oracle byte comparisons and repeated read/CPU/RSS
+measurements pass within that documented scope. This map API itself still does
+not validate payloads. R5.12 separately gates public CLI integration. Existing PERF.0 follow-ups remain open.
 
 ```sh
 cargo test -p rvvdk-vmdk --test stream_map

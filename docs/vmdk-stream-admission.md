@@ -78,11 +78,11 @@ R5.10p [recovers the measured old descriptor cost](benchmark-results/2026-10-02-
 while retaining unresolved stream timing observations. The separate
 [R5.11a map validator](vmdk-stream-map.md) now checks followed pointers, ownership,
 aliasing, redundancy, record ordering and LBA binding under aggregate limits.
-The envelope API itself retains the validation boundary above. R5.11b must bound
-compressed input/output and specify framing, truncation, trailing input and sparse
-zero semantics. Differentially compare logical bytes with authored RAW and QEMU,
-then use the private guest oracle. Measure sequential/random reads, CPU/RSS and
-throughput. R5.12 separately qualifies public CLI integration.
+The envelope API itself retains the validation boundary above.
+[R5.11b native reads](vmdk-stream-reads.md) now enforce exact checksummed zlib
+input/output and sparse-zero semantics, with full RAW/QEMU and guest-oracle
+comparisons and repeated read/CPU/RSS measurements. R5.12 separately qualifies
+public CLI integration.
 
 ## Reproduce offline qualification
 

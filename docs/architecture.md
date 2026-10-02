@@ -1462,7 +1462,7 @@ quiescence is required; length/header rechecks are not snapshots.
 R5.10p adds an inline hint for fixed-key comparisons and recovers the measured
 flat-descriptor cost, with unchanged grammar/bounds. [Both-core evidence](benchmark-results/2026-10-02-r510p/README.md)
 retains unresolved stream timing observations and identical-binary controls.
-R5.11b remains the decompression gate; global performance clearance
+R5.12 remains the public CLI integration gate; global performance clearance
 requires more controlled measurement.
 
 
@@ -1478,5 +1478,24 @@ bounds. Payloads are skipped, and no public logical-read path changes.
 The [contract](vmdk-stream-map.md) documents the strict ordered subset, two-pass
 cost, source quiescence and memory-accounting exclusions. QEMU/authored references
 and the retained ESXi export pass. [ADR-0053](adr/0053-bounded-stream-grain-index.md)
-records why decompression remains a separate R5.11b package. Public CLI admission
+records why native reads are qualified separately in R5.11b. Public CLI admission
 stays gated on R5.12; PERF.0 timing follow-ups remain open.
+
+
+### R5.11b — Owned native compressed reads
+
+`StreamDisk` retains the exact physical `BlockDevice` used for map admission and
+implements read-only logical ranges and coalesced Data/Zero extents. Each uncached
+grain's prefix is rechecked, then a single checksummed zlib stream must consume
+its exact input and produce exactly 64 KiB. Fixed miniz_oxide decoder state,
+input/output storage and a one-grain cache bound memory across concurrent callers.
+Data reads serialize; sparse-zero reads avoid decode I/O. No compressed logical
+bytes are advertised as a native RAW endpoint.
+
+[ADR-0054](adr/0054-bounded-native-stream-reads.md) and the
+[contract](vmdk-stream-reads.md) specify limits, cache invalidation, source
+quiescence, partial-buffer errors, lazy checksum checks and alias protection.
+Full QEMU and independent guest-oracle comparisons pass. Public CLI integration
+remains R5.12. Admission cache sensitivity, parallel-decode scaling and prior
+stream timing observations remain performance follow-ups, with
+[all measurements](benchmark-results/2026-10-02-r511b/README.md) retained.

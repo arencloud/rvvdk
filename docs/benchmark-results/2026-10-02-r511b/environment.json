@@ -1,0 +1,319 @@
+{
+  "baseline_commit": "ea94b1d",
+  "binary_sha256": {
+    "map-before": "b994d057661cab92c0ae6064f8177b3dcbe196b68ac67746fa655c8f65ea326f",
+    "map-candidate": "1c05136446dfa65c94b9dca1b1acda4881e9820900be2ac679f4b7ceabb8a43a",
+    "reads": "2cb2bf7304418fe9b84ae0cfb06f6da9b47bcce4ea6766c9099ca5a84efc33c2"
+  },
+  "cpu_affinity": [
+    0
+  ],
+  "smt_siblings": "0,8",
+  "governor": "powersave",
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)\nbinary: rustc\ncommit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860\ncommit-date: 2026-04-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.95.0\nLLVM version: 22.1.2",
+  "kernel": "7.2.5-200.fc44.x86_64",
+  "sample_size": 30,
+  "warmup_seconds": 0.5,
+  "initial_measurement_seconds": 2,
+  "longer_measurement_seconds": 4,
+  "conditions": "Shared host, no CPU isolation/cache flushing/governor changes. Tests/builds/QEMU/live probes/plotting finish outside the timed matrix. Four existing map cases; seven new native read cases. Not blanket regression coverage.",
+  "commands": [
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511b/reference/map-before",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r511b-initial-map-before-1",
+        "stream_map/(sparse_footer|dense_footer|empty_1t_footer|lookup_sparse)$"
+      ],
+      "start_unix": 1790945056.7934413,
+      "end_unix": 1790945080.9088697
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511b/reference/map-candidate",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r511b-initial-map-candidate-1",
+        "stream_map/(sparse_footer|dense_footer|empty_1t_footer|lookup_sparse)$"
+      ],
+      "start_unix": 1790945080.909292,
+      "end_unix": 1790945104.3296883
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511b/reference/map-candidate",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r511b-initial-map-candidate-2",
+        "stream_map/(sparse_footer|dense_footer|empty_1t_footer|lookup_sparse)$"
+      ],
+      "start_unix": 1790945104.3302119,
+      "end_unix": 1790945128.749107
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511b/reference/map-before",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r511b-initial-map-before-2",
+        "stream_map/(sparse_footer|dense_footer|empty_1t_footer|lookup_sparse)$"
+      ],
+      "start_unix": 1790945128.7497573,
+      "end_unix": 1790945152.494784
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511b/reference/map-before",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r511b-initial-map-before-3",
+        "stream_map/(sparse_footer|dense_footer|empty_1t_footer|lookup_sparse)$"
+      ],
+      "start_unix": 1790945152.49552,
+      "end_unix": 1790945176.3411293
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511b/reference/map-candidate",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r511b-initial-map-candidate-3",
+        "stream_map/(sparse_footer|dense_footer|empty_1t_footer|lookup_sparse)$"
+      ],
+      "start_unix": 1790945176.3417974,
+      "end_unix": 1790945200.5764365
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511b/reference/map-candidate",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r511b-longer-map-candidate-1",
+        "stream_map/(sparse_footer|dense_footer|empty_1t_footer|lookup_sparse)$"
+      ],
+      "start_unix": 1790945200.577278,
+      "end_unix": 1790945232.5787501
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511b/reference/map-before",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r511b-longer-map-before-1",
+        "stream_map/(sparse_footer|dense_footer|empty_1t_footer|lookup_sparse)$"
+      ],
+      "start_unix": 1790945232.5796442,
+      "end_unix": 1790945263.9115055
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511b/reference/map-before",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r511b-longer-map-before-2",
+        "stream_map/(sparse_footer|dense_footer|empty_1t_footer|lookup_sparse)$"
+      ],
+      "start_unix": 1790945263.9124901,
+      "end_unix": 1790945293.5083337
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511b/reference/map-candidate",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r511b-longer-map-candidate-2",
+        "stream_map/(sparse_footer|dense_footer|empty_1t_footer|lookup_sparse)$"
+      ],
+      "start_unix": 1790945293.5091746,
+      "end_unix": 1790945323.684956
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511b/reference/map-candidate",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r511b-longer-map-candidate-3",
+        "stream_map/(sparse_footer|dense_footer|empty_1t_footer|lookup_sparse)$"
+      ],
+      "start_unix": 1790945323.6859367,
+      "end_unix": 1790945355.4177887
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511b/reference/map-before",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "4",
+        "--save-baseline",
+        "r511b-longer-map-before-3",
+        "stream_map/(sparse_footer|dense_footer|empty_1t_footer|lookup_sparse)$"
+      ],
+      "start_unix": 1790945355.4196699,
+      "end_unix": 1790945386.1732683
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511b/reference/reads",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r511b-new-reads-1"
+      ],
+      "start_unix": 1790945386.1744058,
+      "end_unix": 1790945425.6317468
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511b/reference/reads",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r511b-new-reads-2"
+      ],
+      "start_unix": 1790945425.633203,
+      "end_unix": 1790945465.501995
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "target/r511b/reference/reads",
+        "--bench",
+        "--sample-size",
+        "30",
+        "--warm-up-time",
+        "0.5",
+        "--measurement-time",
+        "2",
+        "--save-baseline",
+        "r511b-new-reads-3"
+      ],
+      "start_unix": 1790945465.5033505,
+      "end_unix": 1790945508.200712
+    }
+  ]
+}

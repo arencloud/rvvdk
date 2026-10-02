@@ -125,3 +125,11 @@ sample-derived medians before writing SVG/PNG figures and hash audits:
 ```sh
 python scripts/benchmarks/plot_stream_map.py docs/benchmark-results/2026-10-02-r511a
 ```
+
+R5.11b combines in-memory native read costs, paired map controls, and repeated
+retained-export read/CPU/RSS observations. The generator verifies samples and
+live comparison success and saves SVG/PNG charts with an input/output hash audit:
+
+```sh
+python scripts/benchmarks/plot_stream_reads.py docs/benchmark-results/2026-10-02-r511b
+```

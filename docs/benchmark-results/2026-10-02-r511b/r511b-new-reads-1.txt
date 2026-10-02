@@ -1,0 +1,55 @@
+Gnuplot not found, using plotters backend
+Benchmarking stream_reads/compressed_sequential_1m
+Benchmarking stream_reads/compressed_sequential_1m: Warming up for 500.00 ms
+Benchmarking stream_reads/compressed_sequential_1m: Collecting 30 samples in estimated 2.0056 s (1140 iterations)
+Benchmarking stream_reads/compressed_sequential_1m: Analyzing
+stream_reads/compressed_sequential_1m
+                        time:   [1.7172 ms 1.7615 ms 1.8214 ms]
+                        thrpt:  [549.02 MiB/s 567.70 MiB/s 582.34 MiB/s]
+Found 3 outliers among 30 measurements (10.00%)
+  1 (3.33%) high mild
+  2 (6.67%) high severe
+Benchmarking stream_reads/compressed_random_4k
+Benchmarking stream_reads/compressed_random_4k: Warming up for 500.00 ms
+Benchmarking stream_reads/compressed_random_4k: Collecting 30 samples in estimated 2.0027 s (19k iterations)
+Benchmarking stream_reads/compressed_random_4k: Analyzing
+stream_reads/compressed_random_4k
+                        time:   [103.69 µs 104.30 µs 104.94 µs]
+                        thrpt:  [37.222 MiB/s 37.451 MiB/s 37.672 MiB/s]
+Benchmarking stream_reads/stored_sequential_1m
+Benchmarking stream_reads/stored_sequential_1m: Warming up for 500.00 ms
+Benchmarking stream_reads/stored_sequential_1m: Collecting 30 samples in estimated 2.0000 s (9000 iterations)
+Benchmarking stream_reads/stored_sequential_1m: Analyzing
+stream_reads/stored_sequential_1m
+                        time:   [219.23 µs 221.09 µs 223.04 µs]
+                        thrpt:  [4.3785 GiB/s 4.4171 GiB/s 4.4546 GiB/s]
+Benchmarking stream_reads/stored_random_4k
+Benchmarking stream_reads/stored_random_4k: Warming up for 500.00 ms
+Benchmarking stream_reads/stored_random_4k: Collecting 30 samples in estimated 2.0003 s (173k iterations)
+Benchmarking stream_reads/stored_random_4k: Analyzing
+stream_reads/stored_random_4k
+                        time:   [11.541 µs 11.716 µs 11.897 µs]
+                        thrpt:  [328.33 MiB/s 333.40 MiB/s 338.48 MiB/s]
+Benchmarking stream_reads/cached_4k
+Benchmarking stream_reads/cached_4k: Warming up for 500.00 ms
+Benchmarking stream_reads/cached_4k: Collecting 30 samples in estimated 2.0000 s (25M iterations)
+Benchmarking stream_reads/cached_4k: Analyzing
+stream_reads/cached_4k  time:   [73.822 ns 75.958 ns 78.115 ns]
+                        thrpt:  [48.835 GiB/s 50.221 GiB/s 51.674 GiB/s]
+Benchmarking stream_reads/cross_grain_4k
+Benchmarking stream_reads/cross_grain_4k: Warming up for 500.00 ms
+Benchmarking stream_reads/cross_grain_4k: Collecting 30 samples in estimated 2.0027 s (8940 iterations)
+Benchmarking stream_reads/cross_grain_4k: Analyzing
+stream_reads/cross_grain_4k
+                        time:   [207.65 µs 208.84 µs 210.27 µs]
+                        thrpt:  [18.577 MiB/s 18.704 MiB/s 18.811 MiB/s]
+Found 6 outliers among 30 measurements (20.00%)
+  1 (3.33%) high mild
+  5 (16.67%) high severe
+Benchmarking stream_reads/sparse_zero_1m
+Benchmarking stream_reads/sparse_zero_1m: Warming up for 500.00 ms
+Benchmarking stream_reads/sparse_zero_1m: Collecting 30 samples in estimated 2.0001 s (127k iterations)
+Benchmarking stream_reads/sparse_zero_1m: Analyzing
+stream_reads/sparse_zero_1m
+                        time:   [14.091 µs 14.310 µs 14.530 µs]
+                        thrpt:  [67.210 GiB/s 68.241 GiB/s 69.305 GiB/s]

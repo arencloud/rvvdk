@@ -7,6 +7,7 @@ repository.workspace = true
 
 [dependencies]
 thiserror = "2"
+miniz_oxide = { version = "0.9.1", default-features = false }
 rvvdk-core = { path = "../rvvdk-core" }
 
 [target.'cfg(target_os = "linux")'.dependencies]
@@ -63,4 +64,8 @@ harness = false
 
 [[bench]]
 name = "stream_map"
+harness = false
+
+[[bench]]
+name = "stream_reads"
 harness = false
