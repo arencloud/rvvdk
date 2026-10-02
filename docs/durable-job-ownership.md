@@ -141,7 +141,8 @@ fresh source checks to the proof. [R6.1c.2a](durable-export-probe.md) now binds 
 an owned empty stage. [R6.1c.2b](durable-owned-transfer.md) now integrates owned
 transfer, container-byte readback and conservative completion. [R6.1c.3](owned-artifact-admission.md)
 now persists private metadata and admits native structure/grains during LeaseHeld.
-R6.1c.4 next admits retained read-only artifacts for conversion, before publication.
+[R6.1c.4](retained-artifact-conversion.md) now admits retained artifacts for local
+conversion. R6.1c.5 next defines output ownership and actual publication.
 The capacity-selected proof remains available.
 Do not promote its manifest to job ownership or claim resumable remote export.
 

@@ -1,0 +1,17 @@
+   Compiling rvvdk-vsphere v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-vsphere)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.76s
+     Running unittests src/lib.rs (target/debug/deps/rvvdk_vsphere-11c4046dd677aec4)
+
+running 10 tests
+test ownership::retained::tests::benchmark::matched_retained_conversion ... ignored, opt-in matched retained artifact conversion benchmark
+test ownership::retained::tests::conversion_crash_child ... ok
+test ownership::retained::tests::post_flush_source_drift_prevents_conversion_success ... ok
+test ownership::retained::tests::killed_conversion_leaves_completed_source_and_caller_owned_partial_output ... ok
+test ownership::retained::tests::retained_lock_conversion_and_cleanup_have_separate_lifetimes ... ok
+test ownership::retained::tests::every_serialized_validation_claim_still_requires_fresh_admission ... ok
+test ownership::retained::tests::cancellation_and_deadline_preserve_source_and_report_partial_destination ... ok
+test ownership::retained::tests::open_rejects_pending_nonterminal_wrong_source_and_stale_store_records ... ok
+test ownership::retained::tests::conversion_rechecks_changes_before_writes_and_rejects_aliases ... ok
+test ownership::retained::tests::open_rejects_forged_claims_bad_bytes_and_foreign_resources ... ok
+
+test result: ok. 9 passed; 0 failed; 1 ignored; 0 measured; 51 filtered out; finished in 2.49s

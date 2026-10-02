@@ -1,0 +1,134 @@
+{
+  "repeated_filesystems": [
+    "btrfs",
+    "tmpfs"
+  ],
+  "runs": 12,
+  "conversions": 288,
+  "results": {
+    "btrfs": {
+      "initial": {
+        "wall_ms": {
+          "bare": 11.5482295,
+          "retained": 31.769346,
+          "overhead_percent": 175.1014430393854,
+          "spread_percent": {
+            "bare": 6.070705332917559,
+            "retained": 0.8114423424153472
+          }
+        },
+        "cpu_ms": {
+          "bare": 4.955999999999988,
+          "retained": 24.980500000000017,
+          "overhead_percent": 404.0456012913656,
+          "spread_percent": {
+            "bare": 10.260568710130503,
+            "retained": 0.08407566810109124
+          }
+        },
+        "phase_ms": {
+          "bare": {
+            "admission_ms": 0.131262,
+            "conversion_ms": 11.363444
+          },
+          "retained": {
+            "admission_ms": 7.846762999999999,
+            "conversion_ms": 23.9228615
+          }
+        }
+      },
+      "longer": {
+        "wall_ms": {
+          "bare": 11.642547500000001,
+          "retained": 31.3543705,
+          "overhead_percent": 169.30850400223832,
+          "spread_percent": {
+            "bare": 1.1598002741715074,
+            "retained": 0.9918330516322182
+          }
+        },
+        "cpu_ms": {
+          "bare": 5.083500000000047,
+          "retained": 24.68950000000003,
+          "overhead_percent": 385.6791580603875,
+          "spread_percent": {
+            "bare": 5.436991869921104,
+            "retained": 0.7222934342506981
+          }
+        },
+        "phase_ms": {
+          "bare": {
+            "admission_ms": 0.13791350000000002,
+            "conversion_ms": 11.517256
+          },
+          "retained": {
+            "admission_ms": 7.628187,
+            "conversion_ms": 23.8289415
+          }
+        }
+      }
+    },
+    "tmpfs": {
+      "initial": {
+        "wall_ms": {
+          "bare": 4.899122,
+          "retained": 26.58061,
+          "overhead_percent": 442.55864622273134,
+          "spread_percent": {
+            "bare": 4.875132779409164,
+            "retained": 1.6514919656792415
+          }
+        },
+        "cpu_ms": {
+          "bare": 4.862999999999978,
+          "retained": 26.413999999999994,
+          "overhead_percent": 443.16265679621864,
+          "spread_percent": {
+            "bare": 4.708158658498651,
+            "retained": 1.9480893738830662
+          }
+        },
+        "phase_ms": {
+          "bare": {
+            "admission_ms": 0.1388315,
+            "conversion_ms": 4.7242655
+          },
+          "retained": {
+            "admission_ms": 8.6946025,
+            "conversion_ms": 17.934037500000002
+          }
+        }
+      },
+      "longer": {
+        "wall_ms": {
+          "bare": 4.973352,
+          "retained": 26.6251995,
+          "overhead_percent": 435.3572298924347,
+          "spread_percent": {
+            "bare": 3.7827975550529302,
+            "retained": 1.1120421465010688
+          }
+        },
+        "cpu_ms": {
+          "bare": 4.919000000000007,
+          "retained": 26.486999999999984,
+          "overhead_percent": 438.4631022565552,
+          "spread_percent": {
+            "bare": 3.23945115031381,
+            "retained": 1.1949554727817224
+          }
+        },
+        "phase_ms": {
+          "bare": {
+            "admission_ms": 0.148802,
+            "conversion_ms": 4.8157055
+          },
+          "retained": {
+            "admission_ms": 8.7263785,
+            "conversion_ms": 17.925652499999998
+          }
+        }
+      }
+    }
+  }
+}

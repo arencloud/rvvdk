@@ -173,3 +173,94 @@ async fn admitted_metadata_does_not_resolve_lost_completion() {
 }
 
 mod benchmark;
+
+#[tokio::test]
+async fn transferred_artifact_reopens_for_confined_native_conversion() {
+    use rvvdk_core::{RawDisk, VirtualDisk};
+    use rvvdk_datamover::{CopyEvent, CopyOptions};
+    use rvvdk_local::LocalFileBlockDevice;
+    use rvvdk_vsphere::{
+        contract::{EndpointIdentity, PinProvenance, SourceSelection},
+        ownership::{JobStore, RetainedArtifact, RetainedOptions},
+    };
+    use std::os::unix::fs::OpenOptionsExt;
+    let out = Output::new();
+    let store = store(&out);
+    let data = fixture::image(
+        true,
+        128,
+        &[
+            (0, fixture::stored(&fixture::bytes(0))),
+            (7, fixture::stored(&fixture::bytes(7))),
+        ],
+    );
+    let mut r = replies(&data);
+    for reply in &mut r {
+        reply.body = reply
+            .body
+            .replace("32212254720", "8388608")
+            .replace("31457280", "8192");
+    }
+    let server = Server::start_with_nodelay(r, true);
+    let source = SourceSelection::new(
+        EndpointIdentity::pinned(
+            &server.endpoint,
+            &server.pin,
+            PinProvenance::TrustOnFirstUse,
+        )
+        .unwrap(),
+        "vm-private",
+        "01234567-89ab-cdef-0123-456789abcdef",
+        2000,
+        "PRIVATE-path",
+        8 << 20,
+    )
+    .unwrap();
+    let report = transfer_owned_artifact(source.clone(), &credentials(), store, artifact(), opts())
+        .await
+        .unwrap();
+    assert!(report.is_artifact_success(), "{report:?}");
+    let root = out.0.clone();
+    let source = source.clone();
+    tokio::task::spawn_blocking(move || {
+        let mut admitted = RetainedArtifact::open(
+            JobStore::open(&root.join("jobs")).unwrap(),
+            artifact(),
+            source,
+            RetainedOptions::default(),
+        )
+        .unwrap();
+        let file = std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create_new(true)
+            .mode(0o600)
+            .open(root.join("output.raw"))
+            .unwrap();
+        file.set_len(admitted.logical_bytes()).unwrap();
+        let dest = RawDisk::new(LocalFileBlockDevice::from_buffered_file(file).unwrap());
+        admitted
+            .convert_to(
+                &dest,
+                CopyOptions::default(),
+                RetainedOptions::default(),
+                &|_: &CopyEvent| {},
+            )
+            .unwrap();
+        let mut buffer = vec![0; 65536];
+        for i in 0..128 {
+            dest.read_exact_at(i * 65536, &mut buffer).unwrap();
+            if i == 0 || i == 7 {
+                assert_eq!(buffer, fixture::bytes(i));
+            } else {
+                assert!(buffer.iter().all(|&v| v == 0));
+            }
+        }
+    })
+    .await
+    .unwrap();
+    assert_eq!(
+        record(&out.0.join("jobs"))["record"]["state"],
+        "completed_lease"
+    );
+}

@@ -19,6 +19,9 @@ use std::{
     path::Path,
 };
 
+mod retained;
+pub use retained::{RetainedArtifact, RetainedOptions};
+
 const MAX_RECORD: u64 = 8192;
 const MEMBERS: [&str; 3] = ["disk-1.vmdk", "manifest.json", "owner"];
 type Result<T> = std::result::Result<T, OwnershipError>;
@@ -40,6 +43,8 @@ pub enum OwnershipError {
     Uncertain,
     #[error("payload verification failed")]
     Content,
+    #[error("local artifact conversion failed")]
+    Conversion,
     #[error("artifact admission cancelled")]
     Cancelled,
     #[error("artifact admission deadline exceeded")]
@@ -106,13 +111,13 @@ struct Identity {
     dev: u64,
     ino: u64,
 }
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Stage {
     directory: Identity,
     members: [Identity; 3],
 }
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Record {
     version: u32,

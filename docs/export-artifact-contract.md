@@ -114,7 +114,8 @@ explicit selection and revalidation to the export proof. R6.1c.2a now binds an a
 lease ownership and durable intent. [R6.1c.2b](durable-owned-transfer.md) now integrates
 container-byte transfer/completion. [R6.1c.3](owned-artifact-admission.md) now persists
 private metadata and admits native VMDK structure/grains before completion.
-R6.1c.4 next admits retained artifacts for local conversion, followed by publication. Existing
+[R6.1c.4](retained-artifact-conversion.md) now admits retained artifacts for local
+conversion. Actual output ownership/publication remains R6.1c.5. Existing
 capacity-only manifests are not automatically promoted. No new ESXi run is needed
 for R6.1a's pure contract tests and synthetic measurements.
 

@@ -2674,38 +2674,83 @@ LeaseHeld phase; the separately checked read-only retained-artifact capability i
 explicitly assigned to R6.1c.4. Conversion, publication, composed live qualification
 and production remote recovery remain open.
 
+## R6.1c.4 — Retained artifact admission and confined local conversion
+
+Completed `ownership::RetainedArtifact`: it consumes JobStore, admits only
+CompletedLease/no transaction, checks source/store/artifact and stage/member/marker
+identity, reads bounded private metadata and freshly validates native structure,
+every present grain and current container digest. No stored validation claim skips
+checks, and no Job, remote lease or source handle escapes the capability.
+
+The capability retains its lock through local conversion. It drops its previous map
+before re-admission, rejects aliases to all owned members/journal, and invokes the
+existing controlled portable DataMover into an exact-sized caller-owned buffered
+RAW file. Payload budgets, sparse-zero semantics, worker drain, progress/cancellation
+and destination flush are preserved. Source content/identity and destination facts
+are checked again before wrapper success. Source journal bytes never change.
+Process loss leaves CompletedLease plus potentially partial caller-owned output;
+there is no publication, checkpoint or inferred resume authority.
+
+[Contract](retained-artifact-conversion.md), [ADR-0063](adr/0063-retained-artifact-local-conversion.md),
+[tests, raw timing and plots](benchmark-results/2026-10-02-r61c4/README.md).
+Workspace **711 passed, seven ignored**; all-target clippy and formatting pass.
+Ten added tests include an inert process-loss helper. They cover lock lifetimes,
+concurrent copy workers, dirty destination zeros, pending/stale/corrupt/foreign
+resources, forged claims, changed source/metadata, aliases, budget/size failures,
+cancellation/deadlines, post-flush drift and SIGKILL during conversion. A synthetic
+TLS integration test exercises transfer through native metadata and retained RAW
+conversion with full byte comparison. Btrfs reruns pass all ten new tests.
+
+The matched release matrix retains **288 conversions / 144 pairs**: 64 MiB logical
+capacity, 8 MiB authored present data, two table groups and 56 MiB zeros. All logical
+bytes (18 GiB total), encoded source bytes, source journal state and cleanup compare.
+Outputs allocate 8 MiB each. Longer wall medians are **11.643 → 31.354 ms on Btrfs**
+and **4.973 → 26.625 ms on tmpfs**; retained CPU is 24.690 / 26.487 ms. Repeated
+native admission and three full hash passes add substantial cost; keep this PERF.0
+follow-up. Both adverse comparisons triggered longer repeats. Baseline Btrfs CPU
+spread remains 5.44% afterward; all observations are retained.
+
+No ESXi or guest operation was needed. This local consumer and converter is complete
+within its scope; the borrowed RAW destination is not journal-owned or published.
+Actual output ownership/publication and composed live qualification remain open.
+
 ## Next session
 
-Start **R6.1c.4 — Retained artifact admission and confined local conversion**:
+Start **R6.1c.5 — Output ownership and durable no-replace publication**:
 
-1. Define a read-only capability for a retained CompletedLease stage. Acquire and
-   retain the store lock, reject transactions/uncertain or aborted states, freshly
-   bind explicit source/artifact/store identity and stage/member/marker identities.
-   Do not reopen Job, regenerate a remote lease or treat metadata as authority.
-2. Read at most 4 KiB metadata from the owned handle, verify source/artifact/capacity,
-   require completeness and freshly compare container size/digest. Apply bounded
-   native admission to current bytes; stored validation claims never skip checks.
-   Keep source handles and the lock alive until the consumer is done, preventing
-   cooperating cleanup while reads are active. Qualify replacement/mutation races,
-   stale claims, malicious fields, wrong source and unknown journal states.
-3. Route local conversion through the retained confined native source and existing
-   DataMover/RAW destination policies. Preserve alias admission, payload/memory limits,
-   cancellation/progress, sparse zero semantics and durable output completion. Do
-   not follow a metadata path/URL or weaken existing publication rules.
-4. Keep actual journal-bound descriptor publication as R6.1c.5. Define output ownership
-   and intent/acknowledgment ordering before exposing any new final artifact, with
-   file/directory sync and no-replace collision guarantees. Metadata sync alone is
-   not publication or a resumable job protocol.
-5. Test correct logical output and conservative failure/process-loss handling, and
-   benchmark admission/conversion CPU/RSS/allocation with plots. Retain cumulative
-   hash/decode/journal cost; repeat adverse comparisons/spreads above 5%.
-6. Use the authorized ESXi lab when the composed workflow requires live qualification.
-   Synthetic fixtures and the previously qualified native decoder do not prove new
-   integrated host compatibility. No uncertain remote action may be replayed.
+1. Define the durable output contract and resource owner before wiring publication.
+   Keep export-container identity, metadata claims and converted RAW output distinct.
+   A borrowed conversion destination from R6.1c.4 is not automatically owned by the
+   journal. Choose explicit artifact/output IDs, binding, format and verification
+   evidence; never derive paths or authority from untrusted metadata.
+2. Design versioned journal transitions/capabilities for local output preparation,
+   conversion, validation and publication. Retained CompletedLease admission does
+   not reopen mutable Job or a lease. Preserve source locking and consume/release
+   retained capabilities explicitly; do not reconstruct remote ownership from records.
+3. Create/retain confined private output handles, reject source/destination aliases,
+   preserve bounded memory, cancellation, worker drain and sparse zero behavior.
+   Persist only checkpoints supported by actual data/metadata durability. Define
+   independent logical verification separately from decodability and copy flush.
+4. Implement actual descriptor-bound no-replace publication with file and directory
+   durability, intent before external effects and acknowledgment afterward. Define
+   source/destination filesystem and ancestor constraints, collision behavior and
+   conservative assessment of uncertain rename/sync/acknowledgment outcomes. Never
+   label an uncertain publication failed-and-safe-to-delete by assumption.
+5. Fault-inject partial I/O, directory sync, collision, replacement, cancellation and
+   process loss across output/publication boundaries. Keep explicit cleanup bounded
+   to freshly checked owned resources. A completed engine callback is not wrapper
+   success, publication or remote-recovery authority.
+6. Benchmark complete phase/CPU/RSS/allocation and byte correctness with plots. Track
+   cumulative admission/decode/hash/journal/flush cost, repeat adverse observations
+   above 5%, and preserve the remaining baseline variation. Optimize only with an
+   explicit lifetime/trust argument and matching failure tests.
+7. Once the composed path is ready, use the authorized ESXi lab for new integrated
+   qualification. Preserve existing power/guest controls and credential privacy;
+   never replay uncertain remote completion/abort requests from journal claims.
 
-Keep PERF.0 visible: prior stream timing, CPU/SMT/frequency/layout controls, map/cache
-sensitivity, random whole-grain amplification, sparse-output Btrfs layout/flush cost,
-bounded parallel decoding and integrated journal/readback/native-admission cost.
-Retain R4.4 and discovery/TLS work. VMFS sparse, seSparse, online snapshots, CBT,
-restore, vCenter and vSphere 9 remain later qualified work. Commit every completed
-package with tests, benchmark results, architecture decisions and updated next notes.
+Keep PERF.0 visible: stream timing, CPU/SMT/frequency/layout controls, map/cache
+sensitivity, whole-grain amplification, Btrfs sparse-output layout/flush cost,
+bounded parallel decoding and repeated retained admission/hash cost. Retain R4.4
+and discovery/TLS work. VMFS sparse, seSparse, online snapshots, CBT, restore,
+vCenter and vSphere 9 remain later qualified work. Commit every completed package
+with tests, benchmark plots, architecture decisions and updated continuation notes.

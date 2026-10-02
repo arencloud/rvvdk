@@ -88,13 +88,12 @@ same-user writer. Metadata is private and correlatable; do not copy it into logs
 
 ## Continuation
 
-R6.1c.4 must define fresh read-only artifact admission from a retained CompletedLease
-stage without reopening Job or a lease. It must check journal/transactions, explicit
-source, metadata, stage/member/marker identities and current container content,
-retain the store lock and source handles, and preserve alias and cancellation rules
-when connecting local conversion. Metadata paths or claims cannot confer authority.
-Actual descriptor-bound no-replace publication remains a subsequent gate, followed
-by composed live ESXi qualification. No ESXi operation was required for this step.
+[R6.1c.4](retained-artifact-conversion.md) now freshly admits a retained CompletedLease
+stage without reopening Job or a lease. Its read-only capability retains the store
+lock and confined source through local conversion and final checks. Metadata paths
+or claims do not confer authority. The RAW destination is caller-owned; R6.1c.5
+must define actual output ownership and no-replace publication before composed live
+qualification. No ESXi operation was required for this step.
 
 [ADR-0062](adr/0062-private-native-artifact-admission.md),
 [tests, raw samples and plots](benchmark-results/2026-10-02-r61c3/README.md).

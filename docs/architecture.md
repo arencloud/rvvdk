@@ -1646,3 +1646,28 @@ Metadata persistence uses LeaseHeld, avoiding any reopening of completed Job. Th
 fresh retained read-only capability moves to R6.1c.4 alongside local conversion;
 publication and composed live qualification remain subsequent gates. Cooperating
 writers/source quiescence remain required; these checks are not a snapshot.
+
+
+### R6.1c.4 — Locked retained artifact consumption and local conversion
+
+`ownership::RetainedArtifact` consumes JobStore and retains its lock through local
+consumption. Only CompletedLease with no transaction can be admitted. It freshly
+checks journal/source/artifact/store binding, stage/member/marker identities, bounded
+private metadata, native structure and every present grain, then hashes current
+container bytes. Serialized validation claims never skip these checks.
+
+Conversion drops the prior map before re-admitting into confined read-only handles,
+compares the capability's original record/metadata/journal facts, and rejects aliases
+to every owned member and journal. Existing controlled portable DataMover performs
+logical decoding into an exact-sized caller-owned buffered RAW file, preserving copy
+budgets, sparse-zero semantics, worker drain, progress/cancellation and output flush.
+Final source content/identity checks precede wrapper success. Engine Completed refers
+to flush; a later wrapper check may fail. The source journal is never changed.
+
+[ADR-0063](adr/0063-retained-artifact-local-conversion.md),
+[contract](retained-artifact-conversion.md), [tests and timing](benchmark-results/2026-10-02-r61c4/README.md).
+Drop closes the source before unlocking; no Job or source handle escapes. Process
+loss leaves CompletedLease and potentially partial caller-owned output, with no
+new resume authority. R6.1c.5 must define output ownership and actual no-replace
+publication before composed live qualification. The existing private-store,
+trusted-ancestor and cooperating-writer assumptions remain.
