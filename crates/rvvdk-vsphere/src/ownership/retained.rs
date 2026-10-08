@@ -26,7 +26,18 @@ impl Default for RetainedOptions {
         }
     }
 }
+// Only unit-test builds contain the clocks/counters. Expression value, errors,
+// cancellation and durability ordering are identical in both modes.
+macro_rules! profiled {
+    ($name:literal, $bytes:expr, $expression:expr) => {{
+        #[cfg(test)]
+        let _span = $crate::ownership::retained::profile::enter($name, $bytes as u64);
+        $expression
+    }};
+}
 mod output;
+#[cfg(test)]
+mod profile;
 pub use output::{
     OutputId, OutputLocation, OutputRecovery, OutputReport, OutputState, PublicationDirectory,
     PublicationRecovery, PublicationReport, VerifiedOutput,
@@ -159,7 +170,11 @@ impl RetainedArtifact {
             .plan_with_destination(disk, destination)
             .map_err(|_| OwnershipError::Conversion)?;
         control.check()?;
-        let copied = mover.execute_plan_controlled(&plan, disk, destination, &control, observer);
+        let copied = profiled!(
+            "copy_engine_including_flush",
+            disk.size(),
+            mover.execute_plan_controlled(&plan, disk, destination, &control, observer)
+        );
         control.check()?;
         let report = copied.map_err(|_| OwnershipError::Conversion)?;
         // Engine completion means flush, not final validation/publication. Reject
@@ -237,9 +252,9 @@ fn verify_bytes(mut file: File, metadata: &ExportArtifact, control: &Control<'_>
     while left > 0 {
         control.check()?;
         let n = left.min(buffer.len() as u64) as usize;
-        file.read_exact(&mut buffer[..n])
+        profiled!("container_read", n, file.read_exact(&mut buffer[..n]))
             .map_err(|_| OwnershipError::Io)?;
-        hash.update(&buffer[..n]);
+        profiled!("container_hash", n, hash.update(&buffer[..n]));
         left -= n as u64;
     }
     let size = file.metadata().map_err(|_| OwnershipError::Io)?.len();
@@ -277,8 +292,12 @@ fn admit(
     let (record, metadata, file, journal) = members(store, id, source)?;
     let device =
         LocalFileBlockDevice::from_buffered_file(file).map_err(|_| OwnershipError::Content)?;
-    let disk = StreamDisk::load(Arc::new(device), StreamDiskLimits::default())
-        .map_err(|_| OwnershipError::Content)?;
+    let disk = profiled!(
+        "native_map",
+        0,
+        StreamDisk::load(Arc::new(device), StreamDiskLimits::default())
+    )
+    .map_err(|_| OwnershipError::Content)?;
     if disk.size() != source.logical_bytes() {
         return Err(OwnershipError::Content);
     }
@@ -286,8 +305,12 @@ fn admit(
     for grain in disk.map().grains() {
         control.check()?;
         let n = (disk.size() - grain.logical_offset()).min(buffer.len() as u64) as usize;
-        disk.read_exact_at(grain.logical_offset(), &mut buffer[..n])
-            .map_err(|_| OwnershipError::Content)?;
+        profiled!(
+            "present_grain_read",
+            n,
+            disk.read_exact_at(grain.logical_offset(), &mut buffer[..n])
+        )
+        .map_err(|_| OwnershipError::Content)?;
     }
     disk.revalidate().map_err(|_| OwnershipError::Content)?;
     check_current(store, &record, source, &metadata, journal, control)?;

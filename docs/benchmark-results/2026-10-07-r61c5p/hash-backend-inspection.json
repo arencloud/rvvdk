@@ -1,0 +1,13 @@
+{
+  "dependency": "sha2",
+  "locked_version": "0.11.0",
+  "inspected_sources_sha256": {
+    "src/sha256.rs": "cb03fddc1325b60935409f097f2fab3ae51cfab15bed1254f4e93d13b28b7eff",
+    "src/sha256/soft.rs": "60449b6df17909cd34d533ec4d82851841cb8b26e01c0907827b33343917a31c",
+    "src/sha256/soft/unroll.rs": "69af1d7a57c05b3a69fda30fb0039bc7c8b53e5d9a679bf9973eb6eda245b81a"
+  },
+  "default_x86_sha256_dispatch": "Runtime SHA/SSE2/SSSE3/SSE4.1 check; otherwise portable software compression. Software defaults to the unrolled implementation.",
+  "runner_sha_ni_visible": false,
+  "interpretation": "The runner lacks the required SHA feature, so default dispatch selects software SHA-256. This source/feature observation alone does not establish the fraction of pipeline cost spent hashing.",
+  "qualification": "No dependency, hash algorithm, backend override, VM feature, or production verification change in this package."
+}

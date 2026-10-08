@@ -352,18 +352,22 @@ impl VerifiedOutput {
         while offset < self.record.logical_bytes {
             control.check()?;
             let n = (self.record.logical_bytes - offset).min(input.len() as u64) as usize;
-            self.artifact
-                .disk
-                .as_ref()
-                .ok_or(OwnershipError::Transition)?
-                .read_exact_at(offset, &mut input[..n])
-                .map_err(|_| OwnershipError::Content)?;
-            raw.read_exact(&mut output[..n])
+            profiled!(
+                "logical_source_read",
+                n,
+                self.artifact
+                    .disk
+                    .as_ref()
+                    .ok_or(OwnershipError::Transition)?
+                    .read_exact_at(offset, &mut input[..n])
+            )
+            .map_err(|_| OwnershipError::Content)?;
+            profiled!("raw_read", n, raw.read_exact(&mut output[..n]))
                 .map_err(|_| OwnershipError::Io)?;
-            if input[..n] != output[..n] {
+            if !profiled!("logical_compare", n, input[..n] == output[..n]) {
                 return Err(OwnershipError::Content);
             }
-            hash.update(&output[..n]);
+            profiled!("logical_hash", n, hash.update(&output[..n]));
             offset += n as u64;
         }
         if <[u8; 32]>::from(hash.finalize()) != expected.raw_sha256
@@ -426,17 +430,21 @@ impl VerifiedOutput {
             )?
             .unwrap();
             for (i, n) in OUTPUT_MEMBERS.iter().enumerate() {
-                check_named(
-                    &dir,
-                    n,
-                    self.record.stage.as_ref().unwrap().members[i],
-                    false,
-                )?
-                .sync_all()
+                profiled!(
+                    "payload_sync",
+                    0,
+                    check_named(
+                        &dir,
+                        n,
+                        self.record.stage.as_ref().unwrap().members[i],
+                        false,
+                    )?
+                    .sync_all()
+                )
                 .map_err(|_| OwnershipError::Io)?;
                 hook(self.record.state, "member_synced")?;
             }
-            dir.sync_all().map_err(|_| OwnershipError::Io)?;
+            profiled!("payload_sync", 0, dir.sync_all()).map_err(|_| OwnershipError::Io)?;
             drop(dir);
             hook(self.record.state, "bundle_synced")?;
             control.check()?;
@@ -481,16 +489,10 @@ impl VerifiedOutput {
             report.rename_observed = true;
             hook(self.record.state, "bundle_renamed")?;
             // After rename, finish both directory syncs before observing cancellation.
-            self.artifact
-                .store
-                .directory
-                .sync_all()
+            profiled!("payload_sync", 0, self.artifact.store.directory.sync_all())
                 .map_err(|_| OwnershipError::Uncertain)?;
             hook(self.record.state, "source_directory_synced")?;
-            destination
-                .0
-                .directory
-                .sync_all()
+            profiled!("payload_sync", 0, destination.0.directory.sync_all())
                 .map_err(|_| OwnershipError::Uncertain)?;
             report.directories_synced = true;
             hook(self.record.state, "destination_directory_synced")?;
@@ -647,7 +649,8 @@ impl JobStore {
                         )?;
                     }
                 }
-                dir.sync_all().map_err(|_| OwnershipError::Uncertain)?;
+                profiled!("payload_sync", 0, dir.sync_all())
+                    .map_err(|_| OwnershipError::Uncertain)?;
                 hook(r.state, "cleanup_members_synced")?;
                 control.check()?;
                 check_named(parent, &component, stamp.directory, true)?;

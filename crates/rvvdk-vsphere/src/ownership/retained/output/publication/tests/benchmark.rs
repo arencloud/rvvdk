@@ -143,3 +143,5 @@ fn matched_publication() {
     file.write_all(b"\n").unwrap();
     file.sync_all().unwrap();
 }
+
+mod profiling;

@@ -1,0 +1,14 @@
+{
+  "release_profile_build": "cargo test --release -p rvvdk-vsphere --lib --no-run",
+  "workspace_tests": "cargo test --workspace",
+  "lint": "cargo clippy --workspace --all-targets -- -D warnings",
+  "format": "cargo fmt --all -- --check",
+  "profile_test": "ownership::retained::output::publication::tests::benchmark::profiling::local_profile",
+  "profile_test_options": [
+    "--exact",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "notes": "Final release smoke runs used one pair for each fixture on the separate workstation; qualification timings come from the explicitly recorded runner campaigns. Live runs reuse the separately frozen binary without rebuilding it."
+}

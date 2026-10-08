@@ -1746,3 +1746,29 @@ publication remains separate work.
 [ADR-0066](adr/0066-awaited-export-pipeline.md),
 [contract](composed-export-pipeline.md),
 [qualification and phase plots](benchmark-results/2026-10-02-r61c5c/README.md).
+
+### Disjoint local pipeline profiling (R6.1c.5p)
+
+Test-only wrappers measure existing encoded reads/hashes, native admission and grain
+reads, copy/flush, logical source and RAW reads, equality/hash work, journal commits
+and other explicit syncs. An opt-in thread-local session rejects nested regions and
+records call/byte counts with wall and thread CPU time. Production builds compile
+out the clocks and counters; verification and durable ordering are unchanged.
+
+An ignored release benchmark alternates disabled/instrumented controls, checks full
+authored RAW bytes and source/journal preservation, and measures output cleanup
+separately. It requires serial copy so thread CPU can describe the measured work.
+Process CPU/RSS retain their broader boundaries. Unattributed work and profiler
+overhead remain visible rather than being assigned to an arbitrary region.
+
+The frozen live pipeline and the profiling executable have separate identities.
+Small warm authored fixtures identify local costs but cannot establish the exact
+breakdown of a private disk larger than runner RAM. Repeated full live observations
+retain independent QEMU/guest comparisons, checked cleanup and terminal journals.
+Any later optimization needs a separate matched reference/candidate qualification;
+this instrumentation supplies no authority to skip verification or recover an
+uncertain publication.
+
+[ADR-0067](adr/0067-disjoint-test-only-pipeline-profiling.md),
+[measurement contract](pipeline-performance-profiling.md),
+[raw samples and plots](benchmark-results/2026-10-07-r61c5p/README.md).

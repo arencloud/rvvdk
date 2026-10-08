@@ -2921,40 +2921,82 @@ performance qualification. No VM power change was made; private identities and
 credentials stay outside the committed evidence. PERF.0 remains open, including repeated verification
 cost on the one-vCPU runner and shared-host variability.
 
+## R6.1c.5p — repeated pipeline baseline and disjoint local profiles
+
+Six complete live observations use the unchanged frozen R6.1c.5c executable and
+explicit source. Every run passes QEMU full logical equivalence, the independent
+8 MiB guest oracle, private whole-RAW digest consistency and checked output/source
+cleanup. Twelve Cleaned journals remain; all payloads and profiling fixture parents
+are removed. Final Rust inspection confirms unchanged source/version/power/snapshot
+binding, source off, runner on, no recent source tasks and successful Logout.
+No VM power change was made. Credentials, endpoints and private bindings/digests
+remain outside Git.
+
+[Contract](pipeline-performance-profiling.md),
+[ADR-0067](adr/0067-disjoint-test-only-pipeline-profiling.md),
+[raw samples, controls and standalone plots](benchmark-results/2026-10-07-r61c5p/README.md).
+Workspace **737 passed, 10 ignored**, with clean formatting and all-target Clippy.
+Two profiler regressions cover thread isolation, inactive controls, byte accounting
+and unwind reset. Three release fixtures pass independent full authored RAW bytes,
+source/journal preservation and cleanup. The offline harness/plotter also passes a
+separate 216-operation workstation functional check; those timings are excluded
+from the runner campaign.
+
+Initial wall/CPU/phase/cleanup spread triggers three further complete observations.
+Initial/repeat pipeline wall medians are **1,663.644 / 1,714.977 s**. Repeat spread
+remains **5.16% wall**, **7.30% CPU**, **9.37% fresh admission**, **11.74% publication**
+and **43.06% cleanup CPU**. RAW allocation stays **3.497 GiB** for 30 GiB logical;
+live lifetime peak RSS is **9.82–13.38 MiB**. All samples remain; the older single
+observation is separate, and no matched implementation speedup is claimed.
+
+Test-only disjoint regions cover encoded reads/hashes, native admission/grains,
+copy/flush, logical reads/comparison/hashing, journal commits and other syncs.
+Production builds omit clocks/counters and retain every check and durability gate.
+The guest XFS/tmpfs controls complete **432 operations / 216 pairs**, with all six
+fixture/filesystem combinations receiving longer repeats. They assert three full
+logical verification/hash traversals, seven encoded read/hash traversals, three
+native admissions and nine journal commits per operation.
+
+Encoded and logical SHA-256 regions account for **79.26–93.96% of process CPU** in
+these authored workloads; logical hashing alone is **70.31–88.84%**. The guest lacks
+SHA-NI and the locked dependency's default dispatch uses software SHA-256 there.
+Repeat median recording overhead is **−0.82% to +1.36% wall / −0.71% to +1.23% CPU**.
+All individual pairs and unresolved variation remain, including tmpfs 256 MiB
+control spread of **11.09% wall / 10.59% CPU**. Profile RAW allocation stays 8 MiB.
+Small warm fixtures do not establish the private live disk's exact CPU breakdown.
+No production tuning is accepted; PERF.0 remains open.
+
 ## Next session
 
-Start **R6.1c.5p — repeated composed-workflow performance qualification**:
+Start **R6.1d.1 — explicit reconciliation of unambiguous PublishIntent**, with the
+contract and state table before mutation:
 
-1. Reuse the frozen R6.1c.5c source/binary identity and sanitized measurement contract.
-   Recheck actual host pin/version, explicit source binding, source/runner power state,
-   snapshots and active-task ownership using the Rust runner. No new host, license or
-   VM is required for this existing powered-off workflow. Keep credentials terminal-only.
-2. Establish at least three comparable complete observations with the same binary,
-   source and runner. Keep one source/output pair at a time; check available space,
-   independently compare with QEMU and the guest oracle, then perform explicit checked
-   cleanup and preserve terminal journals before starting the next pair. Keep the
-   earlier observation separately if conditions cannot be matched.
-3. Record wall/phase/CPU/RSS/allocation and every sample. Repeat three observations
-   if any initial wall/phase/CPU/cleanup spread exceeds 5%; retain unresolved variance.
-   Do not treat ordinary-cache repeats, different hosts or changed VM resources as
-   matched implementation speedups. Separate network/ESXi time from local costs.
-4. Profile the dominant local phases with bounded retained-artifact controls. Separate
-   native grain validation/decompression, full logical hashing/readback, journal and
-   flush costs; record profiler overhead and uninstrumented controls. Do not remove
-   hash passes, completion gates or durability barriers merely to improve a number.
-5. Only propose tuning after evidence identifies a cost and a correctness-preserving
-   change. Preserve sparse allocation and bounded memory. Benchmark any candidate
-   against a frozen reference, repeating adverse results above 5%, and rerun relevant
-   oracle/cancellation/fault tests. Save standalone plots, source manifests and next
-   decisions; commit the bounded performance package even if variance stays unresolved.
+1. Specify admission under the original store, destination, source and recorded
+   object identities. Require no pending transaction and exactly one uniquely owned
+   staged OR published bundle. Both/neither/foreign/unstamped states stay blocked.
+2. Define fresh native/source/RAW verification and the required member/bundle/parent
+   directory syncs before durable acknowledgment. Preserve descriptor/lock custody;
+   a status report alone cannot grant mutation or cleanup authority.
+3. Define explicit local outcomes for cancellation, deadline, content change,
+   namespace substitution and journal/sync failure. Retain resources on ambiguity;
+   never infer rollback, remote replay or remote cleanup from a local journal.
+4. Qualify staged and already-renamed cases with full independent byte oracles,
+   crash/fault/cancellation tests and conservative rejection of every excluded case.
+   Keep transaction repair and unstamped-stage adoption as separate work.
+5. Measure the added recovery path against a frozen reference where comparable,
+   retain phase/CPU/RSS/allocation and longer repeats for adverse/variable results,
+   save plots, update the plan and commit the completed bounded package locally.
+   Begin with local fixtures; no new ESXi installation, license, VM or vCenter is
+   needed for the design. Use the existing authorized lab only when a focused live
+   qualification is actually required.
 
-Then design **R6.1d.1 — explicit reconciliation of unambiguous PublishIntent** before
-implementing mutation: require original destination/store/source binding, no pending
-transactions, a uniquely owned staged OR published bundle, full fresh content checks,
-and the required directory syncs/acknowledgment. Both/neither/foreign namespace states
-must stay blocked. Add crash/fault/cancellation tests before exposing this recovery
-capability. Transaction repair and unstamped-stage adoption remain separate work;
-never infer remote cleanup/replay authority from a local journal.
+The first measured tuning target is digest-equivalent SHA-256 throughput on CPUs
+without SHA-NI. Before accepting a candidate, preserve the algorithm and every full
+verification gate, qualify known digests and independent bytes on dense/sparse data,
+and compare frozen builds with CPU/storage/cache controls and larger working sets.
+Keep sparse allocation, bounded memory, cancellation and durability ordering. Do
+not interpret different CPUs/VM resources or skipped checks as an implementation
+speedup. The current diagnostic package supplies a baseline, not PERF.0 clearance.
 
 Retain PERF.0 CPU/SMT/frequency/storage controls, stream/map/cache sensitivity and
 parallel decoding, plus R4.4 and discovery/TLS follow-ups. VMFS sparse, seSparse,

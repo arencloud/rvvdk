@@ -391,14 +391,11 @@ impl<H: FnMut(OutputState, &str) -> Result<()>> Owner<'_, H> {
                 f.write_all(&self.record.operation)
                     .map_err(|_| OwnershipError::Io)?;
             }
-            f.sync_all().map_err(|_| OwnershipError::Io)?;
+            profiled!("payload_sync", 0, f.sync_all()).map_err(|_| OwnershipError::Io)?;
             members[i] = identity(&f)?;
         }
-        dir.sync_all().map_err(|_| OwnershipError::Io)?;
-        self.artifact
-            .store
-            .directory
-            .sync_all()
+        profiled!("payload_sync", 0, dir.sync_all()).map_err(|_| OwnershipError::Io)?;
+        profiled!("payload_sync", 0, self.artifact.store.directory.sync_all())
             .map_err(|_| OwnershipError::Io)?;
         self.point("stage_durable")?;
         self.record.stage = Some(Stage {
@@ -423,18 +420,22 @@ impl<H: FnMut(OutputState, &str) -> Result<()>> Owner<'_, H> {
         while offset < self.record.logical_bytes {
             control.check()?;
             let n = (self.record.logical_bytes - offset).min(expected.len() as u64) as usize;
-            self.artifact
-                .disk
-                .as_ref()
-                .ok_or(OwnershipError::Transition)?
-                .read_exact_at(offset, &mut expected[..n])
-                .map_err(|_| OwnershipError::Content)?;
-            raw.read_exact(&mut observed[..n])
+            profiled!(
+                "logical_source_read",
+                n,
+                self.artifact
+                    .disk
+                    .as_ref()
+                    .ok_or(OwnershipError::Transition)?
+                    .read_exact_at(offset, &mut expected[..n])
+            )
+            .map_err(|_| OwnershipError::Content)?;
+            profiled!("raw_read", n, raw.read_exact(&mut observed[..n]))
                 .map_err(|_| OwnershipError::Io)?;
-            if expected[..n] != observed[..n] {
+            if !profiled!("logical_compare", n, expected[..n] == observed[..n]) {
                 return Err(OwnershipError::Content);
             }
-            hash.update(&observed[..n]);
+            profiled!("logical_hash", n, hash.update(&observed[..n]));
             offset += n as u64;
             report.logical_bytes_verified = offset;
             self.point("verified_chunk")?;
@@ -485,7 +486,7 @@ impl<H: FnMut(OutputState, &str) -> Result<()>> Owner<'_, H> {
         file.write_all(&bytes[mid..])
             .map_err(|_| OwnershipError::Io)?;
         self.point("metadata_written")?;
-        file.sync_all().map_err(|_| OwnershipError::Io)?;
+        profiled!("payload_sync", 0, file.sync_all()).map_err(|_| OwnershipError::Io)?;
         drop(file);
         self.point("metadata_synced")?;
         let mut file = check_named(&dir, OUTPUT_MEMBERS[1], stamp.members[1], false)?;
@@ -511,6 +512,8 @@ fn commit_output(
     initial: bool,
     hook: &mut impl FnMut(OutputState, &str) -> Result<()>,
 ) -> Result<()> {
+    #[cfg(test)]
+    let _span = super::profile::enter("journal_commit_including_sync", 0);
     (|| {
         store.ready()?;
         let data = serde_json::to_vec(&record).map_err(|_| OwnershipError::Record)?;

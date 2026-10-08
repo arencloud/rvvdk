@@ -70,6 +70,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('report', type=Path); a = parser.parse_args(); root = a.report
     rows = read_rows(root); initial = group(rows[:3])
+    campaign = root/'campaign.json'
+    if campaign.exists():
+        c = json.loads(campaign.read_text())
+        assert c['minimum_runs'] == 3 and len(rows) >= c['minimum_runs']
+        for path in root.glob('run-*.json'):
+            raw = json.loads(path.read_text())
+            assert raw['pipeline_binary_sha256'] == c['pipeline_binary_sha256']
+            assert raw['logical_source_matches_series_reference']
     triggered = (any(initial['spread_percent'][k] > 5 for k in METRICS + ['cleanup_cpu_seconds'])
                  if len(rows) >= 3 else None)
     assert not triggered or len(rows) == 6, 'retain three additional observations for >5% spread'
@@ -92,7 +100,8 @@ def main():
         values = [r[k] for r in rows]
         axes[0, 0].bar(x, values, bottom=bottom, label=label, color=COLORS[k])
         bottom = [b+v for b, v in zip(bottom, values)]
-    axes[0, 0].set_ylabel('Pipeline phase seconds'); axes[0, 0].legend(fontsize=8)
+    axes[0, 0].set_ylabel('Pipeline phase seconds')
+    axes[0, 0].legend(fontsize=8, loc='lower left', bbox_to_anchor=(0, 1.01), ncol=2)
     axes[0, 1].bar(x, [r['cpu_seconds'] for r in rows], color='#8056ac')
     axes[0, 1].set_ylabel('Process CPU seconds')
     axes[1, 0].bar(x, [r['peak_rss_mib'] for r in rows], color='#d38629')
@@ -101,7 +110,8 @@ def main():
     axes[1, 1].set_ylabel('Separate checked cleanup seconds')
     for ax in axes.flat:
         ax.set_xticks(x, labels, rotation=15); ax.set_xlim(-.65, max(x)+.65); ax.set_ylim(bottom=0); ax.grid(axis='y', alpha=.2); ax.set_axisbelow(True)
-    fig.suptitle('Composed Rust export → verified RAW publication / 30 GiB logical\nShared ESXi LAN runner; ordinary caches, no isolation / one run is not a variance estimate')
+    note = 'Single observation; no variance estimate' if len(rows) == 1 else 'Three initial runs; three repeats when triggered'
+    fig.suptitle('Composed Rust export → verified RAW publication / 30 GiB logical\nShared ESXi LAN runner; ordinary caches, no isolation / ' + note)
     save(fig, out, 'pipeline'); plt.close(fig)
     fig, axes = plt.subplots(1, 2, figsize=(12, 5), constrained_layout=True)
     bottom = [0.] * len(rows)
@@ -109,15 +119,17 @@ def main():
                      ('publication_admission_seconds', 'Fresh admission'), ('publication_seconds', 'Verify / publish / sync')]:
         values = [r[k] for r in rows]; axes[0].bar(x, values, bottom=bottom, label=label, color=COLORS[k])
         bottom = [b+v for b, v in zip(bottom, values)]
-    axes[0].set_ylabel('Local phase seconds'); axes[0].legend(fontsize=8)
+    axes[0].set_ylabel('Local phase seconds')
+    axes[0].legend(fontsize=8, loc='lower left', bbox_to_anchor=(0, 1.01), ncol=2)
     for shift, key, label in [(-.25, 'source_allocated_bytes', 'Encoded source'), (0, 'output_allocated_bytes', 'Sparse RAW'), (.25, 'output_logical_bytes', 'Logical capacity')]:
         axes[1].bar([v+shift for v in x], [r[key]/1024**3 for r in rows], .25, label=label)
-    axes[1].set_ylabel('GiB'); axes[1].legend(fontsize=8)
+    axes[1].set_ylabel('GiB')
+    axes[1].legend(fontsize=8, loc='lower left', bbox_to_anchor=(0, 1.01), ncol=3)
     for ax in axes:
         ax.set_xticks(x, labels, rotation=15); ax.set_xlim(-.65, max(x)+.65); ax.set_ylim(bottom=0); ax.grid(axis='y', alpha=.2); ax.set_axisbelow(True)
     fig.suptitle('Local verification/publication costs and allocated storage\nIndependent QEMU + mapped guest comparisons pass after timing; explicit cleanup follows')
     save(fig, out, 'local-and-allocation'); plt.close(fig)
-    paths = sorted(root.glob('run-*.json')) + [root/'summary.json', Path(__file__)] + sorted(out.glob('*.svg')) + sorted(out.glob('*.png'))
+    paths = sorted(root.glob('run-*.json')) + ([campaign] if campaign.exists() else []) + [root/'summary.json', Path(__file__)] + sorted(out.glob('*.svg')) + sorted(out.glob('*.png'))
     (out/'audit.json').write_text(json.dumps(dict(matplotlib=matplotlib.__version__, sha256={str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}), indent=2)+'\n')
 
 

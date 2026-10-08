@@ -1,0 +1,11 @@
+{
+  "binary_sha256": "9b9a9e95fa6805f970b27d7a73335419bdd0aadfe9f74992899bfc0bf6fda8b1",
+  "harness_sha256": "53eacc2ea7bba07c6c24d5c0575db8372c454726714018ca6da0703775eae742",
+  "kernel": "6.19.10-300.fc44.x86_64",
+  "cpu_model": "Intel(R) Xeon(R) Silver 4116 CPU @ 2.10GHz",
+  "visible_cpus": 1,
+  "cpu": 0,
+  "filesystem": "xfs",
+  "sha_ni_visible": false,
+  "conditions": "Same release test executable, alternating disabled/instrumented order per pair. One thread and fixed CPU affinity; no isolation or cache drops. Fixture setup and independent full authored-byte oracle excluded from timing. Copy includes flush, journal region includes sync; these are inclusive categories. Production library has no clocks/counters. Thread CPU in disjoint regions, process CPU for whole operation. RSS is lifetime peak including fixture/oracle; no before/after implementation speedup."
+}

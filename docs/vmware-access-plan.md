@@ -391,9 +391,11 @@ following bounded packages in order:
    store/handle lifetimes. **R6.1c.5a complete:** [private owned RAW conversion](owned-raw-output.md) and full logical verification.
    **R6.1c.5b complete:** [atomic bundle publication and explicit checked cleanup](durable-output-publication.md).
    **R6.1c.5c complete:** [composed Rust runner and bounded live qualification](composed-export-pipeline.md), with QEMU/guest-byte checks, cancellation and separate checked cleanup.
-   **Next R6.1c.5p:** repeated phase/CPU profiling on this authorized lab; uncertain publication
-   reconciliation remains outside current recovery actions. The
-   capacity proof remains separate; production R6 integration/recovery remains open.
+   **R6.1c.5p complete:** [six live observations and paired local profiles](pipeline-performance-profiling.md), with all comparisons/cleanup passing and timing variance retained in PERF.0.
+   **Next R6.1d.1:** design explicit reconciliation of unambiguous PublishIntent with local
+   fixtures before implementing mutation. No new host, license, VM or vCenter is needed
+   for that design. Uncertain publication reconciliation remains outside current recovery
+   actions; capacity proof and production R6 integration/recovery remain open.
 6. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9
    in later independently qualified steps. Keep PERF.0/R4.4 and the discovery
    variance/controlled-TLS investigation visible while adding new features.
