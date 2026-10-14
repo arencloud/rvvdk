@@ -392,10 +392,14 @@ following bounded packages in order:
    **R6.1c.5b complete:** [atomic bundle publication and explicit checked cleanup](durable-output-publication.md).
    **R6.1c.5c complete:** [composed Rust runner and bounded live qualification](composed-export-pipeline.md), with QEMU/guest-byte checks, cancellation and separate checked cleanup.
    **R6.1c.5p complete:** [six live observations and paired local profiles](pipeline-performance-profiling.md), with all comparisons/cleanup passing and timing variance retained in PERF.0.
-   **Next R6.1d.1:** design explicit reconciliation of unambiguous PublishIntent with local
-   fixtures before implementing mutation. No new host, license, VM or vCenter is needed
-   for that design. Uncertain publication reconciliation remains outside current recovery
-   actions; capacity proof and production R6 integration/recovery remain open.
+   **R6.1d.1a design complete:** [explicit PublishIntent reconciliation](publish-intent-reconciliation.md)
+   defines staged/already-renamed admission, full verification, intent/parent syncs and
+   conservative acknowledgment. No runtime recovery action was added.
+   **Next R6.1d.1b:** implement and qualify it with [local fixtures, faults and repeated
+   benchmarks](publish-intent-reconciliation-qualification.md). No new host, license,
+   VM, vCenter or lab access is needed for this local package. A later live/runner
+   integration requires its own focused qualification. Capacity proof and production
+   R6 integration/recovery remain open.
 6. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9
    in later independently qualified steps. Keep PERF.0/R4.4 and the discovery
    variance/controlled-TLS investigation visible while adding new features.

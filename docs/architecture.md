@@ -1772,3 +1772,34 @@ uncertain publication.
 [ADR-0067](adr/0067-disjoint-test-only-pipeline-profiling.md),
 [measurement contract](pipeline-performance-profiling.md),
 [raw samples and plots](benchmark-results/2026-10-07-r61c5p/README.md).
+
+### Explicit PublishIntent reconciliation design (R6.1d.1a)
+
+The accepted design consumes the original locked store and destination and explicit
+source/artifact/output selection in one bounded local invocation. Only version-2
+output PublishIntent, no source/output transaction, an admissible retained source
+and exactly one owned staged or final bundle may progress. Assessment remains
+read-only. Existing runtime recovery behavior is unchanged until R6.1d.1b.
+
+Fresh full source/RAW verification precedes bundle sync and re-establishment of the
+exact intent journal's durability. A visible intent can survive before its parent
+sync, so the new operation must sync and recheck it before a staged rename. Staged
+recovery uses one no-replace rename; already-renamed recovery uses none. Both paths
+sync both parents and recheck bindings before a durable Published acknowledgment.
+The source journal and RAW contents/allocation remain unchanged.
+
+A distinct reconciliation report separates origin, observed rename, content checks,
+sync completion and durable acknowledgment from read-only final assessment. Normal
+PublicationReport keeps its existing rename requirement. Cancellation after rename
+is observed after both parent syncs unless I/O fails; a late cancellation or failed
+acknowledgment never becomes success merely because Published is visible.
+
+Both/neither/foreign namespaces, transactions, unstamped stages, missing sources and
+Published-at-entry are excluded. No deletion, rollback, remote replay or automatic
+retry is introduced. Uncertain Published attestation needs separate work. The
+implementation must qualify actual process-loss/fault boundaries and repeated
+performance before the parent R6.1d.1 milestone can close.
+
+[Contract and state table](publish-intent-reconciliation.md),
+[ADR-0068](adr/0068-explicit-publish-intent-reconciliation.md),
+[implementation, fault and benchmark plan](publish-intent-reconciliation-qualification.md).

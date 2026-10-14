@@ -131,8 +131,14 @@ hash passes were removed for performance.
 [private conversion contract](owned-raw-output.md).
 
 Local synthetic qualification covers actual rename, failure boundaries and SIGKILL;
-it does not claim physical power-loss/controller qualification. R6.1c.5c is next:
-a Rust entry point and bounded composed live ESXi export, verified publication and
-explicit cleanup. Uncertain publication reconciliation, transaction repair and
-unstamped-stage adoption remain future work; no remote request is reconstructed or
-replayed from these records. Overall production recovery remains open.
+it does not claim physical power-loss/controller qualification. R6.1c.5c subsequently
+qualified the [composed live workflow](composed-export-pipeline.md), and R6.1c.5p
+recorded [repeated baseline/profiling diagnostics](pipeline-performance-profiling.md).
+
+R6.1d.1a now specifies [explicit PublishIntent reconciliation](publish-intent-reconciliation.md)
+for a single owned staged or already-renamed bundle. This is an accepted design;
+implementation and [local qualification](publish-intent-reconciliation-qualification.md)
+remain R6.1d.1b. The current APIs described above still reject PublishIntent mutation.
+Transaction repair, unstamped-stage adoption and uncertain Published attestation
+remain separate work. No remote request is reconstructed or replayed from these
+records. Overall production recovery remains open.

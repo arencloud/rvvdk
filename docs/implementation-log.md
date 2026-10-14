@@ -2966,29 +2966,63 @@ control spread of **11.09% wall / 10.59% CPU**. Profile RAW allocation stays 8 M
 Small warm fixtures do not establish the private live disk's exact CPU breakdown.
 No production tuning is accepted; PERF.0 remains open.
 
+## R6.1d.1a — explicit PublishIntent reconciliation design (2026-10-14)
+
+Completed the design against `b717207` before adding mutation. The contract separates
+output PublishIntent from the older source job state, covers all nine namespace
+combinations and every other output state, and requires the original locked store,
+destination, source and recorded object identities with no source/output transaction.
+Only staged-owned/final-absent or staged-absent/final-owned can proceed after fresh
+native/source/full RAW verification.
+
+[Contract](publish-intent-reconciliation.md),
+[ADR-0068](adr/0068-explicit-publish-intent-reconciliation.md),
+[implementation and qualification matrix](publish-intent-reconciliation-qualification.md).
+
+Code review identified two durability/report boundaries that must be explicit:
+a visible PublishIntent can precede its journal-directory sync, so reconciliation
+must sync and recheck the exact admitted intent before a new rename; an already-renamed
+bundle cannot satisfy normal publication's rename-in-this-call success requirement,
+so recovery needs a separate report. Both paths sync both parents before a new
+Published acknowledgment. A failed acknowledgment that leaves Published visible
+is not success, and Published-at-entry attestation remains outside this operation.
+
+The saved plan specifies one deadline, lock/descriptor custody, cooperative
+cancellation around the rename/sync/acknowledgment boundaries, conservative failure
+and retry outcomes, and unchanged source bytes/journal and RAW allocation. It maps
+existing regressions to 17 new correctness/exclusion groups, syscall/hook/process-loss
+fault boundaries, and frozen-reference normal-publication plus new-branch timing.
+All implementation, test and benchmark acceptance items remain open in R6.1d.1b.
+
+This commit changes documentation only. Validation checked **577 relative links**
+across nine documents, all **nine namespace pairs and 11 output states**, six cited
+existing test symbols and the relevant code entry points. Whitespace/diff and staged
+privacy checks accompany the commit. No Rust tests or benchmarks were rerun,
+no new performance result is claimed, and no lab connection or VM action occurred.
+R6.1d.1a is complete; its parent R6.1d.1 and production recovery remain open.
+
 ## Next session
 
-Start **R6.1d.1 — explicit reconciliation of unambiguous PublishIntent**, with the
-contract and state table before mutation:
+Start **R6.1d.1b — implement and locally qualify explicit PublishIntent reconciliation**
+using the accepted contract and qualification matrix:
 
-1. Specify admission under the original store, destination, source and recorded
-   object identities. Require no pending transaction and exactly one uniquely owned
-   staged OR published bundle. Both/neither/foreign/unstamped states stay blocked.
-2. Define fresh native/source/RAW verification and the required member/bundle/parent
-   directory syncs before durable acknowledgment. Preserve descriptor/lock custody;
-   a status report alone cannot grant mutation or cleanup authority.
-3. Define explicit local outcomes for cancellation, deadline, content change,
-   namespace substitution and journal/sync failure. Retain resources on ambiguity;
-   never infer rollback, remote replay or remote cleanup from a local journal.
-4. Qualify staged and already-renamed cases with full independent byte oracles,
-   crash/fault/cancellation tests and conservative rejection of every excluded case.
-   Keep transaction repair and unstamped-stage adoption as separate work.
-5. Measure the added recovery path against a frozen reference where comparable,
-   retain phase/CPU/RSS/allocation and longer repeats for adverse/variable results,
-   save plots, update the plan and commit the completed bounded package locally.
-   Begin with local fixtures; no new ESXi installation, license, VM or vCenter is
-   needed for the design. Use the existing authorized lab only when a focused live
-   qualification is actually required.
+1. Freeze the unchanged normal-publication release reference and source/fixture
+   manifest. Factor private bundle validation while keeping VerifiedOutput admission
+   and every existing validation/durability gate unchanged.
+2. Implement the consuming local API and distinct report for exactly the two admitted
+   PublishIntent namespace pairs. Re-establish intent durability, use no-replace rename
+   only for staged output, sync both parents and durably acknowledge Published.
+3. Add independent full-byte checks, all exclusion cases, shared-deadline/cancellation,
+   identity/namespace substitutions, fault injection and real SIGKILL tests. Include
+   visible intent before its directory sync and visible Published after failed ack.
+   Keep transaction repair, unstamped-stage adoption and Published attestation separate.
+4. Measure the unchanged normal path against its frozen reference and both new recovery
+   branches separately. Retain phase/wall/CPU/RSS/allocation, independent comparisons,
+   required longer repeats, all adverse observations and SVG/PNG plots. Keep PERF.0 open.
+5. Complete appropriate workspace checks, record evidence/limits, update this log and
+   roadmap, scan staged files for private data, and commit the bounded package locally.
+   Local fixtures need no ESXi, credentials, new license, VM or vCenter. Defer live
+   runner integration until a focused qualification requires it.
 
 The first measured tuning target is digest-equivalent SHA-256 throughput on CPUs
 without SHA-NI. Before accepting a candidate, preserve the algorithm and every full
