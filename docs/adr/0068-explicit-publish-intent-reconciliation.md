@@ -1,7 +1,8 @@
 # ADR-0068: Reconcile only a freshly verified, unambiguous output PublishIntent
 
-Status: Accepted design for R6.1d.1a. Implementation and qualification remain
-R6.1d.1b; existing runtime recovery behavior is unchanged.
+Status: Accepted in R6.1d.1a and implemented in R6.1d.1b. Bounded local evidence and
+remaining filesystem/performance limits are recorded in the
+[qualification report](../benchmark-results/2026-10-14-r61d1b/README.md).
 
 ## Context
 

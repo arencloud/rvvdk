@@ -1,0 +1,29 @@
+{
+  "reference_commit": "63cc9b0",
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "rvvdk-vsphere",
+    "--lib",
+    "--release",
+    "--no-run",
+    "--message-format=json"
+  ],
+  "compiler_environment": {
+    "RUSTFLAGS": "",
+    "CARGO_ENCODED_RUSTFLAGS": "",
+    "CARGO_BUILD_TARGET": "",
+    "RUSTUP_TOOLCHAIN": ""
+  },
+  "timing_namespace_command": [
+    "unshare",
+    "--user",
+    "--map-root-user",
+    "--mount",
+    "sh",
+    "target/r61d1b/private/campaign.sh"
+  ],
+  "tmpfs_mount_options": "size=512m,mode=0700,huge=never",
+  "notes": "The private tmpfs mount is destroyed when the campaign exits. No system-wide mount, swap or THP setting changes. Both normal-path binaries run inside the same namespace and CPU-affinity configuration."
+}

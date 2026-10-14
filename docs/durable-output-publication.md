@@ -101,8 +101,9 @@ contents or establish durability. Partial cleanup is not an intact Owned bundle.
   The source artifact may already have been explicitly cleaned. Source binding and
   output journal/resource identities remain required.
 - Prepared, unstamped StageIntent, PublishIntent and every pending transaction are
-  refused. These need future explicit reconciliation; names or record claims alone
-  never justify adopting, publishing or removing uncertain resources.
+  refused by cleanup. PublishIntent has a separate bounded explicit reconciliation
+  operation below; other uncertain cases remain excluded. Names or record claims
+  alone never justify adopting, publishing or removing resources.
 - Persist version-2 CleanupIntent with the eligible origin and incremented sequence.
   Check every remaining member immediately before unlinking; remove RAW, metadata,
   marker and then the empty directory. Unknown entries and foreign replacements are
@@ -135,10 +136,16 @@ it does not claim physical power-loss/controller qualification. R6.1c.5c subsequ
 qualified the [composed live workflow](composed-export-pipeline.md), and R6.1c.5p
 recorded [repeated baseline/profiling diagnostics](pipeline-performance-profiling.md).
 
-R6.1d.1a now specifies [explicit PublishIntent reconciliation](publish-intent-reconciliation.md)
-for a single owned staged or already-renamed bundle. This is an accepted design;
-implementation and [local qualification](publish-intent-reconciliation-qualification.md)
-remain R6.1d.1b. The current APIs described above still reject PublishIntent mutation.
-Transaction repair, unstamped-stage adoption and uncertain Published attestation
-remain separate work. No remote request is reconstructed or replayed from these
-records. Overall production recovery remains open.
+R6.1d.1b implements [explicit PublishIntent reconciliation](publish-intent-reconciliation.md)
+for a single owned staged or already-renamed bundle. The consuming local operation
+requires the original retained source and locked parents, freshly checks all bytes,
+syncs the exact admitted intent, performs a no-replace rename only when staged,
+syncs both parents and acknowledges Published. Its separate report supports the
+already-renamed case without weakening normal publication's success predicate.
+Cleanup still refuses PublishIntent and is never called by reconciliation.
+
+[Local qualification and plots](benchmark-results/2026-10-14-r61d1b/README.md) retain
+fault/SIGKILL tests, repeated controls, adverse observations and an ambient tmpfs
+allocation limitation. Transaction repair, unstamped-stage adoption and uncertain
+Published attestation remain separate work. No remote request is reconstructed or
+replayed from these records. Overall production recovery remains open.

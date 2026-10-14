@@ -1,10 +1,11 @@
 # PublishIntent reconciliation qualification plan (R6.1d.1b)
 
-This is the implementation acceptance plan for the
-[R6.1d.1a design](publish-intent-reconciliation.md), not a test-results report.
-All new cases and benchmarks below are pending. Existing regression coverage was
-reviewed at `b717207`; no runtime code changes or new timing results accompany the
-design. Overall R6.1d.1 remains open.
+This is the implementation acceptance plan established by the
+[R6.1d.1a design](publish-intent-reconciliation.md). The
+[R6.1d.1b report](benchmark-results/2026-10-14-r61d1b/README.md) maps it to executed
+checks, measurements and remaining limits. Existing regression anchors were reviewed
+at `b717207`. The sections below preserve the required procedure; they are not raw
+test results.
 
 ## Implementation sequence
 
@@ -114,7 +115,8 @@ eligible. Tests qualify process loss, not physical power interruption.
 
 Keep the [R6.1c.5p baseline and profiling results](benchmark-results/2026-10-07-r61c5p/README.md)
 unchanged. They prioritize hashing and retain variance; they are not matched recovery
-timings. No timings or plots are generated for the documentation-only design.
+timings. The design-only commit generated no timings. The implementation report now retains
+its own frozen-reference comparison and recovery measurements.
 
 Measure two distinct comparisons:
 
@@ -179,3 +181,20 @@ The design-only step checks links, state-table coverage and correspondence with 
 existing code. Its completion must not mark this implementation matrix, performance
 qualification or overall production recovery complete. No lab access is required
 for the design or initial local implementation package.
+
+## Qualification environment adjustment
+
+The initial release smoke found physical allocation growth on ambient `/tmp`,
+although RAW inode, length and independent bytes matched. A standalone Python probe
+reproduced allocation changes using read/hash/fsync after setup without rvddk code.
+The cause is unresolved. Its failures, probe results and syscall-trace summary are
+retained in the implementation report; they are not discarded or attributed to a
+specific kernel mechanism.
+
+The final RAM control uses a private tmpfs mount in an unprivileged user/mount
+namespace, with `huge=never` and a 512 MiB limit. This is a different qualified
+environment, not evidence that ambient `/tmp` is fixed. Strict initial/recovered/
+post-oracle allocation equality remains asserted. No verification is skipped, no
+RAW is rewritten or re-punched, and no system-wide setting changes. Ambient tmpfs
+sparse-allocation behavior remains outside clearance. Persistent-filesystem and
+volatile-control claims stay separate.

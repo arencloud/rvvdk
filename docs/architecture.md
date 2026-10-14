@@ -1773,33 +1773,46 @@ uncertain publication.
 [measurement contract](pipeline-performance-profiling.md),
 [raw samples and plots](benchmark-results/2026-10-07-r61c5p/README.md).
 
-### Explicit PublishIntent reconciliation design (R6.1d.1a)
+### Explicit PublishIntent reconciliation (R6.1d.1)
 
-The accepted design consumes the original locked store and destination and explicit
-source/artifact/output selection in one bounded local invocation. Only version-2
-output PublishIntent, no source/output transaction, an admissible retained source
-and exactly one owned staged or final bundle may progress. Assessment remains
-read-only. Existing runtime recovery behavior is unchanged until R6.1d.1b.
+`JobStore::reconcile_publication` consumes the original locked store and destination
+and explicit source/artifact/output selection in one bounded local invocation. Only
+version-2 output PublishIntent, no source/output transaction, an admissible retained
+source and exactly one owned staged or final bundle may progress. Assessment remains
+read-only; normal VerifiedOutput admission keeps its Verified-only gate.
 
-Fresh full source/RAW verification precedes bundle sync and re-establishment of the
-exact intent journal's durability. A visible intent can survive before its parent
-sync, so the new operation must sync and recheck it before a staged rename. Staged
-recovery uses one no-replace rename; already-renamed recovery uses none. Both paths
-sync both parents and recheck bindings before a durable Published acknowledgment.
-The source journal and RAW contents/allocation remain unchanged.
+Private CheckedOutput shares full content validation between normal publication and
+reconciliation. Fresh source/RAW verification precedes bundle sync and re-establishment
+of the exact intent journal's durability. A visible intent can survive before its
+parent sync, so recovery syncs and rechecks it before a staged rename. Staged recovery
+uses one no-replace rename; already-renamed recovery uses none. Both paths sync both
+parents and recheck bindings before a durable Published acknowledgment.
 
-A distinct reconciliation report separates origin, observed rename, content checks,
-sync completion and durable acknowledgment from read-only final assessment. Normal
-PublicationReport keeps its existing rename requirement. Cancellation after rename
-is observed after both parent syncs unless I/O fails; a late cancellation or failed
+ReconciliationReport separates origin, observed rename, logical verification,
+bundle/intent/parent sync completion and durable acknowledgment from final assessment.
+Normal PublicationReport keeps its existing rename requirement. One shared deadline
+covers source admission through final control checks. Control is checked after binding
+revalidation immediately before rename/acknowledgment. Cancellation after rename is
+observed after both parent syncs unless I/O fails; a late cancellation or failed
 acknowledgment never becomes success merely because Published is visible.
 
 Both/neither/foreign namespaces, transactions, unstamped stages, missing sources and
 Published-at-entry are excluded. No deletion, rollback, remote replay or automatic
-retry is introduced. Uncertain Published attestation needs separate work. The
-implementation must qualify actual process-loss/fault boundaries and repeated
-performance before the parent R6.1d.1 milestone can close.
+retry is introduced. Source bytes/journal and RAW contents are preserved. The
+qualification asserts original/recovered/post-oracle RAW allocation equality on its
+persistent filesystem and isolated volatile control; ambient tmpfs allocation drift
+is separately reproduced and unresolved. This is not a filesystem-independent
+physical-allocation or power-loss guarantee.
+
+A private statically dispatched sync/rename seam supplies syscall-style fault results
+in tests; production always invokes the OS. Private callbacks locate cancellation,
+namespace substitution and process-loss boundaries. Test-only benchmarks compare the
+normal path to a frozen reference, measure both recovery branches and separately
+measure phase-clock overhead. No production profiling or verification bypass is added.
 
 [Contract and state table](publish-intent-reconciliation.md),
 [ADR-0068](adr/0068-explicit-publish-intent-reconciliation.md),
-[implementation, fault and benchmark plan](publish-intent-reconciliation-qualification.md).
+[acceptance plan](publish-intent-reconciliation-qualification.md),
+[local evidence, measurements and plots](benchmark-results/2026-10-14-r61d1b/README.md).
+Uncertain Published attestation, transaction repair and production recovery remain
+separate work; PERF.0 retains timing and allocation follow-ups.

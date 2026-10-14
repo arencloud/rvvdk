@@ -257,9 +257,11 @@ byte comparison and the independent guest oracle, with [read/CPU/RSS plots](docs
 
 [R6.1c.5p](docs/pipeline-performance-profiling.md) now records **six complete live runs** and **432 profiling operations**, with [standalone plots and raw samples](docs/benchmark-results/2026-10-07-r61c5p/README.md). Hashing dominates the authored local controls; timing variance and tuning remain open in PERF.0.
 
-[R6.1d.1a](docs/publish-intent-reconciliation.md) defines explicit PublishIntent
-reconciliation, including both namespace branches and durability gates.
-Next: implement and locally qualify that design (R6.1d.1b); recovery behavior is unchanged.
+[R6.1d.1](docs/publish-intent-reconciliation.md) now implements explicit PublishIntent
+reconciliation for staged and already-renamed bundles, with fresh full verification
+and durable acknowledgment. [Tests, benchmarks and plots](docs/benchmark-results/2026-10-14-r61d1b/README.md)
+record the local qualification and remaining timing/allocation limits.
+Next: design fresh Published-at-entry attestation (R6.1d.2a).
 
 Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
 for sanitizer execution rates, memory and feedback across repeated campaigns.

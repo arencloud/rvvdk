@@ -6,12 +6,12 @@ use std::{
     os::unix::fs::{DirBuilderExt, FileExt, PermissionsExt},
     path::PathBuf,
 };
-fn ready() -> Temp {
+pub(super) fn ready() -> Temp {
     let t = setup();
     assert!(run(&t, |_, _| Ok(())).is_success());
     t
 }
-fn admit(t: &Temp) -> Result<VerifiedOutput> {
+pub(super) fn admit(t: &Temp) -> Result<VerifiedOutput> {
     VerifiedOutput::open(
         t.store(),
         oid(),
@@ -20,23 +20,26 @@ fn admit(t: &Temp) -> Result<VerifiedOutput> {
         RetainedOptions::default(),
     )
 }
-fn destination(t: &Temp) -> PublicationDirectory {
+pub(super) fn destination(t: &Temp) -> PublicationDirectory {
     let p = t.0.join("published");
     fs::DirBuilder::new().mode(0o700).create(&p).unwrap();
     PublicationDirectory::open(&p).unwrap()
 }
-fn reopen(t: &Temp) -> PublicationDirectory {
+pub(super) fn reopen(t: &Temp) -> PublicationDirectory {
     PublicationDirectory::open(&t.0.join("published")).unwrap()
 }
-fn final_path(t: &Temp) -> PathBuf {
+pub(super) fn final_path(t: &Temp) -> PathBuf {
     t.0.join("published").join(oid().bundle_name())
 }
-fn publish(t: &Temp, hook: impl FnMut(OutputState, &str) -> Result<()>) -> PublicationReport {
+pub(super) fn publish(
+    t: &Temp,
+    hook: impl FnMut(OutputState, &str) -> Result<()>,
+) -> PublicationReport {
     admit(t)
         .unwrap()
         .publish_hook(destination(t), RetainedOptions::default(), hook)
 }
-fn cleanup(
+pub(super) fn cleanup(
     t: &Temp,
     published: bool,
     hook: impl FnMut(OutputState, &str) -> Result<()>,
@@ -51,7 +54,7 @@ fn cleanup(
         hook,
     )
 }
-fn rewrite(t: &Temp, change: impl FnOnce(&mut OutputEnvelope)) {
+pub(super) fn rewrite(t: &Temp, change: impl FnOnce(&mut OutputEnvelope)) {
     let path = t.jobs().join(name(&oid().0));
     let mut e: OutputEnvelope = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
     change(&mut e);

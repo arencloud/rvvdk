@@ -1,0 +1,3492 @@
+{
+  "operations": 864,
+  "groups": {
+    "normal-btrfs-stored_64": {
+      "kind": "normal",
+      "filesystem": "btrfs",
+      "fixture": "stored_64",
+      "phases": {
+        "initial": {
+          "modes": {
+            "reference_owned": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 220.125717,
+                  "spread_percent": 2.4586823944360736
+                },
+                "cpu_ms": {
+                  "median": 90.88200000000006,
+                  "spread_percent": 1.197418897044189
+                },
+                "cleanup_ms": {
+                  "median": 39.493671,
+                  "spread_percent": 1.1503696743059733
+                },
+                "cleanup_cpu_ms": {
+                  "median": 2.516999999999936,
+                  "spread_percent": 4.270749395643825
+                },
+                "admission_ms": {
+                  "median": 7.5330379999999995,
+                  "spread_percent": 10.902460300871098
+                },
+                "conversion_and_checks_ms": {
+                  "median": 212.76615600000002,
+                  "spread_percent": 2.722988342896393
+                }
+              },
+              "peak_rss_kib": 32456,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "reference_published": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 404.8216705,
+                  "spread_percent": 6.622549885088058
+                },
+                "cpu_ms": {
+                  "median": 213.80700000000004,
+                  "spread_percent": 6.649612763648438
+                },
+                "cleanup_ms": {
+                  "median": 43.348523500000006,
+                  "spread_percent": 19.29316301242403
+                },
+                "cleanup_cpu_ms": {
+                  "median": 6.846499999999978,
+                  "spread_percent": 92.94259818730953
+                },
+                "admission_ms": {
+                  "median": 7.6839825,
+                  "spread_percent": 6.503876574775425
+                },
+                "conversion_and_checks_ms": {
+                  "median": 212.6937775,
+                  "spread_percent": 3.5795525125060124
+                },
+                "publication_admission_ms": {
+                  "median": 63.549563000000006,
+                  "spread_percent": 7.129249788517167
+                },
+                "publication_ms": {
+                  "median": 120.50849600000001,
+                  "spread_percent": 3.1388769078371626
+                }
+              },
+              "peak_rss_kib": 32456,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "candidate_owned": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 224.6554035,
+                  "spread_percent": 1.64007054507731
+                },
+                "cpu_ms": {
+                  "median": 91.30700000000002,
+                  "spread_percent": 1.1894977919501892
+                },
+                "cleanup_ms": {
+                  "median": 39.8376735,
+                  "spread_percent": 1.71075722546703
+                },
+                "cleanup_cpu_ms": {
+                  "median": 2.68999999999997,
+                  "spread_percent": 1.791438808223056
+                },
+                "admission_ms": {
+                  "median": 7.5637739999999996,
+                  "spread_percent": 0.5312240249947919
+                },
+                "conversion_and_checks_ms": {
+                  "median": 217.1429665,
+                  "spread_percent": 1.5497227788995538
+                }
+              },
+              "peak_rss_kib": 32876,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "candidate_published": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 420.2211565,
+                  "spread_percent": 2.4642489360130915
+                },
+                "cpu_ms": {
+                  "median": 217.138,
+                  "spread_percent": 1.9114922301984194
+                },
+                "cleanup_ms": {
+                  "median": 42.320209000000006,
+                  "spread_percent": 1.2569376840431579
+                },
+                "cleanup_cpu_ms": {
+                  "median": 4.852499999999926,
+                  "spread_percent": 19.897523484202374
+                },
+                "admission_ms": {
+                  "median": 7.647752,
+                  "spread_percent": 4.1038645054281675
+                },
+                "conversion_and_checks_ms": {
+                  "median": 215.7174465,
+                  "spread_percent": 3.995272939694261
+                },
+                "publication_admission_ms": {
+                  "median": 64.4730105,
+                  "spread_percent": 0.9303633178276538
+                },
+                "publication_ms": {
+                  "median": 125.98774,
+                  "spread_percent": 5.898623063027486
+                }
+              },
+              "peak_rss_kib": 32876,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "reference_owned:admission_ms:spread",
+            "reference_published:wall_ms:spread",
+            "reference_published:cpu_ms:spread",
+            "reference_published:cleanup_ms:spread",
+            "reference_published:cleanup_cpu_ms:spread",
+            "reference_published:admission_ms:spread",
+            "reference_published:publication_admission_ms:spread",
+            "candidate_published:cleanup_cpu_ms:spread",
+            "candidate_published:publication_ms:spread"
+          ]
+        },
+        "repeat": {
+          "modes": {
+            "reference_owned": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 222.1092645,
+                  "spread_percent": 2.042618507580074
+                },
+                "cpu_ms": {
+                  "median": 90.91450000000003,
+                  "spread_percent": 1.6920436421433482
+                },
+                "cleanup_ms": {
+                  "median": 39.9735275,
+                  "spread_percent": 0.7880953800989854
+                },
+                "cleanup_cpu_ms": {
+                  "median": 2.5305000000000466,
+                  "spread_percent": 8.254156769596488
+                },
+                "admission_ms": {
+                  "median": 7.613972499999999,
+                  "spread_percent": 5.039368766259056
+                },
+                "conversion_and_checks_ms": {
+                  "median": 214.82555100000002,
+                  "spread_percent": 2.0964736787012495
+                }
+              },
+              "peak_rss_kib": 32228,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "reference_published": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 408.06762100000003,
+                  "spread_percent": 2.038163228326928
+                },
+                "cpu_ms": {
+                  "median": 214.16500000000002,
+                  "spread_percent": 2.4325109951009782
+                },
+                "cleanup_ms": {
+                  "median": 42.5506265,
+                  "spread_percent": 5.215869010429386
+                },
+                "cleanup_cpu_ms": {
+                  "median": 6.178500000000087,
+                  "spread_percent": 55.737704918020725
+                },
+                "admission_ms": {
+                  "median": 7.617376500000001,
+                  "spread_percent": 2.3058510964863554
+                },
+                "conversion_and_checks_ms": {
+                  "median": 213.57626,
+                  "spread_percent": 0.5639954982791684
+                },
+                "publication_admission_ms": {
+                  "median": 64.10950600000001,
+                  "spread_percent": 2.924608837090359
+                },
+                "publication_ms": {
+                  "median": 122.0759065,
+                  "spread_percent": 1.6347162982250696
+                }
+              },
+              "peak_rss_kib": 32228,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "candidate_owned": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 221.609672,
+                  "spread_percent": 0.6150371063905258
+                },
+                "cpu_ms": {
+                  "median": 91.6570000000001,
+                  "spread_percent": 1.985627211304064
+                },
+                "cleanup_ms": {
+                  "median": 39.840052,
+                  "spread_percent": 0.8321314641655198
+                },
+                "cleanup_cpu_ms": {
+                  "median": 2.6334999999999553,
+                  "spread_percent": 4.804447091519659
+                },
+                "admission_ms": {
+                  "median": 7.465469,
+                  "spread_percent": 5.953808724952503
+                },
+                "conversion_and_checks_ms": {
+                  "median": 213.576844,
+                  "spread_percent": 0.6830522119917859
+                }
+              },
+              "peak_rss_kib": 32928,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "candidate_published": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 410.43226949999996,
+                  "spread_percent": 0.22832289439813636
+                },
+                "cpu_ms": {
+                  "median": 216.252,
+                  "spread_percent": 0.07958154911038573
+                },
+                "cleanup_ms": {
+                  "median": 43.8263565,
+                  "spread_percent": 1.9446791199059232
+                },
+                "cleanup_cpu_ms": {
+                  "median": 7.004499999999858,
+                  "spread_percent": 5.092525134779402
+                },
+                "admission_ms": {
+                  "median": 7.6891945,
+                  "spread_percent": 7.190377938232118
+                },
+                "conversion_and_checks_ms": {
+                  "median": 214.4679985,
+                  "spread_percent": 0.38534094814945963
+                },
+                "publication_admission_ms": {
+                  "median": 64.74005550000001,
+                  "spread_percent": 0.5899667727070401
+                },
+                "publication_ms": {
+                  "median": 123.38826599999999,
+                  "spread_percent": 0.9093082130565922
+                }
+              },
+              "peak_rss_kib": 32928,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "reference_owned:cleanup_cpu_ms:spread",
+            "reference_owned:admission_ms:spread",
+            "reference_published:cleanup_ms:spread",
+            "reference_published:cleanup_cpu_ms:spread",
+            "candidate_owned:admission_ms:spread",
+            "candidate_published:cleanup_cpu_ms:spread",
+            "candidate_published:admission_ms:spread"
+          ]
+        }
+      }
+    },
+    "normal-tmpfs-stored_64": {
+      "kind": "normal",
+      "filesystem": "tmpfs",
+      "fixture": "stored_64",
+      "phases": {
+        "initial": {
+          "modes": {
+            "reference_owned": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 81.795107,
+                  "spread_percent": 9.371681974850299
+                },
+                "cpu_ms": {
+                  "median": 81.41050000000006,
+                  "spread_percent": 9.234628001655576
+                },
+                "cleanup_ms": {
+                  "median": 0.814209,
+                  "spread_percent": 10.002524979259109
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.7979999999999932,
+                  "spread_percent": 10.081743869190207
+                },
+                "admission_ms": {
+                  "median": 8.8341115,
+                  "spread_percent": 6.245901569428769
+                },
+                "conversion_and_checks_ms": {
+                  "median": 73.12006650000001,
+                  "spread_percent": 9.876384092175726
+                }
+              },
+              "peak_rss_kib": 32420,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "reference_published": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 199.56627500000002,
+                  "spread_percent": 8.83266925183499
+                },
+                "cpu_ms": {
+                  "median": 198.77900000000002,
+                  "spread_percent": 8.663152535417806
+                },
+                "cleanup_ms": {
+                  "median": 0.8393204999999999,
+                  "spread_percent": 21.05782636599023
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.8304999999999563,
+                  "spread_percent": 20.547073791354475
+                },
+                "admission_ms": {
+                  "median": 8.838740999999999,
+                  "spread_percent": 10.242185961769778
+                },
+                "conversion_and_checks_ms": {
+                  "median": 73.826164,
+                  "spread_percent": 6.943412970925422
+                },
+                "publication_admission_ms": {
+                  "median": 62.122938500000004,
+                  "spread_percent": 8.032816109772645
+                },
+                "publication_ms": {
+                  "median": 54.926766,
+                  "spread_percent": 6.772785539619175
+                }
+              },
+              "peak_rss_kib": 32420,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "candidate_owned": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 81.965621,
+                  "spread_percent": 1.7241668533542587
+                },
+                "cpu_ms": {
+                  "median": 81.58649999999994,
+                  "spread_percent": 1.7090128913670233
+                },
+                "cleanup_ms": {
+                  "median": 0.7836965,
+                  "spread_percent": 4.928242674014105
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.7589999999999542,
+                  "spread_percent": 4.77770404778004
+                },
+                "admission_ms": {
+                  "median": 8.8374955,
+                  "spread_percent": 5.797477414110586
+                },
+                "conversion_and_checks_ms": {
+                  "median": 73.20936549999999,
+                  "spread_percent": 1.0911827209146852
+                }
+              },
+              "peak_rss_kib": 32948,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "candidate_published": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 200.3254365,
+                  "spread_percent": 0.6646571921752553
+                },
+                "cpu_ms": {
+                  "median": 199.512,
+                  "spread_percent": 0.6472272793383693
+                },
+                "cleanup_ms": {
+                  "median": 0.8258449999999999,
+                  "spread_percent": 7.208502183697085
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.8220000000000727,
+                  "spread_percent": 7.269395235181975
+                },
+                "admission_ms": {
+                  "median": 9.0181685,
+                  "spread_percent": 8.68122471276649
+                },
+                "conversion_and_checks_ms": {
+                  "median": 73.62193449999998,
+                  "spread_percent": 0.6860378015380864
+                },
+                "publication_admission_ms": {
+                  "median": 62.78716299999999,
+                  "spread_percent": 1.0133381923790097
+                },
+                "publication_ms": {
+                  "median": 54.78085,
+                  "spread_percent": 0.3253647097649859
+                }
+              },
+              "peak_rss_kib": 32948,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "reference_owned:wall_ms:spread",
+            "reference_owned:cpu_ms:spread",
+            "reference_owned:cleanup_ms:spread",
+            "reference_owned:cleanup_cpu_ms:spread",
+            "reference_owned:admission_ms:spread",
+            "reference_owned:conversion_and_checks_ms:spread",
+            "reference_published:wall_ms:spread",
+            "reference_published:cpu_ms:spread",
+            "reference_published:cleanup_ms:spread",
+            "reference_published:cleanup_cpu_ms:spread",
+            "reference_published:admission_ms:spread",
+            "reference_published:conversion_and_checks_ms:spread",
+            "reference_published:publication_admission_ms:spread",
+            "reference_published:publication_ms:spread",
+            "candidate_owned:admission_ms:spread",
+            "candidate_published:cleanup_ms:spread",
+            "candidate_published:cleanup_cpu_ms:spread",
+            "candidate_published:admission_ms:spread"
+          ]
+        },
+        "repeat": {
+          "modes": {
+            "reference_owned": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 81.45095549999999,
+                  "spread_percent": 0.8288921037557184
+                },
+                "cpu_ms": {
+                  "median": 81.03849999999996,
+                  "spread_percent": 0.7745010425975085
+                },
+                "cleanup_ms": {
+                  "median": 0.7754464999999999,
+                  "spread_percent": 3.0478232168417163
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.7589999999999542,
+                  "spread_percent": 3.206412825677063
+                },
+                "admission_ms": {
+                  "median": 8.6022345,
+                  "spread_percent": 1.2726894301803737
+                },
+                "conversion_and_checks_ms": {
+                  "median": 72.64882750000001,
+                  "spread_percent": 0.4445683231117492
+                }
+              },
+              "peak_rss_kib": 32456,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "reference_published": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 197.7400115,
+                  "spread_percent": 1.5416637036362424
+                },
+                "cpu_ms": {
+                  "median": 196.90799999999996,
+                  "spread_percent": 1.5551363016170772
+                },
+                "cleanup_ms": {
+                  "median": 0.8540285000000001,
+                  "spread_percent": 4.91367423373843
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.8464999999999168,
+                  "spread_percent": 4.551045510459928
+                },
+                "admission_ms": {
+                  "median": 8.6254295,
+                  "spread_percent": 3.763325527176664
+                },
+                "conversion_and_checks_ms": {
+                  "median": 72.595362,
+                  "spread_percent": 0.2239454945593744
+                },
+                "publication_admission_ms": {
+                  "median": 61.77109,
+                  "spread_percent": 1.3933090649190127
+                },
+                "publication_ms": {
+                  "median": 53.8670625,
+                  "spread_percent": 2.3588826112345807
+                }
+              },
+              "peak_rss_kib": 32456,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "candidate_owned": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 81.9151345,
+                  "spread_percent": 0.7360026073217618
+                },
+                "cpu_ms": {
+                  "median": 81.56350000000023,
+                  "spread_percent": 0.686031683750965
+                },
+                "cleanup_ms": {
+                  "median": 0.770696,
+                  "spread_percent": 6.887895919971476
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.7539999999999908,
+                  "spread_percent": 6.726768377263248
+                },
+                "admission_ms": {
+                  "median": 8.7309655,
+                  "spread_percent": 1.6763780021973762
+                },
+                "conversion_and_checks_ms": {
+                  "median": 73.28838999999999,
+                  "spread_percent": 1.085230689715444
+                }
+              },
+              "peak_rss_kib": 32900,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "candidate_published": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 199.1026465,
+                  "spread_percent": 0.8260102806646241
+                },
+                "cpu_ms": {
+                  "median": 198.40700000000015,
+                  "spread_percent": 0.8457194305556248
+                },
+                "cleanup_ms": {
+                  "median": 0.836884,
+                  "spread_percent": 2.6580601550499905
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.8325000000000138,
+                  "spread_percent": 2.9841656516288673
+                },
+                "admission_ms": {
+                  "median": 8.716754,
+                  "spread_percent": 1.7479702978365985
+                },
+                "conversion_and_checks_ms": {
+                  "median": 73.455472,
+                  "spread_percent": 0.38204615735646374
+                },
+                "publication_admission_ms": {
+                  "median": 62.407475500000004,
+                  "spread_percent": 0.40775229527418855
+                },
+                "publication_ms": {
+                  "median": 54.48747899999999,
+                  "spread_percent": 0.5514000883729775
+                }
+              },
+              "peak_rss_kib": 32900,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "candidate_owned:cleanup_ms:spread",
+            "candidate_owned:cleanup_cpu_ms:spread"
+          ]
+        }
+      }
+    },
+    "recovery-btrfs-stored_64": {
+      "kind": "recovery",
+      "filesystem": "btrfs",
+      "fixture": "stored_64",
+      "phases": {
+        "initial": {
+          "modes": {
+            "staged": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 106.0371615,
+                  "spread_percent": 7.091854889473148
+                },
+                "cpu_ms": {
+                  "median": 81.5939999999999,
+                  "spread_percent": 9.886403029252833
+                },
+                "cleanup_ms": {
+                  "median": 39.723952499999996,
+                  "spread_percent": 2.6760352336479665
+                },
+                "cleanup_cpu_ms": {
+                  "median": 2.63799999999992,
+                  "spread_percent": 6.533050684138297
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.6955000000000666,
+                  "spread_percent": 2.0908435472404507
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 12.825479999999999,
+                  "spread_percent": 1.6132826349876561
+                },
+                "admission.cpu_ms": {
+                  "median": 7.606499999999983,
+                  "spread_percent": 14.241044116651501
+                },
+                "admission.wall_ms": {
+                  "median": 7.646483999999999,
+                  "spread_percent": 14.427107292653218
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.17950000000004707,
+                  "spread_percent": 13.687150838120466
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.186559,
+                  "spread_percent": 10.19178006263337
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.26900000000000546,
+                  "spread_percent": 2.071563088462569
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.26828949999999996,
+                  "spread_percent": 2.880688765049255
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 9.451500000000124,
+                  "spread_percent": 27.67331798413808
+                },
+                "intent_sync.wall_ms": {
+                  "median": 15.3957835,
+                  "spread_percent": 14.602091069341782
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.5010000000000616,
+                  "spread_percent": 32.047159699890734
+                },
+                "parent_sync.wall_ms": {
+                  "median": 6.486981999999999,
+                  "spread_percent": 6.909332024542647
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.2660000000000764,
+                  "spread_percent": 17.82178217833763
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.267239,
+                  "spread_percent": 19.116810866606304
+                },
+                "verification.cpu_ms": {
+                  "median": 57.936500000000024,
+                  "spread_percent": 1.0741932678089539
+                },
+                "verification.wall_ms": {
+                  "median": 58.1293575,
+                  "spread_percent": 1.0883031835616785
+                },
+                "rename_ms": {
+                  "median": 0.109794,
+                  "spread_percent": 9.260623925325472
+                },
+                "rename_cpu_ms": {
+                  "median": 0.10800000000006094,
+                  "spread_percent": 6.341463414678783
+                }
+              },
+              "peak_rss_kib": 32472,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "already_renamed": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 92.8850575,
+                  "spread_percent": 4.323079496757498
+                },
+                "cpu_ms": {
+                  "median": 74.55699999999996,
+                  "spread_percent": 2.4934427219242217
+                },
+                "cleanup_ms": {
+                  "median": 39.2362765,
+                  "spread_percent": 1.7471158534215103
+                },
+                "cleanup_cpu_ms": {
+                  "median": 2.5560000000002674,
+                  "spread_percent": 2.2615535889942917
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.5995000000001482,
+                  "spread_percent": 8.691983122380886
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 12.72588,
+                  "spread_percent": 2.351383640274496
+                },
+                "admission.cpu_ms": {
+                  "median": 7.780999999999949,
+                  "spread_percent": 3.8413471025466883
+                },
+                "admission.wall_ms": {
+                  "median": 7.812397499999999,
+                  "spread_percent": 4.0269474531476
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.19449999999994816,
+                  "spread_percent": 13.256484149763859
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.1916385,
+                  "spread_percent": 11.125332994319571
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 7.439000000000021,
+                  "spread_percent": 4.626187525815184
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 13.403569000000001,
+                  "spread_percent": 3.7573414587234844
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 0.41200000000003456,
+                  "spread_percent": 9.314359637791036
+                },
+                "intent_sync.wall_ms": {
+                  "median": 0.408625,
+                  "spread_percent": 6.92935262470129
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.0019999999999527063,
+                  "spread_percent": 33.33333334722839
+                },
+                "parent_sync.wall_ms": {
+                  "median": 0.001014,
+                  "spread_percent": 4.6618852459016535
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.1410000000000764,
+                  "spread_percent": 6.2043795621485875
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.13983449999999997,
+                  "spread_percent": 5.923260332038138
+                },
+                "verification.cpu_ms": {
+                  "median": 57.707000000000164,
+                  "spread_percent": 0.3777966483544448
+                },
+                "verification.wall_ms": {
+                  "median": 57.9406355,
+                  "spread_percent": 0.3570874673495039
+                }
+              },
+              "peak_rss_kib": 32472,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "staged:wall_ms:spread",
+            "staged:cpu_ms:spread",
+            "staged:cleanup_cpu_ms:spread",
+            "staged:admission.cpu_ms:spread",
+            "staged:admission.wall_ms:spread",
+            "staged:assessment_and_release.cpu_ms:spread",
+            "staged:assessment_and_release.wall_ms:spread",
+            "staged:intent_sync.cpu_ms:spread",
+            "staged:intent_sync.wall_ms:spread",
+            "staged:parent_sync.cpu_ms:spread",
+            "staged:parent_sync.wall_ms:spread",
+            "staged:rename_and_checks.cpu_ms:spread",
+            "staged:rename_and_checks.wall_ms:spread",
+            "staged:rename_ms:spread",
+            "staged:rename_cpu_ms:spread",
+            "already_renamed:acknowledgment.cpu_ms:spread",
+            "already_renamed:assessment_and_release.cpu_ms:spread",
+            "already_renamed:assessment_and_release.wall_ms:spread",
+            "already_renamed:intent_sync.cpu_ms:spread",
+            "already_renamed:intent_sync.wall_ms:spread",
+            "already_renamed:parent_sync.cpu_ms:spread",
+            "already_renamed:rename_and_checks.cpu_ms:spread",
+            "already_renamed:rename_and_checks.wall_ms:spread"
+          ]
+        },
+        "repeat": {
+          "modes": {
+            "staged": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 101.31784350000001,
+                  "spread_percent": 4.2552126672613655
+                },
+                "cpu_ms": {
+                  "median": 74.80250000000001,
+                  "spread_percent": 5.341841630264854
+                },
+                "cleanup_ms": {
+                  "median": 39.88233700000001,
+                  "spread_percent": 5.485998654537139
+                },
+                "cleanup_cpu_ms": {
+                  "median": 2.6949999999999363,
+                  "spread_percent": 4.060628742511452
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.6595000000002074,
+                  "spread_percent": 2.429764616599739
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 12.9176425,
+                  "spread_percent": 11.549260059024347
+                },
+                "admission.cpu_ms": {
+                  "median": 7.597000000000094,
+                  "spread_percent": 7.0572569906836025
+                },
+                "admission.wall_ms": {
+                  "median": 7.6342265000000005,
+                  "spread_percent": 7.150546904323907
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.17950000000018917,
+                  "spread_percent": 5.6179775282162
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.1757395,
+                  "spread_percent": 5.948303157652357
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.2580000000001519,
+                  "spread_percent": 5.83657587552906
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.2554105,
+                  "spread_percent": 6.103246621508518
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 7.711499999999887,
+                  "spread_percent": 4.5680839612461055
+                },
+                "intent_sync.wall_ms": {
+                  "median": 13.583776,
+                  "spread_percent": 5.865218758041579
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.46649999999999636,
+                  "spread_percent": 35.09389671368488
+                },
+                "parent_sync.wall_ms": {
+                  "median": 6.496581,
+                  "spread_percent": 5.729986852291802
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.24800000000027467,
+                  "spread_percent": 5.241935483907656
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.2581915,
+                  "spread_percent": 5.945460952975057
+                },
+                "verification.cpu_ms": {
+                  "median": 56.71699999999987,
+                  "spread_percent": 2.6476128153664513
+                },
+                "verification.wall_ms": {
+                  "median": 56.918034,
+                  "spread_percent": 2.667450135092664
+                },
+                "rename_ms": {
+                  "median": 0.0955355,
+                  "spread_percent": 7.232992715331132
+                },
+                "rename_cpu_ms": {
+                  "median": 0.09449999999978331,
+                  "spread_percent": 7.954545454583983
+                }
+              },
+              "peak_rss_kib": 32588,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "already_renamed": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 93.020077,
+                  "spread_percent": 0.7864948693805829
+                },
+                "cpu_ms": {
+                  "median": 74.52249999999975,
+                  "spread_percent": 1.7687740987821332
+                },
+                "cleanup_ms": {
+                  "median": 39.3877145,
+                  "spread_percent": 6.689726056039236
+                },
+                "cleanup_cpu_ms": {
+                  "median": 2.590000000000032,
+                  "spread_percent": 4.6962934213028
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.6220000000000141,
+                  "spread_percent": 5.040650406513736
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 12.797509,
+                  "spread_percent": 5.854835929555735
+                },
+                "admission.cpu_ms": {
+                  "median": 7.6684999999999945,
+                  "spread_percent": 5.026031237486106
+                },
+                "admission.wall_ms": {
+                  "median": 7.718282,
+                  "spread_percent": 4.936184267645083
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.18299999999999272,
+                  "spread_percent": 17.681159420254122
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.181046,
+                  "spread_percent": 22.63087734507443
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 7.48150000000021,
+                  "spread_percent": 21.065323781827814
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 13.5480185,
+                  "spread_percent": 9.06423399100451
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 0.4324999999994361,
+                  "spread_percent": 10.736579275998892
+                },
+                "intent_sync.wall_ms": {
+                  "median": 0.42841799999999997,
+                  "spread_percent": 9.743134294234835
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.0019999999999527063,
+                  "spread_percent": 33.333333330806965
+                },
+                "parent_sync.wall_ms": {
+                  "median": 0.0009714999999999999,
+                  "spread_percent": 6.432748538011701
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.1430000000000291,
+                  "spread_percent": 2.4561403510636293
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.1432635,
+                  "spread_percent": 2.2267500061903256
+                },
+                "verification.cpu_ms": {
+                  "median": 57.158499999999435,
+                  "spread_percent": 0.8028960354815373
+                },
+                "verification.wall_ms": {
+                  "median": 57.381435,
+                  "spread_percent": 0.8262158385666574
+                }
+              },
+              "peak_rss_kib": 32588,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "staged:cpu_ms:spread",
+            "staged:cleanup_ms:spread",
+            "staged:acknowledgment.wall_ms:spread",
+            "staged:admission.cpu_ms:spread",
+            "staged:admission.wall_ms:spread",
+            "staged:assessment_and_release.cpu_ms:spread",
+            "staged:assessment_and_release.wall_ms:spread",
+            "staged:bundle_sync.cpu_ms:spread",
+            "staged:bundle_sync.wall_ms:spread",
+            "staged:intent_sync.wall_ms:spread",
+            "staged:parent_sync.cpu_ms:spread",
+            "staged:parent_sync.wall_ms:spread",
+            "staged:rename_and_checks.cpu_ms:spread",
+            "staged:rename_and_checks.wall_ms:spread",
+            "staged:rename_ms:spread",
+            "staged:rename_cpu_ms:spread",
+            "already_renamed:cleanup_ms:spread",
+            "already_renamed:acknowledgment.cpu_ms:spread",
+            "already_renamed:acknowledgment.wall_ms:spread",
+            "already_renamed:admission.cpu_ms:spread",
+            "already_renamed:assessment_and_release.cpu_ms:spread",
+            "already_renamed:assessment_and_release.wall_ms:spread",
+            "already_renamed:bundle_sync.cpu_ms:spread",
+            "already_renamed:bundle_sync.wall_ms:spread",
+            "already_renamed:intent_sync.cpu_ms:spread",
+            "already_renamed:intent_sync.wall_ms:spread",
+            "already_renamed:parent_sync.cpu_ms:spread",
+            "already_renamed:parent_sync.wall_ms:spread"
+          ]
+        }
+      }
+    },
+    "recovery-btrfs-deflated_256": {
+      "kind": "recovery",
+      "filesystem": "btrfs",
+      "fixture": "deflated_256",
+      "phases": {
+        "initial": {
+          "modes": {
+            "staged": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 280.769083,
+                  "spread_percent": 2.7444996819505407
+                },
+                "cpu_ms": {
+                  "median": 245.46199999999988,
+                  "spread_percent": 2.368048234053388
+                },
+                "cleanup_ms": {
+                  "median": 41.972327,
+                  "spread_percent": 14.796173710492443
+                },
+                "cleanup_cpu_ms": {
+                  "median": 3.076499999999669,
+                  "spread_percent": 2.0341207349124035
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.6419999999993706,
+                  "spread_percent": 11.226944667205597
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 13.5153835,
+                  "spread_percent": 8.915528153824702
+                },
+                "admission.cpu_ms": {
+                  "median": 19.008999999999844,
+                  "spread_percent": 25.82348896806701
+                },
+                "admission.wall_ms": {
+                  "median": 19.128739500000002,
+                  "spread_percent": 25.982589486706487
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.16000000000008185,
+                  "spread_percent": 30.817610062234515
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.1571905,
+                  "spread_percent": 32.414622599260426
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.262000000000171,
+                  "spread_percent": 1.1472275334333704
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.260676,
+                  "spread_percent": 1.5952372676468762
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 10.099499999999807,
+                  "spread_percent": 14.445585770668679
+                },
+                "intent_sync.wall_ms": {
+                  "median": 23.4442455,
+                  "spread_percent": 34.10167800224979
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.46399999999988495,
+                  "spread_percent": 13.318777292479144
+                },
+                "parent_sync.wall_ms": {
+                  "median": 6.356122,
+                  "spread_percent": 6.355874103000536
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.24299999999993815,
+                  "spread_percent": 1.033057850860164
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.2440745,
+                  "spread_percent": 0.3421991533343771
+                },
+                "verification.cpu_ms": {
+                  "median": 215.41999999999962,
+                  "spread_percent": 2.090979947565841
+                },
+                "verification.wall_ms": {
+                  "median": 216.2087615,
+                  "spread_percent": 2.1515300695385653
+                },
+                "rename_ms": {
+                  "median": 0.09617150000000001,
+                  "spread_percent": 3.726784033689423
+                },
+                "rename_cpu_ms": {
+                  "median": 0.0945000000001528,
+                  "spread_percent": 3.2258064509188777
+                }
+              },
+              "peak_rss_kib": 31236,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "already_renamed": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 270.69629599999996,
+                  "spread_percent": 7.671278584716634
+                },
+                "cpu_ms": {
+                  "median": 245.2384999999997,
+                  "spread_percent": 2.036124658835159
+                },
+                "cleanup_ms": {
+                  "median": 40.150769999999994,
+                  "spread_percent": 4.508307987196836
+                },
+                "cleanup_cpu_ms": {
+                  "median": 3.1400000000001,
+                  "spread_percent": 5.582137161083089
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.5995000000002619,
+                  "spread_percent": 8.605851979297064
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 12.75729,
+                  "spread_percent": 2.4090250380829126
+                },
+                "admission.cpu_ms": {
+                  "median": 15.963999999999828,
+                  "spread_percent": 26.25221452730262
+                },
+                "admission.wall_ms": {
+                  "median": 16.033142,
+                  "spread_percent": 26.457892516585012
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.17499999999995453,
+                  "spread_percent": 17.365269460652264
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.1717805,
+                  "spread_percent": 17.881085125827244
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 10.363000000000284,
+                  "spread_percent": 31.3756640023785
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 22.954856499999998,
+                  "spread_percent": 60.08606843514963
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 0.4049999999999727,
+                  "spread_percent": 2.1170610212046137
+                },
+                "intent_sync.wall_ms": {
+                  "median": 0.400761,
+                  "spread_percent": 1.8520953142940222
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.0010000000002037268,
+                  "spread_percent": 150.00000003410605
+                },
+                "parent_sync.wall_ms": {
+                  "median": 0.0009469999999999999,
+                  "spread_percent": 10.432276657060523
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.14049999999974716,
+                  "spread_percent": 5.474452554709397
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.139509,
+                  "spread_percent": 5.4883459536204215
+                },
+                "verification.cpu_ms": {
+                  "median": 214.27649999999983,
+                  "spread_percent": 0.5751696972812192
+                },
+                "verification.wall_ms": {
+                  "median": 215.067093,
+                  "spread_percent": 0.5701524472192965
+                }
+              },
+              "peak_rss_kib": 31236,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "staged:cleanup_ms:spread",
+            "staged:acknowledgment.cpu_ms:spread",
+            "staged:acknowledgment.wall_ms:spread",
+            "staged:admission.cpu_ms:spread",
+            "staged:admission.wall_ms:spread",
+            "staged:assessment_and_release.cpu_ms:spread",
+            "staged:assessment_and_release.wall_ms:spread",
+            "staged:intent_sync.cpu_ms:spread",
+            "staged:intent_sync.wall_ms:spread",
+            "staged:parent_sync.cpu_ms:spread",
+            "staged:parent_sync.wall_ms:spread",
+            "already_renamed:wall_ms:spread",
+            "already_renamed:cleanup_cpu_ms:spread",
+            "already_renamed:acknowledgment.cpu_ms:spread",
+            "already_renamed:admission.cpu_ms:spread",
+            "already_renamed:admission.wall_ms:spread",
+            "already_renamed:assessment_and_release.cpu_ms:spread",
+            "already_renamed:assessment_and_release.wall_ms:spread",
+            "already_renamed:bundle_sync.cpu_ms:spread",
+            "already_renamed:bundle_sync.wall_ms:spread",
+            "already_renamed:parent_sync.cpu_ms:spread",
+            "already_renamed:parent_sync.wall_ms:spread",
+            "already_renamed:rename_and_checks.cpu_ms:spread",
+            "already_renamed:rename_and_checks.wall_ms:spread"
+          ]
+        },
+        "repeat": {
+          "modes": {
+            "staged": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 275.473211,
+                  "spread_percent": 1.7974692005404247
+                },
+                "cpu_ms": {
+                  "median": 249.1790000000001,
+                  "spread_percent": 2.1053102455451222
+                },
+                "cleanup_ms": {
+                  "median": 40.333834,
+                  "spread_percent": 1.567478454904525
+                },
+                "cleanup_cpu_ms": {
+                  "median": 3.3200000000001637,
+                  "spread_percent": 2.9191502368776323
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.7049999999999272,
+                  "spread_percent": 4.981412639234062
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 12.888866499999999,
+                  "spread_percent": 0.9659214192753618
+                },
+                "admission.cpu_ms": {
+                  "median": 15.858499999999822,
+                  "spread_percent": 53.79288233407999
+                },
+                "admission.wall_ms": {
+                  "median": 15.928418,
+                  "spread_percent": 54.07870398696908
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.1720000000013897,
+                  "spread_percent": 11.708860759334282
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.168656,
+                  "spread_percent": 11.665826135279511
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.26150000000052387,
+                  "spread_percent": 1.3409961695690198
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.2596775,
+                  "spread_percent": 1.770986745213543
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 11.683499999999754,
+                  "spread_percent": 31.299676827673206
+                },
+                "intent_sync.wall_ms": {
+                  "median": 21.1435095,
+                  "spread_percent": 18.4283748955945
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.6844999999993888,
+                  "spread_percent": 26.860841423516725
+                },
+                "parent_sync.wall_ms": {
+                  "median": 6.759672999999999,
+                  "spread_percent": 4.725946985662066
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.25349999999929196,
+                  "spread_percent": 5.731225295799036
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.25443,
+                  "spread_percent": 5.931238435626973
+                },
+                "verification.cpu_ms": {
+                  "median": 213.32199999999983,
+                  "spread_percent": 0.5346359837568482
+                },
+                "verification.wall_ms": {
+                  "median": 213.993631,
+                  "spread_percent": 0.5905724113890898
+                },
+                "rename_ms": {
+                  "median": 0.1060875,
+                  "spread_percent": 21.046160665287683
+                },
+                "rename_cpu_ms": {
+                  "median": 0.10449999999946158,
+                  "spread_percent": 20.320855616791267
+                }
+              },
+              "peak_rss_kib": 31236,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "already_renamed": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 267.663924,
+                  "spread_percent": 1.2618404875384792
+                },
+                "cpu_ms": {
+                  "median": 247.2599999999993,
+                  "spread_percent": 2.4951645290776536
+                },
+                "cleanup_ms": {
+                  "median": 40.224554999999995,
+                  "spread_percent": 1.5611257173625992
+                },
+                "cleanup_cpu_ms": {
+                  "median": 3.205500000000029,
+                  "spread_percent": 1.441102756843482
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.6350000000002183,
+                  "spread_percent": 5.675459632435786
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 12.807768,
+                  "spread_percent": 0.9730276106638458
+                },
+                "admission.cpu_ms": {
+                  "median": 15.806500000000597,
+                  "spread_percent": 19.842160982956123
+                },
+                "admission.wall_ms": {
+                  "median": 15.868853000000001,
+                  "spread_percent": 20.033588705947114
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.18149999999968713,
+                  "spread_percent": 3.0470914131122573
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.177675,
+                  "spread_percent": 3.2454505966805547
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 12.425000000000182,
+                  "spread_percent": 24.085153749827406
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 19.9166735,
+                  "spread_percent": 6.921420357510866
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 0.4070000000001528,
+                  "spread_percent": 3.439803439832545
+                },
+                "intent_sync.wall_ms": {
+                  "median": 0.40545299999999995,
+                  "spread_percent": 3.5385811024869263
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.0020000000004074536,
+                  "spread_percent": 0.0
+                },
+                "parent_sync.wall_ms": {
+                  "median": 0.0009500000000000001,
+                  "spread_percent": 4.7084002140181935
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.14199999999982538,
+                  "spread_percent": 1.4234875446170303
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.14111,
+                  "spread_percent": 0.799468924214608
+                },
+                "verification.cpu_ms": {
+                  "median": 213.93999999999915,
+                  "spread_percent": 0.5224653039374916
+                },
+                "verification.wall_ms": {
+                  "median": 214.679194,
+                  "spread_percent": 0.49931972034995553
+                }
+              },
+              "peak_rss_kib": 31236,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "staged:admission.cpu_ms:spread",
+            "staged:admission.wall_ms:spread",
+            "staged:assessment_and_release.cpu_ms:spread",
+            "staged:assessment_and_release.wall_ms:spread",
+            "staged:intent_sync.cpu_ms:spread",
+            "staged:intent_sync.wall_ms:spread",
+            "staged:parent_sync.cpu_ms:spread",
+            "staged:rename_and_checks.cpu_ms:spread",
+            "staged:rename_and_checks.wall_ms:spread",
+            "staged:rename_ms:spread",
+            "staged:rename_cpu_ms:spread",
+            "already_renamed:acknowledgment.cpu_ms:spread",
+            "already_renamed:admission.cpu_ms:spread",
+            "already_renamed:admission.wall_ms:spread",
+            "already_renamed:bundle_sync.cpu_ms:spread",
+            "already_renamed:bundle_sync.wall_ms:spread"
+          ]
+        }
+      }
+    },
+    "recovery-tmpfs-stored_64": {
+      "kind": "recovery",
+      "filesystem": "tmpfs",
+      "fixture": "stored_64",
+      "phases": {
+        "initial": {
+          "modes": {
+            "staged": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 64.3532515,
+                  "spread_percent": 1.6823258152227405
+                },
+                "cpu_ms": {
+                  "median": 64.12600000000008,
+                  "spread_percent": 1.642415880084247
+                },
+                "cleanup_ms": {
+                  "median": 0.8222505,
+                  "spread_percent": 4.2614992862142875
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.8154999999999291,
+                  "spread_percent": 4.320987654320851
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.20899999999994634,
+                  "spread_percent": 1.6867469878842023
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 0.21138099999999999,
+                  "spread_percent": 1.9417335531461521
+                },
+                "admission.cpu_ms": {
+                  "median": 8.802499999999966,
+                  "spread_percent": 3.29963982804784
+                },
+                "admission.wall_ms": {
+                  "median": 8.8375155,
+                  "spread_percent": 3.3135466262292024
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.11250000000001137,
+                  "spread_percent": 12.50000000004099
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.11308499999999999,
+                  "spread_percent": 12.463711736244498
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.24049999999999727,
+                  "spread_percent": 3.594080338276151
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.2390845,
+                  "spread_percent": 1.9523693751783977
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 0.27899999999999636,
+                  "spread_percent": 1.0752688172506408
+                },
+                "intent_sync.wall_ms": {
+                  "median": 0.278555,
+                  "spread_percent": 1.776729758016704
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.00100000000009004,
+                  "spread_percent": 1.1368683772161603e-08
+                },
+                "parent_sync.wall_ms": {
+                  "median": 0.0005095,
+                  "spread_percent": 2.204408817635284
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.16000000000005343,
+                  "spread_percent": 2.2012578616547707
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.1619895,
+                  "spread_percent": 2.161195666394633
+                },
+                "verification.cpu_ms": {
+                  "median": 54.24549999999995,
+                  "spread_percent": 1.819103817075196
+                },
+                "verification.wall_ms": {
+                  "median": 54.4440055,
+                  "spread_percent": 1.8698047036830312
+                },
+                "rename_ms": {
+                  "median": 0.025057,
+                  "spread_percent": 11.130633586655092
+                },
+                "rename_cpu_ms": {
+                  "median": 0.022500000000093223,
+                  "spread_percent": 2.2222222229352218
+                }
+              },
+              "peak_rss_kib": 32472,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "already_renamed": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 64.07352,
+                  "spread_percent": 3.6540771995870136
+                },
+                "cpu_ms": {
+                  "median": 63.809500000000014,
+                  "spread_percent": 3.70145678876177
+                },
+                "cleanup_ms": {
+                  "median": 0.8743609999999999,
+                  "spread_percent": 8.436440850994309
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.8634999999999877,
+                  "spread_percent": 8.602150537634845
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.22950000000003,
+                  "spread_percent": 7.847533632149939
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 0.233024,
+                  "spread_percent": 8.848440084563602
+                },
+                "admission.cpu_ms": {
+                  "median": 8.56450000000001,
+                  "spread_percent": 8.35040366308959
+                },
+                "admission.wall_ms": {
+                  "median": 8.598326499999999,
+                  "spread_percent": 8.284796069069733
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.11199999999996635,
+                  "spread_percent": 15.311004784828764
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.1126225,
+                  "spread_percent": 15.105403370591297
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.24249999999994998,
+                  "spread_percent": 2.0920502092028226
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.2412915,
+                  "spread_percent": 2.1484585719393046
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 0.2780000000001337,
+                  "spread_percent": 3.985507246427411
+                },
+                "intent_sync.wall_ms": {
+                  "median": 0.2771885,
+                  "spread_percent": 4.314439691174643
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.00100000000009004,
+                  "spread_percent": 49.999999988631316
+                },
+                "parent_sync.wall_ms": {
+                  "median": 0.00045850000000000003,
+                  "spread_percent": 10.795454545454541
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.1369999999999436,
+                  "spread_percent": 2.9304029302892776
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.137599,
+                  "spread_percent": 4.059951233367909
+                },
+                "verification.cpu_ms": {
+                  "median": 54.26049999999975,
+                  "spread_percent": 2.769937461951333
+                },
+                "verification.wall_ms": {
+                  "median": 54.4812875,
+                  "spread_percent": 2.7459964978674867
+                }
+              },
+              "peak_rss_kib": 32472,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "staged:assessment_and_release.cpu_ms:spread",
+            "staged:assessment_and_release.wall_ms:spread",
+            "staged:rename_ms:spread",
+            "already_renamed:cleanup_ms:spread",
+            "already_renamed:cleanup_cpu_ms:spread",
+            "already_renamed:acknowledgment.cpu_ms:spread",
+            "already_renamed:acknowledgment.wall_ms:spread",
+            "already_renamed:admission.cpu_ms:spread",
+            "already_renamed:admission.wall_ms:spread",
+            "already_renamed:assessment_and_release.cpu_ms:spread",
+            "already_renamed:assessment_and_release.wall_ms:spread",
+            "already_renamed:parent_sync.cpu_ms:spread",
+            "already_renamed:parent_sync.wall_ms:spread"
+          ]
+        },
+        "repeat": {
+          "modes": {
+            "staged": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 63.719480999999995,
+                  "spread_percent": 1.047134405946415
+                },
+                "cpu_ms": {
+                  "median": 63.52300000000014,
+                  "spread_percent": 1.0722169662568115
+                },
+                "cleanup_ms": {
+                  "median": 0.818444,
+                  "spread_percent": 2.9484430025113806
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.8130000000001019,
+                  "spread_percent": 2.611940298487836
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.21149999999988722,
+                  "spread_percent": 8.333333333464154
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 0.21352900000000002,
+                  "spread_percent": 8.440373070376793
+                },
+                "admission.cpu_ms": {
+                  "median": 8.288999999999987,
+                  "spread_percent": 1.243060584115141
+                },
+                "admission.wall_ms": {
+                  "median": 8.309817500000001,
+                  "spread_percent": 1.335276376321115
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.10950000000013915,
+                  "spread_percent": 6.161137440548381
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.10825499999999999,
+                  "spread_percent": 6.442395738948248
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.23900000000003274,
+                  "spread_percent": 4.935622317427368
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.2376835,
+                  "spread_percent": 5.575252768834349
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 0.27350000000004115,
+                  "spread_percent": 2.7726432531683276
+                },
+                "intent_sync.wall_ms": {
+                  "median": 0.2744225,
+                  "spread_percent": 2.5870038414649743
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.00100000000009004,
+                  "spread_percent": 2.2737367544323206e-08
+                },
+                "parent_sync.wall_ms": {
+                  "median": 0.000497,
+                  "spread_percent": 2.777777777777768
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.1654999999999518,
+                  "spread_percent": 4.374999999912843
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.1672785,
+                  "spread_percent": 4.554954550275436
+                },
+                "verification.cpu_ms": {
+                  "median": 54.164999999999964,
+                  "spread_percent": 0.13575663545224437
+                },
+                "verification.wall_ms": {
+                  "median": 54.328813,
+                  "spread_percent": 0.09578903158888874
+                },
+                "rename_ms": {
+                  "median": 0.026997,
+                  "spread_percent": 22.74879590302192
+                },
+                "rename_cpu_ms": {
+                  "median": 0.02500000000009095,
+                  "spread_percent": 23.91304347804597
+                }
+              },
+              "peak_rss_kib": 32616,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "already_renamed": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 63.725134999999995,
+                  "spread_percent": 0.7113284660817509
+                },
+                "cpu_ms": {
+                  "median": 63.55099999999982,
+                  "spread_percent": 0.6842751356274324
+                },
+                "cleanup_ms": {
+                  "median": 0.8404905,
+                  "spread_percent": 10.44072430867502
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.8345000000000482,
+                  "spread_percent": 10.995445673349735
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.2259999999998854,
+                  "spread_percent": 10.514018691502391
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 0.2291975,
+                  "spread_percent": 11.319561990723903
+                },
+                "admission.cpu_ms": {
+                  "median": 8.608500000000163,
+                  "spread_percent": 1.9981249267563506
+                },
+                "admission.wall_ms": {
+                  "median": 8.640823000000001,
+                  "spread_percent": 1.951846364733556
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.10600000000010823,
+                  "spread_percent": 12.935323382890406
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.109104,
+                  "spread_percent": 10.644940340288667
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.2399999999998954,
+                  "spread_percent": 4.068522483893644
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.23742449999999998,
+                  "spread_percent": 4.254293565623057
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 0.27750000000003183,
+                  "spread_percent": 3.3457249070044437
+                },
+                "intent_sync.wall_ms": {
+                  "median": 0.27710599999999996,
+                  "spread_percent": 2.879363296504911
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.0010000000001468834,
+                  "spread_percent": 1.7053025658242404e-08
+                },
+                "parent_sync.wall_ms": {
+                  "median": 0.00047900000000000004,
+                  "spread_percent": 6.229508196721323
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.13450000000011642,
+                  "spread_percent": 4.150943396260742
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.135031,
+                  "spread_percent": 6.27735286861133
+                },
+                "verification.cpu_ms": {
+                  "median": 53.92150000000004,
+                  "spread_percent": 0.9631103513341843
+                },
+                "verification.wall_ms": {
+                  "median": 54.1014,
+                  "spread_percent": 0.9370482759524901
+                }
+              },
+              "peak_rss_kib": 32616,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "staged:acknowledgment.cpu_ms:spread",
+            "staged:acknowledgment.wall_ms:spread",
+            "staged:assessment_and_release.cpu_ms:spread",
+            "staged:assessment_and_release.wall_ms:spread",
+            "staged:bundle_sync.wall_ms:spread",
+            "staged:rename_ms:spread",
+            "staged:rename_cpu_ms:spread",
+            "already_renamed:cleanup_ms:spread",
+            "already_renamed:cleanup_cpu_ms:spread",
+            "already_renamed:acknowledgment.cpu_ms:spread",
+            "already_renamed:acknowledgment.wall_ms:spread",
+            "already_renamed:assessment_and_release.cpu_ms:spread",
+            "already_renamed:assessment_and_release.wall_ms:spread",
+            "already_renamed:parent_sync.wall_ms:spread",
+            "already_renamed:rename_and_checks.wall_ms:spread"
+          ]
+        }
+      }
+    },
+    "recovery-tmpfs-deflated_256": {
+      "kind": "recovery",
+      "filesystem": "tmpfs",
+      "fixture": "deflated_256",
+      "phases": {
+        "initial": {
+          "modes": {
+            "staged": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 213.993945,
+                  "spread_percent": 0.5085483646908084
+                },
+                "cpu_ms": {
+                  "median": 213.15750000000025,
+                  "spread_percent": 0.49112193607401267
+                },
+                "cleanup_ms": {
+                  "median": 0.835932,
+                  "spread_percent": 27.665753636886837
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.8244999999997162,
+                  "spread_percent": 26.470588235328883
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.2219999999998663,
+                  "spread_percent": 46.80851063839852
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 0.22645300000000002,
+                  "spread_percent": 45.27878518449189
+                },
+                "admission.cpu_ms": {
+                  "median": 17.05749999999989,
+                  "spread_percent": 0.47568710359353616
+                },
+                "admission.wall_ms": {
+                  "median": 17.1182855,
+                  "spread_percent": 0.5131944798550059
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.11400000000003274,
+                  "spread_percent": 80.28846153817038
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.1136355,
+                  "spread_percent": 79.28234091241055
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.24399999999985766,
+                  "spread_percent": 2.474226804161206
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.2423515,
+                  "spread_percent": 2.8017484312964136
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 0.27849999999995134,
+                  "spread_percent": 3.669724770638383
+                },
+                "intent_sync.wall_ms": {
+                  "median": 0.2789135,
+                  "spread_percent": 3.0204470327537036
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.0015000000000782165,
+                  "spread_percent": 99.99999995452526
+                },
+                "parent_sync.wall_ms": {
+                  "median": 0.000516,
+                  "spread_percent": 48.979591836734706
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.16049999999995634,
+                  "spread_percent": 5.937499999963136
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.16230650000000002,
+                  "spread_percent": 6.594740600453286
+                },
+                "verification.cpu_ms": {
+                  "median": 194.92050000000017,
+                  "spread_percent": 0.4218009356777408
+                },
+                "verification.wall_ms": {
+                  "median": 195.676013,
+                  "spread_percent": 0.43785609426050254
+                },
+                "rename_ms": {
+                  "median": 0.0281585,
+                  "spread_percent": 31.053175012906564
+                },
+                "rename_cpu_ms": {
+                  "median": 0.02549999999996544,
+                  "spread_percent": 34.09090909106176
+                }
+              },
+              "peak_rss_kib": 31236,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "already_renamed": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 213.24512549999997,
+                  "spread_percent": 1.0044819321283205
+                },
+                "cpu_ms": {
+                  "median": 212.44849999999974,
+                  "spread_percent": 0.896949945091885
+                },
+                "cleanup_ms": {
+                  "median": 0.8505925000000001,
+                  "spread_percent": 19.07780531094023
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.8439999999998236,
+                  "spread_percent": 18.845917740933515
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.22500000000002274,
+                  "spread_percent": 8.144796380095155
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 0.22951,
+                  "spread_percent": 7.07936319013267
+                },
+                "admission.cpu_ms": {
+                  "median": 17.138999999999896,
+                  "spread_percent": 2.2671896357008503
+                },
+                "admission.wall_ms": {
+                  "median": 17.215107500000002,
+                  "spread_percent": 2.2970685858981987
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.11850000000004002,
+                  "spread_percent": 53.80952380888344
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.11691399999999999,
+                  "spread_percent": 52.69988708145728
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.2390000000004875,
+                  "spread_percent": 1.6877637131372358
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.23741400000000001,
+                  "spread_percent": 1.1290561878722238
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 0.2769999999998163,
+                  "spread_percent": 2.5830258302395714
+                },
+                "intent_sync.wall_ms": {
+                  "median": 0.277586,
+                  "spread_percent": 2.6578060851418783
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.0009999999999763531,
+                  "spread_percent": 3.410605131648481e-08
+                },
+                "parent_sync.wall_ms": {
+                  "median": 0.00046,
+                  "spread_percent": 5.960264900662238
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.13300000000026557,
+                  "spread_percent": 3.383458646358828
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.13225350000000002,
+                  "spread_percent": 3.1528770854613475
+                },
+                "verification.cpu_ms": {
+                  "median": 194.3030000000001,
+                  "spread_percent": 0.8889714878658639
+                },
+                "verification.wall_ms": {
+                  "median": 195.01207900000003,
+                  "spread_percent": 1.0020730768422803
+                }
+              },
+              "peak_rss_kib": 31236,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "staged:cleanup_ms:spread",
+            "staged:cleanup_cpu_ms:spread",
+            "staged:acknowledgment.cpu_ms:spread",
+            "staged:acknowledgment.wall_ms:spread",
+            "staged:assessment_and_release.cpu_ms:spread",
+            "staged:assessment_and_release.wall_ms:spread",
+            "staged:parent_sync.cpu_ms:spread",
+            "staged:parent_sync.wall_ms:spread",
+            "staged:rename_and_checks.cpu_ms:spread",
+            "staged:rename_and_checks.wall_ms:spread",
+            "staged:rename_ms:spread",
+            "staged:rename_cpu_ms:spread",
+            "already_renamed:cleanup_ms:spread",
+            "already_renamed:cleanup_cpu_ms:spread",
+            "already_renamed:acknowledgment.cpu_ms:spread",
+            "already_renamed:acknowledgment.wall_ms:spread",
+            "already_renamed:assessment_and_release.cpu_ms:spread",
+            "already_renamed:assessment_and_release.wall_ms:spread",
+            "already_renamed:parent_sync.wall_ms:spread"
+          ]
+        },
+        "repeat": {
+          "modes": {
+            "staged": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 212.005528,
+                  "spread_percent": 0.7638289405201615
+                },
+                "cpu_ms": {
+                  "median": 211.35549999999967,
+                  "spread_percent": 0.68509409954991
+                },
+                "cleanup_ms": {
+                  "median": 0.8623620000000001,
+                  "spread_percent": 6.869021265846342
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.858499999999367,
+                  "spread_percent": 6.634205721268205
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.2235000000009677,
+                  "spread_percent": 7.6190476190285406
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 0.224644,
+                  "spread_percent": 7.701311138171962
+                },
+                "admission.cpu_ms": {
+                  "median": 16.918000000000575,
+                  "spread_percent": 0.39649662681708886
+                },
+                "admission.wall_ms": {
+                  "median": 16.9844625,
+                  "spread_percent": 0.3511851752125761
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.12999999999919964,
+                  "spread_percent": 5.600000000148064
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.124572,
+                  "spread_percent": 5.216856376626877
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.23999999999887223,
+                  "spread_percent": 1.894736842106881
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.23692200000000002,
+                  "spread_percent": 1.8251071595297708
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 0.2735000000002401,
+                  "spread_percent": 0.915750915498803
+                },
+                "intent_sync.wall_ms": {
+                  "median": 0.2734305,
+                  "spread_percent": 0.6056851939750363
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.0010000000002037268,
+                  "spread_percent": 0.0
+                },
+                "parent_sync.wall_ms": {
+                  "median": 0.0004975,
+                  "spread_percent": 1.6243654822335252
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.1644999999999186,
+                  "spread_percent": 3.773584905425631
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.165057,
+                  "spread_percent": 3.309898219305296
+                },
+                "verification.cpu_ms": {
+                  "median": 193.44350000000054,
+                  "spread_percent": 0.6250405238914292
+                },
+                "verification.wall_ms": {
+                  "median": 194.04008,
+                  "spread_percent": 0.6745060158919847
+                },
+                "rename_ms": {
+                  "median": 0.0287855,
+                  "spread_percent": 6.577877369571894
+                },
+                "rename_cpu_ms": {
+                  "median": 0.02699999999958891,
+                  "spread_percent": 11.999999997635324
+                }
+              },
+              "peak_rss_kib": 31236,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "already_renamed": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 212.865328,
+                  "spread_percent": 0.11258231305903976
+                },
+                "cpu_ms": {
+                  "median": 212.26850000000013,
+                  "spread_percent": 0.19272231474307677
+                },
+                "cleanup_ms": {
+                  "median": 0.838003,
+                  "spread_percent": 7.088321597348468
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.8289999999997235,
+                  "spread_percent": 6.826801517138015
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.21700000000100772,
+                  "spread_percent": 1.8691588778686707
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 0.2183145,
+                  "spread_percent": 2.2715549047774397
+                },
+                "admission.cpu_ms": {
+                  "median": 16.96199999999908,
+                  "spread_percent": 0.4395150585538632
+                },
+                "admission.wall_ms": {
+                  "median": 17.020968500000002,
+                  "spread_percent": 0.5462756139711589
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.11049999999977445,
+                  "spread_percent": 17.972350231171873
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.109389,
+                  "spread_percent": 17.85886115680515
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.23800000000051114,
+                  "spread_percent": 0.6329113923419172
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.2367825,
+                  "spread_percent": 0.7341492425058771
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 0.27200000000050295,
+                  "spread_percent": 1.4760147599438778
+                },
+                "intent_sync.wall_ms": {
+                  "median": 0.272077,
+                  "spread_percent": 0.8396647982849004
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.0010000000002037268,
+                  "spread_percent": 0.0
+                },
+                "parent_sync.wall_ms": {
+                  "median": 0.0004525,
+                  "spread_percent": 2.5442477876105984
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.13400000000001455,
+                  "spread_percent": 0.3745318352825322
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.133301,
+                  "spread_percent": 0.746201055325324
+                },
+                "verification.cpu_ms": {
+                  "median": 194.16049999999984,
+                  "spread_percent": 0.24121721919740935
+                },
+                "verification.wall_ms": {
+                  "median": 194.6943605,
+                  "spread_percent": 0.18173341299163592
+                }
+              },
+              "peak_rss_kib": 31236,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "staged:cleanup_ms:spread",
+            "staged:cleanup_cpu_ms:spread",
+            "staged:acknowledgment.cpu_ms:spread",
+            "staged:acknowledgment.wall_ms:spread",
+            "staged:assessment_and_release.cpu_ms:spread",
+            "staged:assessment_and_release.wall_ms:spread",
+            "staged:rename_ms:spread",
+            "staged:rename_cpu_ms:spread",
+            "already_renamed:cleanup_ms:spread",
+            "already_renamed:cleanup_cpu_ms:spread",
+            "already_renamed:assessment_and_release.cpu_ms:spread",
+            "already_renamed:assessment_and_release.wall_ms:spread"
+          ]
+        }
+      }
+    },
+    "controls-btrfs-stored_64": {
+      "kind": "controls",
+      "filesystem": "btrfs",
+      "fixture": "stored_64",
+      "phases": {
+        "initial": {
+          "modes": {
+            "disabled": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 102.3548285,
+                  "spread_percent": 4.53787747386476
+                },
+                "cpu_ms": {
+                  "median": 77.57549999999998,
+                  "spread_percent": 5.935213261218042
+                },
+                "cleanup_ms": {
+                  "median": 39.652857499999996,
+                  "spread_percent": 1.9811904126826985
+                },
+                "cleanup_cpu_ms": {
+                  "median": 2.63250000000005,
+                  "spread_percent": 7.5321136629120655
+                }
+              },
+              "peak_rss_kib": 32628,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "enabled": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 101.0551725,
+                  "spread_percent": 4.074253282382445
+                },
+                "cpu_ms": {
+                  "median": 76.63499999999999,
+                  "spread_percent": 5.14794290512206
+                },
+                "cleanup_ms": {
+                  "median": 39.573176000000004,
+                  "spread_percent": 0.8211328555415509
+                },
+                "cleanup_cpu_ms": {
+                  "median": 2.611000000000047,
+                  "spread_percent": 5.288558214360539
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.6850000000000023,
+                  "spread_percent": 7.227138643064657
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 12.958802,
+                  "spread_percent": 0.8410058938232989
+                },
+                "admission.cpu_ms": {
+                  "median": 7.4780000000000655,
+                  "spread_percent": 2.5732330018845673
+                },
+                "admission.wall_ms": {
+                  "median": 7.517875,
+                  "spread_percent": 2.7047046230953997
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.17399999999992133,
+                  "spread_percent": 11.33720930239004
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.17103,
+                  "spread_percent": 10.877099440149296
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.2680000000000291,
+                  "spread_percent": 11.111111111138205
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.26573199999999997,
+                  "spread_percent": 11.46575112715935
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 9.541499999999985,
+                  "spread_percent": 23.099805730936062
+                },
+                "intent_sync.wall_ms": {
+                  "median": 15.597993500000001,
+                  "spread_percent": 13.37332211625002
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.5730000000000359,
+                  "spread_percent": 38.25265643443827
+                },
+                "parent_sync.wall_ms": {
+                  "median": 6.5765265,
+                  "spread_percent": 1.9866127437857983
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.25099999999986267,
+                  "spread_percent": 12.076271186414743
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.24943,
+                  "spread_percent": 12.525121197829714
+                },
+                "verification.cpu_ms": {
+                  "median": 57.52600000000001,
+                  "spread_percent": 1.247607508472126
+                },
+                "verification.wall_ms": {
+                  "median": 57.72018,
+                  "spread_percent": 1.2622786657235041
+                },
+                "rename_ms": {
+                  "median": 0.09224450000000001,
+                  "spread_percent": 12.511512731564455
+                },
+                "rename_cpu_ms": {
+                  "median": 0.09049999999990632,
+                  "spread_percent": 11.731843575326394
+                }
+              },
+              "peak_rss_kib": 32628,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "disabled:cpu_ms:spread",
+            "disabled:cleanup_cpu_ms:spread",
+            "enabled:cpu_ms:spread",
+            "enabled:cleanup_cpu_ms:spread",
+            "enabled:acknowledgment.cpu_ms:spread",
+            "enabled:assessment_and_release.cpu_ms:spread",
+            "enabled:assessment_and_release.wall_ms:spread",
+            "enabled:bundle_sync.cpu_ms:spread",
+            "enabled:bundle_sync.wall_ms:spread",
+            "enabled:intent_sync.cpu_ms:spread",
+            "enabled:intent_sync.wall_ms:spread",
+            "enabled:parent_sync.cpu_ms:spread",
+            "enabled:rename_and_checks.cpu_ms:spread",
+            "enabled:rename_and_checks.wall_ms:spread",
+            "enabled:rename_ms:spread",
+            "enabled:rename_cpu_ms:spread"
+          ]
+        },
+        "repeat": {
+          "modes": {
+            "disabled": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 105.3110565,
+                  "spread_percent": 8.187125333140566
+                },
+                "cpu_ms": {
+                  "median": 81.02550000000008,
+                  "spread_percent": 10.402311476828796
+                },
+                "cleanup_ms": {
+                  "median": 39.3277595,
+                  "spread_percent": 1.1907265331514427
+                },
+                "cleanup_cpu_ms": {
+                  "median": 2.651000000000181,
+                  "spread_percent": 2.7207001522427054
+                }
+              },
+              "peak_rss_kib": 32468,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "enabled": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 100.4610415,
+                  "spread_percent": 4.956068243460776
+                },
+                "cpu_ms": {
+                  "median": 76.15599999999995,
+                  "spread_percent": 6.582950310149571
+                },
+                "cleanup_ms": {
+                  "median": 39.308040500000004,
+                  "spread_percent": 1.1343653042314772
+                },
+                "cleanup_cpu_ms": {
+                  "median": 2.672999999999547,
+                  "spread_percent": 4.213323211235154
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.6804999999995971,
+                  "spread_percent": 5.061349693263173
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 12.842447499999999,
+                  "spread_percent": 1.8431589112389846
+                },
+                "admission.cpu_ms": {
+                  "median": 7.834500000000105,
+                  "spread_percent": 3.15377081292445
+                },
+                "admission.wall_ms": {
+                  "median": 7.86593,
+                  "spread_percent": 2.8517487211882075
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.17750000000035016,
+                  "spread_percent": 10.08645533153456
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.175024,
+                  "spread_percent": 9.810195069166205
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.2650000000003274,
+                  "spread_percent": 4.7892720305780845
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.2634525,
+                  "spread_percent": 4.166394967492004
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 8.445500000000038,
+                  "spread_percent": 43.663420240757624
+                },
+                "intent_sync.wall_ms": {
+                  "median": 14.397562,
+                  "spread_percent": 25.137764980650324
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.5634999999999764,
+                  "spread_percent": 36.253776434975094
+                },
+                "parent_sync.wall_ms": {
+                  "median": 6.571972499999999,
+                  "spread_percent": 3.6971467632170407
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.23499999999967258,
+                  "spread_percent": 8.528784647879807
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.23536250000000003,
+                  "spread_percent": 8.095495941060115
+                },
+                "verification.cpu_ms": {
+                  "median": 56.89450000000011,
+                  "spread_percent": 1.0872840053161692
+                },
+                "verification.wall_ms": {
+                  "median": 57.0752185,
+                  "spread_percent": 1.0393575480124762
+                },
+                "rename_ms": {
+                  "median": 0.0840345,
+                  "spread_percent": 5.043262846355856
+                },
+                "rename_cpu_ms": {
+                  "median": 0.0829999999998563,
+                  "spread_percent": 4.216867469924068
+                }
+              },
+              "peak_rss_kib": 32468,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "disabled:wall_ms:spread",
+            "disabled:cpu_ms:spread",
+            "enabled:cpu_ms:spread",
+            "enabled:acknowledgment.cpu_ms:spread",
+            "enabled:assessment_and_release.cpu_ms:spread",
+            "enabled:assessment_and_release.wall_ms:spread",
+            "enabled:intent_sync.cpu_ms:spread",
+            "enabled:intent_sync.wall_ms:spread",
+            "enabled:parent_sync.cpu_ms:spread",
+            "enabled:rename_and_checks.cpu_ms:spread",
+            "enabled:rename_and_checks.wall_ms:spread",
+            "enabled:rename_ms:spread"
+          ]
+        }
+      }
+    },
+    "controls-btrfs-deflated_256": {
+      "kind": "controls",
+      "filesystem": "btrfs",
+      "fixture": "deflated_256",
+      "phases": {
+        "initial": {
+          "modes": {
+            "disabled": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 278.702096,
+                  "spread_percent": 4.82923677548539
+                },
+                "cpu_ms": {
+                  "median": 250.26900000000091,
+                  "spread_percent": 5.408819404768472
+                },
+                "cleanup_ms": {
+                  "median": 40.071933,
+                  "spread_percent": 2.1803229632432197
+                },
+                "cleanup_cpu_ms": {
+                  "median": 3.187000000000353,
+                  "spread_percent": 5.0659376004744905
+                }
+              },
+              "peak_rss_kib": 31236,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "enabled": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 276.917367,
+                  "spread_percent": 2.287727276495688
+                },
+                "cpu_ms": {
+                  "median": 247.10550000000012,
+                  "spread_percent": 1.3402935109041447
+                },
+                "cleanup_ms": {
+                  "median": 40.3804945,
+                  "spread_percent": 1.4370370994861492
+                },
+                "cleanup_cpu_ms": {
+                  "median": 3.209499999999707,
+                  "spread_percent": 10.298627925753866
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.7105000000001382,
+                  "spread_percent": 10.825545171269813
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 12.8318355,
+                  "spread_percent": 0.5931322828697683
+                },
+                "admission.cpu_ms": {
+                  "median": 16.152000000000157,
+                  "spread_percent": 31.08438447247517
+                },
+                "admission.wall_ms": {
+                  "median": 16.2198115,
+                  "spread_percent": 31.210112237745303
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.1730000000002292,
+                  "spread_percent": 6.990881459014453
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.168485,
+                  "spread_percent": 8.53724833569942
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.262000000000171,
+                  "spread_percent": 2.9013539651575604
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.25849099999999997,
+                  "spread_percent": 1.687114188566441
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 11.604000000000042,
+                  "spread_percent": 11.043026508594256
+                },
+                "intent_sync.wall_ms": {
+                  "median": 19.4683745,
+                  "spread_percent": 8.208299719443835
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.596000000000231,
+                  "spread_percent": 15.321100917463193
+                },
+                "parent_sync.wall_ms": {
+                  "median": 6.574675000000001,
+                  "spread_percent": 1.8359890310645444
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.2359999999998763,
+                  "spread_percent": 10.234541577785873
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.2354385,
+                  "spread_percent": 10.080278041343727
+                },
+                "verification.cpu_ms": {
+                  "median": 214.44249999999988,
+                  "spread_percent": 0.4536855830618247
+                },
+                "verification.wall_ms": {
+                  "median": 215.155034,
+                  "spread_percent": 0.4278745810010198
+                },
+                "rename_ms": {
+                  "median": 0.090251,
+                  "spread_percent": 14.692066661120817
+                },
+                "rename_cpu_ms": {
+                  "median": 0.08949999999981628,
+                  "spread_percent": 13.559322033532517
+                }
+              },
+              "peak_rss_kib": 31236,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "disabled:cpu_ms:spread",
+            "disabled:cleanup_cpu_ms:spread",
+            "enabled:cleanup_cpu_ms:spread",
+            "enabled:acknowledgment.cpu_ms:spread",
+            "enabled:admission.cpu_ms:spread",
+            "enabled:admission.wall_ms:spread",
+            "enabled:assessment_and_release.cpu_ms:spread",
+            "enabled:assessment_and_release.wall_ms:spread",
+            "enabled:intent_sync.cpu_ms:spread",
+            "enabled:intent_sync.wall_ms:spread",
+            "enabled:parent_sync.cpu_ms:spread",
+            "enabled:rename_and_checks.cpu_ms:spread",
+            "enabled:rename_and_checks.wall_ms:spread",
+            "enabled:rename_ms:spread",
+            "enabled:rename_cpu_ms:spread"
+          ]
+        },
+        "repeat": {
+          "modes": {
+            "disabled": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 272.7800255,
+                  "spread_percent": 0.3518760900688145
+                },
+                "cpu_ms": {
+                  "median": 242.95800000000054,
+                  "spread_percent": 0.9828519724488061
+                },
+                "cleanup_ms": {
+                  "median": 40.447482,
+                  "spread_percent": 1.2060316990316622
+                },
+                "cleanup_cpu_ms": {
+                  "median": 3.2005000000003747,
+                  "spread_percent": 8.094783715012355
+                }
+              },
+              "peak_rss_kib": 31236,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "enabled": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 270.4882,
+                  "spread_percent": 1.6725641796908608
+                },
+                "cpu_ms": {
+                  "median": 241.73799999999994,
+                  "spread_percent": 1.7120594827965796
+                },
+                "cleanup_ms": {
+                  "median": 40.214671499999994,
+                  "spread_percent": 1.1498406541068595
+                },
+                "cleanup_cpu_ms": {
+                  "median": 3.2779999999997926,
+                  "spread_percent": 0.5359056806189866
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.6909999999998035,
+                  "spread_percent": 3.736263736497447
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 12.810918000000001,
+                  "spread_percent": 0.9549903162624274
+                },
+                "admission.cpu_ms": {
+                  "median": 15.53349999999989,
+                  "spread_percent": 3.0143868463058388
+                },
+                "admission.wall_ms": {
+                  "median": 15.6051605,
+                  "spread_percent": 2.9677638957139596
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.17399999999906868,
+                  "spread_percent": 5.604719764081434
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.1696595,
+                  "spread_percent": 5.947972220461617
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.2614999999996144,
+                  "spread_percent": 2.2988505751407207
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.2598415,
+                  "spread_percent": 2.3753754741176802
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 8.670000000000528,
+                  "spread_percent": 6.556050182107143
+                },
+                "intent_sync.wall_ms": {
+                  "median": 21.5462895,
+                  "spread_percent": 36.129137029179326
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.5795000000002801,
+                  "spread_percent": 3.5621198957755063
+                },
+                "parent_sync.wall_ms": {
+                  "median": 6.5546865,
+                  "spread_percent": 1.5908814436922825
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.23849999999947613,
+                  "spread_percent": 3.5714285716878846
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.2381095,
+                  "spread_percent": 4.635549602823619
+                },
+                "verification.cpu_ms": {
+                  "median": 212.7390000000005,
+                  "spread_percent": 0.7014853178861191
+                },
+                "verification.wall_ms": {
+                  "median": 213.418674,
+                  "spread_percent": 0.6605356527267014
+                },
+                "rename_ms": {
+                  "median": 0.089582,
+                  "spread_percent": 2.5770711543804614
+                },
+                "rename_cpu_ms": {
+                  "median": 0.08849999999983993,
+                  "spread_percent": 2.3121387279970262
+                }
+              },
+              "peak_rss_kib": 31236,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "disabled:cleanup_cpu_ms:spread",
+            "enabled:assessment_and_release.cpu_ms:spread",
+            "enabled:assessment_and_release.wall_ms:spread",
+            "enabled:intent_sync.cpu_ms:spread",
+            "enabled:intent_sync.wall_ms:spread"
+          ]
+        }
+      }
+    },
+    "controls-tmpfs-stored_64": {
+      "kind": "controls",
+      "filesystem": "tmpfs",
+      "fixture": "stored_64",
+      "phases": {
+        "initial": {
+          "modes": {
+            "disabled": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 65.82180350000002,
+                  "spread_percent": 1.41321991463903
+                },
+                "cpu_ms": {
+                  "median": 65.54899999999986,
+                  "spread_percent": 1.3870858061321378
+                },
+                "cleanup_ms": {
+                  "median": 0.7748995000000001,
+                  "spread_percent": 20.70720697584758
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.7690000000000055,
+                  "spread_percent": 20.57667103537146
+                }
+              },
+              "peak_rss_kib": 32596,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "enabled": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 65.094967,
+                  "spread_percent": 4.413017397239671
+                },
+                "cpu_ms": {
+                  "median": 64.85499999999996,
+                  "spread_percent": 4.439561459840324
+                },
+                "cleanup_ms": {
+                  "median": 0.890088,
+                  "spread_percent": 4.072541846087829
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.8820000000000618,
+                  "spread_percent": 4.190919674047011
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.23400000000020782,
+                  "spread_percent": 5.882352941237667
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 0.235865,
+                  "spread_percent": 7.144878538793065
+                },
+                "admission.cpu_ms": {
+                  "median": 8.749999999999943,
+                  "spread_percent": 6.718659734256427
+                },
+                "admission.wall_ms": {
+                  "median": 8.7870795,
+                  "spread_percent": 6.817561026347674
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.12150000000008276,
+                  "spread_percent": 27.705627705662227
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.1205145,
+                  "spread_percent": 25.62117299570772
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.24349999999992633,
+                  "spread_percent": 1.8633540372702928
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.241888,
+                  "spread_percent": 1.5170954881429832
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 0.28000000000014325,
+                  "spread_percent": 2.350813743307145
+                },
+                "intent_sync.wall_ms": {
+                  "median": 0.279284,
+                  "spread_percent": 2.1496980396470633
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.0009999999999763531,
+                  "spread_percent": 0.0
+                },
+                "parent_sync.wall_ms": {
+                  "median": 0.000544,
+                  "spread_percent": 7.6056338028169135
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.1690000000000964,
+                  "spread_percent": 4.819277108458486
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.16988199999999998,
+                  "spread_percent": 4.892297873990148
+                },
+                "verification.cpu_ms": {
+                  "median": 55.18200000000013,
+                  "spread_percent": 4.360449291404134
+                },
+                "verification.wall_ms": {
+                  "median": 55.388543,
+                  "spread_percent": 4.306215719071971
+                },
+                "rename_ms": {
+                  "median": 0.030696499999999998,
+                  "spread_percent": 11.055892164204506
+                },
+                "rename_cpu_ms": {
+                  "median": 0.028999999999882675,
+                  "spread_percent": 5.263157895030779
+                }
+              },
+              "peak_rss_kib": 32596,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "disabled:cleanup_ms:spread",
+            "disabled:cleanup_cpu_ms:spread",
+            "enabled:acknowledgment.cpu_ms:spread",
+            "enabled:acknowledgment.wall_ms:spread",
+            "enabled:admission.cpu_ms:spread",
+            "enabled:admission.wall_ms:spread",
+            "enabled:assessment_and_release.cpu_ms:spread",
+            "enabled:assessment_and_release.wall_ms:spread",
+            "enabled:parent_sync.wall_ms:spread",
+            "enabled:rename_ms:spread",
+            "enabled:rename_cpu_ms:spread"
+          ]
+        },
+        "repeat": {
+          "modes": {
+            "disabled": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 67.623337,
+                  "spread_percent": 1.0306924636300563
+                },
+                "cpu_ms": {
+                  "median": 67.30499999999995,
+                  "spread_percent": 1.0397439714203482
+                },
+                "cleanup_ms": {
+                  "median": 0.9421305,
+                  "spread_percent": 22.72813060584591
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.9299999999998363,
+                  "spread_percent": 22.323600973229386
+                }
+              },
+              "peak_rss_kib": 32576,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "enabled": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 66.7730345,
+                  "spread_percent": 0.4192263600598656
+                },
+                "cpu_ms": {
+                  "median": 66.53300000000002,
+                  "spread_percent": 0.3731287143609263
+                },
+                "cleanup_ms": {
+                  "median": 0.9020315,
+                  "spread_percent": 13.878581053649697
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.8929999999999723,
+                  "spread_percent": 13.426966292138598
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.22749999999996362,
+                  "spread_percent": 49.292452830245416
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 0.2296365,
+                  "spread_percent": 47.06976572007644
+                },
+                "admission.cpu_ms": {
+                  "median": 9.104499999999916,
+                  "spread_percent": 2.7323628219475093
+                },
+                "admission.wall_ms": {
+                  "median": 9.1556635,
+                  "spread_percent": 2.6207248491000312
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.1260000000000332,
+                  "spread_percent": 66.07929515429932
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.1251945,
+                  "spread_percent": 66.41060051451018
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.24149999999985994,
+                  "spread_percent": 2.719665271756555
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.2383215,
+                  "spread_percent": 3.5681573390099253
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 0.277499999999975,
+                  "spread_percent": 2.181818181850348
+                },
+                "intent_sync.wall_ms": {
+                  "median": 0.27796350000000003,
+                  "spread_percent": 2.5215413550277566
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.0010000000002037268,
+                  "spread_percent": 49.99999997726263
+                },
+                "parent_sync.wall_ms": {
+                  "median": 0.0005245,
+                  "spread_percent": 20.969337289812053
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.16750000000024556,
+                  "spread_percent": 0.5988023950925792
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.170758,
+                  "spread_percent": 1.9721553501165001
+                },
+                "verification.cpu_ms": {
+                  "median": 56.49999999999994,
+                  "spread_percent": 0.693202345676025
+                },
+                "verification.wall_ms": {
+                  "median": 56.6943665,
+                  "spread_percent": 0.6984222717468125
+                },
+                "rename_ms": {
+                  "median": 0.0275075,
+                  "spread_percent": 20.79343926191697
+                },
+                "rename_cpu_ms": {
+                  "median": 0.02600000000001046,
+                  "spread_percent": 21.7391304331493
+                }
+              },
+              "peak_rss_kib": 32576,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "disabled:cleanup_ms:spread",
+            "disabled:cleanup_cpu_ms:spread",
+            "enabled:cleanup_ms:spread",
+            "enabled:cleanup_cpu_ms:spread",
+            "enabled:acknowledgment.cpu_ms:spread",
+            "enabled:acknowledgment.wall_ms:spread",
+            "enabled:assessment_and_release.cpu_ms:spread",
+            "enabled:assessment_and_release.wall_ms:spread",
+            "enabled:parent_sync.cpu_ms:spread",
+            "enabled:parent_sync.wall_ms:spread",
+            "enabled:rename_ms:spread",
+            "enabled:rename_cpu_ms:spread"
+          ]
+        }
+      }
+    },
+    "controls-tmpfs-deflated_256": {
+      "kind": "controls",
+      "filesystem": "tmpfs",
+      "fixture": "deflated_256",
+      "phases": {
+        "initial": {
+          "modes": {
+            "disabled": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 222.38309450000003,
+                  "spread_percent": 2.696140667951452
+                },
+                "cpu_ms": {
+                  "median": 221.66399999999987,
+                  "spread_percent": 2.7374397995425737
+                },
+                "cleanup_ms": {
+                  "median": 0.878784,
+                  "spread_percent": 7.794667468491068
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.8704999999997654,
+                  "spread_percent": 7.456404089039204
+                }
+              },
+              "peak_rss_kib": 31236,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "enabled": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 217.1403785,
+                  "spread_percent": 4.517729512409785
+                },
+                "cpu_ms": {
+                  "median": 216.3365000000008,
+                  "spread_percent": 4.492645945332163
+                },
+                "cleanup_ms": {
+                  "median": 0.892503,
+                  "spread_percent": 6.679811853601403
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.8749999999996589,
+                  "spread_percent": 6.993424985054486
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.22349999999983083,
+                  "spread_percent": 7.3113207543679115
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 0.224684,
+                  "spread_percent": 7.41618860122637
+                },
+                "admission.cpu_ms": {
+                  "median": 17.0450000000003,
+                  "spread_percent": 2.8661482267022587
+                },
+                "admission.wall_ms": {
+                  "median": 17.106659,
+                  "spread_percent": 2.9310491681994844
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.11800000000005184,
+                  "spread_percent": 2.5531914896919083
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.11862049999999999,
+                  "spread_percent": 2.157213964623428
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.2419999999999618,
+                  "spread_percent": 13.33333333334281
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.2415295,
+                  "spread_percent": 13.581529557251137
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 0.29199999999968895,
+                  "spread_percent": 11.904761904692496
+                },
+                "intent_sync.wall_ms": {
+                  "median": 0.292545,
+                  "spread_percent": 12.549589788496451
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.0010000000002037268,
+                  "spread_percent": 100.00000002273737
+                },
+                "parent_sync.wall_ms": {
+                  "median": 0.0005955,
+                  "spread_percent": 13.568773234200737
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.16249999999990905,
+                  "spread_percent": 9.493670886131511
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.16266400000000003,
+                  "spread_percent": 9.74318476166407
+                },
+                "verification.cpu_ms": {
+                  "median": 198.0055000000002,
+                  "spread_percent": 4.586672044803675
+                },
+                "verification.wall_ms": {
+                  "median": 198.722958,
+                  "spread_percent": 4.6132889916631115
+                },
+                "rename_ms": {
+                  "median": 0.0255255,
+                  "spread_percent": 24.478713261203012
+                },
+                "rename_cpu_ms": {
+                  "median": 0.02449999999953434,
+                  "spread_percent": 23.913043475595998
+                }
+              },
+              "peak_rss_kib": 31236,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "disabled:cleanup_ms:spread",
+            "disabled:cleanup_cpu_ms:spread",
+            "enabled:cleanup_ms:spread",
+            "enabled:cleanup_cpu_ms:spread",
+            "enabled:acknowledgment.cpu_ms:spread",
+            "enabled:acknowledgment.wall_ms:spread",
+            "enabled:bundle_sync.cpu_ms:spread",
+            "enabled:bundle_sync.wall_ms:spread",
+            "enabled:intent_sync.cpu_ms:spread",
+            "enabled:intent_sync.wall_ms:spread",
+            "enabled:parent_sync.cpu_ms:spread",
+            "enabled:parent_sync.wall_ms:spread",
+            "enabled:rename_and_checks.cpu_ms:spread",
+            "enabled:rename_and_checks.wall_ms:spread",
+            "enabled:rename_ms:spread",
+            "enabled:rename_cpu_ms:spread"
+          ]
+        },
+        "repeat": {
+          "modes": {
+            "disabled": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 215.43325850000002,
+                  "spread_percent": 2.8478600870826654
+                },
+                "cpu_ms": {
+                  "median": 214.5310000000004,
+                  "spread_percent": 2.7923088790088757
+                },
+                "cleanup_ms": {
+                  "median": 0.872557,
+                  "spread_percent": 13.252612021154754
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.8654999999994288,
+                  "spread_percent": 12.958435207777107
+                }
+              },
+              "peak_rss_kib": 31236,
+              "allocation_bytes": [
+                8388608
+              ]
+            },
+            "enabled": {
+              "metrics": {
+                "wall_ms": {
+                  "median": 215.2668805,
+                  "spread_percent": 1.0464845313682636
+                },
+                "cpu_ms": {
+                  "median": 214.54550000000063,
+                  "spread_percent": 0.9923113382663606
+                },
+                "cleanup_ms": {
+                  "median": 0.9106215,
+                  "spread_percent": 8.29664211927037
+                },
+                "cleanup_cpu_ms": {
+                  "median": 0.9025000000000318,
+                  "spread_percent": 8.159618820722848
+                },
+                "acknowledgment.cpu_ms": {
+                  "median": 0.21949999999969805,
+                  "spread_percent": 3.2183908044208343
+                },
+                "acknowledgment.wall_ms": {
+                  "median": 0.220025,
+                  "spread_percent": 3.3332492472383457
+                },
+                "admission.cpu_ms": {
+                  "median": 17.361000000001013,
+                  "spread_percent": 1.679646634900056
+                },
+                "admission.wall_ms": {
+                  "median": 17.42085,
+                  "spread_percent": 1.6904287762130155
+                },
+                "assessment_and_release.cpu_ms": {
+                  "median": 0.11100000000033106,
+                  "spread_percent": 8.018867924858153
+                },
+                "assessment_and_release.wall_ms": {
+                  "median": 0.11024900000000001,
+                  "spread_percent": 8.499268005626327
+                },
+                "bundle_sync.cpu_ms": {
+                  "median": 0.241999999999166,
+                  "spread_percent": 6.903765690148389
+                },
+                "bundle_sync.wall_ms": {
+                  "median": 0.23959000000000003,
+                  "spread_percent": 6.7526050739555865
+                },
+                "intent_sync.cpu_ms": {
+                  "median": 0.2755000000001928,
+                  "spread_percent": 5.646630236994543
+                },
+                "intent_sync.wall_ms": {
+                  "median": 0.277566,
+                  "spread_percent": 5.639530353249889
+                },
+                "parent_sync.cpu_ms": {
+                  "median": 0.0010000000002037268,
+                  "spread_percent": 49.99999990905053
+                },
+                "parent_sync.wall_ms": {
+                  "median": 0.0005215,
+                  "spread_percent": 8.293153326904523
+                },
+                "rename_and_checks.cpu_ms": {
+                  "median": 0.16649999999890497,
+                  "spread_percent": 5.607476635524611
+                },
+                "rename_and_checks.wall_ms": {
+                  "median": 0.166835,
+                  "spread_percent": 6.3045330447707215
+                },
+                "verification.cpu_ms": {
+                  "median": 196.13850000000002,
+                  "spread_percent": 1.1059637301078062
+                },
+                "verification.wall_ms": {
+                  "median": 196.78414949999998,
+                  "spread_percent": 1.1591722806530314
+                },
+                "rename_ms": {
+                  "median": 0.025350499999999998,
+                  "spread_percent": 10.773407898202736
+                },
+                "rename_cpu_ms": {
+                  "median": 0.02399999999965985,
+                  "spread_percent": 10.638297872083102
+                }
+              },
+              "peak_rss_kib": 31236,
+              "allocation_bytes": [
+                8388608
+              ]
+            }
+          },
+          "unresolved": [
+            "disabled:cleanup_ms:spread",
+            "disabled:cleanup_cpu_ms:spread",
+            "enabled:cleanup_ms:spread",
+            "enabled:cleanup_cpu_ms:spread",
+            "enabled:assessment_and_release.cpu_ms:spread",
+            "enabled:assessment_and_release.wall_ms:spread",
+            "enabled:bundle_sync.cpu_ms:spread",
+            "enabled:bundle_sync.wall_ms:spread",
+            "enabled:intent_sync.cpu_ms:spread",
+            "enabled:intent_sync.wall_ms:spread",
+            "enabled:parent_sync.cpu_ms:spread",
+            "enabled:parent_sync.wall_ms:spread",
+            "enabled:rename_and_checks.cpu_ms:spread",
+            "enabled:rename_and_checks.wall_ms:spread",
+            "enabled:rename_ms:spread",
+            "enabled:rename_cpu_ms:spread"
+          ]
+        }
+      }
+    }
+  }
+}

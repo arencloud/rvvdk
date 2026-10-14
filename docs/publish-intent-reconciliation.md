@@ -1,12 +1,13 @@
-# Explicit PublishIntent reconciliation — design (R6.1d.1a)
+# Explicit PublishIntent reconciliation (R6.1d.1)
 
-Status: design accepted on 2026-10-14 against `b717207`. Implementation and local
-qualification are **R6.1d.1b**, still open. No recovery API or runtime behavior is
-added by this design. The existing APIs continue to reject uncertain publication.
+Status: implemented in **R6.1d.1b**, following the R6.1d.1a design accepted on
+2026-10-14. The bounded local qualification and its filesystem/performance limits
+are recorded in the [implementation report](benchmark-results/2026-10-14-r61d1b/README.md).
+Ambiguous namespaces, pending transactions and Published-at-entry remain blocked.
 
 An interrupted bundle rename can leave a valid output PublishIntent and exactly
 one owned bundle at its recorded stage or destination. An explicit local operation
-will freshly verify that bundle, finish the necessary durability work and acknowledge
+freshly verifies that bundle, finishes the necessary durability work and acknowledges
 Published. This contract covers the **output journal** (`OutputState`), not the
 older source job's similarly named `JobState::PublishIntent`.
 
@@ -14,14 +15,14 @@ older source job's similarly named `JobState::PublishIntent`.
 [Qualification plan](publish-intent-reconciliation-qualification.md) defines the
 required fault, process-loss, correctness and performance evidence.
 
-## Existing code and required changes
+## Implementation structure
 
 | Existing implementation | Design consequence |
 |---|---|
 | [`JobStore::read_output` and `OutputRecord`](../crates/rvvdk-vsphere/src/ownership/retained/output.rs) validate checksum, version, source/store binding and sequence | Keep version 2, PublishIntent sequence 7 and Published sequence 8. No new record fields, rollback or sequence reset. |
 | [`assess_publication`, `location` and `bundle`](../crates/rvvdk-vsphere/src/ownership/retained/output/publication.rs) report namespace/identity observations | Assessment remains read-only. Reconciliation must independently admit records and contents under both locks. |
-| `VerifiedOutput::open` requires Verified, and `validate` resolves the private stage | Factor private validation to accept a checked bundle under a pinned parent; keep the public Verified-only admission rule. |
-| `PublicationReport::is_success` requires a rename observed in that invocation | Add a distinct reconciliation report for the already-renamed case. Preserve the existing publication success predicate. |
+| `VerifiedOutput::open` requires Verified; private `CheckedOutput::validate_at` checks a bundle under a pinned parent | Normal publication still uses its private stage. Reconciliation selects its admitted location; the public Verified-only admission rule is unchanged. |
+| `PublicationReport::is_success` requires a rename observed in that invocation | `ReconciliationReport` handles the already-renamed case without changing the existing publication success predicate. |
 | `commit_output` can leave a visible new record before store-directory sync completes | A visible intent is insufficient: sync and recheck the admitted intent before any new rename. A visible Published record after a failed acknowledgment is not success. |
 | [`RetainedArtifact::open`, `admit` and `check_current`](../crates/rvvdk-vsphere/src/ownership/retained.rs) require a retained CompletedLease source and check encoded bytes | Reuse fresh native/source admission. Retain the source journal and payload unchanged; no VMware connection is needed. |
 | `cleanup_output` rejects PublishIntent | Preserve that rule. Reconciliation is a separate explicit request; it never deletes resources. |
@@ -90,7 +91,7 @@ assessment cannot prove that an earlier sync completed.
 
 ## API and report contract
 
-Planned public shape (not yet implemented):
+Public API (synchronous, consuming):
 
 ```rust,ignore
 impl JobStore {
@@ -105,16 +106,16 @@ impl JobStore {
 }
 ```
 
-Use a private shared content validator rather than constructing a VerifiedOutput
-from an uncertain record. Its bundle parent/component come only from an admitted
-branch; they are not public caller-controlled path arguments. Reuse the current
-record/member/metadata limits and the full comparison algorithm. Preserve existing
-normal publication gates and regression tests when extracting the helper.
+Private `CheckedOutput` shares content validation with normal publication without
+constructing a VerifiedOutput from an uncertain record. Its bundle parent/component
+come only from an admitted branch. The existing record/member/metadata limits, full
+comparison algorithm and normal publication gates remain in force. The operation
+keeps the original store available for assessment even when source admission fails.
 
 The new report contains only closed enums, booleans, byte counts and existing
 sanitized errors/assessment. Do not serialize paths, IDs, fingerprints or digests.
 
-| Planned report field | Meaning |
+| Report field | Meaning |
 |---|---|
 | `origin: Option<ReconciliationOrigin>` | `Staged` or `AlreadyRenamed`, set after valid record/namespace admission; an observation, not a capability. |
 | `logical_bytes_verified` | Bytes actually compared during this call; partial progress may survive failure. |
@@ -203,9 +204,9 @@ flowchart TD
 ```
 
 Every failure edge retains resources; the diagram shows the successful branches.
-This ordering is a protocol to implement and qualify, not evidence of implemented
-power-loss recovery. SIGKILL tests cover process loss; physical storage/controller
-failure requires separate qualification.
+The [qualification evidence](benchmark-results/2026-10-14-r61d1b/README.md) covers
+this protocol's local process-loss boundaries. SIGKILL tests do not establish
+physical power-loss/controller recovery.
 
 ## Failure and retry policy
 
@@ -234,10 +235,12 @@ it nor treats it as evidence of durable publication. Source cleanup is also sepa
 
 ## Implementation boundary and acceptance
 
-R6.1d.1b must implement the consuming API, shared private validator, report and
-deterministic fault hooks, then satisfy the linked qualification matrix. Keep the
-normal publication and pipeline behavior unchanged. No production flag may bypass
-verification, intent persistence or sync barriers.
+R6.1d.1b implements the consuming API, shared private validator, separate report and
+private fault hooks in [reconciliation.rs](../crates/rvvdk-vsphere/src/ownership/retained/output/publication/reconciliation.rs).
+Production instantiates the direct OS implementation of the private sync/rename seam;
+tests inject errors without changing the persistence protocol. Normal publication and
+pipeline behavior remain unchanged. No production flag bypasses verification, intent
+persistence or sync barriers.
 
 Verification is O(logical capacity), with fixed comparison buffers and the existing
 bounded native map/decoder. Reconciliation does not copy or rewrite RAW, allocate a
@@ -245,9 +248,8 @@ second image, alter sparse layout or advance the source journal. The prior profi
 identifies hashing cost but supplies no license to skip it. Record actual traversal,
 allocation and sync/commit counts rather than treating this design as a measurement.
 
-R6.1d.1 stays open until implementation, independent byte/fault/process-loss checks,
-repeated timing/plots and documentation are complete. Local synthetic fixtures are
-sufficient for that bounded package; no ESXi credentials, new VM, license or vCenter
-are required. A later runner/live integration must be explicitly qualified. PERF.0,
-transaction repair, uncertain Published attestation and general production recovery
-remain open.
+The bounded package uses local synthetic fixtures; no ESXi credentials, new VM,
+license or vCenter are required. See the linked report for completed evidence and
+remaining limits. A later runner/live integration must be explicitly qualified.
+PERF.0, ambient tmpfs allocation behavior, transaction repair, uncertain Published
+attestation and general production recovery remain open.

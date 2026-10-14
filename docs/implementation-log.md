@@ -3001,28 +3001,56 @@ privacy checks accompany the commit. No Rust tests or benchmarks were rerun,
 no new performance result is claimed, and no lab connection or VM action occurred.
 R6.1d.1a is complete; its parent R6.1d.1 and production recovery remain open.
 
+## R6.1d.1b — explicit PublishIntent reconciliation (2026-10-14)
+
+Implemented the consuming `JobStore::reconcile_publication` API and separate
+`ReconciliationReport` for exactly the staged-only and final-only owned intent cases.
+Both locks remain held through fresh source/native/full RAW verification, member and
+bundle syncs, exact intent re-sync/recheck, optional no-replace rename, both parent
+syncs and durable Published acknowledgment. Cancellation/deadline checks follow
+binding checks immediately before rename and acknowledgment. Normal Verified
+admission remains unchanged; shared private validation preserves every check.
+Transactions, ambiguous/unstamped resources and Published-at-entry remain blocked.
+
+[Evidence, plots and reproduction](benchmark-results/2026-10-14-r61d1b/README.md)
+map the accepted matrix to independent byte/identity/allocation checks, exclusions,
+I/O fault seams, cancellation and 51 SIGKILL boundaries. Workspace checks passed:
+**753 tests, 0 failures, 11 ignored**, all-target Clippy and formatting. Release
+focused tests passed on Btrfs and isolated tmpfs. Eight counter smoke operations
+confirmed the expected full verification work. The final **864-operation** campaign
+retains all initial observations and required longer repeats. Normal Published
+repeat-median wall changes were +0.58% on Btrfs and +0.69% on tmpfs; CPU changes
++0.97% and +0.76%. Phase/cleanup variation and recording-control outliers remain;
+negative recording ratios do not establish speedup or zero overhead.
+
+Ambient `/tmp` allocation grew during a read/hash/fsync workload and a standalone
+probe reproduced it without rvddk. Cause remains unresolved. The final campaign
+used a private tmpfs mount with unchanged strict allocation checks; every final
+recovery/control RAW remained 8 MiB allocated before/after recovery and oracle.
+Failed diagnostics and the preliminary campaign interrupted for final control checks
+are retained separately. This qualifies bounded local behavior, not physical power
+loss, universal filesystem behavior, capacity, live integration or general recovery.
+No VMware/SSH access or VM action occurred. R6.1d.1b and bounded parent R6.1d.1 are
+complete; PERF.0 and broader R6 recovery remain open. This package is committed locally.
+
 ## Next session
 
-Start **R6.1d.1b — implement and locally qualify explicit PublishIntent reconciliation**
-using the accepted contract and qualification matrix:
+Start **R6.1d.2a — design fresh Published-at-entry attestation**:
 
-1. Freeze the unchanged normal-publication release reference and source/fixture
-   manifest. Factor private bundle validation while keeping VerifiedOutput admission
-   and every existing validation/durability gate unchanged.
-2. Implement the consuming local API and distinct report for exactly the two admitted
-   PublishIntent namespace pairs. Re-establish intent durability, use no-replace rename
-   only for staged output, sync both parents and durably acknowledge Published.
-3. Add independent full-byte checks, all exclusion cases, shared-deadline/cancellation,
-   identity/namespace substitutions, fault injection and real SIGKILL tests. Include
-   visible intent before its directory sync and visible Published after failed ack.
-   Keep transaction repair, unstamped-stage adoption and Published attestation separate.
-4. Measure the unchanged normal path against its frozen reference and both new recovery
-   branches separately. Retain phase/wall/CPU/RSS/allocation, independent comparisons,
-   required longer repeats, all adverse observations and SVG/PNG plots. Keep PERF.0 open.
-5. Complete appropriate workspace checks, record evidence/limits, update this log and
-   roadmap, scan staged files for private data, and commit the bounded package locally.
-   Local fixtures need no ESXi, credentials, new license, VM or vCenter. Defer live
-   runner integration until a focused qualification requires it.
+1. Review uncertain/lost acknowledgment cases against existing state, transaction,
+   source and namespace bindings. Define what a fresh operation can prove without
+   claiming it witnessed a previous commit.
+2. Specify consuming lock custody, fresh full source/RAW verification, required syncs,
+   report semantics, cancellation/deadline behavior and failure/retry boundaries.
+   Keep transaction repair and unstamped-stage adoption separate.
+3. Save an ADR, contract and concrete fault/process-loss/performance acceptance matrix
+   before implementing new mutation behavior. Preserve the current benchmark package
+   and all existing verification/durability gates.
+4. Update the roadmap/log, validate documentation and commit the bounded design.
+   This local work needs no ESXi, new license, VM, vCenter or credentials.
+
+Keep ambient tmpfs sparse-allocation diagnosis and controlled phase/cleanup timing
+in PERF.0; a stable private control does not close either finding.
 
 The first measured tuning target is digest-equivalent SHA-256 throughput on CPUs
 without SHA-NI. Before accepting a candidate, preserve the algorithm and every full

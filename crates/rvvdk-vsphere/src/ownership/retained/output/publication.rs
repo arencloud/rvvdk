@@ -280,123 +280,24 @@ impl VerifiedOutput {
         value.validate(&control)?;
         Ok(value)
     }
+    fn binding(&self) -> CheckedOutput<'_> {
+        CheckedOutput {
+            artifact: &self.artifact,
+            record: &self.record,
+            journal: self.journal,
+        }
+    }
     fn current(&self) -> Result<()> {
-        let store = &self.artifact.store;
-        if exists(&store.directory, &txn(&self.record.output))? {
-            return Err(OwnershipError::Uncertain);
-        }
-        if store.read_output(
-            OutputId(self.record.output),
-            self.artifact.metadata.id(),
-            &self.artifact.source,
-        )? != self.record
-            || identity(&open_at(
-                &store.directory,
-                &name(&self.record.output),
-                false,
-                false,
-                false,
-            )?)? != self.journal
-        {
-            return Err(OwnershipError::Identity);
-        }
-        Ok(())
+        self.binding().current()
     }
     fn validate(&self, control: &Control<'_>) -> Result<()> {
-        control.check()?;
-        self.current()?;
-        let contract: [u8; 32] = Sha256::digest(
-            self.artifact
-                .metadata
-                .to_json()
-                .map_err(|_| OwnershipError::Content)?,
-        )
-        .into();
-        if contract != self.record.container_contract {
-            return Err(OwnershipError::Content);
-        }
-        let dir = bundle(
+        self.binding().validate_at(
             &self.artifact.store.directory,
             &stage(&self.record.operation),
-            &self.record,
-            false,
-        )?
-        .unwrap();
-        let stamp = self.record.stage.as_ref().unwrap();
-        let mut meta = check_named(&dir, OUTPUT_MEMBERS[1], stamp.members[1], false)?;
-        let bytes = bounded_read(&mut meta, MAX_METADATA_BYTES as u64)?;
-        let parsed: OutputMetadata =
-            serde_json::from_slice(&bytes).map_err(|_| OwnershipError::Content)?;
-        let expected = OutputMetadata {
-            version: 1,
-            format: RawFormat::Raw,
-            output: self.record.output,
-            artifact: self.record.artifact,
-            source: self.record.source,
-            container_contract: contract,
-            logical_bytes: self.record.logical_bytes,
-            raw_sha256: self.record.raw_sha256.ok_or(OwnershipError::Content)?,
-            verification: OutputVerification::LogicalSourceReadback,
-        };
-        if parsed != expected {
-            return Err(OwnershipError::Content);
-        }
-        let mut raw = check_named(&dir, OUTPUT_MEMBERS[0], stamp.members[0], false)?;
-        if raw.metadata().map_err(|_| OwnershipError::Io)?.len() != self.record.logical_bytes {
-            return Err(OwnershipError::Content);
-        }
-        let mut input = vec![0; 1 << 20];
-        let mut output = vec![0; 1 << 20];
-        let mut offset = 0;
-        let mut hash = Sha256::new();
-        while offset < self.record.logical_bytes {
-            control.check()?;
-            let n = (self.record.logical_bytes - offset).min(input.len() as u64) as usize;
-            profiled!(
-                "logical_source_read",
-                n,
-                self.artifact
-                    .disk
-                    .as_ref()
-                    .ok_or(OwnershipError::Transition)?
-                    .read_exact_at(offset, &mut input[..n])
-            )
-            .map_err(|_| OwnershipError::Content)?;
-            profiled!("raw_read", n, raw.read_exact(&mut output[..n]))
-                .map_err(|_| OwnershipError::Io)?;
-            if !profiled!("logical_compare", n, input[..n] == output[..n]) {
-                return Err(OwnershipError::Content);
-            }
-            profiled!("logical_hash", n, hash.update(&output[..n]));
-            offset += n as u64;
-        }
-        if <[u8; 32]>::from(hash.finalize()) != expected.raw_sha256
-            || raw.metadata().map_err(|_| OwnershipError::Io)?.len() != self.record.logical_bytes
-        {
-            return Err(OwnershipError::Content);
-        }
-        drop(raw);
-        drop(meta);
-        let mut meta = check_named(&dir, OUTPUT_MEMBERS[1], stamp.members[1], false)?;
-        if bounded_read(&mut meta, MAX_METADATA_BYTES as u64)? != bytes {
-            return Err(OwnershipError::Content);
-        }
-        check_current(
-            &self.artifact.store,
-            &self.artifact.record,
-            &self.artifact.source,
-            &self.artifact.metadata,
-            self.artifact.journal,
             control,
-        )?;
-        self.current()?;
-        drop(bundle(
-            &self.artifact.store.directory,
-            &stage(&self.record.operation),
-            &self.record,
-            false,
-        )?);
-        control.check()
+            &mut 0,
+            &mut |_, _| Ok(()),
+        )
     }
     pub fn publish(
         self,
@@ -525,6 +426,130 @@ impl VerifiedOutput {
             Err(e) => report.assessment_error = Some(e),
         }
         report
+    }
+}
+// Private borrowed validation, independent of the public Verified-only capability.
+struct CheckedOutput<'a> {
+    artifact: &'a RetainedArtifact,
+    record: &'a OutputRecord,
+    journal: Identity,
+}
+impl CheckedOutput<'_> {
+    fn current(&self) -> Result<()> {
+        let store = &self.artifact.store;
+        if exists(&store.directory, &txn(&self.record.output))? {
+            return Err(OwnershipError::Uncertain);
+        }
+        if store.read_output(
+            OutputId(self.record.output),
+            self.artifact.metadata.id(),
+            &self.artifact.source,
+        )? != *self.record
+            || identity(&open_at(
+                &store.directory,
+                &name(&self.record.output),
+                false,
+                false,
+                false,
+            )?)? != self.journal
+        {
+            return Err(OwnershipError::Identity);
+        }
+        Ok(())
+    }
+    fn validate_at(
+        &self,
+        parent: &File,
+        component: &str,
+        control: &Control<'_>,
+        verified: &mut u64,
+        hook: &mut impl FnMut(OutputState, &str) -> Result<()>,
+    ) -> Result<()> {
+        control.check()?;
+        self.current()?;
+        let contract: [u8; 32] = Sha256::digest(
+            self.artifact
+                .metadata
+                .to_json()
+                .map_err(|_| OwnershipError::Content)?,
+        )
+        .into();
+        if contract != self.record.container_contract {
+            return Err(OwnershipError::Content);
+        }
+        let dir = bundle(parent, component, self.record, false)?.unwrap();
+        let stamp = self.record.stage.as_ref().unwrap();
+        let mut meta = check_named(&dir, OUTPUT_MEMBERS[1], stamp.members[1], false)?;
+        let bytes = bounded_read(&mut meta, MAX_METADATA_BYTES as u64)?;
+        let parsed: OutputMetadata =
+            serde_json::from_slice(&bytes).map_err(|_| OwnershipError::Content)?;
+        let expected = OutputMetadata {
+            version: 1,
+            format: RawFormat::Raw,
+            output: self.record.output,
+            artifact: self.record.artifact,
+            source: self.record.source,
+            container_contract: contract,
+            logical_bytes: self.record.logical_bytes,
+            raw_sha256: self.record.raw_sha256.ok_or(OwnershipError::Content)?,
+            verification: OutputVerification::LogicalSourceReadback,
+        };
+        if parsed != expected {
+            return Err(OwnershipError::Content);
+        }
+        let mut raw = check_named(&dir, OUTPUT_MEMBERS[0], stamp.members[0], false)?;
+        if raw.metadata().map_err(|_| OwnershipError::Io)?.len() != self.record.logical_bytes {
+            return Err(OwnershipError::Content);
+        }
+        let mut input = vec![0; 1 << 20];
+        let mut output = vec![0; 1 << 20];
+        let mut offset = 0;
+        let mut hash = Sha256::new();
+        while offset < self.record.logical_bytes {
+            control.check()?;
+            let n = (self.record.logical_bytes - offset).min(input.len() as u64) as usize;
+            profiled!(
+                "logical_source_read",
+                n,
+                self.artifact
+                    .disk
+                    .as_ref()
+                    .ok_or(OwnershipError::Transition)?
+                    .read_exact_at(offset, &mut input[..n])
+            )
+            .map_err(|_| OwnershipError::Content)?;
+            profiled!("raw_read", n, raw.read_exact(&mut output[..n]))
+                .map_err(|_| OwnershipError::Io)?;
+            if !profiled!("logical_compare", n, input[..n] == output[..n]) {
+                return Err(OwnershipError::Content);
+            }
+            profiled!("logical_hash", n, hash.update(&output[..n]));
+            offset += n as u64;
+            *verified = offset;
+            hook(self.record.state, "verified_chunk")?;
+        }
+        if <[u8; 32]>::from(hash.finalize()) != expected.raw_sha256
+            || raw.metadata().map_err(|_| OwnershipError::Io)?.len() != self.record.logical_bytes
+        {
+            return Err(OwnershipError::Content);
+        }
+        drop(raw);
+        drop(meta);
+        let mut meta = check_named(&dir, OUTPUT_MEMBERS[1], stamp.members[1], false)?;
+        if bounded_read(&mut meta, MAX_METADATA_BYTES as u64)? != bytes {
+            return Err(OwnershipError::Content);
+        }
+        check_current(
+            &self.artifact.store,
+            &self.artifact.record,
+            &self.artifact.source,
+            &self.artifact.metadata,
+            self.artifact.journal,
+            control,
+        )?;
+        self.current()?;
+        drop(bundle(parent, component, self.record, false)?);
+        control.check()
     }
 }
 impl JobStore {
@@ -672,5 +697,7 @@ impl JobStore {
         result
     }
 }
+mod reconciliation;
+pub use reconciliation::{ReconciliationOrigin, ReconciliationReport};
 #[cfg(test)]
 mod tests;
