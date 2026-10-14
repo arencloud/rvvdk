@@ -405,11 +405,13 @@ following bounded packages in order:
    performs fresh full verification, ten syncs and exact candidate promotion.
    [Local tests, syscall audit and repeated plots](benchmark-results/2026-10-14-r61d3b/README.md) retain bounded evidence
    and performance limits. Partial/foreign pairs and source transactions stay blocked.
-   **Next R6.1d.4a:** design explicit local recovery commands for the existing APIs,
-   with private source selection/original parent binding, separate reports and awaited
-   cancellation. No new host, license, VM, vCenter or lab access is needed. Live/runner
-   integration requires its own focused qualification. Capacity proof and production
-   R6 integration/recovery remain open.
+   **R6.1d.4a complete:** [explicit local recovery command design](local-recovery-cli.md)
+   specifies private original selection including pin provenance, four separate verbs,
+   joined cancellation and sanitized reports/exit semantics. Runtime is unchanged.
+   **Next R6.1d.4b:** implement and locally qualify these commands under the
+   [test/performance plan](local-recovery-cli-qualification.md). No new host, license,
+   VM, vCenter or lab access is needed. Live retained-artifact qualification, capacity
+   proof and general production R6 integration/recovery remain open.
 6. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9
    in later independently qualified steps. Keep PERF.0/R4.4 and the discovery
    variance/controlled-TLS investigation visible while adding new features.

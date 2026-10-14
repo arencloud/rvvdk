@@ -147,3 +147,12 @@ these preview contracts.
 [ADR-0031](adr/0031-local-copy-publication.md) records transfer decisions.
 See the [implementation log](implementation-log.md) and
 [R3.2 performance evidence](benchmark-results/2026-09-29-r32/README.md).
+
+## Planned local recovery commands
+
+[R6.1d.4a](local-recovery-cli.md) specifies a separate `recover` group with explicit
+assessment, intent reconciliation, Published attestation and exact acknowledgment
+transaction recovery. **These commands are not implemented yet.** Existing disk
+commands and their schemas are unchanged. [R6.1d.4b qualification](local-recovery-cli-qualification.md)
+covers private config, signals, report delivery, library gates and startup/performance
+costs before this interface becomes available.

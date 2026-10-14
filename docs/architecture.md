@@ -1888,4 +1888,36 @@ source transaction recovery or remote replay is introduced.
 [acceptance matrix](published-acknowledgment-recovery-qualification.md),
 [local qualification, timings and plots](benchmark-results/2026-10-14-r61d3b/README.md).
 PERF.0, general recovery, CLI/live integration, larger working sets and power-loss
-qualification remain open. Next is R6.1d.4a: explicit local recovery command design.
+qualification remain open. R6.1d.4a now defines the local command adapter below.
+
+### Explicit local recovery command adapter (R6.1d.4 design)
+
+R6.1d.4a defines `rvddk recover assess|reconcile-intent|attest-published|acknowledge-published`.
+**Not implemented.** R6.1d.4b is the next implementation/qualification package.
+The existing library APIs and public CLI behavior remain unchanged in this step.
+
+A separate strict 16 KiB private config carries schema version, original endpoint/pin
+and provenance, source selection, artifact/output IDs, absolute parent paths and a
+bounded timeout. Original pin provenance is part of the binding; the pipeline
+example's implicit TrustOnFirstUse must not become a guessed value in recovery.
+No credentials, live inventory, config override or automatic operation selection.
+
+Open both original parents once, with nonblocking store-then-destination locks.
+Assessment gathers independent source/output observations; each effectful verb calls
+exactly one consuming API with remaining timeout and preserves its success predicate.
+A scoped, joined relay maps the CLI's borrowed cancellation predicate to the library's
+owned token while filesystem work runs synchronously. Async callers must await a
+whole blocking invocation; no task abandonment or timeout race. No Tokio runtime is
+added for the synchronous CLI and no duplicate recovery path is added to the runner.
+
+Command-specific sanitized reports preserve native flags and separate errors. Exit
+zero distinguishes assessed/completed, 1 operational/output failure, 2 invalid input,
+3 explicit unknown outcome and 130/143 pure cancellation. No failure exit promises
+unchanged resources, and assessment never proves durability. Output failure retains
+the operation result when possible and never triggers replay. The qualification plan
+covers actual binary signal/flush/redaction behavior and records startup/thread/
+linkage costs separately from full library verification and persistence.
+
+[Command contract](local-recovery-cli.md), [ADR-0071](adr/0071-explicit-local-recovery-commands.md),
+[implementation and qualification](local-recovery-cli-qualification.md).
+The design supplies no new performance measurements or PERF.0 clearance.

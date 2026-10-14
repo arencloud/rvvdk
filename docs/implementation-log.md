@@ -3218,22 +3218,60 @@ working sets and CLI/live integration remain unqualified here. Ambient tmpfs
 allocation and the preceding timing findings stay open. R6.1d.3b and bounded parent
 R6.1d.3 are complete; general recovery and PERF.0 remain open. Committed locally.
 
+## R6.1d.4a — explicit local recovery command design (2026-10-14)
+
+Reviewed CLI argument/dispatch/output/signal handling, the pipeline example's private
+config, source binding constructors, both cancellation types and all four local
+recovery APIs against `f764b4d`. Saved [ADR-0071](adr/0071-explicit-local-recovery-commands.md),
+the [command/config/report contract](local-recovery-cli.md) and the
+[implementation and qualification matrix](local-recovery-cli-qualification.md).
+
+The design selects `rvddk recover assess|reconcile-intent|attest-published|acknowledge-published`.
+Each invocation calls only its explicit operation. A separate bounded private v1
+config supplies the original selection, pin provenance, IDs and parents; it rejects
+credential/export fields. The pipeline example's implicit TrustOnFirstUse is part
+of the source binding and must be projected explicitly, without a fresh network call.
+
+Store/destination locks are opened once in fixed order; one command deadline supplies
+the selected API's remaining budget. Filesystem work is synchronous with a joined,
+scoped cancellation relay bridging the CLI predicate to the library token. Signal
+handling, async awaiting, unwind and report-delivery behavior are specified without
+changing library gates. Assessment retains independent source/output observations;
+it does not decode candidates, verify content or dispatch mutation. Sanitized reports
+retain native errors/flags and distinct assessed/completed/failure/unknown/cancelled
+exits. No nonzero exit implies untouched resources, and missing output never permits
+replay. No cleanup, transaction editing, automatic retry or remote operation is added.
+
+The saved acceptance plan covers authored real transition histories, strict bounded
+input/file safety, original bindings, exclusions, both locks, cancellation/signals,
+thread lifetime, redaction, output/flush failure, process loss and syscall effects.
+It preserves frozen library baselines and measures existing CLI regression plus new
+startup/config/relay/report costs with raw samples, longer repeats and PNG/SVG plots.
+Prior timing variance, ambient tmpfs allocation and PERF.0 remain open.
+
+This is documentation only: no Rust/dependency changes, runtime tests, benchmarks,
+ESXi/SSH connection, VM action or credentials were needed. Validation checked 651
+relative links, ten heading fragments and 27 symbol anchors in thirteen source files;
+all ten changed files are Markdown. Diff hygiene and staged privacy are checked
+before the local commit. R6.1d.4a is complete; R6.1d.4b, parent R6.1d.4 and general
+recovery stay open.
+
 ## Next session
 
-Start **R6.1d.4a — design explicit local recovery commands**:
+Start **R6.1d.4b — implement and locally qualify explicit recovery commands**:
 
-1. Review CLI/runner configuration and report conventions against the implemented
-   assessment, intent reconciliation, fresh attestation and exact acknowledgment
-   recovery APIs. Define explicit verbs; do not dispatch mutations from assessment.
-2. Specify private source/artifact/output selection, original store/destination locks,
-   bounded input parsing, sanitized output and distinct success/failure/uncertainty
-   exit semantics. Preserve each library operation's admission gates and fresh work.
-3. Plan awaited blocking execution and cooperative cancellation without abandoning
-   worker ownership. Keep cleanup, partial/source transaction repair and remote replay
-   separate. Save an ADR, command contract and authored-fixture/error/performance matrix
-   before adding runtime integration; retain library baselines and CLI startup costs.
-4. Update roadmap/log, validate the documentation and commit the bounded design step.
-   No ESXi, license, VM, vCenter, SSH or credentials are needed for this local design.
+1. Freeze the unchanged CLI and library release baselines, source/binary hashes and
+   environment before changing the CLI's dependencies, parser, dispatch or control.
+2. Implement the four verbs, private config, one-operation dispatch, joined token
+   relay, deadline and original parent lifetime, sanitized reports and final flush.
+   Preserve existing CLI behavior and all native library admission/success gates.
+3. Execute the saved authored-fixture, signal/unwind/output/privacy/syscall matrix;
+   measure existing CLI and library regressions plus new adapter overhead and save
+   samples, repeated/adverse observations and inspected plots. Do not claim PERF.0
+   clearance from stable isolated controls.
+4. Mark the contract implemented only after local qualification, record limitations
+   and the next bounded step, scan and commit. No ESXi, license, VM, vCenter, SSH or
+   credentials are needed; live retained-artifact integration remains a later package.
 
 Keep ambient tmpfs sparse-allocation diagnosis and controlled phase/cleanup timing
 in PERF.0; a stable private control does not close either finding.
