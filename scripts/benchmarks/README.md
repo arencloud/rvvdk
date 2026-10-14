@@ -186,3 +186,35 @@ For new measurements, build `ownership_probe` and supply `--binary`, a new repor
 and new `--btrfs-parent` / `--tmpfs-parent` fixture parents. Every job performs ten
 journal commits with no VMware or disk payload operations. Reopening/cleanup are
 checked, and each successful synthetic fixture is removed outside timed phases.
+
+## Explicit local recovery commands (R6.1d.4b)
+
+`measure_recovery_cli.py` compares the actual CLI with equivalent direct native
+recovery, measures test-only adapter spans, and pairs existing commands against a
+frozen reference. `measure_recovery_cli_supplement.py` adds human/JSON assessment
+baselines and frozen native publication/recovery controls. Both are local authored
+fixture harnesses; they never accept VMware credentials. Run them serially, with
+separate private fixture parents and frozen release executables. Use `--help` for
+the required paths. The profile executable is the CLI release unit-test binary;
+the library executables are the vSphere release unit-test binaries.
+
+Use a private mount/network namespace for tmpfs, with `size=512m,mode=0700,huge=never`;
+keep persistent Btrfs separate. Do not overlap builds, tests, tracing or plots with
+timed work. All groups retain three rounds of four pairs and three of eight pairs.
+The supplemental script requires a new supplemental index; the main script refuses
+an existing campaign unless explicitly resumed. Preserve failures before resuming.
+
+Render and validate the saved report afterward:
+
+```bash
+target/benchmark-plots/bin/python scripts/benchmarks/plot_recovery_cli.py \
+  docs/benchmark-results/2026-10-14-r61d4b
+```
+
+The ten PNG/SVG figures include existing CLI changes, whole/direct recovery costs,
+adapter phases, recording controls, memory/allocation, assessment, frozen library
+controls, variation and real signal outcomes. Hashes in `plots/audit.json` bind the
+figures to their inputs. Direct test-process RSS includes fixture setup and cannot
+be compared as isolated operation memory against CLI child RSS. Signed profile
+clock-accounting gaps and zero-resolution CPU phases remain in the report. See the
+[recorded campaign and limits](../../docs/benchmark-results/2026-10-14-r61d4b/README.md).

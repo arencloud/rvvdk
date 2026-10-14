@@ -49,3 +49,6 @@ harness = false
 [[bench]]
 name = "stream"
 harness = false
+
+[target.'cfg(target_os = "linux")'.dependencies]
+rvvdk-vsphere = { path = "../rvvdk-vsphere" }

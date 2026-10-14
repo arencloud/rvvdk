@@ -1,16 +1,17 @@
 # Explicit local recovery commands (R6.1d.4)
 
-Status: design accepted in **R6.1d.4a**, 2026-10-14, against `f764b4d`.
-**Not implemented.** R6.1d.4b will implement and locally qualify these commands.
-Existing commands, library admission rules and journal formats are unchanged.
+Status: implemented and locally qualified in **R6.1d.4b**, 2026-10-14, following
+the design accepted against `f764b4d`. [Evidence and performance limits](benchmark-results/2026-10-14-r61d4b/README.md)
+record the actual checks, measurements and remaining scope. Existing disk commands,
+library admission rules and journal formats retain their contracts.
 
 [ADR-0071](adr/0071-explicit-local-recovery-commands.md) ·
 [Implementation and qualification](local-recovery-cli-qualification.md)
 
 ## Command contract
 
-Add a Linux `recover` group to the existing `rvddk` binary. Each invocation selects
-exactly one operation and one output. Proposed syntax, not currently executable:
+The Linux `rvddk recover` group selects exactly one operation and one output.
+Build with `cargo build --release -p rvvdk-cli`, then invoke:
 
 ```text
 rvddk recover assess PRIVATE_CONFIG.json [--json]
@@ -140,8 +141,9 @@ The small relay owns no artifact capability. Use fallible thread creation; failu
 is a pre-dispatch operational error. A panicking cancellation predicate is outside
 the existing caller contract and must never be silently ignored.
 
-Extend binary SIGINT/SIGTERM handler selection to the parsed recovery group, including
-assessment. Retain first-signal, atomic-only handlers and repeated-signal behavior.
+The binary identifies the top-level recovery group before its single full clap
+parse and installs SIGINT/SIGTERM handlers, including for assessment. Invalid syntax
+still rejects before any config or directory access. Retain first-signal, atomic-only handlers and repeated-signal behavior.
 The library entry point installs no process handlers. A late signal after a library
 success must not rewrite that result; output failure can still change the exit code.
 Do not place another cancellation check between final success and report rendering.
@@ -169,7 +171,8 @@ Use a recovery-specific envelope: `schema_version: 1`, `command: "recover"`,
 `operation` (the selected verb, null if syntax did not identify one), `status`, `operation_started`,
 `operation_succeeded`, `assessment_only`, `data`, and `error` (null on success).
 `data` is null before dispatch, otherwise the selected native report. For assessment
-it contains `source`, `source_error`, `publication`, `publication_error`, with null
+it contains `source`, `source_error`, `publication`, `publication_error`, and the
+final `control_error`, with null
 for unavailable values. Do not flatten away error precedence or library flags.
 `operation_started` means the selected API was entered, not that mutation occurred.
 `operation_succeeded` follows the selected predicate or both assessment Results plus
@@ -236,6 +239,10 @@ Do not create a report file, rewrite the private config, or persist a new checkp
 | [reconciliation](../crates/rvvdk-vsphere/src/ownership/retained/output/publication/reconciliation.rs), [attestation](../crates/rvvdk-vsphere/src/ownership/retained/output/publication/attestation.rs), [acknowledgment](../crates/rvvdk-vsphere/src/ownership/retained/output/publication/acknowledgment.rs) | Consuming synchronous APIs, distinct flags/predicates and primary/assessment errors. |
 | [retained control](../crates/rvvdk-vsphere/src/ownership/retained.rs), [pipeline](../crates/rvvdk-vsphere/src/pipeline.rs) | Bounded relative timeout at API entry, owned cancellation token, awaited blocking-work precedent. |
 
-The qualification plan preserves full library baselines and separately measures
-CLI startup/config/thread/rendering overhead. This documentation step runs no new
-runtime benchmarks and closes no PERF.0 finding. No ESXi or credential is needed.
+The [qualification report](benchmark-results/2026-10-14-r61d4b/README.md) retains frozen library baselines, existing CLI
+comparisons and separate adapter costs. The recovery tree is constructed lazily;
+unrelated commands do not build its arguments. Preliminary eager-parser measurements
+remain separate from final-candidate evidence. The 10 ms relay is cooperative: a
+late signal can race successful completion before token observation. Long-verification
+signal tests and completed-late-signal cases are both retained. PERF.0 stays open.
+No ESXi or credential is needed for these local commands.

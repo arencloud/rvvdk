@@ -1,0 +1,42 @@
+[
+  {
+    "case": "source_transaction",
+    "exit": 0,
+    "data": {
+      "control_error": null,
+      "publication": {
+        "output": {
+          "pending_transaction": false,
+          "sequence": 8,
+          "state": "published"
+        },
+        "published": "owned",
+        "staged": "absent"
+      },
+      "publication_error": null,
+      "source": {
+        "action": "check_owned_local_resources",
+        "pending_transaction": true,
+        "sequence": 7,
+        "state": "completed_lease"
+      },
+      "source_error": null
+    }
+  },
+  {
+    "case": "missing_output",
+    "exit": 1,
+    "data": {
+      "control_error": null,
+      "publication": null,
+      "publication_error": "io",
+      "source": {
+        "action": "check_owned_local_resources",
+        "pending_transaction": false,
+        "sequence": 7,
+        "state": "completed_lease"
+      },
+      "source_error": null
+    }
+  }
+]

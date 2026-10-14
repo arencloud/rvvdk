@@ -1,0 +1,36 @@
+{
+  "reason": "A late SIGINT can race the 10 ms relay and full operation completion. The original checker required cancellation unconditionally; completed native success is also valid when the token was not observed before the final check. No runtime changes.",
+  "history": "published",
+  "fsync_boundary": 7,
+  "observed_exit": 0,
+  "report": {
+    "schema_version": 1,
+    "command": "recover",
+    "operation": "attest-published",
+    "status": "completed",
+    "operation_started": true,
+    "operation_succeeded": true,
+    "assessment_only": false,
+    "data": {
+      "assessment_error": null,
+      "bindings_rechecked": true,
+      "bundle_synced": true,
+      "content_verified": true,
+      "directories_synced": true,
+      "logical_bytes_verified": 2097152,
+      "primary_error": null,
+      "published_record_synced": true,
+      "recovery": {
+        "output": {
+          "pending_transaction": false,
+          "sequence": 8,
+          "state": "published"
+        },
+        "published": "owned",
+        "staged": "absent"
+      }
+    },
+    "error": null
+  },
+  "trace_sha256": "da7a9ee7ff65041db45bff357da686c5a6a0ac71d6064fc597b111a75360bfb2"
+}

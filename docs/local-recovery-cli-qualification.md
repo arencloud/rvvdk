@@ -1,9 +1,10 @@
 # Local recovery CLI implementation and qualification (R6.1d.4b)
 
-Status: acceptance plan saved by **R6.1d.4a**, 2026-10-14. **Not executed.**
-Reviewed against `f764b4d`; the [command contract](local-recovery-cli.md) and
-[ADR-0071](adr/0071-explicit-local-recovery-commands.md) define the proposed interface.
-This plan adds no runtime or benchmark result to the existing library evidence.
+Status: plan established by **R6.1d.4a** against `f764b4d`, executed in **R6.1d.4b**,
+2026-10-14. [Qualification and limitations](benchmark-results/2026-10-14-r61d4b/README.md) map the plan to actual evidence;
+any unqualified cases are listed there. The [command contract](local-recovery-cli.md)
+and [ADR-0071](adr/0071-explicit-local-recovery-commands.md) define the implemented interface.
+The original design step changed documentation only.
 
 ## Implementation sequence
 

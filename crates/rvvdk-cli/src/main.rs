@@ -45,16 +45,23 @@ impl Drop for Handlers {
 }
 fn main() -> std::process::ExitCode {
     let arguments: Vec<_> = std::env::args_os().collect();
-    let transfer = arguments
-        .iter()
-        .skip(1)
-        .find(|a| !a.as_encoded_bytes().starts_with(b"-"))
-        .is_some_and(|a| a == "copy" || a == "verify");
+    let command = rvvdk_cli::invocation_command(&arguments);
+    let recovery = command == Some("recover");
+    let transfer = matches!(command, Some("copy" | "verify" | "recover"));
+    if recovery {
+        std::panic::set_hook(Box::new(|_| {
+            eprintln!("rvddk: local recovery worker failed; outcome may be unknown")
+        }));
+    }
     let _handlers = if transfer {
         match Handlers::install() {
             Ok(h) => Some(h),
             Err(e) => {
-                eprintln!("rvddk: install cancellation handlers: {e}");
+                if recovery {
+                    eprintln!("rvddk: could not install cancellation handlers");
+                } else {
+                    eprintln!("rvddk: install cancellation handlers: {e}");
+                }
                 return 1.into();
             }
         }

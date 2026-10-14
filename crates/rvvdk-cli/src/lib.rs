@@ -5,6 +5,7 @@ mod error;
 mod output;
 mod preview;
 mod progress;
+mod recovery;
 mod source;
 mod target;
 mod transfer;
@@ -40,6 +41,7 @@ where
         .skip(1)
         .take_while(|a| *a != "--")
         .any(|a| a == "--json");
+    let recovery_request = invocation_command(&arguments) == Some("recover");
     let matches = match args::command().try_get_matches_from(arguments) {
         Ok(matches) => matches,
         Err(error) => {
@@ -50,11 +52,21 @@ where
                     1
                 };
             }
+            if recovery_request {
+                return recovery::usage(json, out, err);
+            }
             emit_error(&Failure::new("usage", error.to_string()), json, err);
             return 2;
         }
     };
+    #[cfg(test)]
+    if recovery_request {
+        recovery::profile::mark("parse");
+    }
     let (name, args) = matches.subcommand().expect("required subcommand");
+    if name == "recover" {
+        return recovery::run(args, json, out, err, cancellation);
+    }
     let result = match name {
         "copy" | "verify" => transfer::run(name, args, json, out, err, cancellation),
         _ => preview::build(name, args).and_then(|report| output::write(&report, json, out)),
@@ -88,4 +100,18 @@ fn emit_error(error: &Failure, json: bool, err: &mut impl Write) {
         }
     }
     let _ = err.flush();
+}
+
+/// Top-level command routing before parsing; never inspects config contents.
+/// Invalid syntax is still rejected by the single full clap parse in run.
+pub fn invocation_command(arguments: &[OsString]) -> Option<&str> {
+    for argument in arguments.iter().skip(1) {
+        if argument == "--" {
+            return None;
+        }
+        if !argument.as_encoded_bytes().starts_with(b"-") {
+            return argument.to_str();
+        }
+    }
+    None
 }

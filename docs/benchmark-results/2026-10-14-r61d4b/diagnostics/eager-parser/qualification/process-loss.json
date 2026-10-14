@@ -1,0 +1,22 @@
+[
+  {
+    "fsync_boundary": 1,
+    "state_after_kill": {
+      "pending_transaction": true,
+      "sequence": 7,
+      "state": "publish_intent"
+    },
+    "explicit_following_operation": "acknowledge-published",
+    "following_success": true
+  },
+  {
+    "fsync_boundary": 10,
+    "state_after_kill": {
+      "pending_transaction": false,
+      "sequence": 8,
+      "state": "published"
+    },
+    "explicit_following_operation": "attest-published",
+    "following_success": true
+  }
+]

@@ -3256,35 +3256,55 @@ all ten changed files are Markdown. Diff hygiene and staged privacy are checked
 before the local commit. R6.1d.4a is complete; R6.1d.4b, parent R6.1d.4 and general
 recovery stay open.
 
+## R6.1d.4b — explicit local recovery implementation (2026-10-14)
+
+Implemented `rvddk recover assess|reconcile-intent|attest-published|acknowledge-published`
+with a lazy argument tree, strict private original-source configuration, one selected
+native operation, fixed original parent locks, a scoped joined cancellation relay,
+sanitized report projection and checked output delivery. Existing native production
+recovery logic, journal formats and success predicates are unchanged. Assessment
+retains independent source/output observations and never selects a mutation.
+
+[Qualification and performance evidence](benchmark-results/2026-10-14-r61d4b/README.md) records the workspace suite,
+actual release executable tests on Btrfs/private tmpfs, six syscall audits, 28 signals,
+five process-loss cases, four syscall I/O faults and failed report delivery. All 144
+fixture command invocations passed independent bytes and identity/allocation checks.
+The final campaign retains 3,888 timed operations and ten inspected PNG/SVG plots.
+The separate 512-operation preliminary eager-parser campaign and checker/fixture
+corrections remain visible with their disposition; no failed or adverse observation
+was silently replaced. Source/binary/sample hashes and validator checks accompany
+results. Direct API and CLI process scopes, relay races, profiling clock gaps,
+unavailable owner/concurrent-read tests and host scheduling limits are explicit.
+
+No ESXi, SSH, VM action or credentials were needed. R6.1d.4b and its bounded parent
+R6.1d.4 are complete. Existing CLI/linkage variation, native timing variance, ambient
+tmpfs allocation and PERF.0 remain open; this is not general production recovery.
+Formatting, workspace tests, all-target Clippy, documentation links, artifact hashes,
+diff hygiene and staged privacy are checked before the local commit.
+
 ## Next session
 
-Start **R6.1d.4b — implement and locally qualify explicit recovery commands**:
+Start **PERF.1a — digest-equivalent SHA-256 qualification and tuning**:
 
-1. Freeze the unchanged CLI and library release baselines, source/binary hashes and
-   environment before changing the CLI's dependencies, parser, dispatch or control.
-2. Implement the four verbs, private config, one-operation dispatch, joined token
-   relay, deadline and original parent lifetime, sanitized reports and final flush.
-   Preserve existing CLI behavior and all native library admission/success gates.
-3. Execute the saved authored-fixture, signal/unwind/output/privacy/syscall matrix;
-   measure existing CLI and library regressions plus new adapter overhead and save
-   samples, repeated/adverse observations and inspected plots. Do not claim PERF.0
-   clearance from stable isolated controls.
-4. Mark the contract implemented only after local qualification, record limitations
-   and the next bounded step, scan and commit. No ESXi, license, VM, vCenter, SSH or
-   credentials are needed; live retained-artifact integration remains a later package.
+1. Audit existing hash call sites/backends and CPU capabilities: the current host
+   advertises SHA-NI; retain the earlier non-SHA-NI target as a separate CPU
+   configuration. Use retained phase evidence. Freeze current release binaries and dependency/source hashes.
+2. Evaluate a bounded backend change only if it preserves SHA-256 exactly. Use known
+   digests, differential checks, chunk boundaries and independent dense/sparse bytes.
+   Preserve encoded-source and full logical RAW verification, bounded memory,
+   cancellation, sparse allocation and every sync/publication gate.
+3. Compare frozen paired hash and end-to-end publication/recovery builds, including
+   CLI startup/linkage. Keep CPU/storage/cache conditions explicit and retain every
+   slower result, failed sample and repeat spread. Export and inspect PNG/SVG plots.
+   Test existing cancellation, fault, identity and allocation invariants unchanged.
+4. Accept only a measured supported improvement; otherwise commit the bounded
+   investigation and its evidence. Save remaining limits and the next step, scan
+   staged files and commit locally. No ESXi or new trial/license is needed.
 
 Keep ambient tmpfs sparse-allocation diagnosis and controlled phase/cleanup timing
-in PERF.0; a stable private control does not close either finding.
-
-The first measured tuning target is digest-equivalent SHA-256 throughput on CPUs
-without SHA-NI. Before accepting a candidate, preserve the algorithm and every full
-verification gate, qualify known digests and independent bytes on dense/sparse data,
-and compare frozen builds with CPU/storage/cache controls and larger working sets.
-Keep sparse allocation, bounded memory, cancellation and durability ordering. Do
-not interpret different CPUs/VM resources or skipped checks as an implementation
-speedup. The current diagnostic package supplies a baseline, not PERF.0 clearance.
-
-Retain PERF.0 CPU/SMT/frequency/storage controls, stream/map/cache sensitivity and
-parallel decoding, plus R4.4 and discovery/TLS follow-ups. VMFS sparse, seSparse,
-online snapshots, CBT, restore, vCenter and vSphere 9 remain independently qualified
-later work. Continue local commits after each completed bounded package.
+in PERF.0; a stable private control does not close either finding. Different CPU/VM
+resources or omitted checks cannot establish an implementation speedup. Larger and
+cold working sets, stream/map/cache sensitivity, parallel decoding, R4.4 and discovery/
+TLS follow-ups remain open. Live retained-artifact recovery command qualification,
+VMFS sparse, seSparse, online snapshots, CBT, restore, vCenter and vSphere 9 remain
+separate work. Continue local commits after each completed bounded package.

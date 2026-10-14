@@ -148,11 +148,20 @@ these preview contracts.
 See the [implementation log](implementation-log.md) and
 [R3.2 performance evidence](benchmark-results/2026-09-29-r32/README.md).
 
-## Planned local recovery commands
+## Local retained-output recovery
 
-[R6.1d.4a](local-recovery-cli.md) specifies a separate `recover` group with explicit
-assessment, intent reconciliation, Published attestation and exact acknowledgment
-transaction recovery. **These commands are not implemented yet.** Existing disk
-commands and their schemas are unchanged. [R6.1d.4b qualification](local-recovery-cli-qualification.md)
-covers private config, signals, report delivery, library gates and startup/performance
-costs before this interface becomes available.
+[R6.1d.4b](local-recovery-cli.md) adds `rvddk recover` with explicit `assess`,
+`reconcile-intent`, `attest-published` and `acknowledge-published` verbs. Each requires
+one private original-source config; no networking or credentials are needed. The
+[command contract](local-recovery-cli.md) defines its versioned input, original parent
+locks, cancellation, sanitized reports and separate exit codes, including 3 for an
+explicit unknown outcome. Existing disk commands retain their schemas.
+
+```bash
+rvddk recover assess /private/recovery.json --json
+rvddk recover attest-published /private/recovery.json --json
+```
+
+Assessment gives observations, not permission to mutate or proof of durability.
+Choose the effectful verb explicitly and await it. No automatic retry or cleanup.
+[Qualification and performance plots](benchmark-results/2026-10-14-r61d4b/README.md) retain actual evidence and limits.

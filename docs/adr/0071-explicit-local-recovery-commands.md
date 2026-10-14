@@ -1,8 +1,9 @@
 # ADR-0071: Expose local recovery through explicit, awaited commands
 
-Status: accepted for implementation in **R6.1d.4a**, 2026-10-14.
-Reviewed against `f764b4d`. Documentation only; R6.1d.4b runtime integration and
-qualification remain open.
+Status: accepted in **R6.1d.4a**, implemented and locally qualified in **R6.1d.4b**,
+2026-10-14. Original design reviewed against `f764b4d`; implementation reference
+`852b0e8`. [Evidence and limits](../benchmark-results/2026-10-14-r61d4b/README.md) retain qualification. The original
+design step changed documentation only.
 
 ## Context
 

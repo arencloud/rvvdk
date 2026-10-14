@@ -1,0 +1,135 @@
+   Compiling rvvdk-cli v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.20s
+     Running unittests src/lib.rs (target/debug/deps/rvvdk_cli-9d80ba5e5d281c78)
+
+running 18 tests
+test recovery::tests::adapter_profile ... ignored, explicit authored fixture; release adapter phases and recording controls
+test recovery::report::tests::all_reports_use_explicit_sanitized_field_sets ... ok
+test recovery::tests::injected_spawn_failure_does_not_enter_work ... ok
+test recovery::tests::relay_panic_requests_cancellation_and_is_not_success ... ok
+test recovery::report::tests::classification_requires_native_success_and_retains_failures ... ok
+test recovery::tests::control_precancel_and_deadline_prevent_dispatch ... ok
+test recovery::config::tests::bounded_private_file_admission_and_nonblocking_special_files ... ok
+test recovery::config::tests::strict_typed_schema_rejects_missing_duplicate_unknown_null_and_trailing_input ... ok
+test recovery::tests::second_lock_failure_releases_first_and_reports_no_dispatch ... ok
+test recovery::tests::relay_observes_cancellation_and_joins_after_dispatch_unwind ... ok
+test recovery::tests::request_routing_redacts_usage_and_preserves_delimiter ... ok
+test recovery::config::tests::constructors_enforce_ids_identity_paths_and_timeout ... ok
+test transfer::tests::racing_name_is_never_replaced_even_when_overwrite_was_requested ... ok
+test transfer::tests::corruption_fails_before_publication_and_reports_offset ... ok
+test transfer::tests::observed_source_mutation_rejects_publication ... ok
+test transfer::tests::failed_overwrite_keeps_partial_output_and_tail ... ok
+test transfer::tests::file_sync_and_directory_sync_failures_have_distinct_output_states ... ok
+test recovery::report::tests::output_failure_retains_completed_report_and_never_returns_success ... ok
+
+test result: ok. 17 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running unittests src/main.rs (target/debug/deps/rvddk-edabb77c1ebf27be)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/commands.rs (target/debug/deps/commands-2b65ae4414a3078f)
+
+running 12 tests
+test sparse_map_matches_library_topology_without_reading_payload ... ok
+test output_write_and_flush_failures_return_failure ... ok
+test non_utf8_paths_round_trip_and_control_characters_are_escaped ... ok
+test overwrite_is_explicit_preserves_bytes_and_reports_untouched_tail ... ok
+test metadata_budget_failure_and_unadmitted_execution_estimate_are_distinct ... ok
+test new_destination_preview_never_creates_output_and_native_is_deferred ... ok
+test missing_parent_and_non_file_paths_fail_before_output ... ok
+test aliases_symlinks_and_small_destinations_reject_without_changes ... ok
+test usage_errors_are_json_and_tunables_are_checked ... ok
+test inspect_dense_empty_and_odd_images_with_explicit_extent_output ... ok
+test actual_binary_handles_help_errors_and_special_files_without_blocking ... ok
+test commands_succeed_when_writable_opens_and_ring_setup_are_denied ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/parents.rs (target/debug/deps/parents-5afee5a7635db24e)
+
+running 13 tests
+test opt_in_requires_vmdk_and_default_still_rejects_parents ... ok
+test parent_opt_in_rejects_flat_sources ... ok
+test native_and_budget_rejections_precede_publication ... ok
+test invalid_chain_metadata_never_publishes ... ok
+test parent_backing_symlinks_and_oversized_descriptors_rejected ... ok
+test base_entry_and_padded_parent_descriptors_supported ... ok
+test parent_chain_publication_cancellation_and_collision ... ok
+test unsafe_missing_or_symlink_parents_never_publish ... ok
+test embedded_identity_binding_and_external_mirrors ... ok
+test depth_limit_is_enforced_before_output_creation ... ok
+test all_ancestor_descriptors_and_backings_reject_destination_aliases ... ok
+test ancestor_descriptor_metadata_and_payload_mutations_prevent_publication ... ok
+test chain_commands_resolve_inheritance_zeros_and_preserve_tail ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
+
+     Running tests/sparse.rs (target/debug/deps/sparse-645c8bbdc07a25da)
+
+running 10 tests
+test sparse_native_and_budget_failures_do_not_publish ... ok
+test same_size_backing_or_descriptor_mutation_prevents_publication ... ok
+test padded_split_descriptor_is_preserved ... ok
+test container_cannot_redirect_to_another_inode_or_external_monolithic_descriptor ... ok
+test malformed_features_confinement_and_size_bounds_fail_without_output ... ok
+test monolithic_metadata_and_payload_changes_prevent_publication ... ok
+test sparse_descriptor_and_every_backing_hardlink_reject_before_mutation ... ok
+test cancellation_and_publication_collision_preserve_output_policy ... ok
+test monolithic_container_uses_logical_capacity_and_raw_remains_explicit ... ok
+test split_inspect_plan_copy_verify_and_tail_preservation ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/stream.rs (target/debug/deps/stream-c422fee62e50561b)
+
+running 6 tests
+test payload_validation_is_lazy_but_corruption_never_publishes ... ok
+test unsupported_options_and_limits_reject_before_destination_preparation ... ok
+test aliases_and_symlinks_reject_but_embedded_filename_is_not_followed ... ok
+test mutations_cancel_and_publication_races_preserve_output_policy ... ok
+test unsupported_versions_flags_and_parent_descriptors_stay_rejected ... ok
+test logical_commands_cover_both_layouts_cross_grain_reads_and_overwrite_tail ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+     Running tests/transfers.rs (target/debug/deps/transfers-28718583f29b2bc4)
+
+running 12 tests
+test progress_output_failure_stops_before_publication ... ok
+test no_clobber_alias_symlink_and_capacity_rejections_preserve_contents ... ok
+test verification_checks_holes_and_first_mismatch_without_mutation ... ok
+test report_failure_retains_completed_operation_and_published_bytes ... ok
+test verification_buffers_and_copy_budget_are_jointly_admitted ... ok
+test cancelled_overwrite_keeps_inode_tail_and_reports_partial_effects ... ok
+test lifecycle_json_is_separate_from_success_and_actual_backend_is_reported ... ok
+test sparse_copy_cancellation_after_full_logical_processing_is_not_completion ... ok
+test runtime_ring_denial_auto_falls_back_but_explicit_native_does_not_publish ... ok
+test sigint_and_sigterm_cancel_binary_copy_and_verify_with_bounded_shutdown ... ok
+test progress_cancellation_preserves_private_and_published_destination_states ... ok
+test new_and_overwrite_copies_verify_empty_odd_and_sparse_images_across_backends ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+     Running tests/vmdk.rs (target/debug/deps/vmdk-cea9adb48722abf9)
+
+running 9 tests
+test logical_inspection_and_preview_use_capacity_and_portable_selection ... ok
+test native_rejection_precedes_destination_open_and_budget_failure_does_not_publish ... ok
+test zero_only_source_and_explicit_raw_selection ... ok
+test malformed_unsupported_and_unconfined_sources_fail_without_output ... ok
+test padded_sources_work_in_all_commands_without_rewriting_the_descriptor ... ok
+test cancellation_and_publication_collision_preserve_output_policy ... ok
+test descriptor_and_every_backing_hardlink_are_rejected_without_mutation ... ok
+test same_size_backing_or_descriptor_mutation_prevents_publication ... ok
+test copies_verify_logical_bytes_and_preserve_overwrite_tail ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests rvvdk_cli
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

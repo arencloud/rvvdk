@@ -1,0 +1,13 @@
+--- eager/args.rs
++++ final/args.rs
+@@ -104 +104,3 @@
+-        .subcommand(recovery())
++        .subcommand(Command::new("recover")
++            .about("Explicit local recovery of retained output; no network or cleanup")
++            .defer(recovery))
+@@ -121,3 +123,2 @@
+-fn recovery() -> Command {
+-    let mut command = Command::new("recover")
+-        .about("Explicit local recovery of retained output; no network or cleanup")
++fn recovery(command: Command) -> Command {
++    let mut command = command

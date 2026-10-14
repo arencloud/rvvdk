@@ -1,0 +1,45 @@
+   Compiling rvvdk-cli v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.57s
+     Running unittests src/lib.rs (target/debug/deps/rvvdk_cli-9d80ba5e5d281c78)
+
+running 16 tests
+test recovery::report::tests::all_reports_use_explicit_sanitized_field_sets ... FAILED
+test recovery::tests::control_precancel_and_deadline_prevent_dispatch ... ok
+test recovery::report::tests::classification_requires_native_success_and_retains_failures ... ok
+test recovery::tests::relay_panic_requests_cancellation_and_is_not_success ... ok
+test recovery::tests::relay_observes_cancellation_and_joins_after_dispatch_unwind ... ok
+test recovery::tests::second_lock_failure_releases_first_and_reports_no_dispatch ... ok
+test recovery::config::tests::bounded_private_file_admission_and_nonblocking_special_files ... ok
+test recovery::config::tests::strict_typed_schema_rejects_missing_duplicate_unknown_null_and_trailing_input ... FAILED
+test transfer::tests::corruption_fails_before_publication_and_reports_offset ... ok
+test recovery::tests::request_routing_redacts_usage_and_preserves_delimiter ... ok
+test transfer::tests::failed_overwrite_keeps_partial_output_and_tail ... ok
+test transfer::tests::observed_source_mutation_rejects_publication ... ok
+test transfer::tests::racing_name_is_never_replaced_even_when_overwrite_was_requested ... ok
+test recovery::config::tests::constructors_enforce_ids_identity_paths_and_timeout ... ok
+test transfer::tests::file_sync_and_directory_sync_failures_have_distinct_output_states ... ok
+test recovery::report::tests::output_failure_retains_completed_report_and_never_returns_success ... ok
+
+failures:
+
+---- recovery::report::tests::all_reports_use_explicit_sanitized_field_sets stdout ----
+
+thread 'recovery::report::tests::all_reports_use_explicit_sanitized_field_sets' (623157) panicked at crates/rvvdk-cli/src/recovery/report/tests.rs:160:5:
+assertion `left == right` failed
+  left: 9
+ right: 10
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- recovery::config::tests::strict_typed_schema_rejects_missing_duplicate_unknown_null_and_trailing_input stdout ----
+
+thread 'recovery::config::tests::strict_typed_schema_rejects_missing_duplicate_unknown_null_and_trailing_input' (623156) panicked at crates/rvvdk-cli/src/recovery/config/tests.rs:12:5:
+assertion failed: matches!(parse(bytes), Err(Status::Invalid))
+
+
+failures:
+    recovery::config::tests::strict_typed_schema_rejects_missing_duplicate_unknown_null_and_trailing_input
+    recovery::report::tests::all_reports_use_explicit_sanitized_field_sets
+
+test result: FAILED. 14 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+error: test failed, to rerun pass `-p rvvdk-cli --lib`

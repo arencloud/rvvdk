@@ -727,3 +727,5 @@ fn process_loss_observes_rename_without_replay_and_cleanup_can_finish_absent_dir
 }
 
 mod benchmark;
+
+mod cli;

@@ -1888,13 +1888,14 @@ source transaction recovery or remote replay is introduced.
 [acceptance matrix](published-acknowledgment-recovery-qualification.md),
 [local qualification, timings and plots](benchmark-results/2026-10-14-r61d3b/README.md).
 PERF.0, general recovery, CLI/live integration, larger working sets and power-loss
-qualification remain open. R6.1d.4a now defines the local command adapter below.
+qualification remain open. R6.1d.4b supplies the local command adapter below.
 
-### Explicit local recovery command adapter (R6.1d.4 design)
+### Explicit local recovery command adapter (R6.1d.4)
 
-R6.1d.4a defines `rvddk recover assess|reconcile-intent|attest-published|acknowledge-published`.
-**Not implemented.** R6.1d.4b is the next implementation/qualification package.
-The existing library APIs and public CLI behavior remain unchanged in this step.
+R6.1d.4b implements `rvddk recover assess|reconcile-intent|attest-published|acknowledge-published`.
+A lazy command tree keeps unrelated CLI invocations from constructing recovery
+arguments. Library APIs/journals and existing disk commands retain their contracts.
+[Local evidence and performance limits](benchmark-results/2026-10-14-r61d4b/README.md) record qualification.
 
 A separate strict 16 KiB private config carries schema version, original endpoint/pin
 and provenance, source selection, artifact/output IDs, absolute parent paths and a
@@ -1920,4 +1921,6 @@ linkage costs separately from full library verification and persistence.
 
 [Command contract](local-recovery-cli.md), [ADR-0071](adr/0071-explicit-local-recovery-commands.md),
 [implementation and qualification](local-recovery-cli-qualification.md).
-The design supplies no new performance measurements or PERF.0 clearance.
+The linked report retains actual-binary signals/faults/process loss, independent
+bytes and frozen comparisons. Late signals can race the relay and completed work;
+accepted work is never abandoned. PERF.0 remains open.

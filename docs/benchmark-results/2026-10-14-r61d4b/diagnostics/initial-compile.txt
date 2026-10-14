@@ -1,0 +1,33 @@
+    Checking rvvdk-cli v0.1.0 (/home/egevorky/RustroverProjects/rvvdk/crates/rvvdk-cli)
+error[E0277]: `std::sync::mpsc::Receiver<()>` cannot be shared between threads safely
+   --> crates/rvvdk-cli/src/recovery.rs:58:99
+    |
+ 58 |               let handle=std::thread::Builder::new().name("rvddk-cancel".into()).spawn_scoped(scope,||{
+    |  ________________________________________________________________________________------------_______^
+    | |                                                                                |
+    | |                                                                                required by a bound introduced by this call
+ 59 | |                 let _guard=RelayGuard(&control);
+ 60 | |                 loop {
+ 61 | |                     if c.is_cancelled(){control.cancel();}
+...   |
+ 66 | |             });
+    | |_____________^ `std::sync::mpsc::Receiver<()>` cannot be shared between threads safely
+    |
+    = help: the trait `Sync` is not implemented for `std::sync::mpsc::Receiver<()>`
+    = note: required for `&std::sync::mpsc::Receiver<()>` to implement `Send`
+note: required because it's used within this closure
+   --> crates/rvvdk-cli/src/recovery.rs:58:99
+    |
+ 58 |             let handle=std::thread::Builder::new().name("rvddk-cancel".into()).spawn_scoped(scope,||{
+    |                                                                                                   ^^
+note: required by a bound in `std::thread::scoped::<impl Builder>::spawn_scoped`
+   --> /home/egevorky/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/thread/scoped.rs:262:28
+    |
+256 |     pub fn spawn_scoped<'scope, 'env, F, T>(
+    |            ------------ required by a bound in this associated function
+...
+262 |         F: FnOnce() -> T + Send + 'scope,
+    |                            ^^^^ required by this bound in `std::thread::scoped::<impl Builder>::spawn_scoped`
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `rvvdk-cli` (lib) due to 1 previous error

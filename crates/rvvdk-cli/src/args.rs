@@ -101,6 +101,9 @@ pub(crate) fn command() -> Command {
     // remain available in root help, without cloning unrelated argument trees.
     Command::new("rvddk").version(env!("CARGO_PKG_VERSION"))
         .about("Inspect, plan, copy, and verify local RAW or FLAT/ZERO/hosted-sparse/streamOptimized VMDK sources (RAW destinations)")
+        .subcommand(Command::new("recover")
+            .about("Explicit local recovery of retained output; no network or cleanup")
+            .defer(recovery))
         .subcommand_required(true).arg_required_else_help(true)
         .arg(Arg::new("json").long("json").global(true).action(ArgAction::SetTrue)
             .help("Emit schema-versioned JSON; errors go to stderr"))
@@ -115,4 +118,26 @@ pub(crate) fn command() -> Command {
                 .help("Read back and compare all logical bytes before publishing new output"))))
         .subcommand(Command::new("verify").about("Compare source bytes with the destination prefix; no writes")
             .defer(|c| progress(block_size(destination(source(c))))))
+}
+
+fn recovery(command: Command) -> Command {
+    let mut command = command
+        .subcommand_required(true)
+        .arg_required_else_help(true);
+    for verb in [
+        "assess",
+        "reconcile-intent",
+        "attest-published",
+        "acknowledge-published",
+    ] {
+        command = command.subcommand(
+            Command::new(verb).arg(
+                Arg::new("config")
+                    .required(true)
+                    .value_parser(value_parser!(PathBuf))
+                    .help("Private original-source configuration file"),
+            ),
+        );
+    }
+    command
 }

@@ -1,0 +1,4 @@
+{
+  "reason": "The first verification signal watcher looked for pread64 on RAW. The implementation reads RAW sequentially with read; pread64 belongs to native source admission. The child completed successfully without the watcher injecting a signal. Corrected the watcher to read on disk.raw; no runtime changes.",
+  "trace_sha256": "806acaeb7f85b48eb7767547b339c3d98a6d778b87d5630b8233d6c8186c6366"
+}

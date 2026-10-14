@@ -102,9 +102,9 @@ Repeated full source/RAW checks remain deliberate costs tracked in PERF.0.
 [owned transfer](durable-owned-transfer.md),
 [publication/cleanup](durable-output-publication.md).
 
-R6.1d.4a separately defines [local recovery commands](local-recovery-cli.md) for the
-public CLI. This is a design only; the pipeline example's verbs remain unchanged.
-Its config cannot be reused unchanged: recovery requires a version and explicit pin
-provenance and rejects user/export fields. The linked contract defines the private
-projection and local-only operation boundaries. [R6.1d.4b](local-recovery-cli-qualification.md)
-will qualify the adapter without a live export or automatic pipeline recovery.
+R6.1d.4b separately implements [local recovery commands](local-recovery-cli.md) in
+the public CLI; the pipeline example's verbs remain unchanged. Its config cannot be
+reused unchanged: recovery requires a version and explicit pin provenance and rejects
+user/export fields. The linked contract defines private projection and local-only
+operation boundaries. [Local qualification](benchmark-results/2026-10-14-r61d4b/README.md) adds no live export or
+automatic pipeline recovery.

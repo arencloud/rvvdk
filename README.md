@@ -270,9 +270,11 @@ record the local qualification.
 PublishIntent/Published transaction pair, with fresh full verification before journal
 promotion. [Tests, syscall audit and performance plots](docs/benchmark-results/2026-10-14-r61d3b/README.md) retain the
 bounded qualification and unresolved timing limits.
-[R6.1d.4a](docs/local-recovery-cli.md) defines four explicit local recovery commands,
-private configuration, cancellation and report/exit contracts. **Design only.** Next:
-implement and locally qualify them in [R6.1d.4b](docs/local-recovery-cli-qualification.md).
+[R6.1d.4b](docs/local-recovery-cli.md) adds four explicit local recovery commands:
+`assess`, `reconcile-intent`, `attest-published`, and `acknowledge-published` under
+`rvddk recover`. Each uses a private original-source config and preserves native
+verification, cancellation and report boundaries. [Tests and performance plots](docs/benchmark-results/2026-10-14-r61d4b/README.md)
+record qualification and remaining performance findings.
 
 Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
 for sanitizer execution rates, memory and feedback across repeated campaigns.
