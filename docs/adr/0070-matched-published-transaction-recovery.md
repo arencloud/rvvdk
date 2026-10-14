@@ -1,8 +1,9 @@
 # ADR-0070: Promote only a matched Published acknowledgment transaction
 
-Status: accepted for implementation in **R6.1d.3a**, 2026-10-14.
-Reviewed against `6c0134e`. **Documentation only; runtime implementation and
-qualification remain open in R6.1d.3b.**
+Status: accepted in **R6.1d.3a** and implemented in **R6.1d.3b**, 2026-10-14.
+The original design was reviewed against `6c0134e`; the implementation compares
+against `bdc26ef`. [Local evidence and limits](../benchmark-results/2026-10-14-r61d3b/README.md) record qualification.
+The original R6.1d.3a package changed documentation only.
 
 ## Context
 

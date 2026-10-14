@@ -266,10 +266,11 @@ of Published output after an uncertain or lost acknowledgment. It preserves the
 original journal and freshly verifies all bytes and persistence barriers.
 [Tests, syscall audit and benchmark plots](docs/benchmark-results/2026-10-14-r61d2b/README.md)
 record the local qualification.
-[R6.1d.3a](docs/published-acknowledgment-recovery.md) now defines recovery of an exact
-PublishIntent/Published transaction pair, with full verification before journal
-promotion. This is a design only. Next: implement and locally qualify it in
-[R6.1d.3b](docs/published-acknowledgment-recovery-qualification.md).
+[R6.1d.3b](docs/published-acknowledgment-recovery.md) now recovers an exact
+PublishIntent/Published transaction pair, with fresh full verification before journal
+promotion. [Tests, syscall audit and performance plots](docs/benchmark-results/2026-10-14-r61d3b/README.md) retain the
+bounded qualification and unresolved timing limits. Next: design explicit local
+recovery commands for the CLI/runner (R6.1d.4a).
 
 Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
 for sanitizer execution rates, memory and feedback across repeated campaigns.

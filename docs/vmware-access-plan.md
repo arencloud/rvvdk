@@ -401,13 +401,13 @@ following bounded packages in order:
    verifies and syncs the existing Published bundle/journal without rewriting records
    or inferring prior success. [Local qualification](benchmark-results/2026-10-14-r61d2b/README.md)
    retains syscall/fault/crash checks and repeated benchmarks/plots.
-   **R6.1d.3a complete:** [matched Published-transaction recovery design](published-acknowledgment-recovery.md)
-   requires exact intent/candidate bindings and fresh full verification before promotion.
-   Partial/foreign entries, source transactions and unstamped stages remain separate.
-   **Next R6.1d.3b:** implement and locally qualify the consuming API with ten syncs,
-   one journal rename, faults/process loss and frozen comparisons/plots under the
-   [acceptance plan](published-acknowledgment-recovery-qualification.md).
-   No new host, license, VM, vCenter or lab access is needed. A later live/runner
+   **R6.1d.3b complete:** [matched Published-transaction recovery](published-acknowledgment-recovery.md)
+   performs fresh full verification, ten syncs and exact candidate promotion.
+   [Local tests, syscall audit and repeated plots](benchmark-results/2026-10-14-r61d3b/README.md) retain bounded evidence
+   and performance limits. Partial/foreign pairs and source transactions stay blocked.
+   **Next R6.1d.4a:** design explicit local recovery commands for the existing APIs,
+   with private source selection/original parent binding, separate reports and awaited
+   cancellation. No new host, license, VM, vCenter or lab access is needed. Live/runner
    integration requires its own focused qualification. Capacity proof and production
    R6 integration/recovery remain open.
 6. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9

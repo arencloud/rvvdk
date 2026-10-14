@@ -1,8 +1,11 @@
 # Published acknowledgment recovery implementation and qualification (R6.1d.3b)
 
-Status: acceptance plan saved by **R6.1d.3a**, 2026-10-14. **Not executed.**
+Status: acceptance plan established by **R6.1d.3a**, 2026-10-14, and executed in
+**R6.1d.3b**. [Implementation evidence and limits](benchmark-results/2026-10-14-r61d3b/README.md) map the matrix to
+checks, measurements and remaining qualification. The design-only step did not run
+these tests or benchmarks.
 The [contract](published-acknowledgment-recovery.md) and
-[ADR-0070](adr/0070-matched-published-transaction-recovery.md) define the proposed API.
+[ADR-0070](adr/0070-matched-published-transaction-recovery.md) define the implemented API.
 Existing anchors below were reviewed against `6c0134e`.
 
 ## Implementation sequence

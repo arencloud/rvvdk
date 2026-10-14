@@ -2,8 +2,9 @@
 use super::*;
 mod publication;
 pub use publication::{
-    OutputLocation, PublicationAttestationReport, PublicationDirectory, PublicationRecovery,
-    PublicationReport, ReconciliationOrigin, ReconciliationReport, VerifiedOutput,
+    OutputLocation, PublicationAcknowledgmentRecoveryReport, PublicationAttestationReport,
+    PublicationDirectory, PublicationRecovery, PublicationReport, ReconciliationOrigin,
+    ReconciliationReport, VerifiedOutput,
 };
 
 const OUTPUT_MEMBERS: [&str; 3] = ["disk.raw", "output.json", "owner"];
@@ -199,9 +200,17 @@ impl JobStore {
         self.ready()?;
         let mut file = open_at(&self.directory, &name(&id.0), false, false, false)?;
         private(&file, false)?;
+        self.decode_output(&bounded_read(&mut file, MAX_RECORD)?, id, artifact, source)
+    }
+    fn decode_output(
+        &self,
+        bytes: &[u8],
+        id: OutputId,
+        artifact: ArtifactId,
+        source: &SourceSelection,
+    ) -> Result<OutputRecord> {
         let envelope: OutputEnvelope =
-            serde_json::from_slice(&bounded_read(&mut file, MAX_RECORD)?)
-                .map_err(|_| OwnershipError::Record)?;
+            serde_json::from_slice(bytes).map_err(|_| OwnershipError::Record)?;
         let r = envelope.record;
         let data = serde_json::to_vec(&r).map_err(|_| OwnershipError::Record)?;
         if envelope.sha256 != <[u8; 32]>::from(Sha256::digest(data))

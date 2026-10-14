@@ -472,8 +472,22 @@ impl CheckedOutput<'_> {
         verified: &mut u64,
         hook: &mut impl FnMut(OutputState, &str) -> Result<()>,
     ) -> Result<()> {
+        self.validate_bound_at(parent, component, control, verified, hook, &|| {
+            self.current()
+        })
+    }
+    // The caller supplies a private checked binding, never a public bypass option.
+    fn validate_bound_at(
+        &self,
+        parent: &File,
+        component: &str,
+        control: &Control<'_>,
+        verified: &mut u64,
+        hook: &mut impl FnMut(OutputState, &str) -> Result<()>,
+        current: &impl Fn() -> Result<()>,
+    ) -> Result<()> {
         control.check()?;
-        self.current()?;
+        current()?;
         let contract: [u8; 32] = Sha256::digest(
             self.artifact
                 .metadata
@@ -554,7 +568,7 @@ impl CheckedOutput<'_> {
             self.artifact.journal,
             control,
         )?;
-        self.current()?;
+        current()?;
         drop(bundle(parent, component, self.record, false)?);
         control.check()
     }
@@ -704,6 +718,8 @@ impl JobStore {
         result
     }
 }
+mod acknowledgment;
+pub use acknowledgment::PublicationAcknowledgmentRecoveryReport;
 mod attestation;
 pub use attestation::PublicationAttestationReport;
 mod reconciliation;

@@ -1,8 +1,10 @@
 # Interrupted Published acknowledgment recovery (R6.1d.3)
 
-Status: design accepted in **R6.1d.3a**, 2026-10-14, against `6c0134e`.
-**Not implemented.** R6.1d.3b must implement and qualify this operation before use.
-Current APIs continue rejecting every pending output transaction.
+Status: implemented and locally qualified in **R6.1d.3b**, 2026-10-14,
+following the R6.1d.3a design reviewed against `6c0134e`.
+[Qualification, measurements and limits](benchmark-results/2026-10-14-r61d3b/README.md) record the bounded evidence.
+Existing publication/reconciliation/attestation/cleanup APIs retain their transaction
+exclusions; only the new explicit API admits the exact pair described below.
 
 [ADR-0070](adr/0070-matched-published-transaction-recovery.md) ·
 [Implementation and qualification plan](published-acknowledgment-recovery-qualification.md) ·
@@ -45,8 +47,8 @@ are outside its bounded acceptance campaign.
 | [`members` and `admit`](../crates/rvvdk-vsphere/src/ownership/retained.rs) require CompletedLease and no source transaction | Output transaction recovery must not admit or recover source transactions. |
 | [Existing originating crash tests](../crates/rvvdk-vsphere/src/ownership/retained/output/publication/attestation/tests/crash.rs) preserve transactions and reject them in attestation | Retain those assertions; add a separate invocation of the new operation. |
 
-These are observations of the current code and planned decisions, not runtime
-qualification of the proposed API.
+These are design-time code observations; the linked implementation report records
+runtime qualification of the separate recovery API.
 
 | Originating acknowledgment boundary | Current journal / output transaction after process loss | Planned next explicit operation |
 |---|---|---|
@@ -127,7 +129,7 @@ not content; full verification remains a separate requirement.
 | ForeignOrInvalid | Owned | Reject foreign stage. |
 | ForeignOrInvalid | ForeignOrInvalid | Reject both locations. |
 
-## Planned API and report
+## API and report
 
 ```rust,ignore
 impl JobStore {

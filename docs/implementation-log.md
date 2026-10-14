@@ -3168,24 +3168,72 @@ No Rust code changed, so no Rust tests or benchmarks were rerun. No lab connecti
 or VM action occurred. R6.1d.3a is complete; R6.1d.3b, its parent R6.1d.3, PERF.0 and
 general R6 recovery remain open. This bounded documentation package is committed locally.
 
+## R6.1d.3b — matched Published acknowledgment recovery (2026-10-14)
+
+Implemented `JobStore::recover_publication_acknowledgment` and its separate report
+for the exact v2 PublishIntent-7/Published-8 pair. Both record bytes/inodes are pinned;
+all other fields must match, with original source/store/destination bindings,
+retained CompletedLease source and Absent/Owned namespace. Fresh full source/RAW
+verification precedes ten syncs and one journal replacement preserving candidate
+bytes/inode. No payload rewrite, new transaction, bundle rename, commit_output,
+automatic retry/cleanup or remote operation occurs. Existing API gates remain intact.
+
+[Contract](published-acknowledgment-recovery.md),
+[ADR-0070](adr/0070-matched-published-transaction-recovery.md),
+[qualification, measurements and plots](benchmark-results/2026-10-14-r61d3b/README.md).
+
+One deadline and both locks cover final source/output checks around independent
+assessment. Candidate sync is followed by the last binding/control gate before rename;
+post-rename cancellation waits for store sync unless I/O fails. All report flags and
+consistent final state are required. Failed/ambiguous outcomes retain primary errors;
+a later Published observation requires a separate explicit attestation invocation.
+
+Workspace validation passed **792 tests, 0 failures, 13 ignored**, formatting and
+all-target Clippy with warnings denied. New tests cover 60 SIGKILL cases, 30 sync
+failures, rename ambiguity/control, exact pairing and content/identity exclusions.
+A first workspace attempt caught a new test-fixture branch error; the corrected
+fixture passed the full rerun before release freeze, and the failed log is retained.
+Focused release tests on Btrfs/private tmpfs, six-origin counter checks, eight larger
+counter smoke operations and a two-interval syscall audit are recorded in the report.
+
+The **2,016-operation** campaign compares frozen normal publication,
+both reconciliation paths and both attestation histories, and separately measures
+new recovery histories and recording controls. Raw samples, all repeat decisions,
+phase/CPU/RSS/allocation/cleanup, provenance and SVG/PNG plots are retained. Short-phase
+CPU zeros remain unchanged and resolution-limited spreads are explicit. Measured
+limits and adverse observations remain in the report and PERF.0; no blanket
+performance clearance follows from bounded functional qualification.
+Existing-path whole wall/CPU repeat-median changes range from −1.42% to +3.85%.
+The new Btrfs 256 MiB written-candidate history retains 5.71% wall spread; existing
+tmpfs staged reconciliation and uncertain attestation retain 11.68% and 10.45% wall
+spread respectively. These observations remain open. Final provenance checks verified
+289 candidate and 285 reference source files, frozen binaries, plot hashes and all
+2,016 operations; fourteen malformed measurement cases were correctly rejected.
+The syscall audit accepts the installed libc's flags-zero renameat2-to-renameat
+translation, verified by local disassembly, while retaining all mutation/order gates.
+
+No ESXi/SSH connection or VM action occurred. Wrong-owner/device-node fixture cases,
+physical power loss, prior writeback repair, hostile mutation, capacity, larger
+working sets and CLI/live integration remain unqualified here. Ambient tmpfs
+allocation and the preceding timing findings stay open. R6.1d.3b and bounded parent
+R6.1d.3 are complete; general recovery and PERF.0 remain open. Committed locally.
+
 ## Next session
 
-Start **R6.1d.3b — implement and locally qualify matched Published transaction recovery**:
+Start **R6.1d.4a — design explicit local recovery commands**:
 
-1. Freeze the unchanged release binary, source/fixture hashes and normal publication,
-   both reconciliation branches and both attestation histories before Rust edits.
-2. Implement the bounded exact-pair parser/guard and consuming API/report under
-   [ADR-0070](adr/0070-matched-published-transaction-recovery.md), preserving all
-   existing state/transaction gates. Complete fresh verification, the ten-sync order,
-   candidate-preserving journal promotion and final binding/control/assessment checks.
-3. Execute the [acceptance matrix](published-acknowledgment-recovery-qualification.md):
-   independent bytes, exclusions, faults/SIGKILL/cancellation, measured syscall audit,
-   work counts, frozen regressions and new phase/resource/recording controls with
-   required repeats and visually inspected SVG/PNG plots. Preserve all failed/adverse
-   samples and any resumed-campaign provenance; do not close unresolved PERF.0 findings.
-4. Update contracts, roadmap/log and qualification evidence, validate/redact artifacts
-   and commit the bounded implementation step locally. No ESXi, license, VM, vCenter,
-   SSH or credentials are needed for authored local fixture qualification.
+1. Review CLI/runner configuration and report conventions against the implemented
+   assessment, intent reconciliation, fresh attestation and exact acknowledgment
+   recovery APIs. Define explicit verbs; do not dispatch mutations from assessment.
+2. Specify private source/artifact/output selection, original store/destination locks,
+   bounded input parsing, sanitized output and distinct success/failure/uncertainty
+   exit semantics. Preserve each library operation's admission gates and fresh work.
+3. Plan awaited blocking execution and cooperative cancellation without abandoning
+   worker ownership. Keep cleanup, partial/source transaction repair and remote replay
+   separate. Save an ADR, command contract and authored-fixture/error/performance matrix
+   before adding runtime integration; retain library baselines and CLI startup costs.
+4. Update roadmap/log, validate the documentation and commit the bounded design step.
+   No ESXi, license, VM, vCenter, SSH or credentials are needed for this local design.
 
 Keep ambient tmpfs sparse-allocation diagnosis and controlled phase/cleanup timing
 in PERF.0; a stable private control does not close either finding.

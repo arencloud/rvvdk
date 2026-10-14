@@ -258,8 +258,9 @@ Fresh Published attestation is now separately available under its linked contrac
 PERF.0, ambient tmpfs allocation behavior, transaction repair and general production
 recovery remain open.
 
-R6.1d.3a separately designs [matched Published-transaction recovery](published-acknowledgment-recovery.md).
-That proposed API accepts only an exact intent-7/candidate-8 pair after fresh full
-verification and original binding checks. It remains **unimplemented** pending
-[R6.1d.3b qualification](published-acknowledgment-recovery-qualification.md); the
-current operation's pending-transaction exclusions and success predicate stay unchanged.
+R6.1d.3b separately implements [matched Published-transaction recovery](published-acknowledgment-recovery.md).
+That explicit API accepts only an exact intent-7/candidate-8 pair after fresh full
+verification and original binding checks, then promotes the unchanged candidate with
+ten syncs and one journal rename. [Local qualification and plots](benchmark-results/2026-10-14-r61d3b/README.md) retain
+fault/process-loss/syscall evidence and performance limits. This operation's existing
+pending-transaction exclusions and success predicate stay unchanged.

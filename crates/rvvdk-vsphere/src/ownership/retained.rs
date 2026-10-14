@@ -40,8 +40,9 @@ mod output;
 mod profile;
 pub use output::{
     OutputId, OutputLocation, OutputRecovery, OutputReport, OutputState,
-    PublicationAttestationReport, PublicationDirectory, PublicationRecovery, PublicationReport,
-    ReconciliationOrigin, ReconciliationReport, VerifiedOutput,
+    PublicationAcknowledgmentRecoveryReport, PublicationAttestationReport, PublicationDirectory,
+    PublicationRecovery, PublicationReport, ReconciliationOrigin, ReconciliationReport,
+    VerifiedOutput,
 };
 
 struct Control<'a> {

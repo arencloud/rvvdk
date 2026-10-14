@@ -1,0 +1,38 @@
+
+/lib64/libc.so.6:     file format elf64-x86-64
+
+
+Disassembly of section .plt:
+
+Disassembly of section .plt.sec:
+
+Disassembly of section .text:
+
+000000000003c9c0 <renameat2>:
+   3c9c0:	f3 0f 1e fa          	endbr64
+   3c9c4:	45 85 c0             	test   %r8d,%r8d
+   3c9c7:	74 37                	je     3ca00 <renameat2+0x40>
+   3c9c9:	49 89 ca             	mov    %rcx,%r10
+   3c9cc:	b8 3c 01 00 00       	mov    $0x13c,%eax
+   3c9d1:	0f 05                	syscall
+   3c9d3:	48 3d 00 f0 ff ff    	cmp    $0xfffffffffffff000,%rax
+   3c9d9:	77 2d                	ja     3ca08 <renameat2+0x48>
+   3c9db:	89 c2                	mov    %eax,%edx
+   3c9dd:	83 f8 ff             	cmp    $0xffffffff,%eax
+   3c9e0:	75 14                	jne    3c9f6 <renameat2+0x36>
+   3c9e2:	48 8b 15 ef 23 1b 00 	mov    0x1b23ef(%rip),%rdx        # 1eedd8 <_GLOBAL_OFFSET_TABLE_+0x278>
+   3c9e9:	64 8b 02             	mov    %fs:(%rdx),%eax
+   3c9ec:	83 f8 26             	cmp    $0x26,%eax
+   3c9ef:	74 25                	je     3ca16 <renameat2+0x56>
+   3c9f1:	ba ff ff ff ff       	mov    $0xffffffff,%edx
+   3c9f6:	89 d0                	mov    %edx,%eax
+   3c9f8:	c3                   	ret
+   3c9f9:	0f 1f 80 00 00 00 00 	nopl   0x0(%rax)
+   3ca00:	e9 7b ff ff ff       	jmp    3c980 <renameat>
+   3ca05:	0f 1f 00             	nopl   (%rax)
+   3ca08:	48 8b 15 c9 23 1b 00 	mov    0x1b23c9(%rip),%rdx        # 1eedd8 <_GLOBAL_OFFSET_TABLE_+0x278>
+   3ca0f:	f7 d8                	neg    %eax
+   3ca11:	64 89 02             	mov    %eax,%fs:(%rdx)
+   3ca14:	eb d6                	jmp    3c9ec <renameat2+0x2c>
+   3ca16:	64 c7 02 16 00 00 00 	movl   $0x16,%fs:(%rdx)
+   3ca1d:	eb d2                	jmp    3c9f1 <renameat2+0x31>
