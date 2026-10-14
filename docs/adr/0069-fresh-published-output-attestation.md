@@ -1,7 +1,8 @@
 # ADR-0069: Attest current Published output without rewriting its acknowledgment
 
-Status: Accepted in **R6.1d.2a**, 2026-10-14. Implementation and qualification pending
-**R6.1d.2b**. Reviewed against `b569060`; this decision changes no runtime behavior.
+Status: accepted in **R6.1d.2a**, 2026-10-14, and implemented in **R6.1d.2b**.
+[Local evidence and remaining limits](../benchmark-results/2026-10-14-r61d2b/README.md)
+record qualification. The original design was reviewed against `b569060`.
 
 ## Context
 
@@ -17,7 +18,7 @@ and cannot stand in for verification.
 
 ## Decision
 
-Design `JobStore::attest_publication`, consuming the original store/destination locks,
+Add `JobStore::attest_publication`, consuming the original store/destination locks,
 explicit output/artifact/source selection and one bounded control. Accept only valid
 version-2 Published sequence 8, no source/output transaction, retained CompletedLease
 source, absent stage and original owned final bundle. Every other state and namespace

@@ -3,7 +3,9 @@
 Status: implemented in **R6.1d.1b**, following the R6.1d.1a design accepted on
 2026-10-14. The bounded local qualification and its filesystem/performance limits
 are recorded in the [implementation report](benchmark-results/2026-10-14-r61d1b/README.md).
-Ambiguous namespaces, pending transactions and Published-at-entry remain blocked.
+Ambiguous namespaces and pending transactions remain blocked. Published-at-entry is
+excluded from this intent-only operation; [fresh attestation](published-output-attestation.md)
+is a separate explicit API.
 
 An interrupted bundle rename can leave a valid output PublishIntent and exactly
 one owned bundle at its recorded stage or destination. An explicit local operation
@@ -87,7 +89,7 @@ branches mid-call or infer that another actor finished the operation.
 In particular, retrying after a lost success response may find Published and return
 Transition. This operation is not an idempotent success query. Fresh attestation of
 an uncertain Published acknowledgment is specified separately by the
-[R6.1d.2a design](published-output-attestation.md), with implementation pending.
+[R6.1d.2 contract](published-output-attestation.md), implemented in R6.1d.2b.
 Read-only assessment cannot prove that an earlier sync completed.
 
 ## API and report contract
@@ -252,5 +254,6 @@ allocation and sync/commit counts rather than treating this design as a measurem
 The bounded package uses local synthetic fixtures; no ESXi credentials, new VM,
 license or vCenter are required. See the linked report for completed evidence and
 remaining limits. A later runner/live integration must be explicitly qualified.
-PERF.0, ambient tmpfs allocation behavior, transaction repair, uncertain Published
-attestation and general production recovery remain open.
+Fresh Published attestation is now separately available under its linked contract.
+PERF.0, ambient tmpfs allocation behavior, transaction repair and general production
+recovery remain open.

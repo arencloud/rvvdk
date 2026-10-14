@@ -146,12 +146,14 @@ Cleanup still refuses PublishIntent and is never called by reconciliation.
 
 [Local qualification and plots](benchmark-results/2026-10-14-r61d1b/README.md) retain
 fault/SIGKILL tests, repeated controls, adverse observations and an ambient tmpfs
-allocation limitation. Transaction repair, unstamped-stage adoption and uncertain
-Published attestation remain separate work. No remote request is reconstructed or
+allocation limitation. Transaction repair and unstamped-stage adoption remain
+separate work. No remote request is reconstructed or
 replayed from these records. Overall production recovery remains open.
 
-R6.1d.2a specifies [fresh Published-output attestation](published-output-attestation.md)
-for a later explicit invocation after an uncertain/lost acknowledgment. Its proposed
-report requires fresh source/full RAW checks and bundle/parent/existing-journal syncs;
-it never rewrites the journal or infers earlier success. Implementation/qualification
-remain pending R6.1d.2b; current publication, assessment and cleanup behavior is unchanged.
+R6.1d.2b implements [fresh Published-output attestation](published-output-attestation.md)
+for a later explicit invocation after an uncertain/lost acknowledgment. Its separate
+report requires fresh source/full RAW checks and eight bundle/parent/existing-journal
+syncs; it never rewrites the journal or infers earlier success. Final source/output
+binding checks bracket assessment and preserve the shared deadline. [Local evidence](benchmark-results/2026-10-14-r61d2b/README.md)
+retains faults, process loss, syscall audit and repeated benchmark controls. Normal
+publication, intent reconciliation, assessment and cleanup keep their existing contracts.

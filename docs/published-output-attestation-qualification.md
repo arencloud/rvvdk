@@ -1,9 +1,9 @@
 # Published-output attestation implementation and qualification (R6.1d.2b)
 
-Status: **acceptance plan**, established by R6.1d.2a on 2026-10-14. None of the new
-runtime acceptance items below has been executed. Existing anchors were reviewed
-at `b569060`. [Contract](published-output-attestation.md) and
-[ADR-0069](adr/0069-fresh-published-output-attestation.md) define the proposed API.
+This acceptance plan was established by R6.1d.2a on 2026-10-14. The
+[R6.1d.2b report](benchmark-results/2026-10-14-r61d2b/README.md) maps it to executed
+checks, measurements and limits. Existing anchors were reviewed at `b569060`. [Contract](published-output-attestation.md) and
+[ADR-0069](adr/0069-fresh-published-output-attestation.md) define the implemented API.
 
 ## Implementation sequence
 
@@ -172,4 +172,4 @@ executables and plot results; production VMware/data/recovery logic stays Rust.
 Complete focused release and appropriate workspace test/fmt/Clippy checks. Record
 performance disposition without declaring PERF.0 or general recovery complete. The
 R6.1d.2a design-only commit does not rerun Rust tests or benchmarks and claims no new
-runtime timing; implementation acceptance remains entirely open here.
+runtime timing; the implementation report records subsequent runtime qualification.

@@ -3074,26 +3074,72 @@ were rerun, no timing or allocation improvement is claimed, and no lab connectio
 VM action occurred. R6.1d.2a is complete; all runtime implementation/qualification
 items remain open in R6.1d.2b, as do the parent R6.1d.2, PERF.0 and general R6 recovery.
 
+## R6.1d.2b — fresh Published-output attestation (2026-10-14)
+
+Implemented `JobStore::attest_publication` and `PublicationAttestationReport` for
+valid version-2 Published sequence 8 with retained CompletedLease source, no source/
+output transaction, absent stage and original owned final bundle. It consumes both
+locks through fresh source/full RAW verification, eight syncs, final binding checks
+before and after assessment, and the last shared-deadline/control observation. The
+Published journal bytes, inode and sequence remain unchanged; the call never creates
+a transaction, acknowledges a new state, renames, deletes or infers earlier success.
+
+[Contract](published-output-attestation.md),
+[ADR-0069](adr/0069-fresh-published-output-attestation.md),
+[qualification, measurements and plots](benchmark-results/2026-10-14-r61d2b/README.md).
+
+The shared private source-binding helper moved to the publication module; existing
+normal and intent-reconciliation protocols remain unchanged. The new local API
+preserves separate primary/assessment errors, catches late source transactions even
+when output assessment looks valid, and completes paired sync phases before observing
+cancellation unless I/O fails. Source cleanup blocks later attestation while existing
+explicit Published cleanup stays independently eligible.
+
+Workspace validation passed **772 tests, 0 failures, 12 ignored**, all-target Clippy
+with warnings denied and formatting. Release publication tests passed on Btrfs and
+private tmpfs: **46 passed, 4 ignored** each. New tests cover 36 SIGKILL boundaries,
+24 simulated sync errors, control/deadline, state/namespace exclusions, independent
+bytes, original journal/inode preservation and explicit cleanup. Eight release
+counter smokes confirm full verification work and zero journal commits. A separate
+two-history syscall audit observed eight successful syncs each, no application
+mutation syscalls and no writable/creating opens within attestation.
+
+The **1,440-operation** campaign compares frozen normal publication and both
+reconciliation paths, then separately measures attestation histories and recording
+controls. Existing-path whole wall/CPU repeat-median changes were within −1.65% to
++2.03%. New 256 MiB tmpfs attestation still has roughly 15% whole-operation
+round-median spread after longer repeats, concentrated in verification; timing
+stability, phase/cleanup/recording variation remain in PERF.0. Raw samples,
+repeat decisions, all phase/CPU/RSS/allocation/cleanup observations and plots are
+retained in the report. A successful sub-microsecond parent-sync sample exposed an
+overly strict positive-only CPU-phase validator. The fix preserves zero-resolution
+CPU observations, uses null for undefined relative spreads and rejects negative/
+nonfinite values. All completed rounds, original harness/environment, rejection and
+pre-resume hashes are retained; no numeric sample was edited or discarded. Only
+missing work resumed with unchanged Rust executables and matching namespace options.
+
+No ESXi/SSH connection or VM action occurred. Physical power loss, prior writeback
+repair, hostile mutation, capacity and live integration remain unqualified. PERF.0
+retains timing/recording variance and ambient tmpfs allocation; the private volatile
+control does not close those findings. R6.1d.2b and bounded parent R6.1d.2 are complete;
+transaction repair and general R6 recovery remain open. This package is committed locally.
+
 ## Next session
 
-Start **R6.1d.2b — implement and locally qualify fresh Published-output attestation**:
+Start **R6.1d.3a — design recovery of interrupted Published acknowledgment transactions**:
 
-1. Freeze unchanged release binaries and source/fixture/build manifests for existing
-   normal publication and both intent-reconciliation paths before editing Rust.
-2. Implement the consuming API and separate report with fresh source/full RAW checks,
-   original journal preservation, exact eight-sync order and one shared control.
-   Keep final source/output binding checks before and after assessment. Do not add
-   journal transitions, automatic recovery dispatch, transaction repair or cleanup.
-3. Execute the accepted independent-byte, exclusion, identity/substitution, lock,
-   cancellation/deadline, I/O-fault and SIGKILL matrix. Test both normal-publication
-   and reconciliation origins of uncertain Published and lost successful replies.
-4. Measure frozen existing-path regressions and new operation phases separately;
-   retain original/recovered/post-oracle allocation, wall/CPU/RSS, work counts,
-   cleanup, recording controls, all adverse observations, longer repeats and plots.
-5. Complete focused/workspace checks, record evidence and limits, update roadmap/log,
-   scan staged private data and commit the bounded package locally. Local authored
-   fixtures need no ESXi, license, VM, vCenter or credentials. Defer runner/live
-   integration until separately qualified.
+1. Review actual old/output-transaction state pairs from publication and reconciliation
+   failure boundaries. Define which complete matching records can establish authority
+   under the existing private-store model, and which partial/foreign entries stay blocked.
+2. Specify original source/store/destination bindings, fresh full verification and
+   namespace requirements before any transaction promotion. Keep source transactions,
+   conversion resume and unstamped-stage adoption separate.
+3. Save an ADR, explicit state/transaction table, consuming API/report contract,
+   durability/control order and fault/process-loss/performance acceptance matrix.
+   Preserve current publication, reconciliation, attestation and cleanup behavior
+   until the new operation is independently implemented and qualified.
+4. Update roadmap/log, validate the design and commit the bounded documentation step.
+   Local analysis needs no ESXi, license, VM, vCenter or credentials.
 
 Keep ambient tmpfs sparse-allocation diagnosis and controlled phase/cleanup timing
 in PERF.0; a stable private control does not close either finding.

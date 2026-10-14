@@ -397,12 +397,14 @@ following bounded packages in order:
    and conservative acknowledgment. [Local qualification](benchmark-results/2026-10-14-r61d1b/README.md)
    includes repeated measurements/plots and retains ambient tmpfs allocation and
    timing variation in PERF.0.
-   **R6.1d.2a design complete:** [fresh Published-output attestation](published-output-attestation.md)
-   requires full verification and new sync barriers without rewriting the journal
-   or inferring prior success. **Next R6.1d.2b:** implement and qualify the
-   [accepted local matrix](published-output-attestation-qualification.md). Keep
-   transaction repair and unstamped stages separate. No new host, license, VM,
-   vCenter or lab access is needed for this local package. A later live/runner
+   **R6.1d.2 complete:** [fresh Published-output attestation](published-output-attestation.md)
+   verifies and syncs the existing Published bundle/journal without rewriting records
+   or inferring prior success. [Local qualification](benchmark-results/2026-10-14-r61d2b/README.md)
+   retains syscall/fault/crash checks and repeated benchmarks/plots.
+   **Next R6.1d.3a:** design explicit recovery of interrupted Published-acknowledgment
+   transactions, preserving partial/foreign entries and fresh verification requirements.
+   Keep source transactions and unstamped stages separate. No new host, license, VM,
+   vCenter or lab access is needed for that design. A later live/runner
    integration requires its own focused qualification. Capacity proof and production
    R6 integration/recovery remain open.
 6. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9

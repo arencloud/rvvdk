@@ -2,8 +2,8 @@
 use super::*;
 mod publication;
 pub use publication::{
-    OutputLocation, PublicationDirectory, PublicationRecovery, PublicationReport,
-    ReconciliationOrigin, ReconciliationReport, VerifiedOutput,
+    OutputLocation, PublicationAttestationReport, PublicationDirectory, PublicationRecovery,
+    PublicationReport, ReconciliationOrigin, ReconciliationReport, VerifiedOutput,
 };
 
 const OUTPUT_MEMBERS: [&str; 3] = ["disk.raw", "output.json", "owner"];

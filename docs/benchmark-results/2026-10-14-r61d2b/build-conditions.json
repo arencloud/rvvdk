@@ -1,0 +1,34 @@
+{
+  "reference_commit": "0e621b9",
+  "build_command": [
+    "cargo",
+    "test",
+    "-p",
+    "rvvdk-vsphere",
+    "--lib",
+    "--release",
+    "--no-run",
+    "--message-format=json"
+  ],
+  "compiler_environment": {
+    "RUSTFLAGS": "",
+    "CARGO_ENCODED_RUSTFLAGS": "",
+    "CARGO_BUILD_TARGET": "",
+    "RUSTUP_TOOLCHAIN": ""
+  },
+  "checks": [
+    "cargo test --workspace",
+    "cargo clippy --workspace --all-targets -- -D warnings",
+    "cargo fmt --all -- --check"
+  ],
+  "retained_test_parent": "target/r61d2b/fixtures",
+  "namespace": [
+    "unshare",
+    "--user",
+    "--map-root-user",
+    "--mount",
+    "sh",
+    "target/r61d2b/private/qualify.sh"
+  ],
+  "tmpfs": "size=512m,mode=0700,huge=never"
+}

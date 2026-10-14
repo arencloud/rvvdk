@@ -261,10 +261,12 @@ byte comparison and the independent guest oracle, with [read/CPU/RSS plots](docs
 reconciliation for staged and already-renamed bundles, with fresh full verification
 and durable acknowledgment. [Tests, benchmarks and plots](docs/benchmark-results/2026-10-14-r61d1b/README.md)
 record the local qualification and remaining timing/allocation limits.
-[R6.1d.2a](docs/published-output-attestation.md) now defines fresh Published-output
-attestation after an uncertain or lost acknowledgment. The design preserves the
-existing journal and requires full verification plus new sync observations.
-Next: implement and locally qualify it (R6.1d.2b); runtime behavior is unchanged.
+[R6.1d.2](docs/published-output-attestation.md) now adds explicit fresh attestation
+of Published output after an uncertain or lost acknowledgment. It preserves the
+original journal and freshly verifies all bytes and persistence barriers.
+[Tests, syscall audit and benchmark plots](docs/benchmark-results/2026-10-14-r61d2b/README.md)
+record the local qualification. Next: design recovery of interrupted Published
+acknowledgment transactions (R6.1d.3a).
 
 Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
 for sanitizer execution rates, memory and feedback across repeated campaigns.

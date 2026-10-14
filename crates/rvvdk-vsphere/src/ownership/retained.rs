@@ -39,9 +39,9 @@ mod output;
 #[cfg(test)]
 mod profile;
 pub use output::{
-    OutputId, OutputLocation, OutputRecovery, OutputReport, OutputState, PublicationDirectory,
-    PublicationRecovery, PublicationReport, ReconciliationOrigin, ReconciliationReport,
-    VerifiedOutput,
+    OutputId, OutputLocation, OutputRecovery, OutputReport, OutputState,
+    PublicationAttestationReport, PublicationDirectory, PublicationRecovery, PublicationReport,
+    ReconciliationOrigin, ReconciliationReport, VerifiedOutput,
 };
 
 struct Control<'a> {

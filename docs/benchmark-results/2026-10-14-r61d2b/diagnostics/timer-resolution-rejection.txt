@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/home/egevorky/RustroverProjects/rvvdk/scripts/benchmarks/measure_attestation.py", line 171, in <module>
+    main()
+    ~~~~^^
+  File "/home/egevorky/RustroverProjects/rvvdk/scripts/benchmarks/measure_attestation.py", line 166, in main
+    for n in range(1, 4): run(kind, fs, fixture, 'repeat', n)
+                          ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/egevorky/RustroverProjects/rvvdk/scripts/benchmarks/measure_attestation.py", line 155, in run
+    entry['medians'] = load_run(a.report, entry)[1]
+                       ~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/egevorky/RustroverProjects/rvvdk/scripts/benchmarks/measure_attestation.py", line 35, in load_run
+    old, _ = previous.load_run(root, single)
+             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/home/egevorky/RustroverProjects/rvvdk/scripts/benchmarks/measure_reconciliation.py", line 86, in load_run
+    metrics(r, run['kind'])
+    ~~~~~~~^^^^^^^^^^^^^^^^
+  File "/home/egevorky/RustroverProjects/rvvdk/scripts/benchmarks/measure_reconciliation.py", line 42, in metrics
+    assert all(math.isfinite(v) and v > 0 for v in result.values()), result
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'wall_ms': 63.207426, 'cpu_ms': 63.02099999999999, 'cleanup_ms': 0.7825949999999999, 'cleanup_cpu_ms': 0.7799999999999727, 'acknowledgment.cpu_ms': 0.2400000000000091, 'acknowledgment.wall_ms': 0.239956, 'admission.cpu_ms': 8.239000000000004, 'admission.wall_ms': 8.259541, 'assessment_and_release.cpu_ms': 0.12700000000000955, 'assessment_and_release.wall_ms': 0.126078, 'bundle_sync.cpu_ms': 0.23399999999998045, 'bundle_sync.wall_ms': 0.231689, 'intent_sync.cpu_ms': 0.29100000000005366, 'intent_sync.wall_ms': 0.29496, 'parent_sync.cpu_ms': 0.0, 'parent_sync.wall_ms': 0.000404, 'rename_and_checks.cpu_ms': 0.17999999999994998, 'rename_and_checks.wall_ms': 0.17947300000000002, 'verification.cpu_ms': 53.70999999999998, 'verification.wall_ms': 53.864216, 'rename_ms': 0.026995, 'rename_cpu_ms': 0.02600000000001046}

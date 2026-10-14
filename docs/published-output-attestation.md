@@ -1,14 +1,14 @@
 # Fresh Published-output attestation (R6.1d.2)
 
-Status: **design accepted in R6.1d.2a, 2026-10-14; implementation pending R6.1d.2b**.
-This document specifies a new operation. No attestation API exists yet and current
-runtime behavior is unchanged. Code reviewed at `b569060`.
+Status: implemented in **R6.1d.2b**, following the R6.1d.2a design accepted on
+2026-10-14. [Local qualification, measurements and limits](benchmark-results/2026-10-14-r61d2b/README.md)
+record the bounded evidence; general recovery and PERF.0 remain open.
 
 A process can lose its response after publication succeeds, or fail after the
 Published journal rename but before the store-directory sync. A later invocation
 sees the same Published sequence 8 in both cases. It cannot establish which earlier
-steps completed. Explicit attestation will freshly verify the current source and
-output and observe new synchronization barriers, without relabeling the earlier
+steps completed. Explicit attestation freshly verifies the current source and
+output and observes new synchronization barriers, without relabeling the earlier
 call as successful.
 
 [ADR-0069](adr/0069-fresh-published-output-attestation.md) ·
@@ -103,7 +103,7 @@ Invalid versions, checksums, sequences, fields, bindings and either transaction 
 regardless of the table. Only a fresh explicit invocation can reconsider a failure.
 There is no dispatch from attestation into publication, reconciliation or cleanup.
 
-## Proposed API and report
+## API and report
 
 ```rust,ignore
 impl JobStore {
@@ -118,7 +118,7 @@ impl JobStore {
 }
 ```
 
-| Proposed report field | Observation made by this invocation |
+| Report field | Observation made by this invocation |
 |---|---|
 | `logical_bytes_verified: u64` | Bytes actually compared; partial progress may survive failure. |
 | `content_verified: bool` | Full native/source/RAW/metadata/digest and post-read checks passed. |
@@ -190,8 +190,7 @@ no promise is made to interrupt a blocked syscall.
 
 The successful path makes **eight explicit sync calls**: three members, bundle,
 store, destination, Published journal, store. It makes **zero journal commits, zero
-renames and zero output/source byte writes**. This is a protocol target, not a measured
-result. The source journal and payload are verified but not re-synced or rewritten;
+renames and zero output/source byte writes**. The linked qualification checks the exact calls and audits syscall intervals. The source journal and payload are verified but not re-synced or rewritten;
 the operation attests the selected Published output, not source retention durability.
 
 File sync alone does not ensure the containing directory entry is persisted; a
@@ -242,10 +241,10 @@ storage-error diagnosis and physical durability qualification remain separate.
 Normal publication, intent reconciliation, read-only assessment and explicit cleanup
 keep their current acceptance and report semantics. There is no CLI/pipeline dispatch
 or remote integration in R6.1d.2b. No new ESXi, credentials, license, VM or vCenter is
-needed for the planned local synthetic qualification.
+needed for local synthetic qualification.
 
-Implementation must pass the [acceptance matrix](published-output-attestation-qualification.md)
-and a frozen normal/reconciliation regression comparison before completion. Existing
+The [acceptance matrix](published-output-attestation-qualification.md) maps to the
+linked implementation report, including frozen normal/reconciliation comparisons. Existing
 [measurements and plots](benchmark-results/2026-10-14-r61d1b/README.md) remain unchanged;
 PERF.0 timing variation, ambient tmpfs allocation and larger-working-set/hash tuning
 remain open. Transaction repair, unstamped-stage adoption and general R6 recovery

@@ -52,7 +52,7 @@ reconciliation finishes.
 
 Published-at-entry remains outside this intent-only operation, including a retry
 after a lost success response. [ADR-0069](0069-fresh-published-output-attestation.md)
-now defines separate fresh Published attestation (implementation pending); transaction
+defines separate fresh Published attestation (implemented in R6.1d.2b); transaction
 repair remains future work. Process-loss qualification is not physical power-loss
 qualification. The private cooperating-writer trust boundary is unchanged.
 

@@ -54,11 +54,11 @@ fn origin(staged: OutputLocation, published: OutputLocation) -> Result<Reconcili
 }
 // A statically dispatched private seam allows tests to return actual syscall-style
 // errors before an operation. Production always executes the OS implementation.
-trait Io {
+pub(super) trait Io {
     fn sync(&mut self, file: &File, point: &'static str) -> std::io::Result<()>;
     fn rename(&mut self, from: &File, old: &str, to: &File, new: &str) -> Result<()>;
 }
-struct SystemIo;
+pub(super) struct SystemIo;
 impl Io for SystemIo {
     fn sync(&mut self, file: &File, _: &'static str) -> std::io::Result<()> {
         file.sync_all()
@@ -87,13 +87,6 @@ impl Io for SystemIo {
         }
         Ok(())
     }
-}
-fn source_current(a: &RetainedArtifact) -> Result<()> {
-    let (record, metadata, _, journal) = members(&a.store, a.metadata.id(), &a.source)?;
-    if record != a.record || metadata != a.metadata || journal != a.journal {
-        return Err(OwnershipError::Identity);
-    }
-    Ok(())
 }
 impl CheckedOutput<'_> {
     fn reconcile_current(
@@ -149,7 +142,7 @@ impl JobStore {
         )
     }
     #[allow(clippy::too_many_arguments)]
-    fn reconcile_hook(
+    pub(super) fn reconcile_hook(
         self,
         output: OutputId,
         artifact: ArtifactId,

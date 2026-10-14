@@ -428,6 +428,13 @@ impl VerifiedOutput {
         report
     }
 }
+fn source_current(a: &RetainedArtifact) -> Result<()> {
+    let (record, metadata, _, journal) = members(&a.store, a.metadata.id(), &a.source)?;
+    if record != a.record || metadata != a.metadata || journal != a.journal {
+        return Err(OwnershipError::Identity);
+    }
+    Ok(())
+}
 // Private borrowed validation, independent of the public Verified-only capability.
 struct CheckedOutput<'a> {
     artifact: &'a RetainedArtifact,
@@ -697,6 +704,8 @@ impl JobStore {
         result
     }
 }
+mod attestation;
+pub use attestation::PublicationAttestationReport;
 mod reconciliation;
 pub use reconciliation::{ReconciliationOrigin, ReconciliationReport};
 #[cfg(test)]
