@@ -1,0 +1,19 @@
+{
+  "sha256": {
+    "scripts/benchmarks/hash_probe/Cargo.toml": "4af09a8bc141527ce4276d0bbaba95547eb51c1edb0da51cb13dec4cd17976ca",
+    "scripts/benchmarks/hash_probe/Cargo.lock": "42e234a84b0fbb76b5245294526229fee40391dc6f251c80b083cad734621168",
+    "scripts/benchmarks/hash_probe/src/main.rs": "da86f70aec500279f43e2a5447342d471311832c0cf3b7482ef37b3e7478eb00",
+    "scripts/benchmarks/measure_hash_backends.py": "5f802c08c0dc6bec0ec0bbef11d2562cad66ddf7d6289b160eb342e0d5575bc2",
+    "target/perf1a/hash-probe": "87e240e96c3e3e805e9f9ef4bcdb9f5cc5675b55816a484a32ec4c5abe71db3d"
+  },
+  "native_checks": 624,
+  "emulated_no_sha_checks": 624,
+  "independent_python_digest_cases": 72,
+  "qemu": "qemu-x86_64 version 10.2.2 (qemu-10.2.2-1.fc44)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+  "qemu_args": [
+    "-cpu",
+    "max,sha-ni=off"
+  ],
+  "affinity": "minimum allowed CPU, recorded in baseline",
+  "source_audit": "sha2 SHA-256 default selects x86_sha when SHA/SSE2/SSSE3/SSE4.1 detected; ring selects SHA+SSSE3, then Intel AVX, then SSSE3/fallback. Features confirmed by executable. Emulation proves correctness only."
+}

@@ -3282,24 +3282,63 @@ tmpfs allocation and PERF.0 remain open; this is not general production recovery
 Formatting, workspace tests, all-target Clippy, documentation links, artifact hashes,
 diff hygiene and staged privacy are checked before the local commit.
 
+## PERF.1a — 2026-10-15
+
+Complete within the current SHA-NI host scope. Measurements began 2026-10-14 from
+`95ca5245a60438965bec71a461687d41b6ce292d`; all 285 frozen production source/dependency
+hashes remain unchanged. The [decision](sha256-performance-qualification.md) and
+[report](benchmark-results/2026-10-14-perf1a/README.md) retain the experiment and limits.
+
+Audited existing hash sites and exact `sha2 0.11.0` / `ring 0.17.14` dispatch.
+The current host already uses SHA-NI; the earlier runner without SHA-NI is a distinct
+configuration. Added a standalone Rust benchmark/correctness probe with a separate
+manifest/lock, paired measurement drivers, evidence checks and four PNG/SVG figures.
+The production workspace gains no dependency or backend selector.
+
+Both backends pass 624 checks natively and 624 with SHA masked under QEMU, plus 72
+independent Python digest-case comparisons. The private candidate changes three
+retained bulk hash contexts only; exact patch/source/binary hashes are archived.
+805 candidate workspace tests pass, all-target Clippy/formatting pass, and three
+actual CLI fixture groups pass. The first workspace run exposed a missing copied
+`target/` fixture prerequisite; its failure and successful full rerun are retained.
+No code change was needed to fix that setup. QEMU provides correctness evidence only.
+The help oracle also needed exact argv[0] normalization; its diagnostic and original
+driver are retained, with 1,008 completed samples preserved before 144 auxiliary
+controls resumed. Two unpersisted help timings are explicitly excluded. A separate
+untimed control confirms child peak RSS can inherit launcher memory; the plots and
+report label this limit instead of claiming isolated CLI working-set measurements.
+
+Measured 576 hash observations and 1,152 frozen full-operation observations, retaining
+all initial and longer repeats, adverse results, full byte/allocation/sync checks,
+CLI process costs and timing spread. The alternative loses every hash group on this
+host: bulk wall +4.26–8.64%; 64-byte records +33.40%. Reject it here and retain `sha2`.
+Full-operation results, including mixed results and unresolved variation, stay in
+PERF.0. This is a completed bounded investigation, not a production speedup or
+cross-CPU performance clearance. No lab access or VM operation occurred.
+
+Evidence validators, plot inputs/outputs, documentation links, unchanged production
+hashes, staged privacy and diff hygiene are checked before the local commit.
+PERF.1a is complete; non-SHA native throughput remains PERF.1b. Commit this bounded
+package locally with its evidence; no push.
+
 ## Next session
 
-Start **PERF.1a — digest-equivalent SHA-256 qualification and tuning**:
+Start **PERF.1b — native SHA-256 qualification without SHA-NI**:
 
-1. Audit existing hash call sites/backends and CPU capabilities: the current host
-   advertises SHA-NI; retain the earlier non-SHA-NI target as a separate CPU
-   configuration. Use retained phase evidence. Freeze current release binaries and dependency/source hashes.
-2. Evaluate a bounded backend change only if it preserves SHA-256 exactly. Use known
-   digests, differential checks, chunk boundaries and independent dense/sparse bytes.
-   Preserve encoded-source and full logical RAW verification, bounded memory,
-   cancellation, sparse allocation and every sync/publication gate.
-3. Compare frozen paired hash and end-to-end publication/recovery builds, including
-   CLI startup/linkage. Keep CPU/storage/cache conditions explicit and retain every
-   slower result, failed sample and repeat spread. Export and inspect PNG/SVG plots.
-   Test existing cancellation, fault, identity and allocation invariants unchanged.
-4. Accept only a measured supported improvement; otherwise commit the bounded
-   investigation and its evidence. Save remaining limits and the next step, scan
-   staged files and commit locally. No ESXi or new trial/license is needed.
+1. Reconfirm the earlier runner's CPU features and resource/storage configuration.
+   Freeze reference source/dependencies/binaries there. Record any changed VM/CPU
+   configuration; do not compare timings across machines as an implementation gain.
+2. Run the standalone Rust probe's known vectors, independent bytes, chunk boundaries
+   and repeated small/bulk dense/sparse matrix natively. Retain every sample. QEMU
+   CPU masking is not a replacement for native performance qualification.
+3. Only if supported by the microbenchmarks, evaluate a private feature-aware bulk
+   fallback that preserves current SHA-NI behavior. Repeat frozen publication,
+   reconciliation, attestation, acknowledgment and whole CLI controls on affected
+   configurations; preserve full verification, sparse allocation, cancellation and
+   every persistence gate.
+4. Accept a supported bounded improvement or commit the negative result. Export and
+   inspect plots, record remaining limits, scan staged files and commit locally.
+   Existing runner access is sufficient; no new ESXi trial, VM or vCenter is needed.
 
 Keep ambient tmpfs sparse-allocation diagnosis and controlled phase/cleanup timing
 in PERF.0; a stable private control does not close either finding. Different CPU/VM

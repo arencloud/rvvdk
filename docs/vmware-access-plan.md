@@ -409,10 +409,13 @@ following bounded packages in order:
    with private original-source config, joined cancellation and sanitized reports.
    [Local tests and performance plots](benchmark-results/2026-10-14-r61d4b/README.md) retain actual signal/fault/process-loss
    checks, frozen comparisons and unresolved timing variation.
-   **Next PERF.1a:** qualify and tune digest-equivalent SHA-256 throughput after auditing the actual
-   CPU/backend configuration, preserving every full verification and durability gate. No new
-   host, license, VM, vCenter or lab access is needed. Live retained-artifact command
-   qualification, capacity proof and general production R6 recovery remain open.
+   **PERF.1a complete:** [current SHA-NI host qualification](sha256-performance-qualification.md)
+   retains `sha2` after digest checks and repeated hash/workflow/CLI comparisons; the isolated
+   `ring` experiment is rejected. **Next PERF.1b:** reconfirm the earlier runner without SHA-NI
+   and benchmark the same frozen builds natively on that runner. No new ESXi trial, license,
+   VM or vCenter is required; runner access is needed for native performance evidence.
+   Live retained-artifact command qualification, capacity proof and general production R6
+   recovery remain open.
 6. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9
    in later independently qualified steps. Keep PERF.0/R4.4 and the discovery
    variance/controlled-TLS investigation visible while adding new features.

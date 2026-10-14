@@ -218,3 +218,27 @@ figures to their inputs. Direct test-process RSS includes fixture setup and cann
 be compared as isolated operation memory against CLI child RSS. Signed profile
 clock-accounting gaps and zero-resolution CPU phases remain in the report. See the
 [recorded campaign and limits](../../docs/benchmark-results/2026-10-14-r61d4b/README.md).
+
+## SHA-256 backend qualification
+
+[PERF.1a](../../docs/benchmark-results/2026-10-14-perf1a/README.md) records a rejected
+backend experiment with native and CPU-masked correctness, paired micro/workflow
+measurements and independent byte/allocation/durability checks. The standalone
+Linux x86-64 Rust probe lives in `hash_probe/` with its own Cargo manifest/lock;
+it is excluded from the production workspace. Python orchestrates offline local
+measurements and plots; it does not implement VMware transport.
+
+```sh
+python3 scripts/benchmarks/check_hash_evidence.py docs/benchmark-results/2026-10-14-perf1a
+target/benchmark-plots/bin/python scripts/benchmarks/plot_hash_backends.py docs/benchmark-results/2026-10-14-perf1a
+```
+
+`measure_hash_backends.py` and `measure_hash_workflows.py` require explicit frozen
+binaries and a new report location; see `--help` and the report for the private
+filesystem setup. They refuse campaign-index overwrite. The plotter validates all
+recorded samples and regenerates matching summaries before writing four PNG/SVG
+pairs. Positive percentage changes mean slower. Round ratios/spreads describe
+variation and are not confidence intervals. Emulated correctness is never native
+performance evidence. Keep native/probe lifetime RSS separate from CLI child RSS. Child high-water RSS
+can include inherited launcher memory before exec; PERF.1a records a diagnostic,
+so these counters must not be treated as isolated CLI working sets.

@@ -1,0 +1,13 @@
+{
+  "baseline": "95ca524",
+  "scope": "Audit and qualify a digest-equivalent SHA-256 candidate; accept runtime changes only with measured support.",
+  "candidate": "ring 0.17.14 SHA-256 versus existing sha2 0.11.0; same dependency versions as workspace",
+  "micro_groups": ["64-byte metadata", "1024-byte metadata", "64-KiB container chunk", "64-MiB dense / 1-MiB chunks", "64-MiB dense / 64-KiB chunks", "64-MiB sparse-pattern / 1-MiB chunks", "256-MiB dense / 1-MiB chunks", "256-MiB sparse-pattern / 1-MiB chunks"],
+  "rounds": {"initial": {"rounds": 3, "pairs": 4}, "repeat": {"rounds": 3, "pairs": 8}},
+  "repeats": "Predeclared for every micro group and any later full-operation group; retain all samples, including adverse results and spread above 5%.",
+  "correctness": "Known SHA-256 vectors, padding/block/chunk boundary differential checks, independent Python hashlib oracles; native and QEMU CPU-masked checks. QEMU is correctness only, never performance evidence for physical CPUs without SHA-NI.",
+  "promotion_gate": "A microbenchmark improvement must survive frozen full-publication/recovery and CLI comparisons. No skipped read/hash/comparison, zero shortcut, altered chunk size, cancellation or persistence gate.",
+  "if_promising": "Privately build a candidate using ring only for bulk owned/retained payload hashing; retain SHA-256 identity/journal/TLS contracts. Qualify workspace and actual CLI fixtures, frozen native normal/reconciliation/attestation/acknowledgment controls, and whole recovery CLI. Restore production if full-operation results do not support promotion.",
+  "measurement_conditions": "Serial workloads; no concurrent builds/tests/traces/plots; fixed CPU affinity; warm normal page cache; record CPU features and storage; host SMT/load/frequency not isolated. Distinguish wall, CPU and lifetime peak RSS.",
+  "no_lab": true
+}

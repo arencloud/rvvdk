@@ -1,0 +1,49 @@
+{
+  "affinity": [
+    0
+  ],
+  "available_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+  ],
+  "kernel": [
+    "Linux",
+    "egevorky-thinkpadp1gen4i.remote.csb",
+    "7.2.5-200.fc44.x86_64",
+    "#1 SMP PREEMPT_DYNAMIC Fri Sep 11 15:11:05 UTC 2026",
+    "x86_64"
+  ],
+  "binary_sha256": {
+    "reference": "9d5945ac85fbcf9045b90f994ebbef4e8362b16b0f37dfa9225d46d174703317",
+    "candidate": "940058f01a750ada368349e209b9d487538f7686cc6ea8fb24ba250353fe19f4",
+    "reference_cli": "562eaa823b1b1466d482e0a483d0e0ea7068c9cff4820c6eab7ff1a4269bedbc",
+    "candidate_cli": "a45005ff78463048fe4502a6bfe0ef2a44481156f4ee19460c7c58ffd9f8f6de"
+  },
+  "scripts": {
+    "measure_hash_workflows.py": "513d005e28bdcc8ac784e48a0ff50cb23370beb15a469c48c2f7c8669245bdc7",
+    "measure_acknowledgment.py": "1cc13c1e176fa68d214c2e83294ede63f013998c0fd91656663762c0fe276048",
+    "measure_attestation.py": "3588fda96b304cb47d9b4968407584e784e4d8a9272b00be7c213ca683109f53",
+    "measure_reconciliation.py": "b9f4293d240455fea9f294e9d444a09f76b8b94a7ca4b5791bf7eb0ffc6d7cff",
+    "measure_recovery_cli.py": "024cfc77cf97ee34423767263eab868faf6fc87e405ce689cfe66745dd0b6dc0",
+    "measure_recovery_cli_supplement.py": "36147110ad61385eeb75c2b01e2c66fa46e42dafa23eb64dc59cce1856a9cff9"
+  },
+  "mounts": {
+    "btrfs": "btrfs rw,relatime,seclabel,compress=zstd:1,ssd,discard=async,space_cache=v2,subvolid=256,subvol=/home",
+    "tmpfs": "tmpfs rw,relatime,seclabel,size=524288k,mode=700,uid=4214714,gid=4214714,inode64"
+  },
+  "conditions": "Serial workload; normal page cache; setup/oracles excluded; no cold-cache claim. Host load/SMT/frequency not isolated. Private tmpfs huge=never is volatile. Native lifetime RSS includes fixture setup; CLI child RSS is a separate scope."
+}

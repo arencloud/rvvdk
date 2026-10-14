@@ -275,6 +275,9 @@ bounded qualification and unresolved timing limits.
 `rvddk recover`. Each uses a private original-source config and preserves native
 verification, cancellation and report boundaries. [Tests and performance plots](docs/benchmark-results/2026-10-14-r61d4b/README.md)
 record qualification and remaining performance findings.
+[PERF.1a SHA-256 comparisons](docs/benchmark-results/2026-10-14-perf1a/README.md)
+retain the existing accelerated `sha2` backend after evaluating an alternative,
+with digest checks, full-operation measurements and PNG/SVG plots.
 
 Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
 for sanitizer execution rates, memory and feedback across repeated campaigns.

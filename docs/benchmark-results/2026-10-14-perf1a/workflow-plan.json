@@ -1,0 +1,25 @@
+{
+  "decision": "Microbenchmarks favor sha2 in every group. Run a bounded isolated candidate to check full-operation impact; this does not meet the micro promotion gate and is not a full production qualification.",
+  "candidate": "Only three retained payload hash constructors use ring: encoded-container admission, full output verification, fresh publication verification. Identity/journal/TLS/owned-transfer paths unchanged.",
+  "rounds": {
+    "initial": [
+      3,
+      4
+    ],
+    "repeat": [
+      3,
+      8
+    ]
+  },
+  "groups": [
+    "Btrfs stored64 native owned/published, reconciliation staged/renamed, attestation acknowledged/uncertain, acknowledgment written/synced",
+    "Private tmpfs deflated256 native attestation histories",
+    "Btrfs stored64 Published attestation direct/CLI for each frozen build",
+    "Private tmpfs deflated256 Written acknowledgment direct/CLI for each frozen build",
+    "Paired CLI help and observational Published assessment"
+  ],
+  "timed_observations": 1152,
+  "storage": "Btrfs and private user/mount/network namespace tmpfs size=512m,mode=0700,huge=never",
+  "safety": "Authored local synthetic fixtures; unchanged full byte/hash, allocation, fault, cancellation and sync checks; no VMware access.",
+  "repeat_policy": "All groups get all repeats, regardless of sign or spread."
+}

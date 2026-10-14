@@ -1,0 +1,32 @@
+{
+  "kind": "Untimed diagnostic; not added to benchmark observation totals",
+  "binary_sha256": "562eaa823b1b1466d482e0a483d0e0ea7068c9cff4820c6eab7ff1a4269bedbc",
+  "script_sha256": "a36a99c3913967e0e8b48cd862b22b2a4aacf6eefe824c6c1c5ca375c5d099b7",
+  "rows": [
+    {
+      "retained_launcher_bytes": 0,
+      "launcher_peak_rss_kib": 16632,
+      "child_peak_rss_kib": 12504,
+      "exit_code": 0
+    },
+    {
+      "retained_launcher_bytes": 134217728,
+      "launcher_peak_rss_kib": 143584,
+      "child_peak_rss_kib": 143456,
+      "exit_code": 0
+    },
+    {
+      "retained_launcher_bytes": 134217728,
+      "launcher_peak_rss_kib": 143640,
+      "child_peak_rss_kib": 143640,
+      "exit_code": 0
+    },
+    {
+      "retained_launcher_bytes": 0,
+      "launcher_peak_rss_kib": 16632,
+      "child_peak_rss_kib": 12568,
+      "exit_code": 0
+    }
+  ],
+  "interpretation": "The same help command reports higher child lifetime peak RSS when its Python launcher retains more memory. This counter includes launch-time inherited memory on this host; it is not isolated post-exec CLI working-set memory."
+}

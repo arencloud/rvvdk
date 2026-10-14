@@ -1,0 +1,76 @@
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -1292,0 +1293 @@
++ "ring",
+--- a/crates/rvvdk-vsphere/Cargo.toml
++++ b/crates/rvvdk-vsphere/Cargo.toml
+@@ -12,0 +13 @@
++ring = "=0.17.14"
+--- a/crates/rvvdk-vsphere/src/lib.rs
++++ b/crates/rvvdk-vsphere/src/lib.rs
+@@ -13,0 +14,2 @@
++#[cfg(target_os = "linux")]
++mod payload_hash;
+--- a/crates/rvvdk-vsphere/src/ownership/retained.rs
++++ b/crates/rvvdk-vsphere/src/ownership/retained.rs
+@@ -253 +253 @@
+-    let mut hash = Sha256::new();
++    let mut hash = crate::payload_hash::Sha256::new();
+@@ -264 +264 @@
+-        .check_container(size, &hash.finalize().into())
++        .check_container(size, &hash.finalize())
+--- a/crates/rvvdk-vsphere/src/ownership/retained/output.rs
++++ b/crates/rvvdk-vsphere/src/ownership/retained/output.rs
+@@ -428 +428 @@
+-        let mut hash = Sha256::new();
++        let mut hash = crate::payload_hash::Sha256::new();
+@@ -467 +467 @@
+-        let digest = hash.finalize().into();
++        let digest = hash.finalize();
+--- a/crates/rvvdk-vsphere/src/ownership/retained/output/publication.rs
++++ b/crates/rvvdk-vsphere/src/ownership/retained/output/publication.rs
+@@ -528 +528 @@
+-        let mut hash = Sha256::new();
++        let mut hash = crate::payload_hash::Sha256::new();
+@@ -552 +552 @@
+-        if <[u8; 32]>::from(hash.finalize()) != expected.raw_sha256
++        if hash.finalize() != expected.raw_sha256
+--- /dev/null
++++ b/crates/rvvdk-vsphere/src/payload_hash.rs
+@@ -0,0 +1,36 @@
++//! Experimental retained-payload backend; identity and journal hashes stay unchanged.
++pub(crate) struct Sha256(ring::digest::Context);
++impl Sha256 {
++    pub(crate) fn new() -> Self {
++        Self(ring::digest::Context::new(&ring::digest::SHA256))
++    }
++    pub(crate) fn update(&mut self, bytes: &[u8]) {
++        self.0.update(bytes);
++    }
++    pub(crate) fn finalize(self) -> [u8; 32] {
++        self.0.finish().as_ref().try_into().expect("SHA-256 length")
++    }
++}
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use sha2::Digest;
++    #[test]
++    fn exact_streaming_digest_equivalence() {
++        for size in [0, 1, 55, 56, 63, 64, 65, 127, 128, 129, 4097, 1 << 20] {
++            for zeros in [false, true] {
++                let bytes: Vec<_> = (0..size)
++                    .map(|i| if zeros { 0 } else { (i * 17 + i / 256) as u8 })
++                    .collect();
++                let expected: [u8; 32] = sha2::Sha256::digest(&bytes).into();
++                for chunk in [1, 63, 64, 65, 4096, 1 << 20] {
++                    let mut h = Sha256::new();
++                    for part in bytes.chunks(chunk) {
++                        h.update(part);
++                    }
++                    assert_eq!(h.finalize(), expected);
++                }
++            }
++        }
++    }
++}
