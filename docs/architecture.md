@@ -1851,3 +1851,38 @@ explicit in the report. Larger working sets and live integration require later w
 [ADR-0069](adr/0069-fresh-published-output-attestation.md),
 [acceptance matrix](published-output-attestation-qualification.md),
 [local evidence, timings and plots](benchmark-results/2026-10-14-r61d2b/README.md).
+
+### Interrupted Published acknowledgment recovery (R6.1d.3 design)
+
+R6.1d.3a specifies a separate consuming API for the exact current v2 PublishIntent
+sequence 7 / complete v2 Published sequence 8 transaction pair. **Not implemented.**
+R6.1d.3b is the next implementation/qualification step. All existing APIs continue
+rejecting pending transactions under their current contracts.
+
+A private admitted-pair value pins each envelope's bytes and distinct inode. The
+candidate must equal the old record with only state and sequence changed. Original
+source/store/destination bindings, retained CompletedLease source, no source
+transaction and Absent/Owned output namespace are mandatory. Partial/foreign pairs,
+orphan candidates, duplicate Published records and staged bundles remain blocked.
+
+The planned private binding guard allows the existing full-content algorithm to
+validate this exact pair while preserving the no-transaction guard for every current
+caller. Fresh admission, full RAW comparison/hash, metadata and encoded-source rereads
+precede persistence. Sync bundle members/directory, old intent/store, both namespace
+parents and the exact candidate; recheck pair/bindings/control; replace the old journal
+with the candidate and sync the store before observing cancellation. Ten syncs and
+one journal rename preserve candidate bytes/inode at the journal name. There is no
+bundle rename, application byte write, new transaction or commit_output call.
+
+The separate report requires observed promotion and terminal store sync as well as
+verification and final bindings. Source/output checks bracket independent assessment
+under the original locks/deadline. Errors survive visible Published. Before promotion
+a new explicit call repeats all work; after promotion a separately requested
+attestation can verify current Published output. No automatic dispatch, rollback,
+source transaction recovery, wire-format change or new cleanup authority is planned.
+
+[Contract and state/pair tables](published-acknowledgment-recovery.md),
+[ADR-0070](adr/0070-matched-published-transaction-recovery.md),
+[implementation, fault and performance acceptance](published-acknowledgment-recovery-qualification.md).
+The design supplies no new runtime measurements. PERF.0, general recovery, live
+integration and power-loss qualification remain open.

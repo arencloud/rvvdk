@@ -257,3 +257,9 @@ remaining limits. A later runner/live integration must be explicitly qualified.
 Fresh Published attestation is now separately available under its linked contract.
 PERF.0, ambient tmpfs allocation behavior, transaction repair and general production
 recovery remain open.
+
+R6.1d.3a separately designs [matched Published-transaction recovery](published-acknowledgment-recovery.md).
+That proposed API accepts only an exact intent-7/candidate-8 pair after fresh full
+verification and original binding checks. It remains **unimplemented** pending
+[R6.1d.3b qualification](published-acknowledgment-recovery-qualification.md); the
+current operation's pending-transaction exclusions and success predicate stay unchanged.

@@ -157,3 +157,9 @@ syncs; it never rewrites the journal or infers earlier success. Final source/out
 binding checks bracket assessment and preserve the shared deadline. [Local evidence](benchmark-results/2026-10-14-r61d2b/README.md)
 retains faults, process loss, syscall audit and repeated benchmark controls. Normal
 publication, intent reconciliation, assessment and cleanup keep their existing contracts.
+
+R6.1d.3a separately designs [matched Published-transaction recovery](published-acknowledgment-recovery.md).
+That proposed API accepts only an exact intent-7/candidate-8 pair after fresh full
+verification and original binding checks. It remains **unimplemented** pending
+[R6.1d.3b qualification](published-acknowledgment-recovery-qualification.md); the
+current operation's pending-transaction exclusions and success predicate stay unchanged.

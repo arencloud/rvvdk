@@ -3124,22 +3124,68 @@ retains timing/recording variance and ambient tmpfs allocation; the private vola
 control does not close those findings. R6.1d.2b and bounded parent R6.1d.2 are complete;
 transaction repair and general R6 recovery remain open. This package is committed locally.
 
+## R6.1d.3a — matched Published transaction recovery design (2026-10-14)
+
+Reviewed terminal acknowledgment writes, record validation, retained admission,
+namespace assessment and existing originating crash tests at `6c0134e`. Saved
+[ADR-0070](adr/0070-matched-published-transaction-recovery.md), the
+[contract and complete state/pair tables](published-acknowledgment-recovery.md), and
+[implementation/fault/process-loss/performance acceptance](published-acknowledgment-recovery-qualification.md).
+
+Only a valid v2 PublishIntent sequence 7 plus a complete Published sequence 8 candidate
+with every other record field equal can enter the proposed operation. Original
+source/store/destination bindings, no source transaction, retained CompletedLease
+source and absent stage/owned final bundle remain required. Exact record bytes and
+inodes are pinned; partial, foreign, duplicate, orphan and earlier-transition
+transactions stay untouched. The current APIs keep rejecting all pending transactions.
+
+The planned consuming API freshly verifies all source/RAW bytes, performs ten syncs
+and promotes the exact candidate with one journal replacement. Candidate bytes/inode
+become the journal; there is no new file, application byte write, bundle rename or
+commit_output call. A separate report records current verification, sync and
+promotion observations. One deadline and both locks cover binding checks before and
+after independent assessment. Cancellation after successful promotion waits for the
+store sync unless I/O fails. Failure never becomes success from visible Published;
+a later explicit attestation handles that state.
+
+The plan includes 18 correctness/exclusion groups, originating and new-operation
+SIGKILL boundaries, 30 sync-error injections plus rename ambiguity/control cases,
+independent byte/inode/allocation checks and a syscall audit. Freeze all three
+existing benchmark entry points before shared-parser/validator changes. Retain
+normal/reconciliation/attestation comparisons, new operation phases, wall/CPU/RSS/
+allocation/cleanup, recording controls, longer repeats and SVG/PNG plots. Carry
+forward zero-resolution CPU handling and resume provenance from R6.1d.2b; ambient
+tmpfs allocation and approximately 15% 256 MiB tmpfs attestation variation remain
+PERF.0 work. No new performance or runtime qualification is claimed by this design.
+
+Design validation passed: **654 local link targets**, including 10 heading fragments,
+across 11 documents; all eleven output states plus missing/invalid current records,
+nine namespace pairs, all fourteen OutputRecord fields, eight report flags and
+18 acceptance groups. Eight existing test symbols, three benchmark symbols and five
+originating commit hooks resolve to current source. Whitespace checks passed; the
+staged package is scanned for private data before commit.
+No Rust code changed, so no Rust tests or benchmarks were rerun. No lab connection
+or VM action occurred. R6.1d.3a is complete; R6.1d.3b, its parent R6.1d.3, PERF.0 and
+general R6 recovery remain open. This bounded documentation package is committed locally.
+
 ## Next session
 
-Start **R6.1d.3a — design recovery of interrupted Published acknowledgment transactions**:
+Start **R6.1d.3b — implement and locally qualify matched Published transaction recovery**:
 
-1. Review actual old/output-transaction state pairs from publication and reconciliation
-   failure boundaries. Define which complete matching records can establish authority
-   under the existing private-store model, and which partial/foreign entries stay blocked.
-2. Specify original source/store/destination bindings, fresh full verification and
-   namespace requirements before any transaction promotion. Keep source transactions,
-   conversion resume and unstamped-stage adoption separate.
-3. Save an ADR, explicit state/transaction table, consuming API/report contract,
-   durability/control order and fault/process-loss/performance acceptance matrix.
-   Preserve current publication, reconciliation, attestation and cleanup behavior
-   until the new operation is independently implemented and qualified.
-4. Update roadmap/log, validate the design and commit the bounded documentation step.
-   Local analysis needs no ESXi, license, VM, vCenter or credentials.
+1. Freeze the unchanged release binary, source/fixture hashes and normal publication,
+   both reconciliation branches and both attestation histories before Rust edits.
+2. Implement the bounded exact-pair parser/guard and consuming API/report under
+   [ADR-0070](adr/0070-matched-published-transaction-recovery.md), preserving all
+   existing state/transaction gates. Complete fresh verification, the ten-sync order,
+   candidate-preserving journal promotion and final binding/control/assessment checks.
+3. Execute the [acceptance matrix](published-acknowledgment-recovery-qualification.md):
+   independent bytes, exclusions, faults/SIGKILL/cancellation, measured syscall audit,
+   work counts, frozen regressions and new phase/resource/recording controls with
+   required repeats and visually inspected SVG/PNG plots. Preserve all failed/adverse
+   samples and any resumed-campaign provenance; do not close unresolved PERF.0 findings.
+4. Update contracts, roadmap/log and qualification evidence, validate/redact artifacts
+   and commit the bounded implementation step locally. No ESXi, license, VM, vCenter,
+   SSH or credentials are needed for authored local fixture qualification.
 
 Keep ambient tmpfs sparse-allocation diagnosis and controlled phase/cleanup timing
 in PERF.0; a stable private control does not close either finding.
