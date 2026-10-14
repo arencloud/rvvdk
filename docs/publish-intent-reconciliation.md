@@ -86,8 +86,9 @@ branches mid-call or infer that another actor finished the operation.
 
 In particular, retrying after a lost success response may find Published and return
 Transition. This operation is not an idempotent success query. Fresh attestation of
-an uncertain Published acknowledgment is a separate future design; read-only
-assessment cannot prove that an earlier sync completed.
+an uncertain Published acknowledgment is specified separately by the
+[R6.1d.2a design](published-output-attestation.md), with implementation pending.
+Read-only assessment cannot prove that an earlier sync completed.
 
 ## API and report contract
 

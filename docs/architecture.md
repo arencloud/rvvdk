@@ -1816,3 +1816,35 @@ measure phase-clock overhead. No production profiling or verification bypass is 
 [local evidence, measurements and plots](benchmark-results/2026-10-14-r61d1b/README.md).
 Uncertain Published attestation, transaction repair and production recovery remain
 separate work; PERF.0 retains timing and allocation follow-ups.
+
+### Fresh Published-output attestation design (R6.1d.2a)
+
+The accepted design adds a separate consuming `JobStore::attest_publication` operation
+in a later implementation step. Current runtime behavior is unchanged. It will accept
+only version-2 Published sequence 8, no source/output transaction, an admissible retained
+CompletedLease source, absent stage and the original owned final bundle. Normal Verified
+publication and intent-only reconciliation keep their existing state gates.
+
+Private CheckedOutput validation supplies full fresh source/RAW/metadata/digest checks.
+The planned successful path syncs three members and the bundle, both namespace parents,
+then the exact existing Published journal and store again: eight syncs, zero journal
+commits, renames or application byte writes. The journal's bytes, inode and sequence
+stay unchanged. A separate PublicationAttestationReport records current verification
+and sync observations; it never claims to witness the previous acknowledgment.
+
+Both locks and one deadline cover final source/output binding checks before and after
+read-only assessment. Final source transaction and journal-inode checks cannot be
+replaced by PublicationRecovery, which describes only output state/namespaces. Late
+control or assessment failure prevents success even after all syncs. Paired parent
+and journal/store syncs defer cancellation until the pair completes unless I/O fails.
+
+A source cleaned after publication makes attestation unavailable. Explicit Published
+cleanup retains its independent identity-based contract. No recovery dispatcher,
+transaction repair, unstamped-stage adoption, CLI integration or remote replay is
+introduced. Reports convey observations, not reusable authority or physical-media
+repair guarantees. R6.1d.2b must qualify the new operation and compare frozen normal
+publication and both reconciliation paths before implementation is considered complete.
+
+[Contract and tables](published-output-attestation.md),
+[ADR-0069](adr/0069-fresh-published-output-attestation.md),
+[implementation, fault and benchmark matrix](published-output-attestation-qualification.md).

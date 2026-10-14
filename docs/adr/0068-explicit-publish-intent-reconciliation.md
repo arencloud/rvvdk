@@ -51,9 +51,10 @@ required even when the final RAW appears intact. A caller must preserve it until
 reconciliation finishes.
 
 Published-at-entry remains outside this intent-only operation, including a retry
-after a lost success response. Separate future work must define fresh Published
-attestation and transaction repair. Process-loss qualification is not physical
-power-loss qualification. The private cooperating-writer trust boundary is unchanged.
+after a lost success response. [ADR-0069](0069-fresh-published-output-attestation.md)
+now defines separate fresh Published attestation (implementation pending); transaction
+repair remains future work. Process-loss qualification is not physical power-loss
+qualification. The private cooperating-writer trust boundary is unchanged.
 
 The implementation must qualify both branches with independent bytes, fault hooks,
 SIGKILL, cancellation, namespace substitution and conservative exclusions. Measure

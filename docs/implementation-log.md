@@ -3033,21 +3033,67 @@ loss, universal filesystem behavior, capacity, live integration or general recov
 No VMware/SSH access or VM action occurred. R6.1d.1b and bounded parent R6.1d.1 are
 complete; PERF.0 and broader R6 recovery remain open. This package is committed locally.
 
+## R6.1d.2a — fresh Published-output attestation design (2026-10-14)
+
+Reviewed `b569060` and accepted a separate consuming `JobStore::attest_publication`
+design for an uncertain or lost acknowledgment that leaves Published visible. Only
+valid version-2 Published sequence 8, no source/output transaction, a retained
+CompletedLease source, absent stage and original owned final bundle are eligible.
+The complete nine-pair namespace and eleven-state tables keep every other case blocked.
+
+[Contract](published-output-attestation.md),
+[ADR-0069](adr/0069-fresh-published-output-attestation.md),
+[implementation and qualification matrix](published-output-attestation-qualification.md).
+
+The planned operation freshly admits source/native content and compares the complete
+RAW before eight syncs: three members, bundle, store, destination, existing Published
+journal, store. It preserves journal bytes/inode/sequence and performs zero commits,
+renames or application byte writes. A separate report describes this invocation's
+verification and sync observations, never earlier success or a new acknowledgment.
+
+Code review identified that output assessment alone cannot detect a late source
+transaction or source journal replacement. Final original source/output binding
+checks therefore bracket assessment, with a final shared-deadline/control check after
+that work. Both locks remain held. Paired sync phases defer control observation until
+the pair completes unless I/O fails; all errors retain resources and completed flags.
+Source cleanup prevents later attestation but leaves existing explicit Published
+cleanup eligibility unchanged. Transaction repair and unstamped stages stay separate.
+
+The saved plan specifies 17 correctness/exclusion groups, originating acknowledgment
+and attestation SIGKILL boundaries, I/O-fault versus hook-error distinctions, full-byte
+and original-journal preservation checks. It requires frozen normal-publication and
+both reconciliation-path comparisons, new attestation phases, independent work counts,
+allocation/CPU/RSS/cleanup, overhead controls, longer repeats and SVG/PNG plots.
+
+This package changes documentation only. Validation checked **616 local links**
+(including 10 heading fragments) across 11 documents, all nine namespace pairs and
+eleven output states, 17 planned acceptance groups, seven existing test symbols and
+two benchmark entry points. Diff whitespace checks passed; staged private-data
+scanning accompanies the local commit. No Rust tests or benchmarks
+were rerun, no timing or allocation improvement is claimed, and no lab connection or
+VM action occurred. R6.1d.2a is complete; all runtime implementation/qualification
+items remain open in R6.1d.2b, as do the parent R6.1d.2, PERF.0 and general R6 recovery.
+
 ## Next session
 
-Start **R6.1d.2a — design fresh Published-at-entry attestation**:
+Start **R6.1d.2b — implement and locally qualify fresh Published-output attestation**:
 
-1. Review uncertain/lost acknowledgment cases against existing state, transaction,
-   source and namespace bindings. Define what a fresh operation can prove without
-   claiming it witnessed a previous commit.
-2. Specify consuming lock custody, fresh full source/RAW verification, required syncs,
-   report semantics, cancellation/deadline behavior and failure/retry boundaries.
-   Keep transaction repair and unstamped-stage adoption separate.
-3. Save an ADR, contract and concrete fault/process-loss/performance acceptance matrix
-   before implementing new mutation behavior. Preserve the current benchmark package
-   and all existing verification/durability gates.
-4. Update the roadmap/log, validate documentation and commit the bounded design.
-   This local work needs no ESXi, new license, VM, vCenter or credentials.
+1. Freeze unchanged release binaries and source/fixture/build manifests for existing
+   normal publication and both intent-reconciliation paths before editing Rust.
+2. Implement the consuming API and separate report with fresh source/full RAW checks,
+   original journal preservation, exact eight-sync order and one shared control.
+   Keep final source/output binding checks before and after assessment. Do not add
+   journal transitions, automatic recovery dispatch, transaction repair or cleanup.
+3. Execute the accepted independent-byte, exclusion, identity/substitution, lock,
+   cancellation/deadline, I/O-fault and SIGKILL matrix. Test both normal-publication
+   and reconciliation origins of uncertain Published and lost successful replies.
+4. Measure frozen existing-path regressions and new operation phases separately;
+   retain original/recovered/post-oracle allocation, wall/CPU/RSS, work counts,
+   cleanup, recording controls, all adverse observations, longer repeats and plots.
+5. Complete focused/workspace checks, record evidence and limits, update roadmap/log,
+   scan staged private data and commit the bounded package locally. Local authored
+   fixtures need no ESXi, license, VM, vCenter or credentials. Defer runner/live
+   integration until separately qualified.
 
 Keep ambient tmpfs sparse-allocation diagnosis and controlled phase/cleanup timing
 in PERF.0; a stable private control does not close either finding.
