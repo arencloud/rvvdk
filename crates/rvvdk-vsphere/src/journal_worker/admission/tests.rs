@@ -4,6 +4,7 @@ use crate::artifact_fixture as fixture;
 use crate::contract::{EndpointIdentity, PinProvenance};
 use crate::ownership::{JobStore, RecoveryAction};
 use sha1::Sha1;
+use sha2::{Digest, Sha256};
 use std::{
     fs,
     os::unix::fs::{DirBuilderExt, FileExt},
@@ -355,3 +356,5 @@ fn process_loss_during_metadata_never_creates_recovered_authority() {
         assert_eq!(parsed.is_ok(), point == "metadata_synced");
     }
 }
+
+mod benchmark;

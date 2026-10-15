@@ -415,10 +415,16 @@ following bounded packages in order:
    adopts conditional hashing in three retained bulk paths, preserving SHA-NI behavior.
    The existing guest now exposes 2 CPUs/8 GiB; both sides use that current configuration,
    without historical timing ratios. No ESXi operation or VM change was performed.
-   **Next PERF.1c:** separately audit and qualify remaining transfer/worker bulk hashes
-   with frozen same-host comparisons and complete correctness/control/persistence gates.
-   Existing native runner access is sufficient for local/loopback qualification; no new
-   ESXi trial, license, VM or vCenter is required. Live export remains a separate scope.
+   **PERF.1c complete:** [transfer/worker bulk hashing](transfer-hash-qualification.md)
+   is qualified on both native CPU profiles with every verification gate preserved.
+   [Evidence and plots](benchmark-results/2026-10-15-perf1c/README.md) retain original
+   adverse measurements and supplemental A/A and A/B controls. No ESXi operation occurred.
+   **Next R6.1d.5a:** plan live retained-artifact recovery command qualification and
+   read-only preflight private artifacts, original source/trust provenance and capacity.
+   Specify disposable ownership, independent oracles and command/failure/benchmark matrices
+   before R6.1d.5b harness implementation. Preserve originals; no journal editing or lease replay.
+   No new ESXi trial, license, VM or vCenter is needed for the preflight; establish any
+   fresh-export requirement from the audit. Local loopback gains do not qualify live throughput.
    Live retained-artifact command qualification, capacity proof and general production R6
    recovery remain open.
 6. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9

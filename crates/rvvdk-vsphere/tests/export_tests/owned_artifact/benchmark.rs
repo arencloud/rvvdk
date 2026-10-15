@@ -29,8 +29,18 @@ async fn matched_owned_artifact() {
     assert!((1..=64).contains(&count));
     let parent = PathBuf::from(std::env::var_os("RVVDK_ARTIFACT_PARENT").unwrap());
     let output = std::env::var_os("RVVDK_ARTIFACT_REPORT").unwrap();
-    let records: Vec<_> = (0..128)
-        .map(|i| (i, fixture::stored(&fixture::bytes(i))))
+    let case = std::env::var("RVVDK_HASH_CASE").unwrap_or_else(|_| "bulk".into());
+    assert!(["small", "bulk", "zeros"].contains(&case.as_str()));
+    let grains = if case == "small" { 1 } else { 128 };
+    let authored = |i| {
+        if case == "zeros" {
+            vec![0; 65536]
+        } else {
+            fixture::bytes(i)
+        }
+    };
+    let records: Vec<_> = (0..grains)
+        .map(|i| (i, fixture::stored(&authored(i))))
         .collect();
     let payload = fixture::image(true, (30u64 << 30) / 65536, &records);
     let mut rows = Vec::new();
@@ -74,7 +84,7 @@ async fn matched_owned_artifact() {
             assert_eq!(report.is_artifact_success(), admitted);
             assert_eq!(
                 report.present_grains_verified,
-                if admitted { 128 } else { 0 }
+                if admitted { grains } else { 0 }
             );
             assert_eq!(
                 (
@@ -113,11 +123,11 @@ async fn matched_owned_artifact() {
             )
             .unwrap();
             let mut buffer = vec![0; 65536];
-            for i in 0..128 {
+            for i in 0..grains {
                 disk.read_exact_at(i * 65536, &mut buffer).unwrap();
-                assert_eq!(buffer, fixture::bytes(i));
+                assert_eq!(buffer, authored(i));
             }
-            for at in [8 << 20, (30u64 << 30) - 65536] {
+            for at in [grains * 65536, (30u64 << 30) - 65536] {
                 disk.read_exact_at(at, &mut buffer).unwrap();
                 assert!(buffer.iter().all(|&v| v == 0));
             }
@@ -137,7 +147,7 @@ async fn matched_owned_artifact() {
             );
             drop(store);
             std::fs::remove_dir_all(&path).unwrap();
-            rows.push(serde_json::json!({"pair":pair,"admitted":admitted,"wall_ms":wall_ms,"cpu_ms":(after.0-before.0)*1000.,"process_peak_rss_kib":after.1,"cleanup_ms":cleanup_ms,"payload_bytes":payload.len(),"payload_allocated_bytes":allocated,"metadata_bytes":bytes.len(),"journal_commits":8,"requests":server.requests().len(),"byte_comparison_passed":true,"decoded_oracle_passed":true,"present_grains_verified":report.present_grains_verified}));
+            rows.push(serde_json::json!({"case":case,"pair":pair,"admitted":admitted,"wall_ms":wall_ms,"cpu_ms":(after.0-before.0)*1000.,"process_peak_rss_kib":after.1,"cleanup_ms":cleanup_ms,"payload_bytes":payload.len(),"payload_allocated_bytes":allocated,"metadata_bytes":bytes.len(),"journal_commits":8,"requests":server.requests().len(),"byte_comparison_passed":true,"decoded_oracle_passed":true,"present_grains_verified":report.present_grains_verified}));
         }
     }
     let mut file = std::fs::OpenOptions::new()

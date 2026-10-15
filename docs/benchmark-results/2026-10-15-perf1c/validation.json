@@ -1,0 +1,76 @@
+{
+  "log_normalization": "Checkout paths replaced and trailing whitespace removed; test results unchanged. Original logs stay private.",
+  "logs": {
+    "candidate-clippy.txt": {
+      "original_sha256": "a9b102603ac8cc9bcae657c33f9a94dc0ac0ff33de8b61a047efd5644253bcf9",
+      "committed_sha256": "0e1a29e893d5ee7594f04ac8a9c559a8d4be3df9201c555fcca285bfda4cb634"
+    },
+    "candidate-tests.txt": {
+      "original_sha256": "77c3da8bf0368da740502f9c66b44c1c5023c87bec6611fd08a2e35938294796",
+      "committed_sha256": "a5f73c71cfb950dba7bc8092d4426e558467fb72a8f49e108381eb4c75915048"
+    },
+    "candidate-cli-build.txt": {
+      "original_sha256": "b94fcef3320e50a5be065d3d3e0f70834f278660616702309134f7746a065d96",
+      "committed_sha256": "2ef46a4d2b6b79d84c1cde97ade36b4d00b4be106ee0204f36497ebf149b4dfb"
+    },
+    "root-clippy.txt": {
+      "original_sha256": "ddafd291624e0fa21059bf75cd1626e6a1a73e7df33a2f65c4956e54513bc014",
+      "committed_sha256": "7416ca3cca91d6ef631c951eab322b9d00e8719b50e84727f7211d2f774ac679"
+    },
+    "root-tests.txt": {
+      "original_sha256": "4c607711b83cce41ae2ac85119c1054e55092b1ce150bedcfab5d446b8af9c2b",
+      "committed_sha256": "9654df123d3aa5328e086751dd8716e9c4413e5daf302de4e77b93cbea49e89e"
+    },
+    "root-release.txt": {
+      "original_sha256": "c65938674a9ecd2a1e7de032e2ef311a564cb7155ff9067e39f64ed2991b33f5",
+      "committed_sha256": "5f86db117c85565f0d95c013c8485c3c2d0c1d9b85f0b07791f7594e208767c0"
+    },
+    "library-tests.txt": {
+      "original_sha256": "f27cb39b2dc663858ab17df885a4c60e0b0c78df4af467616807bdddfb83eb3e",
+      "committed_sha256": "bf161189701e438dbc7d5ad3d5b96b7547ad1d0f7414d72cb3c00c97aedbbe8d"
+    },
+    "integration-tests.txt": {
+      "original_sha256": "75ea0ff666fcf68f5b61f725f8b111ab3f340dbca13b22c1cfd0d46be4b58b83",
+      "committed_sha256": "4eaa1913d4f00164b7d24bf97e9cde88331273c9a958d9bc2f52ed6aacdafeb3"
+    }
+  },
+  "candidate": {
+    "passed": 807,
+    "failed": 0,
+    "ignored": 20,
+    "cargo_targets": 81,
+    "nested_child_results_excluded": 32
+  },
+  "root": {
+    "passed": 807,
+    "failed": 0,
+    "ignored": 20,
+    "cargo_targets": 81,
+    "nested_child_results_excluded": 41
+  },
+  "runner": {
+    "library": {
+      "passed": 139,
+      "failed": 0,
+      "ignored": 13
+    },
+    "export_integration": {
+      "passed": 60,
+      "failed": 0,
+      "ignored": 4,
+      "filtered": 18
+    }
+  },
+  "root_release_cli": {
+    "sha256": "18fa0f729bddf7cfebe21a0c984e3fba183b26676cb9c97fd5c52f73ba971f7a",
+    "bytes": 3141384
+  },
+  "root_cli_byte_identical_to_measured_candidate": true,
+  "source_files_matching_measured_candidate": 298,
+  "commands": [
+    "cargo fmt --all --check",
+    "cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "cargo test --workspace --locked",
+    "cargo build --release --locked -p rvvdk-cli"
+  ]
+}

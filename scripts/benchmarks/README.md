@@ -264,3 +264,34 @@ comparisons. Changed guest resources are recorded; old/new or cross-host timing
 ratios cannot establish an implementation gain. No VMware credentials are accepted
 by these offline fixture tools. The shared tools still replay PERF.1a summaries
 byte-identically.
+
+
+## PERF.1c transfer and worker hashes
+
+`measure_transfer_hashes.py` compares frozen reference/candidate library,
+`discovery` integration-test and CLI binaries on one native CPU profile. Existing
+opt-in Rust fixtures perform full proof/owned transfer, artifact admission and
+separate seal/admit measurements, including small/bulk/stored-zero data. Pass six
+binary paths, a fresh report directory, empty disk/tmpfs parents and an ignored
+private scratch directory; `--help` lists flags. The tmpfs control must be mounted
+in a private namespace with `size=512m,mode=0700,huge=never`, and loopback enabled.
+Fixed CPU 0 and serial measurements are intentional. No VMware credentials or
+production source paths are accepted by these tools.
+
+`measure_transfer_hash_controls.py` records the separately declared A/A and adjacent
+A/B controls, selecting `--profile sha-host` or `--profile non-sha-host`. Frozen
+binary filenames and empty `fixtures`/`private` directories are relative to
+`--root`. Original measurements are retained. `--summarize` only replays a report.
+
+```sh
+python3 scripts/benchmarks/check_transfer_hashes.py docs/benchmark-results/2026-10-15-perf1c --self-test
+target/benchmark-plots/bin/python scripts/benchmarks/plot_transfer_hashes.py docs/benchmark-results/2026-10-15-perf1c
+```
+
+The checker validates 2,640 observations, complete pair coverage, independent
+oracle/allocation claims, binary and raw-file hashes, logs, plots and 14 corrupt
+copies. Add `--source .` only at the qualified implementation revision. Python
+`-O` is unsupported because it removes assertion gates. Five PNG/SVG plot sets
+show original adverse observations, round ranges, separate controls and costs;
+they do not claim live export or cold/disk-scale throughput. See the
+[report and reproduction notes](../../docs/benchmark-results/2026-10-15-perf1c/README.md).

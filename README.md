@@ -282,7 +282,11 @@ with digest checks, full-operation measurements and PNG/SVG plots.
 adds a conditional backend for three retained bulk hash paths: SHA-NI systems keep
 `sha2`; Linux x86-64 systems without its acceleration prerequisites use `ring`.
 Native hash, complete-workflow and CLI plots record the bounded gains and remaining
-timing variation. See the [backend boundary and next step](docs/sha256-fallback-qualification.md).
+timing variation. [PERF.1c transfer/worker qualification](docs/benchmark-results/2026-10-15-perf1c/README.md)
+extends that backend to four encoded-payload paths while retaining full readback,
+SHA-1, cancellation and durability checks. Native bulk loopback operations use
+14–30% less wall time; five plot sets retain SHA-NI controls and adverse results.
+See the [scope and next step](docs/transfer-hash-qualification.md).
 
 Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
 for sanitizer execution rates, memory and feedback across repeated campaigns.

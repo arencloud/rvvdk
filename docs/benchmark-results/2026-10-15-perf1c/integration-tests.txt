@@ -1,0 +1,68 @@
+
+running 64 tests
+test export_tests::auxiliary_non_disk_entries_are_not_downloaded_or_verified_as_disks ... ok
+test export_tests::cancel_pending_download_aborts_and_removes_private_files ... ok
+test export_tests::complete_or_logout_failure_prevents_publication ... ok
+test export_tests::digest_mismatch_retains_both_cleanup_outcomes_without_publication ... ok
+test export_tests::endpoint_or_pin_rejection_aborts_without_get ... ok
+test export_tests::explicit_cancellation_during_fresh_checks_prevents_acquire_download_or_complete ... ok
+test export_tests::explicit_drift_at_every_boundary_blocks_the_next_mutation_and_cleans_up ... ok
+test export_tests::explicit_identity_selects_among_equal_capacity_vms_and_revalidates_in_order ... ok
+test export_tests::explicit_invalid_options_fail_before_connecting ... ok
+test export_tests::explicit_live_lease_revalidation_has_a_bounded_request_budget ... ok
+test export_tests::explicit_missing_identity_does_not_fall_back_to_capacity ... ok
+test export_tests::explicit_probe_acquires_and_aborts_without_artifact_or_download ... ok
+test export_tests::explicit_revalidation_cancels_unexpected_pagination_before_lease_abort ... ok
+test export_tests::explicit_source_pin_is_enforced_before_credentials_are_sent ... ok
+test export_tests::full_transfer_verifies_manifest_completes_logs_out_and_publishes ... ok
+test export_tests::graceful_shutdown_revalidates_disk_before_acquisition ... ok
+test export_tests::heartbeats_renew_lease_while_data_response_is_pending ... ok
+test export_tests::inspection_bounds_and_validates_all_references_before_task_queries ... ok
+test export_tests::inspection_does_not_serialize_arbitrary_task_strings ... ok
+test export_tests::inspection_reads_tasks_without_acquiring_or_cancelling_them ... ok
+test export_tests::inspection_rejects_task_identity_change_and_always_logs_out ... ok
+test export_tests::malformed_acquisition_is_uncertain_and_not_retried ... ok
+test export_tests::opaque_lease_reference_is_escaped_and_aborted ... ok
+test export_tests::output_collision_precedes_power_and_lease_calls ... ok
+test export_tests::owned_artifact::admitted_metadata_does_not_resolve_lost_completion ... ok
+test export_tests::owned_artifact::benchmark::matched_owned_artifact ... ignored, opt-in matched native artifact admission benchmark
+test export_tests::owned_artifact::native_metadata_precedes_completion_and_does_not_claim_logical_equivalence ... ok
+test export_tests::owned_artifact::transferred_artifact_reopens_for_confined_native_conversion ... ok
+test export_tests::owned_artifact::valid_manifest_cannot_promote_corrupt_grains_or_wrong_capacity ... ok
+test export_tests::owned_probe::acquisition_and_abort_failures_remain_unknown_without_retry ... ok
+test export_tests::owned_probe::benchmark::matched_owned_probe ... ignored, opt-in matched journal/probe performance matrix
+test export_tests::owned_probe::cancellation_after_acquire_intent_preserves_conservative_record_without_rpc ... ok
+test export_tests::owned_probe::cancellation_after_acquire_still_persists_abort_intent ... ok
+test export_tests::owned_probe::failed_abort_ack_retains_remote_success_but_blocks_local_cleanup ... ok
+test export_tests::owned_probe::failed_lease_record_never_authorizes_abort ... ok
+test export_tests::owned_probe::fresh_identity_change_after_intent_blocks_acquisition ... ok
+test export_tests::owned_probe::intents_precede_rpc_and_cleanup_requires_the_returned_operation ... ok
+test export_tests::owned_probe::lost_rpc_response_retains_intent_and_never_retries ... ok
+test export_tests::owned_probe::malformed_acquisition_does_not_invent_a_lease ... ok
+test export_tests::owned_probe::owned_probe_crash_child ... ok
+test export_tests::owned_probe::process_loss_at_rpc_boundaries_leaves_durable_intent_without_recovered_capability ... ok
+test export_tests::owned_probe::store_id_reuse_fails_before_any_connection ... ok
+test export_tests::owned_transfer::benchmark::matched_owned_transfer ... ignored, opt-in matched owned transfer benchmark
+test export_tests::owned_transfer::cancellation_before_and_after_completion_intent_has_distinct_disposition ... ok
+test export_tests::owned_transfer::completes_only_after_durable_bytes_readback_and_completion_intent ... ok
+test export_tests::owned_transfer::completion_fault_or_lost_reply_never_triggers_abort_or_retry ... ok
+test export_tests::owned_transfer::completion_persistence_failures_never_authorize_abort ... ok
+test export_tests::owned_transfer::independent_readback_rejects_changed_file_and_preserves_foreign_members ... ok
+test export_tests::owned_transfer::process_loss_at_completion_keeps_private_bytes_and_blocks_cleanup ... ok
+test export_tests::owned_transfer::source_drift_before_download_or_completion_blocks_next_rpc ... ok
+test export_tests::owned_transfer::transfer_crash_child ... ok
+test export_tests::owned_transfer::truncated_over_budget_and_bad_manifest_transfers_abort_without_validation ... ok
+test export_tests::pipeline::pipeline_local_failures_retain_completed_source_and_do_not_delete_foreign_output ... ok
+test export_tests::pipeline::pipeline_preflight_collision_and_precancel_do_not_contact_host ... ok
+test export_tests::pipeline::pipeline_publishes_then_separate_explicit_cleanup_preserves_tombstones ... ok
+test export_tests::pipeline::pipeline_stops_after_uncertain_completion_without_abort_or_local_copy ... ok
+test export_tests::pipeline::pipeline_store_anchor_never_adopts_a_replacement_path_between_phases ... ok
+test export_tests::powered_on_probe_never_acquires_a_lease_or_changes_power ... ok
+test export_tests::probe_aborts_any_granted_lease ... ok
+test export_tests::probe_distinguishes_license_and_power_without_shutdown ... ok
+test export_tests::selected_benchmark::matched_selected_export ... ignored, opt-in synthetic performance matrix; requires a new output file
+test export_tests::shutdown_failure_never_falls_back_to_hard_power_off ... ok
+test export_tests::transfer_limit_redirect_and_truncation_abort_without_publication ... ok
+test export_tests::wildcard_and_legacy_sha1_are_bound_to_the_sha256_pinned_endpoint ... ok
+
+test result: ok. 60 passed; 0 failed; 4 ignored; 0 measured; 18 filtered out; finished in 9.02s

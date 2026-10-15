@@ -26,9 +26,12 @@ async fn matched_owned_transfer() {
     assert!((1..=64).contains(&count));
     let parent = PathBuf::from(std::env::var_os("RVVDK_TRANSFER_PARENT").unwrap());
     let output = std::env::var_os("RVVDK_TRANSFER_REPORT").unwrap();
-    let bytes = 8 << 20;
-    let payload = "KDMV".to_owned() + &"x".repeat(bytes - 4);
-    let digest = Sha256::digest(payload.as_bytes())
+    let case = std::env::var("RVVDK_HASH_CASE").unwrap_or_else(|_| "bulk".into());
+    assert!(["small", "bulk", "zeros"].contains(&case.as_str()));
+    let bytes = if case == "small" { 65536 } else { 8 << 20 };
+    let mut payload = vec![if case == "zeros" { 0 } else { b'x' }; bytes];
+    payload[..4].copy_from_slice(b"KDMV");
+    let digest = Sha256::digest(&payload)
         .iter()
         .map(|b| format!("{b:02x}"))
         .collect::<String>();
@@ -40,7 +43,7 @@ async fn matched_owned_transfer() {
             [true, false]
         } {
             let mut r = if owned { replies() } else { explicit_replies() };
-            r[12].body = payload.clone();
+            r[12].binary = Some(payload.clone());
             r[13] = Reply::soap(
                 "HttpNfcLeaseGetManifest",
                 &format!(
@@ -104,7 +107,7 @@ async fn matched_owned_transfer() {
             } else {
                 path.join("artifact/disk-1.vmdk")
             };
-            assert_eq!(std::fs::read(&file).unwrap(), payload.as_bytes());
+            assert_eq!(std::fs::read(&file).unwrap(), payload);
             let allocated = std::fs::metadata(&file).unwrap().blocks() * 512;
             let mut cleanup_ms = 0.;
             if let Some(recovery) = recovery {
@@ -122,7 +125,7 @@ async fn matched_owned_transfer() {
                 );
             }
             std::fs::remove_dir_all(&path).unwrap();
-            rows.push(serde_json::json!({"pair":pair,"owned":owned,"wall_ms":wall_ms,"cpu_ms":(after.0-before.0)*1000.,"process_peak_rss_kib":after.1,"cleanup_ms":cleanup_ms,"payload_bytes":bytes,"payload_allocated_bytes":allocated,"journal_commits":if owned{8}else{0},"requests":server.requests().len(),"byte_comparison_passed":true}));
+            rows.push(serde_json::json!({"case":case,"pair":pair,"owned":owned,"wall_ms":wall_ms,"cpu_ms":(after.0-before.0)*1000.,"process_peak_rss_kib":after.1,"cleanup_ms":cleanup_ms,"payload_bytes":bytes,"payload_allocated_bytes":allocated,"journal_commits":if owned{8}else{0},"requests":server.requests().len(),"byte_comparison_passed":true}));
         }
     }
     let mut file = std::fs::OpenOptions::new()

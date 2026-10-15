@@ -1,4 +1,4 @@
-//! Digest-equivalent streaming hashing for retained payload verification only.
+//! Digest-equivalent streaming hashing for bulk encoded and retained payload verification.
 //!
 //! Keep RustCrypto's SHA-NI path where available. The x86-64 software fallback
 //! uses ring's runtime dispatch; other architectures retain the existing backend.

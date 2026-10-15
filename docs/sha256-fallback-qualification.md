@@ -69,7 +69,11 @@ assessment startup controls. PERF.0 stays open. These results cover the measured
 CPU configurations and three hash contexts; they do not establish a universal
 non-SHA CPU gain, other-architecture throughput or live VMware export performance.
 
-## Next package: PERF.1c
+## Recorded continuation: PERF.1c (complete)
+
+The following saved sequence was completed by [PERF.1c](transfer-hash-qualification.md).
+Its [evidence](benchmark-results/2026-10-15-perf1c/README.md) extends the historical
+three-path scope above to four transfer/worker paths.
 
 Audit and qualify the remaining bulk hashes in `export.rs`, `owned_transfer.rs`,
 `journal_worker/admission.rs` and `journal_worker/payload.rs` as a separate package:

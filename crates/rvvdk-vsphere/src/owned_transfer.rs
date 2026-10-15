@@ -1,4 +1,5 @@
 //! Journal-owned container transfer and conservative completion; no publication.
+use crate::payload_hash::Sha256;
 use crate::{
     Cancellation, Cleanup, Credentials, Error, InventoryLimits, LeaseCleanup, Result, Session,
     contract::{ArtifactId, SourceSelection},
@@ -13,7 +14,7 @@ use crate::{
 };
 use serde::Serialize;
 use sha1::Sha1;
-use sha2::{Digest, Sha256};
+use sha2::Digest;
 use std::time::{Duration, Instant};
 use zeroize::Zeroizing;
 
@@ -509,7 +510,7 @@ async fn download(
             .await
             .map_err(|_| Error::Artifact)?;
     }
-    let sha256: [u8; 32] = sha256.finalize().into();
+    let sha256: [u8; 32] = sha256.finalize();
     let sha1: [u8; 20] = sha1.finalize().into();
     Ok(Downloaded {
         file: ExportFile {

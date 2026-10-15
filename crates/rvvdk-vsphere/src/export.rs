@@ -1,3 +1,5 @@
+#[cfg(target_os = "linux")]
+use crate::payload_hash::Sha256;
 use crate::{
     About, Cleanup, ConnectionPolicy, Credentials, Error, InventoryLimits, Result, Session,
     contract::SourceSelection,
@@ -8,7 +10,9 @@ use crate::{
 };
 use serde::Serialize;
 use sha1::Sha1;
-use sha2::{Digest, Sha256};
+use sha2::Digest;
+#[cfg(not(target_os = "linux"))]
+use sha2::Sha256;
 use std::{
     fmt,
     future::Future,

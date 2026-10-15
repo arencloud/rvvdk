@@ -3374,26 +3374,79 @@ artifact/source hashes, staged privacy and diff hygiene are checked before commi
 PERF.1b is complete; PERF.0 and production recovery remain open. Commit locally;
 no push.
 
+## PERF.1c — 2026-10-15
+
+Completed separate transfer/worker hash qualification from accepted PERF.1b
+reference `fb4ea8d`. [Decision and next scope](transfer-hash-qualification.md),
+[raw evidence and five PNG/SVG plot sets](benchmark-results/2026-10-15-perf1c/README.md).
+
+Audited proof export, owned transfer, worker seal and native admission byte domains,
+source/ownership binding, cancellation and persistence gates. Added small, bulk and
+stored-zero cases to existing opt-in loopback benchmarks and a worker seal/admit
+phase benchmark. Both builds use identical fixture/oracle code. Privately reused
+the accepted conditional facade at four production hash sites, then promoted the
+exact six-file patch after qualification. Non-Linux export explicitly retains
+sha2; Linux SHA-NI and other architectures keep their existing accelerated/default
+backend. Every encoded byte, SHA-1, fresh readback, grain decode, identity check,
+bounded queue, heartbeat, manifest, journal and sync remains. No dependency/API change.
+
+The same frozen binaries run natively on the SHA-NI development host/Btrfs and
+non-SHA Xeon runner/XFS, CPU 0 and current unchanged resources. Private tmpfs bulk
+controls retain allocated bytes with huge pages disabled. Three initial rounds of
+two pairs and three repeat rounds of four pairs cover each full API/worker group;
+startup uses four/eight pairs. Recorded 1,728 workflow/phase and 144 startup samples.
+
+Native bulk complete operations use 14.37–30.09% less wall time; worker phases use
+22.43–41.96% less. Original SHA-NI wall changes span −3.90% to +2.88%, with four
+original CPU regressions above +5% retained. Separately declared adjacent A/A and
+A/B controls add 576 SHA-NI observations; those four A/B CPU changes span −0.76%
+to +2.64%. The native small owned-export original +6.67% wall/+5.65% CPU result is
+also retained; 192 additional native controls give +3.63% wall/−1.25% CPU for A/B.
+All 2,640 observations, spreads, cleanup/resource costs and adverse values remain.
+This supports bounded bulk adoption; small-case, cleanup and phase variation
+remain PERF.0. CLI size is unchanged at 3,141,384 bytes.
+
+Candidate and promoted workspaces each pass 807 tests, with 20 opt-in tests ignored;
+formatting and all-target Clippy pass. Native frozen library: 139 passed/13 ignored;
+native export integration: 60 passed/4 ignored/18 unrelated tests filtered. Full
+encoded equality, independent digests, logical grain/zero oracles, allocated bytes
+and cleanup checks pass. Fourteen corrupted evidence copies are rejected. Both
+patches replay with all 298 reference/candidate source hashes; the rebuilt root CLI
+is byte-identical to the measured candidate. Validation logs record original and
+normalized hashes; raw numeric evidence/indexes remain unchanged.
+
+The original post-measurement summary assertion incorrectly compared raw CLI help
+hashes across different argv[0] filenames. Saved outputs prove only that expected
+name differs. Corrected the replay assertion without replacing timed samples;
+retained the exact measured driver and separately recorded control-driver revision.
+
+Plots are rendered and inspected. Only authored local/loopback fixtures ran;
+no ESXi API, live export, snapshot, VM power/resource or global system change.
+Final runner hashes/resources are unchanged, fixture parents are empty, and the
+private SSH master is closed. Privacy/diff/artifact/link checks precede the local
+commit. No push. PERF.1c is complete; general production recovery and
+PERF.0 remain open.
+
 ## Next session
 
-Start **PERF.1c — separately qualify remaining transfer/worker bulk hashes**:
+Start **R6.1d.5a — live retained-artifact recovery qualification plan and preflight**:
 
-1. Audit `export.rs`, `owned_transfer.rs`, `journal_worker/admission.rs` and
-   `journal_worker/payload.rs`: byte domain, source/ownership binding, cancellation
-   and persistence boundaries. Reuse representative existing fault/fixture tests.
-2. Freeze PERF.1b as the reference. Measure complete affected operations with small,
-   bulk and zero-rich payloads. Separate hash CPU from loopback/network/storage
-   costs, preserving independent digests and full verification.
-3. Qualify a private reuse of the facade only where supported. Repeat all groups
-   on both native CPU profiles with matched conditions and all original gates.
-   Retain adverse measurements, initial/repeat spread and process/size costs.
-4. Adopt only a supported bounded gain, or save a negative result. Export/inspect
-   plots, update planning, scan staged files and commit locally. Existing native
-   runner access is sufficient for local/loopback work; no new ESXi trial, VM or
-   vCenter is needed. A live export is a separate qualification scope.
+1. Read-only audit the existing private retained artifacts, original endpoint trust
+   and source-selection provenance, ownership state, native runner and free space.
+   Preserve all originals; do not infer recovered authority from a directory name.
+2. Freeze the accepted CLI/source revision and specify independent byte oracles,
+   disposable fixture ownership, admitted recovery states and all four commands.
+   Define normal/fault/cancellation/restart cases without hand-editing live journals
+   or replaying remote leases. Establish whether existing artifacts suffice.
+3. Write the bounded R6.1d.5b harness/qualification plan, repeated wall/CPU/RSS/
+   allocation/cleanup benchmarks, privacy/cleanup gates and actual lab capacity
+   prerequisites. Use a fresh export only if the preflight establishes a need and
+   its scope/ownership is clear. No new trial, VM or vCenter is needed for preflight.
+4. Commit the completed design/preflight package locally, then implement R6.1d.5b
+   against that concrete plan. Source transactions, unstamped stages and general
+   recovery remain outside these explicit command capabilities.
 
 Keep ambient tmpfs allocation, startup/phase/cleanup variance, larger/cold working
 sets, stream/map/cache sensitivity, parallel decoding, R4.4 and discovery/TLS
-follow-ups open in PERF.0. Live retained-artifact recovery command qualification,
-VMFS sparse, seSparse, online snapshots, CBT, restore, vCenter and vSphere 9 remain
-separate work. Continue local commits after each completed bounded package.
+follow-ups open in PERF.0. VMFS sparse, seSparse, online snapshots, CBT, restore,
+vCenter and vSphere 9 remain separately qualified. Commit after completed packages.

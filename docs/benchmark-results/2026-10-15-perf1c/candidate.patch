@@ -1,0 +1,110 @@
+--- a/crates/rvvdk-vsphere/src/export.rs
++++ b/crates/rvvdk-vsphere/src/export.rs
+@@ -1,3 +1,5 @@
++#[cfg(target_os = "linux")]
++use crate::payload_hash::Sha256;
+ use crate::{
+     About, Cleanup, ConnectionPolicy, Credentials, Error, InventoryLimits, Result, Session,
+     contract::SourceSelection,
+@@ -8,7 +10,9 @@
+ };
+ use serde::Serialize;
+ use sha1::Sha1;
+-use sha2::{Digest, Sha256};
++use sha2::Digest;
++#[cfg(not(target_os = "linux"))]
++use sha2::Sha256;
+ use std::{
+     fmt,
+     future::Future,
+--- a/crates/rvvdk-vsphere/src/journal_worker/admission.rs
++++ b/crates/rvvdk-vsphere/src/journal_worker/admission.rs
+@@ -1,5 +1,6 @@
+ //! Native validation and private metadata persistence while the live Job owns its stage.
+ use super::{Result, payload::Payload};
++use crate::payload_hash::Sha256;
+ use crate::{
+     Cancellation,
+     contract::{
+@@ -11,7 +12,6 @@
+ use rvvdk_core::VirtualDisk;
+ use rvvdk_local::LocalFileBlockDevice;
+ use rvvdk_vmdk::{StreamDisk, StreamDiskLimits};
+-use sha2::{Digest, Sha256};
+ use std::{
+     io::{Read, Write},
+     sync::Arc,
+@@ -99,7 +99,7 @@
+             hash.update(&buffer[..n]);
+             left -= n as u64;
+         }
+-        if <[u8; 32]>::from(hash.finalize()) != expected.sha256
++        if hash.finalize() != expected.sha256
+             || reader.metadata().map_err(|_| OwnershipError::Io)?.len() != expected.bytes
+         {
+             return Err(OwnershipError::Content);
+--- a/crates/rvvdk-vsphere/src/journal_worker/admission/tests.rs
++++ b/crates/rvvdk-vsphere/src/journal_worker/admission/tests.rs
+@@ -4,6 +4,7 @@
+ use crate::contract::{EndpointIdentity, PinProvenance};
+ use crate::ownership::{JobStore, RecoveryAction};
+ use sha1::Sha1;
++use sha2::{Digest, Sha256};
+ use std::{
+     fs,
+     os::unix::fs::{DirBuilderExt, FileExt},
+--- a/crates/rvvdk-vsphere/src/journal_worker/payload.rs
++++ b/crates/rvvdk-vsphere/src/journal_worker/payload.rs
+@@ -1,7 +1,8 @@
+ use super::Result;
+ use crate::ownership::{Job, JobState, OwnershipError};
++use crate::payload_hash::Sha256;
+ use sha1::Sha1;
+-use sha2::{Digest, Sha256};
++use sha2::Digest;
+ use std::{
+     fs::File,
+     io::{Read, Write},
+@@ -106,7 +107,7 @@
+             left -= n as u64;
+         }
+         if reader.metadata().map_err(|_| OwnershipError::Io)?.len() != expected.bytes
+-            || <[u8; 32]>::from(sha256.finalize()) != expected.sha256
++            || sha256.finalize() != expected.sha256
+             || <[u8; 20]>::from(sha1.finalize()) != expected.sha1
+         {
+             return Err(OwnershipError::Content);
+--- a/crates/rvvdk-vsphere/src/owned_transfer.rs
++++ b/crates/rvvdk-vsphere/src/owned_transfer.rs
+@@ -1,4 +1,5 @@
+ //! Journal-owned container transfer and conservative completion; no publication.
++use crate::payload_hash::Sha256;
+ use crate::{
+     Cancellation, Cleanup, Credentials, Error, InventoryLimits, LeaseCleanup, Result, Session,
+     contract::{ArtifactId, SourceSelection},
+@@ -13,7 +14,7 @@
+ };
+ use serde::Serialize;
+ use sha1::Sha1;
+-use sha2::{Digest, Sha256};
++use sha2::Digest;
+ use std::time::{Duration, Instant};
+ use zeroize::Zeroizing;
+
+@@ -509,7 +510,7 @@
+             .await
+             .map_err(|_| Error::Artifact)?;
+     }
+-    let sha256: [u8; 32] = sha256.finalize().into();
++    let sha256: [u8; 32] = sha256.finalize();
+     let sha1: [u8; 20] = sha1.finalize().into();
+     Ok(Downloaded {
+         file: ExportFile {
+--- a/crates/rvvdk-vsphere/src/payload_hash.rs
++++ b/crates/rvvdk-vsphere/src/payload_hash.rs
+@@ -1,4 +1,4 @@
+-//! Digest-equivalent streaming hashing for retained payload verification only.
++//! Digest-equivalent streaming hashing for bulk encoded and retained payload verification.
+ //!
+ //! Keep RustCrypto's SHA-NI path where available. The x86-64 software fallback
+ //! uses ring's runtime dispatch; other architectures retain the existing backend.

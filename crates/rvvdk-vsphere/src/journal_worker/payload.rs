@@ -1,7 +1,8 @@
 use super::Result;
 use crate::ownership::{Job, JobState, OwnershipError};
+use crate::payload_hash::Sha256;
 use sha1::Sha1;
-use sha2::{Digest, Sha256};
+use sha2::Digest;
 use std::{
     fs::File,
     io::{Read, Write},
@@ -106,7 +107,7 @@ impl Payload {
             left -= n as u64;
         }
         if reader.metadata().map_err(|_| OwnershipError::Io)?.len() != expected.bytes
-            || <[u8; 32]>::from(sha256.finalize()) != expected.sha256
+            || sha256.finalize() != expected.sha256
             || <[u8; 20]>::from(sha1.finalize()) != expected.sha1
         {
             return Err(OwnershipError::Content);

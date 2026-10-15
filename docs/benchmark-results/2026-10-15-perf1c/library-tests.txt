@@ -1,0 +1,156 @@
+
+running 152 tests
+test artifact::tests::publication_race_preserves_existing_destination_and_private_modes ... ok
+test contract::tests::canonical_endpoint_pin_and_uuid_spellings_match ... ok
+test contract::tests::explicit_selection_rejects_same_capacity_impostors_and_duplicates ... ok
+test contract::tests::identity_check_retains_power_topology_and_backing_scope_gates ... ok
+test contract::tests::incomplete_artifacts_cannot_claim_checks_or_complete_content ... ok
+test contract::tests::malformed_versions_sizes_digests_states_and_extensions_fail_closed ... ok
+test contract::tests::parser_budget_duplicates_nesting_overflow_and_trailing_data_are_rejected ... ok
+test contract::tests::round_trip_preserves_claims_but_never_skips_fresh_container_checks ... ok
+test contract::tests::runtime_input_bounds_and_redaction ... ok
+test contract::tests::trust_endpoint_and_source_components_are_bound ... ok
+test contract::tests::v1_golden_binding_and_explicit_inventory_access_remain_stable ... ok
+test export::qualification_tests::disk_selection_rejects_ambiguous_untyped_and_unbounded_entries ... ok
+test export::qualification_tests::timestamps_are_bounded_calendar_values_not_server_messages ... ok
+test inventory::reference_tests::opaque_references_round_trip_without_xml_injection ... ok
+test journal_worker::admission::tests::admission_rechecks_sealed_bytes_and_preserves_existing_metadata ... ok
+test journal_worker::admission::tests::benchmark::worker_hash_phases ... ignored, opt-in transfer hash worker phase benchmark
+test journal_worker::admission::tests::metadata_crash_child ... ok
+test journal_worker::admission::tests::metadata_faults_and_readback_tampering_never_acknowledge_durability ... ok
+test journal_worker::admission::tests::native_admission_checks_both_layouts_and_keeps_digest_claim_private ... ok
+test journal_worker::admission::tests::native_cancel_and_deadline_stop_before_metadata_and_preserve_partial_counts ... ok
+test journal_worker::admission::tests::native_rejects_matching_digest_with_bad_structure_payload_or_capacity ... ok
+test journal_worker::admission::tests::process_loss_during_metadata_never_creates_recovered_authority ... ok
+test journal_worker::tests::cancelled_waiter_retains_lock_until_accepted_work_is_drained ... ok
+test journal_worker::tests::payload_commands_bound_chunks_and_never_validate_failed_writes ... ok
+test journal_worker::tests::worker_failure_stops_later_commands_and_returns_conservative_assessment ... ok
+test journal_worker::tests::worker_panic_returns_uncertainty_and_releases_owned_handles ... ok
+test owned_probe::tests::cancellation_keeps_heartbeat_and_drains_accepted_intent_before_abort ... ok
+test owned_probe::tests::failed_progress_still_drains_intent_before_exactly_one_abort ... ok
+test owned_probe::tests::heartbeat_runs_while_held_and_abort_intents_sync ... ok
+test owned_transfer::tests::cancellation_drains_pending_write_before_abort_and_return ... ok
+test owned_transfer::tests::cancellation_during_seal_or_complete_intent_obeys_durable_boundary ... ok
+test owned_transfer::tests::payload_write_failure_still_allows_durable_abort_after_writer_closes ... ok
+test owned_transfer::tests::slow_native_admission_keeps_heartbeats_and_drains_on_cancel_or_error ... ok
+test owned_transfer::tests::slow_readback_and_completion_intent_keep_heartbeats_alive ... ok
+test ownership::retained::output::publication::acknowledgment::tests::all_other_states_and_absent_candidates_retain_existing_gates ... ok
+test ownership::retained::output::publication::acknowledgment::tests::assessment_failure_preserves_primary_and_durable_flags ... ok
+test ownership::retained::output::publication::acknowledgment::tests::benchmark::acknowledgment_histories ... ignored, opt-in acknowledgment histories and phase-recording controls
+test ownership::retained::output::publication::acknowledgment::tests::cancellation_respects_pairs_and_the_last_gate ... ok
+test ownership::retained::output::publication::acknowledgment::tests::crash::acknowledgment_crash_child ... ok
+test ownership::retained::output::publication::acknowledgment::tests::crash::originating_process_loss_classifies_all_three_paths_without_editing_records ... ok
+test ownership::retained::output::publication::acknowledgment::tests::crash::recovery_process_loss_preserves_pair_or_requires_separate_attestation ... ok
+test ownership::retained::output::publication::acknowledgment::tests::dense_and_deflated_fixtures_have_independent_full_byte_oracles ... ok
+test ownership::retained::output::publication::acknowledgment::tests::every_successor_field_is_bound_to_the_old_record ... ok
+test ownership::retained::output::publication::acknowledgment::tests::explicit_cleanup_remains_separate ... ok
+test ownership::retained::output::publication::acknowledgment::tests::invalid_options_precancellation_and_shared_deadline_block_success ... ok
+test ownership::retained::output::publication::acknowledgment::tests::late_pair_source_and_namespace_changes_are_checked_through_assessment ... ok
+test ownership::retained::output::publication::acknowledgment::tests::namespace_and_content_exclusions_preserve_journals ... ok
+test ownership::retained::output::publication::acknowledgment::tests::original_destination_and_explicit_selection_are_required ... ok
+test ownership::retained::output::publication::acknowledgment::tests::partial_foreign_and_unsafe_candidate_entries_are_retained ... ok
+test ownership::retained::output::publication::acknowledgment::tests::pinned_parents_do_not_follow_replaced_pathnames ... ok
+test ownership::retained::output::publication::acknowledgment::tests::rename_failures_and_ambiguous_returns_never_claim_success_or_rollback ... ok
+test ownership::retained::output::publication::acknowledgment::tests::report_requires_every_flag_and_final_observation ... ok
+test ownership::retained::output::publication::acknowledgment::tests::six_histories_preserve_exact_candidate_and_full_work_under_both_locks ... ok
+test ownership::retained::output::publication::acknowledgment::tests::source_transactions_are_never_adopted ... ok
+test ownership::retained::output::publication::acknowledgment::tests::thirty_sync_faults_stop_and_choose_explicit_retry ... ok
+test ownership::retained::output::publication::attestation::tests::all_non_published_states_and_invalid_records_are_rejected ... ok
+test ownership::retained::output::publication::attestation::tests::assessment_error_preserves_primary_error_and_completed_flags ... ok
+test ownership::retained::output::publication::attestation::tests::benchmark::attestation_histories ... ignored, opt-in attestation histories and phase-recording controls
+test ownership::retained::output::publication::attestation::tests::cancellation_is_checked_after_pairs_and_after_assessment ... ok
+test ownership::retained::output::publication::attestation::tests::crash::acknowledgment_hook_failures_remain_failures_after_fresh_attestation ... ok
+test ownership::retained::output::publication::attestation::tests::crash::acknowledgment_process_loss_keeps_transactions_blocked_and_attests_only_published ... ok
+test ownership::retained::output::publication::attestation::tests::crash::attestation_crash_child ... ok
+test ownership::retained::output::publication::attestation::tests::crash::interrupted_attestation_repeats_all_work_without_journal_replacement ... ok
+test ownership::retained::output::publication::attestation::tests::dense_and_deflated_fixtures_have_independent_full_byte_oracles ... ok
+test ownership::retained::output::publication::attestation::tests::every_sync_failure_stops_and_retry_repeats_all_work ... ok
+test ownership::retained::output::publication::attestation::tests::fresh_content_and_member_checks_reject_corruption_and_forged_claims ... ok
+test ownership::retained::output::publication::attestation::tests::invalid_budgets_and_shared_deadline_include_final_assessment ... ok
+test ownership::retained::output::publication::attestation::tests::late_bindings_and_transactions_are_checked_even_after_assessment ... ok
+test ownership::retained::output::publication::attestation::tests::namespace_table_and_misplaced_or_foreign_entries_are_rejected ... ok
+test ownership::retained::output::publication::attestation::tests::original_destination_and_explicit_selection_are_required ... ok
+test ownership::retained::output::publication::attestation::tests::pending_transactions_are_retained_for_both_journals_and_branches ... ok
+test ownership::retained::output::publication::attestation::tests::pinned_parents_do_not_follow_replaced_pathnames ... ok
+test ownership::retained::output::publication::attestation::tests::repeated_attestation_preserves_original_journals_and_syncs_without_mutation ... ok
+test ownership::retained::output::publication::attestation::tests::report_success_needs_every_gate_and_valid_final_assessment ... ok
+test ownership::retained::output::publication::attestation::tests::source_cleanup_blocks_attestation_without_blocking_explicit_output_cleanup ... ok
+test ownership::retained::output::publication::reconciliation::tests::acknowledgment_faults_and_assessment_failures_never_become_success ... ok
+test ownership::retained::output::publication::reconciliation::tests::all_non_intent_states_and_invalid_records_are_rejected ... ok
+test ownership::retained::output::publication::reconciliation::tests::benchmark::recovery_branches ... ignored, opt-in recovery branches and phase-recording controls
+test ownership::retained::output::publication::reconciliation::tests::both_branches_verify_preserve_sync_and_acknowledge_without_recopy ... ok
+test ownership::retained::output::publication::reconciliation::tests::cancellation_boundaries_keep_sync_observations_separate_from_success ... ok
+test ownership::retained::output::publication::reconciliation::tests::crash::initial_publication_crashes_reconcile_even_visible_unsynced_intent ... ok
+test ownership::retained::output::publication::reconciliation::tests::crash::reconciliation_crash_child ... ok
+test ownership::retained::output::publication::reconciliation::tests::crash::reconciliation_process_loss_preserves_retry_or_blocked_acknowledgment ... ok
+test ownership::retained::output::publication::reconciliation::tests::deadline_is_shared_with_admission_and_invalid_budgets_do_not_mutate ... ok
+test ownership::retained::output::publication::reconciliation::tests::dense_and_deflated_fixtures_have_independent_full_byte_oracles ... ok
+test ownership::retained::output::publication::reconciliation::tests::fresh_content_and_member_checks_reject_corruption_and_forged_claims ... ok
+test ownership::retained::output::publication::reconciliation::tests::late_substitution_and_collisions_preserve_foreign_entries ... ok
+test ownership::retained::output::publication::reconciliation::tests::namespace_table_and_real_ambiguous_locations_fail_closed ... ok
+test ownership::retained::output::publication::reconciliation::tests::original_destination_and_explicit_selection_are_required ... ok
+test ownership::retained::output::publication::reconciliation::tests::pending_transactions_are_retained_for_both_journals_and_branches ... ok
+test ownership::retained::output::publication::reconciliation::tests::pinned_parents_do_not_follow_replaced_pathnames ... ok
+test ownership::retained::output::publication::reconciliation::tests::sync_and_rename_syscall_errors_stop_without_acknowledgment ... ok
+test ownership::retained::output::publication::tests::benchmark::matched_publication ... ignored, opt-in matched owned output and durable publication benchmark
+test ownership::retained::output::publication::tests::benchmark::profiling::local_profile ... ignored, opt-in paired local profiling and disabled-instrumentation controls
+test ownership::retained::output::publication::tests::cleanup_accepts_stamped_partial_states_but_refuses_unstamped_and_uncertain_ones ... ok
+test ownership::retained::output::publication::tests::cleanup_faults_resume_only_checked_missing_members_and_sync_before_ack ... ok
+test ownership::retained::output::publication::tests::cleanup_preserves_unknown_or_replaced_files_and_cancellation_keeps_intent ... ok
+test ownership::retained::output::publication::tests::cli::command_benchmark ... ignored, explicit release command/direct comparisons; no overlapping workloads
+test ownership::retained::output::publication::tests::cli::executable_exclusions ... ignored, requires explicit built recovery CLI; parameterized exclusions
+test ownership::retained::output::publication::tests::cli::executable_histories ... ignored, requires explicit built recovery CLI; authored executable qualification
+test ownership::retained::output::publication::tests::cli::executable_reconciliation_candidates ... ignored, requires explicit built CLI; remaining reconciliation candidate origins
+test ownership::retained::output::publication::tests::cli::prepare_fixture ... ignored, exports only authored fixture into an explicitly selected private parent
+test ownership::retained::output::publication::tests::destination_constraints_and_binding_are_explicit ... ok
+test ownership::retained::output::publication::tests::fresh_admission_rejects_forged_claims_metadata_changes_and_unknown_members ... ok
+test ownership::retained::output::publication::tests::process_loss_observes_rename_without_replay_and_cleanup_can_finish_absent_directory ... ok
+test ownership::retained::output::publication::tests::publication_boundaries_cancellation_and_namespace_substitution_are_conservative ... ok
+test ownership::retained::output::publication::tests::publication_crash_child ... ok
+test ownership::retained::output::publication::tests::publication_journal_faults_never_turn_uncertainty_into_success ... ok
+test ownership::retained::output::publication::tests::publication_revalidates_after_admission_and_never_overwrites_collisions ... ok
+test ownership::retained::output::publication::tests::v1_admission_atomic_bundle_publication_and_explicit_cleanup ... ok
+test ownership::retained::output::tests::assessment_rejects_bad_binding_record_permissions_and_pending_collision ... ok
+test ownership::retained::output::tests::benchmark::matched_owned_output ... ignored, opt-in matched owned RAW conversion and verification benchmark
+test ownership::retained::output::tests::cancellation_deadline_and_engine_completion_are_not_owned_success ... ok
+test ownership::retained::output::tests::changed_raw_namespace_marker_and_metadata_never_verify ... ok
+test ownership::retained::output::tests::interrupted_stage_and_metadata_remain_owned_without_cleanup_or_resume ... ok
+test ownership::retained::output::tests::journal_faults_preserve_conservative_prefix_and_pending_transactions ... ok
+test ownership::retained::output::tests::output_crash_child ... ok
+test ownership::retained::output::tests::owned_conversion_verifies_bytes_metadata_lock_and_source_preservation ... ok
+test ownership::retained::output::tests::process_loss_preserves_prefix_source_and_partial_output ... ok
+test ownership::retained::profile::isolation_disabled_mode_and_byte_accounting ... ok
+test ownership::retained::profile::unwinding_releases_measurement_state ... ok
+test ownership::retained::tests::benchmark::matched_retained_conversion ... ignored, opt-in matched retained artifact conversion benchmark
+test ownership::retained::tests::cancellation_and_deadline_preserve_source_and_report_partial_destination ... ok
+test ownership::retained::tests::conversion_crash_child ... ok
+test ownership::retained::tests::conversion_rechecks_changes_before_writes_and_rejects_aliases ... ok
+test ownership::retained::tests::every_serialized_validation_claim_still_requires_fresh_admission ... ok
+test ownership::retained::tests::killed_conversion_leaves_completed_source_and_caller_owned_partial_output ... ok
+test ownership::retained::tests::open_rejects_forged_claims_bad_bytes_and_foreign_resources ... ok
+test ownership::retained::tests::open_rejects_pending_nonterminal_wrong_source_and_stale_store_records ... ok
+test ownership::retained::tests::post_flush_source_drift_prevents_conversion_success ... ok
+test ownership::retained::tests::retained_lock_conversion_and_cleanup_have_separate_lifetimes ... ok
+test ownership::tests::actual_process_loss_and_competing_process_are_conservative ... ok
+test ownership::tests::cleanup_requires_no_uncertain_remote_or_publication_outcome ... ok
+test ownership::tests::cleanup_retries_only_durable_partial_cleanup_and_keeps_unknown_files ... ok
+test ownership::tests::crash_child ... ok
+test ownership::tests::empty_or_unknown_prepare_failure_never_creates_cleanup_authority ... ok
+test ownership::tests::failed_commit_poisons_writer_and_preserves_old_or_new_complete_record ... ok
+test ownership::tests::local_cleanup_after_explicit_abort_or_before_acquire_preserves_tombstone ... ok
+test ownership::tests::process_loss_during_initial_reservation_and_stage_creation_preserves_unknowns ... ok
+test ownership::tests::records_and_debug_exclude_runtime_lease_reference_and_operational_source ... ok
+test ownership::tests::replacement_symlink_hardlink_marker_and_unknown_member_are_preserved ... ok
+test ownership::tests::schema_sequence_and_identity_invariants_are_checked_even_with_valid_checksum ... ok
+test ownership::tests::stale_operation_source_copied_store_and_corrupt_records_cannot_authorize_cleanup ... ok
+test ownership::tests::store_lock_is_exclusive_and_symlink_or_public_directories_are_rejected ... ok
+test ownership::tests::transitions_require_durable_intents_and_recovery_never_recreates_live_job ... ok
+test payload_hash::tests::dense_and_zero_streams_match_at_block_and_chunk_boundaries ... ok
+test payload_hash::tests::known_vectors_include_empty_input_and_padding ... ok
+test payload_hash::tests::runtime_selection_preserves_the_hardware_backend ... ok
+test transport::tests::exact_authority_and_secret_safe_debug ... ok
+test xml::tests::escaping_and_invalid_characters ... ok
+test xml::tests::hostile_xml_is_bounded ... ok
+test xml::tests::namespaces_shape_and_faults ... ok
+
+test result: ok. 139 passed; 0 failed; 13 ignored; 0 measured; 0 filtered out; finished in 137.76s

@@ -1,5 +1,6 @@
 //! Native validation and private metadata persistence while the live Job owns its stage.
 use super::{Result, payload::Payload};
+use crate::payload_hash::Sha256;
 use crate::{
     Cancellation,
     contract::{
@@ -11,7 +12,6 @@ use crate::{
 use rvvdk_core::VirtualDisk;
 use rvvdk_local::LocalFileBlockDevice;
 use rvvdk_vmdk::{StreamDisk, StreamDiskLimits};
-use sha2::{Digest, Sha256};
 use std::{
     io::{Read, Write},
     sync::Arc,
@@ -99,7 +99,7 @@ impl Payload {
             hash.update(&buffer[..n]);
             left -= n as u64;
         }
-        if <[u8; 32]>::from(hash.finalize()) != expected.sha256
+        if hash.finalize() != expected.sha256
             || reader.metadata().map_err(|_| OwnershipError::Io)?.len() != expected.bytes
         {
             return Err(OwnershipError::Content);
