@@ -1,0 +1,189 @@
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -1292,0 +1293 @@
++ "ring",
+--- a/crates/rvvdk-vsphere/Cargo.toml
++++ b/crates/rvvdk-vsphere/Cargo.toml
+@@ -36,0 +37,3 @@
++
++[target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
++ring = "=0.17.14"
+--- a/crates/rvvdk-vsphere/src/lib.rs
++++ b/crates/rvvdk-vsphere/src/lib.rs
+@@ -13,0 +14,2 @@
++#[cfg(target_os = "linux")]
++mod payload_hash;
+--- a/crates/rvvdk-vsphere/src/ownership/retained.rs
++++ b/crates/rvvdk-vsphere/src/ownership/retained.rs
+@@ -253 +253 @@
+-    let mut hash = Sha256::new();
++    let mut hash = crate::payload_hash::Sha256::new();
+@@ -264 +264 @@
+-        .check_container(size, &hash.finalize().into())
++        .check_container(size, &hash.finalize())
+--- a/crates/rvvdk-vsphere/src/ownership/retained/output.rs
++++ b/crates/rvvdk-vsphere/src/ownership/retained/output.rs
+@@ -428 +428 @@
+-        let mut hash = Sha256::new();
++        let mut hash = crate::payload_hash::Sha256::new();
+@@ -467 +467 @@
+-        let digest = hash.finalize().into();
++        let digest = hash.finalize();
+--- a/crates/rvvdk-vsphere/src/ownership/retained/output/publication.rs
++++ b/crates/rvvdk-vsphere/src/ownership/retained/output/publication.rs
+@@ -528 +528 @@
+-        let mut hash = Sha256::new();
++        let mut hash = crate::payload_hash::Sha256::new();
+@@ -552 +552 @@
+-        if <[u8; 32]>::from(hash.finalize()) != expected.raw_sha256
++        if hash.finalize() != expected.raw_sha256
+--- a/crates/rvvdk-vsphere/src/ownership/retained/output/publication/tests.rs
++++ b/crates/rvvdk-vsphere/src/ownership/retained/output/publication/tests.rs
+@@ -401,2 +401,3 @@
+-    let cwd = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+-        .join("../..")
++    let cwd = std::env::var_os("RVVDK_RETAINED_PARENT")
++        .map(PathBuf::from)
++        .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."))
+--- /dev/null
++++ b/crates/rvvdk-vsphere/src/payload_hash.rs
+@@ -0,0 +1,139 @@
++//! Digest-equivalent streaming hashing for retained payload verification only.
++//!
++//! Keep RustCrypto's SHA-NI path where available. The x86-64 software fallback
++//! uses ring's runtime dispatch; other architectures retain the existing backend.
++//! Selection does not change readback, chunk size, cancellation or persistence.
++use sha2::Digest;
++
++enum Backend {
++    Sha2(sha2::Sha256),
++    #[cfg(target_arch = "x86_64")]
++    Ring(ring::digest::Context),
++}
++
++pub(crate) struct Sha256(Backend);
++
++#[cfg(target_arch = "x86_64")]
++fn has_sha2_acceleration() -> bool {
++    std::is_x86_feature_detected!("sha")
++        && std::is_x86_feature_detected!("sse2")
++        && std::is_x86_feature_detected!("ssse3")
++        && std::is_x86_feature_detected!("sse4.1")
++}
++
++impl Sha256 {
++    pub(crate) fn new() -> Self {
++        #[cfg(target_arch = "x86_64")]
++        if !has_sha2_acceleration() {
++            return Self(Backend::Ring(ring::digest::Context::new(
++                &ring::digest::SHA256,
++            )));
++        }
++        Self(Backend::Sha2(sha2::Sha256::new()))
++    }
++
++    pub(crate) fn update(&mut self, bytes: &[u8]) {
++        match &mut self.0 {
++            Backend::Sha2(hash) => hash.update(bytes),
++            #[cfg(target_arch = "x86_64")]
++            Backend::Ring(hash) => hash.update(bytes),
++        }
++    }
++
++    pub(crate) fn finalize(self) -> [u8; 32] {
++        match self.0 {
++            Backend::Sha2(hash) => hash.finalize().into(),
++            #[cfg(target_arch = "x86_64")]
++            Backend::Ring(hash) => hash.finish().as_ref().try_into().expect("SHA-256 length"),
++        }
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    fn contexts() -> Vec<Sha256> {
++        let hashes = vec![Sha256::new(), Sha256(Backend::Sha2(sha2::Sha256::new()))];
++        #[cfg(target_arch = "x86_64")]
++        let hashes = {
++            let mut hashes = hashes;
++            hashes.push(Sha256(Backend::Ring(ring::digest::Context::new(
++                &ring::digest::SHA256,
++            ))));
++            hashes
++        };
++        hashes
++    }
++
++    #[test]
++    fn known_vectors_include_empty_input_and_padding() {
++        for (bytes, expected) in [
++            (
++                &b""[..],
++                "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++            ),
++            (
++                &b"abc"[..],
++                "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
++            ),
++            (
++                &b"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"[..],
++                "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1",
++            ),
++        ] {
++            for mut hash in contexts() {
++                for byte in bytes.chunks(1) {
++                    hash.update(byte);
++                }
++                assert_eq!(crate::transport::hex_string(&hash.finalize()), expected);
++            }
++        }
++    }
++
++    #[test]
++    fn dense_and_zero_streams_match_at_block_and_chunk_boundaries() {
++        for size in [
++            0,
++            1,
++            55,
++            56,
++            63,
++            64,
++            65,
++            119,
++            120,
++            127,
++            128,
++            129,
++            4095,
++            4096,
++            4097,
++            1 << 20,
++        ] {
++            for zeros in [false, true] {
++                let bytes: Vec<_> = (0..size)
++                    .map(|i| if zeros { 0 } else { (i * 17 + i / 256) as u8 })
++                    .collect();
++                let expected: [u8; 32] = sha2::Sha256::digest(&bytes).into();
++                for chunk in [1, 63, 64, 65, 4096, 1 << 20] {
++                    for mut hash in contexts() {
++                        for part in bytes.chunks(chunk) {
++                            hash.update(part);
++                        }
++                        assert_eq!(hash.finalize(), expected);
++                    }
++                }
++            }
++        }
++    }
++
++    #[test]
++    fn runtime_selection_preserves_the_hardware_backend() {
++        let hash = Sha256::new();
++        #[cfg(target_arch = "x86_64")]
++        assert_eq!(matches!(hash.0, Backend::Sha2(_)), has_sha2_acceleration());
++        #[cfg(not(target_arch = "x86_64"))]
++        assert!(matches!(hash.0, Backend::Sha2(_)));
++    }
++}

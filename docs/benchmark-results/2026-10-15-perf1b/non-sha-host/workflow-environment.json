@@ -1,0 +1,35 @@
+{
+  "affinity": [
+    0
+  ],
+  "available_affinity": [
+    0,
+    1
+  ],
+  "kernel": {
+    "sysname": "Linux",
+    "release": "6.19.10-300.fc44.x86_64",
+    "version": "#1 SMP PREEMPT_DYNAMIC Wed Mar 25 18:23:49 UTC 2026",
+    "machine": "x86_64"
+  },
+  "disk_filesystem": "xfs",
+  "binary_sha256": {
+    "reference": "9d5945ac85fbcf9045b90f994ebbef4e8362b16b0f37dfa9225d46d174703317",
+    "candidate": "ec12d3622d9362888cc69f0a4e4ed8c3492988dcfd5d4808896050054b0b7ed5",
+    "reference_cli": "562eaa823b1b1466d482e0a483d0e0ea7068c9cff4820c6eab7ff1a4269bedbc",
+    "candidate_cli": "edc96def448557b9144ca10dc3f5c0e316d8daab088a5c308d8e97de098d2052"
+  },
+  "scripts": {
+    "measure_hash_workflows.py": "1571250c0b7ce33005d57367a19036b8e6366856ba2b2138309f22b213b5562b",
+    "measure_acknowledgment.py": "1cc13c1e176fa68d214c2e83294ede63f013998c0fd91656663762c0fe276048",
+    "measure_attestation.py": "3588fda96b304cb47d9b4968407584e784e4d8a9272b00be7c213ca683109f53",
+    "measure_reconciliation.py": "b9f4293d240455fea9f294e9d444a09f76b8b94a7ca4b5791bf7eb0ffc6d7cff",
+    "measure_recovery_cli.py": "024cfc77cf97ee34423767263eab868faf6fc87e405ce689cfe66745dd0b6dc0",
+    "measure_recovery_cli_supplement.py": "36147110ad61385eeb75c2b01e2c66fa46e42dafa23eb64dc59cce1856a9cff9"
+  },
+  "mounts": {
+    "xfs": "xfs rw,relatime,seclabel,inode64,logbufs=8,logbsize=32k,noquota",
+    "tmpfs": "tmpfs rw,relatime,seclabel,size=524288k,mode=700,uid=1000,gid=1000,inode64"
+  },
+  "conditions": "Serial workload; normal page cache; setup/oracles excluded; no cold-cache claim. Host load/SMT/frequency not isolated. Private tmpfs huge=never is volatile. Native lifetime RSS includes fixture setup; CLI child RSS is a separate scope."
+}

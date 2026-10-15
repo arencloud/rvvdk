@@ -1,0 +1,24 @@
+{
+  "baseline": "82c025d2571ee7fba1cf1ffbf854e0118519341e",
+  "scope": "PERF.1b: native non-SHA qualification; conditional bulk backend candidate only after same-runner micro evidence. Preserve current SHA-NI behavior.",
+  "runner_delta": "Same CPU model/kernel/XFS and no SHA feature; now 2 visible CPUs and 8 GiB rather than earlier 1 CPU/2 GiB. No historical timing ratios.",
+  "build_execution": "Both binaries built on development host with identical compiler/flags/dependencies; frozen hashes/source manifests copied to runner. Native execution, not emulation. No remote compiler installation.",
+  "micro_groups": "Existing eight groups plus 512 MiB dense and sparse-pattern groups (1 MiB chunks); ordinary caches, no cold claim.",
+  "rounds": {
+    "initial": {
+      "rounds": 3,
+      "pairs": 4
+    },
+    "repeat": {
+      "rounds": 3,
+      "pairs": 8
+    }
+  },
+  "repeat_policy": "Every group gets all repeats, irrespective of sign. Retain failed runs, adverse observations and timing spreads.",
+  "candidate_gate": "Require bulk micro benefit on non-SHA CPU before testing a private runtime-selected retained payload backend. Hardware SHA-capable x86-64 uses existing sha2; preserve other architecture defaults.",
+  "workflow_gate": "Frozen native normal/reconciliation/attestation/acknowledgment and direct/whole-CLI controls on runner XFS/private tmpfs and development Btrfs/private tmpfs. Same filesystems/caches/affinity/verification per pair. All groups 3x4+3x8 pairs.",
+  "correctness": "Known vectors and independent dense/sparse digests; candidate full workspace and real CLI fixture tests, existing fault/process-loss/cancellation/identity/sparse/durability checks.",
+  "resources": "CPU0 affinity; one measured workload per host; builds/tests/plots never concurrent with that host timing. Separate hosts may execute independent work concurrently; no cross-host timing ratio.",
+  "promotion": "Accept only bounded same-runner benefit with SHA-NI regression controls; otherwise retain baseline and commit diagnostics.",
+  "privacy": "Authored synthetic fixtures on existing guest only. No ESXi operation, exports, VM resource modification or credentials in public evidence."
+}

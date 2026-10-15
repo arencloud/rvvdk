@@ -525,7 +525,7 @@ impl CheckedOutput<'_> {
         let mut input = vec![0; 1 << 20];
         let mut output = vec![0; 1 << 20];
         let mut offset = 0;
-        let mut hash = Sha256::new();
+        let mut hash = crate::payload_hash::Sha256::new();
         while offset < self.record.logical_bytes {
             control.check()?;
             let n = (self.record.logical_bytes - offset).min(input.len() as u64) as usize;
@@ -549,7 +549,7 @@ impl CheckedOutput<'_> {
             *verified = offset;
             hook(self.record.state, "verified_chunk")?;
         }
-        if <[u8; 32]>::from(hash.finalize()) != expected.raw_sha256
+        if hash.finalize() != expected.raw_sha256
             || raw.metadata().map_err(|_| OwnershipError::Io)?.len() != self.record.logical_bytes
         {
             return Err(OwnershipError::Content);

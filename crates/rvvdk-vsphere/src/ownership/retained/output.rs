@@ -425,7 +425,7 @@ impl<H: FnMut(OutputState, &str) -> Result<()>> Owner<'_, H> {
         }
         let mut expected = vec![0; 1 << 20];
         let mut observed = vec![0; 1 << 20];
-        let mut hash = Sha256::new();
+        let mut hash = crate::payload_hash::Sha256::new();
         let mut offset = 0;
         while offset < self.record.logical_bytes {
             control.check()?;
@@ -464,7 +464,7 @@ impl<H: FnMut(OutputState, &str) -> Result<()>> Owner<'_, H> {
             control,
         )?;
         drop(check_stage(&self.artifact.store, &self.record)?);
-        let digest = hash.finalize().into();
+        let digest = hash.finalize();
         let metadata = OutputMetadata {
             version: 1,
             format: RawFormat::Raw,

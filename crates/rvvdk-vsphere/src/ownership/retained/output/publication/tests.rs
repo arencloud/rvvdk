@@ -398,8 +398,9 @@ fn destination_constraints_and_binding_are_explicit() {
     );
     assert!(final_path(&t).exists());
     let t = ready();
-    let cwd = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
+    let cwd = std::env::var_os("RVVDK_RETAINED_PARENT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."))
         .canonicalize()
         .unwrap();
     let parent = if fs::metadata(&t.0).unwrap().dev() == fs::metadata(&cwd).unwrap().dev() {

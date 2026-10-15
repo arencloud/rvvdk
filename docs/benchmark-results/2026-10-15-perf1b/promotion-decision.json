@@ -1,0 +1,22 @@
+{
+  "accepted": true,
+  "scope": "Exact frozen conditional backend in three retained bulk contexts; native same-host comparisons only.",
+  "core_results": {
+    "non-sha-host": {
+      "core_workflow_wall_change_min_percent": -44.64956938163594,
+      "core_workflow_wall_change_max_percent": -34.947109237873384
+    },
+    "sha-host": {
+      "core_workflow_wall_change_min_percent": -1.4161958791513163,
+      "core_workflow_wall_change_max_percent": 3.7161839503586647
+    }
+  },
+  "hash_bulk_wall_change_percent": [
+    -46.94,
+    -43.22
+  ],
+  "correctness": "807 candidate workspace tests, 139 native guest library tests, six CLI fixture groups per host, 624 probe checks per CPU profile and 72 independent digest cases. All byte/control/allocation/sync gates pass.",
+  "sha_regression_disposition": "Keep SHA-NI backend. Core wall medians -1.42% to +3.72%; original assessment +7.18% wall retained. Additional A/A and A/B controls reverse the A/B sign, without clearing startup variability.",
+  "non_sha_limits": "Core wall gains -44.65% to -34.95%; retain repeat wall spread above 5% in tmpfs uncertain attestation, XFS direct/CLI, tmpfs CLI and assessment. Assessment +2.52% wall/+3.92% CPU is retained.",
+  "open": "PERF.0: startup/phase/cleanup variance, ambient tmpfs allocation, larger/cold workloads and unmeasured CPU/platforms. No live export or production recovery clearance."
+}

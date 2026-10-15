@@ -278,6 +278,11 @@ record qualification and remaining performance findings.
 [PERF.1a SHA-256 comparisons](docs/benchmark-results/2026-10-14-perf1a/README.md)
 retain the existing accelerated `sha2` backend after evaluating an alternative,
 with digest checks, full-operation measurements and PNG/SVG plots.
+[PERF.1b native fallback qualification](docs/benchmark-results/2026-10-15-perf1b/README.md)
+adds a conditional backend for three retained bulk hash paths: SHA-NI systems keep
+`sha2`; Linux x86-64 systems without its acceleration prerequisites use `ring`.
+Native hash, complete-workflow and CLI plots record the bounded gains and remaining
+timing variation. See the [backend boundary and next step](docs/sha256-fallback-qualification.md).
 
 Explore the [R5.9 fuzz qualification charts](docs/benchmark-results/2026-09-30-r59/README.md)
 for sanitizer execution rates, memory and feedback across repeated campaigns.

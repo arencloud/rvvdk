@@ -34,3 +34,6 @@ rvvdk-core = { path = "../rvvdk-core" }
 rvvdk-local = { path = "../rvvdk-local" }
 rvvdk-vmdk = { path = "../rvvdk-vmdk" }
 rvvdk-datamover = { path = "../rvvdk-datamover" }
+
+[target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
+ring = "=0.17.14"

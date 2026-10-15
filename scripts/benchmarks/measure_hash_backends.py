@@ -42,11 +42,11 @@ def validate(value,pairs,case):
         assert all(math.isfinite(r[k]) and r[k]>0 for k in ['wall_ms','cpu_ms','peak_rss_kib'])
     return rows
 
-def summarize(report):
+def summarize(report, cases=CASES):
     index=load(report/'hash-measurements.json');groups={}
     for run in index:
         assert sha(report/run['file'])==run['sha256']
-        case=next(c for c in CASES if c[0]==run['group']);rows=validate(load(report/run['file']),run['pairs'],case)
+        case=next(c for c in cases if c[0]==run['group']);rows=validate(load(report/run['file']),run['pairs'],case)
         if run['stage']!='repeat':continue
         g=groups.setdefault(run['group'],{})
         for backend in ['sha2','ring']:

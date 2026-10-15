@@ -1,0 +1,27 @@
+{
+  "locked_dispatch_source_audit": {
+    "dependency_source_sha256": {
+      "sha2-0.11.0/src/sha256.rs": "cb03fddc1325b60935409f097f2fab3ae51cfab15bed1254f4e93d13b28b7eff",
+      "sha2-0.11.0/src/sha256/x86_sha.rs": "19d8c7c15ffa081332e5b438e98809ce52f14706553ec8965d6c54c5fbf7cccf",
+      "sha2-0.11.0/src/sha256/soft.rs": "60449b6df17909cd34d533ec4d82851841cb8b26e01c0907827b33343917a31c",
+      "ring-0.17.14/src/digest/sha2/sha2_32.rs": "b1b889257ac23508d68addfc628e929f70139b6418cfdbee63a18930061db7a9"
+    },
+    "default_sha2": "Runtime SHA+SSE2+SSSE3+SSE4.1 selects x86_sha; otherwise software SHA-256. SHA-512 AVX2 is unrelated.",
+    "default_ring": "SHA+SSSE3 then Intel AVX then SSSE3/fallback.",
+    "candidate_sites": [
+      "ownership/retained.rs::verify_bytes",
+      "ownership/retained/output.rs::verify",
+      "ownership/retained/output/publication.rs::verify_fresh"
+    ],
+    "audited_unchanged_sites": [
+      "owned_transfer.rs::transfer",
+      "export.rs::transfer",
+      "journal_worker/admission.rs",
+      "journal_worker/payload.rs",
+      "identity/journal/contract/TLS SHA-256"
+    ],
+    "inference": "CPU feature observations and exact source dispatch, not an instruction trace."
+  },
+  "dependency_change": "Direct Linux x86-64 ring 0.17.14 edge only. No dependency version changes; existing rustls ring edge already enables default alloc/dev_urandom_fallback features.",
+  "selection": "sha2 on x86-64 with SHA, SSE2, SSSE3 and SSE4.1; ring otherwise on x86-64; sha2 on other architectures. Native known-vector runs confirm feature availability, not an instruction trace."
+}

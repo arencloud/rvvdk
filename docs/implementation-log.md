@@ -3321,29 +3321,79 @@ hashes, staged privacy and diff hygiene are checked before the local commit.
 PERF.1a is complete; non-SHA native throughput remains PERF.1b. Commit this bounded
 package locally with its evidence; no push.
 
+## PERF.1b — 2026-10-15
+
+Complete within the bounded native qualification scope. Baseline
+`82c025d2571ee7fba1cf1ffbf854e0118519341e`. The
+[decision and next package](sha256-fallback-qualification.md) and
+[report with seven PNG/SVG figures](benchmark-results/2026-10-15-perf1b/README.md)
+record the implementation, positive/adverse measurements and remaining limits.
+
+Reconfirmed the earlier Xeon Silver 4116 runner without SHA-NI. It now exposes
+2 CPUs/8 GiB rather than the older 1 CPU/2 GiB; no VM resource change was made.
+Both sides of each comparison use the current configuration. With no Rust compiler
+on the guest, identical frozen binaries built locally with Rust 1.95.0/default
+flags run natively on both CPU profiles. Source, binary, dependency and environment
+hashes are retained. No historical or cross-host ratio establishes a speedup.
+
+Native repeated bulk hashing uses 43.22–46.94% less wall time. Only after repeated
+micro evidence, developed and qualified a private conditional backend in three
+retained bulk hash contexts. Keep sha2 with its SHA/SSE2/SSSE3/SSE4.1 prerequisites;
+otherwise use already-locked ring on Linux x86-64. Other architectures and all
+metadata/identity/journal/TLS/export/worker hashes keep the existing backend.
+Every byte read/comparison/hash, control, allocation, identity and durability gate
+remains. A test-only parent override permits real cross-filesystem fixture testing
+on the native guest. The exact eight-file patch replays against the baseline,
+matching all 297 frozen candidate source hashes before promotion.
+
+Candidate and promoted workspace checks pass 807 tests, with 19 opt-in tests
+ignored; nested child summaries are excluded (31 candidate-log results, 29 root-log
+results). The rebuilt root release CLI is byte-identical to the measured candidate.
+Formatting and all-target Clippy pass. The frozen guest library passes 139 tests;
+six actual CLI fixture groups pass
+per host on primary storage and private tmpfs. Each native probe passes 624 checks,
+plus 72 independent Python digest-case checks across the two profiles.
+
+Retained and validated 720 native hash observations, 1,152 complete-workflow
+observations per host, and 96 supplemental assessment controls: 3,120 total.
+Non-SHA full core workflow wall changes span -44.65% to -34.95%;
+SHA-host core workflow changes span −1.42% to +3.72%. The original SHA-host
+assessment +7.18% wall/+3.75% CPU result remains. Separately declared controls give
+A/A +0.09% wall/−0.13% CPU and fresh A/B −1.62% wall/+0.26% CPU, retaining the sign
+reversal and all spread. This does not clear variance or establish a universal
+performance guarantee. Release CLI size increases 21,776 bytes (+0.70%). Child
+peak RSS still includes possible inherited launcher memory; no isolated working-set
+claim is made. All full-byte, sparse-allocation and explicit-sync oracles pass.
+
+Only authored local/loopback fixtures ran on the guest. No ESXi API, live export,
+snapshot, VM power or VM resource operation occurred. Fixture parents are checked
+empty and the SSH control connection is closed after collection. Numeric samples
+and raw index hashes remain unchanged. Text-log whitespace normalization records
+original/committed hashes. Evidence replay/corruption checks, plot review, docs links,
+artifact/source hashes, staged privacy and diff hygiene are checked before committing.
+PERF.1b is complete; PERF.0 and production recovery remain open. Commit locally;
+no push.
+
 ## Next session
 
-Start **PERF.1b — native SHA-256 qualification without SHA-NI**:
+Start **PERF.1c — separately qualify remaining transfer/worker bulk hashes**:
 
-1. Reconfirm the earlier runner's CPU features and resource/storage configuration.
-   Freeze reference source/dependencies/binaries there. Record any changed VM/CPU
-   configuration; do not compare timings across machines as an implementation gain.
-2. Run the standalone Rust probe's known vectors, independent bytes, chunk boundaries
-   and repeated small/bulk dense/sparse matrix natively. Retain every sample. QEMU
-   CPU masking is not a replacement for native performance qualification.
-3. Only if supported by the microbenchmarks, evaluate a private feature-aware bulk
-   fallback that preserves current SHA-NI behavior. Repeat frozen publication,
-   reconciliation, attestation, acknowledgment and whole CLI controls on affected
-   configurations; preserve full verification, sparse allocation, cancellation and
-   every persistence gate.
-4. Accept a supported bounded improvement or commit the negative result. Export and
-   inspect plots, record remaining limits, scan staged files and commit locally.
-   Existing runner access is sufficient; no new ESXi trial, VM or vCenter is needed.
+1. Audit `export.rs`, `owned_transfer.rs`, `journal_worker/admission.rs` and
+   `journal_worker/payload.rs`: byte domain, source/ownership binding, cancellation
+   and persistence boundaries. Reuse representative existing fault/fixture tests.
+2. Freeze PERF.1b as the reference. Measure complete affected operations with small,
+   bulk and zero-rich payloads. Separate hash CPU from loopback/network/storage
+   costs, preserving independent digests and full verification.
+3. Qualify a private reuse of the facade only where supported. Repeat all groups
+   on both native CPU profiles with matched conditions and all original gates.
+   Retain adverse measurements, initial/repeat spread and process/size costs.
+4. Adopt only a supported bounded gain, or save a negative result. Export/inspect
+   plots, update planning, scan staged files and commit locally. Existing native
+   runner access is sufficient for local/loopback work; no new ESXi trial, VM or
+   vCenter is needed. A live export is a separate qualification scope.
 
-Keep ambient tmpfs sparse-allocation diagnosis and controlled phase/cleanup timing
-in PERF.0; a stable private control does not close either finding. Different CPU/VM
-resources or omitted checks cannot establish an implementation speedup. Larger and
-cold working sets, stream/map/cache sensitivity, parallel decoding, R4.4 and discovery/
-TLS follow-ups remain open. Live retained-artifact recovery command qualification,
+Keep ambient tmpfs allocation, startup/phase/cleanup variance, larger/cold working
+sets, stream/map/cache sensitivity, parallel decoding, R4.4 and discovery/TLS
+follow-ups open in PERF.0. Live retained-artifact recovery command qualification,
 VMFS sparse, seSparse, online snapshots, CBT, restore, vCenter and vSphere 9 remain
 separate work. Continue local commits after each completed bounded package.

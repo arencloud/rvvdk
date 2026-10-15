@@ -1,0 +1,352 @@
+{
+  "hash_changes": {
+    "metadata64": {
+      "wall_ms": -38.81989005569634,
+      "cpu_ms": -38.35171570960296
+    },
+    "metadata1024": {
+      "wall_ms": -44.51861001298699,
+      "cpu_ms": -44.37839515173279
+    },
+    "chunk64k": {
+      "wall_ms": -46.9367183507739,
+      "cpu_ms": -47.20049049662788
+    },
+    "dense64": {
+      "wall_ms": -43.21537305857292,
+      "cpu_ms": -43.31028852983047
+    },
+    "dense64_chunk64k": {
+      "wall_ms": -44.40721987480298,
+      "cpu_ms": -44.501526733465155
+    },
+    "sparse64": {
+      "wall_ms": -45.67373096003892,
+      "cpu_ms": -45.56180773081026
+    },
+    "dense256": {
+      "wall_ms": -43.697243175178336,
+      "cpu_ms": -43.908119141993915
+    },
+    "sparse256": {
+      "wall_ms": -44.88408463000971,
+      "cpu_ms": -44.88695949502357
+    },
+    "dense512": {
+      "wall_ms": -45.36228685659444,
+      "cpu_ms": -45.541144296797974
+    },
+    "sparse512": {
+      "wall_ms": -44.714899900249485,
+      "cpu_ms": -44.6656330253162
+    }
+  },
+  "workflows": {
+    "non-sha-host": [
+      {
+        "label": "normal-xfs-64 MiB / owned",
+        "change_percent": {
+          "wall_ms": -38.03070968218933,
+          "cpu_ms": -41.270589859915894
+        },
+        "reference_wall_ms": 905.2296220000001,
+        "candidate_wall_ms": 560.9643725000001
+      },
+      {
+        "label": "normal-xfs-64 MiB / published",
+        "change_percent": {
+          "wall_ms": -41.36482872781714,
+          "cpu_ms": -42.581194853982005
+        },
+        "reference_wall_ms": 2211.9996,
+        "candidate_wall_ms": 1297.009754
+      },
+      {
+        "label": "recovery-xfs-64 MiB / staged",
+        "change_percent": {
+          "wall_ms": -42.32707706672612,
+          "cpu_ms": -42.659963072468784
+        },
+        "reference_wall_ms": 682.551688,
+        "candidate_wall_ms": 393.647509
+      },
+      {
+        "label": "recovery-xfs-64 MiB / already renamed",
+        "change_percent": {
+          "wall_ms": -44.30286845934342,
+          "cpu_ms": -44.41589987966895
+        },
+        "reference_wall_ms": 702.0288625,
+        "candidate_wall_ms": 391.00993900000003
+      },
+      {
+        "label": "attestation-xfs-64 MiB / acknowledged",
+        "change_percent": {
+          "wall_ms": -42.98815729737906,
+          "cpu_ms": -42.911846307453146
+        },
+        "reference_wall_ms": 695.7084259999999,
+        "candidate_wall_ms": 396.6361935
+      },
+      {
+        "label": "attestation-xfs-64 MiB / uncertain",
+        "change_percent": {
+          "wall_ms": -42.45292527310027,
+          "cpu_ms": -42.612465078972164
+        },
+        "reference_wall_ms": 685.5030475000001,
+        "candidate_wall_ms": 394.486951
+      },
+      {
+        "label": "acknowledgment-xfs-64 MiB / written",
+        "change_percent": {
+          "wall_ms": -41.477559923965735,
+          "cpu_ms": -41.92871440320584
+        },
+        "reference_wall_ms": 695.217631,
+        "candidate_wall_ms": 406.8583215
+      },
+      {
+        "label": "acknowledgment-xfs-64 MiB / synced",
+        "change_percent": {
+          "wall_ms": -42.721562654719925,
+          "cpu_ms": -42.94018725262085
+        },
+        "reference_wall_ms": 691.2258135,
+        "candidate_wall_ms": 395.9233445
+      },
+      {
+        "label": "attestation-tmpfs-256 MiB / acknowledged",
+        "change_percent": {
+          "wall_ms": -41.398123959807286,
+          "cpu_ms": -41.466612695804606
+        },
+        "reference_wall_ms": 2244.138274,
+        "candidate_wall_ms": 1315.1071295000002
+      },
+      {
+        "label": "attestation-tmpfs-256 MiB / uncertain",
+        "change_percent": {
+          "wall_ms": -42.089091906504414,
+          "cpu_ms": -42.137850239858174
+        },
+        "reference_wall_ms": 2267.497598,
+        "candidate_wall_ms": 1313.12845
+      },
+      {
+        "label": "cli-xfs-64 MiB-published / direct",
+        "change_percent": {
+          "wall_ms": -42.15378737566896,
+          "cpu_ms": -42.20085533989302
+        },
+        "reference_wall_ms": 698.8046159999999,
+        "candidate_wall_ms": 404.23200399999996
+      },
+      {
+        "label": "cli-xfs-64 MiB-published / cli",
+        "change_percent": {
+          "wall_ms": -34.947109237873384,
+          "cpu_ms": -37.228873929510634
+        },
+        "reference_wall_ms": 1173.773784,
+        "candidate_wall_ms": 763.5737775
+      },
+      {
+        "label": "cli-tmpfs-256 MiB-written / direct",
+        "change_percent": {
+          "wall_ms": -42.81589940985122,
+          "cpu_ms": -42.8420849345843
+        },
+        "reference_wall_ms": 2270.355286,
+        "candidate_wall_ms": 1298.2822505
+      },
+      {
+        "label": "cli-tmpfs-256 MiB-written / cli",
+        "change_percent": {
+          "wall_ms": -44.64956938163594,
+          "cpu_ms": -44.323357152048715
+        },
+        "reference_wall_ms": 4143.9461805,
+        "candidate_wall_ms": 2293.6920554999997
+      },
+      {
+        "label": "help / command",
+        "change_percent": {
+          "wall_ms": -4.183433292331418,
+          "cpu_ms": -2.605281941470372
+        },
+        "reference_wall_ms": 3.1503310019616038,
+        "candidate_wall_ms": 3.018539006006904
+      },
+      {
+        "label": "assess / command",
+        "change_percent": {
+          "wall_ms": 2.524503517672927,
+          "cpu_ms": 3.924956800789925
+        },
+        "reference_wall_ms": 4.470443003810942,
+        "candidate_wall_ms": 4.583299494697712
+      }
+    ],
+    "sha-host": [
+      {
+        "label": "normal-btrfs-64 MiB / owned",
+        "change_percent": {
+          "wall_ms": 1.1012816579827334,
+          "cpu_ms": 2.3965816885659352
+        },
+        "reference_wall_ms": 220.038578,
+        "candidate_wall_ms": 222.4618225
+      },
+      {
+        "label": "normal-btrfs-64 MiB / published",
+        "change_percent": {
+          "wall_ms": -0.5961519685345085,
+          "cpu_ms": 0.30382885643438495
+        },
+        "reference_wall_ms": 408.58306749999997,
+        "candidate_wall_ms": 406.14729150000005
+      },
+      {
+        "label": "recovery-btrfs-64 MiB / staged",
+        "change_percent": {
+          "wall_ms": -0.32686153689162056,
+          "cpu_ms": 0.636250440841124
+        },
+        "reference_wall_ms": 95.3399115,
+        "candidate_wall_ms": 95.02828199999999
+      },
+      {
+        "label": "recovery-btrfs-64 MiB / already renamed",
+        "change_percent": {
+          "wall_ms": -0.6487341001105151,
+          "cpu_ms": -0.5956382509621161
+        },
+        "reference_wall_ms": 87.7280075,
+        "candidate_wall_ms": 87.158886
+      },
+      {
+        "label": "attestation-btrfs-64 MiB / acknowledged",
+        "change_percent": {
+          "wall_ms": 1.021934909259481,
+          "cpu_ms": 0.9610499576626852
+        },
+        "reference_wall_ms": 77.3998415,
+        "candidate_wall_ms": 78.19081750000001
+      },
+      {
+        "label": "attestation-btrfs-64 MiB / uncertain",
+        "change_percent": {
+          "wall_ms": 0.3130914859269307,
+          "cpu_ms": -0.7343837331881486
+        },
+        "reference_wall_ms": 77.00944,
+        "candidate_wall_ms": 77.25055
+      },
+      {
+        "label": "acknowledgment-btrfs-64 MiB / written",
+        "change_percent": {
+          "wall_ms": -0.786648013538549,
+          "cpu_ms": -0.9694687592204931
+        },
+        "reference_wall_ms": 89.556382,
+        "candidate_wall_ms": 88.8518885
+      },
+      {
+        "label": "acknowledgment-btrfs-64 MiB / synced",
+        "change_percent": {
+          "wall_ms": 0.9688193251251143,
+          "cpu_ms": 1.206271781831858
+        },
+        "reference_wall_ms": 84.621196,
+        "candidate_wall_ms": 85.4410225
+      },
+      {
+        "label": "attestation-tmpfs-256 MiB / acknowledged",
+        "change_percent": {
+          "wall_ms": -0.9828009944531035,
+          "cpu_ms": -1.3382950963314655
+        },
+        "reference_wall_ms": 210.86344150000002,
+        "candidate_wall_ms": 208.79107349999998
+      },
+      {
+        "label": "attestation-tmpfs-256 MiB / uncertain",
+        "change_percent": {
+          "wall_ms": -0.2758504051020183,
+          "cpu_ms": -0.2864865387585236
+        },
+        "reference_wall_ms": 207.66763050000003,
+        "candidate_wall_ms": 207.09477850000002
+      },
+      {
+        "label": "cli-btrfs-64 MiB-published / direct",
+        "change_percent": {
+          "wall_ms": -0.5911738156195834,
+          "cpu_ms": -0.5295217779918815
+        },
+        "reference_wall_ms": 72.8860935,
+        "candidate_wall_ms": 72.45521
+      },
+      {
+        "label": "cli-btrfs-64 MiB-published / cli",
+        "change_percent": {
+          "wall_ms": 3.7161839503586647,
+          "cpu_ms": 3.858813006198414
+        },
+        "reference_wall_ms": 79.09373,
+        "candidate_wall_ms": 82.0329985
+      },
+      {
+        "label": "cli-tmpfs-256 MiB-written / direct",
+        "change_percent": {
+          "wall_ms": 0.568561504817855,
+          "cpu_ms": 0.5617588590755451
+        },
+        "reference_wall_ms": 202.93574049999998,
+        "candidate_wall_ms": 204.08955500000002
+      },
+      {
+        "label": "cli-tmpfs-256 MiB-written / cli",
+        "change_percent": {
+          "wall_ms": -1.4161958791513163,
+          "cpu_ms": -1.4178125044100875
+        },
+        "reference_wall_ms": 216.4108825,
+        "candidate_wall_ms": 213.34608050000003
+      },
+      {
+        "label": "help / command",
+        "change_percent": {
+          "wall_ms": 3.492860393814956,
+          "cpu_ms": -0.5376344086021501
+        },
+        "reference_wall_ms": 0.5355925022740848,
+        "candidate_wall_ms": 0.5543000006582588
+      },
+      {
+        "label": "assess / command",
+        "change_percent": {
+          "wall_ms": 7.181579530557025,
+          "cpu_ms": 3.750884642604402
+        },
+        "reference_wall_ms": 0.7845209984225221,
+        "candidate_wall_ms": 0.8408619978581555
+      }
+    ]
+  },
+  "assessment_controls": {
+    "wall_ms": {
+      "Original A/B initial": 5.250855871507998,
+      "Original A/B repeat": 7.181579530557025,
+      "Diagnostic A/A": 0.08521533550240878,
+      "Diagnostic A/B": -1.6204793570066545
+    },
+    "cpu_ms": {
+      "Original A/B initial": 3.2005689900426626,
+      "Original A/B repeat": 3.750884642604402,
+      "Diagnostic A/A": -0.13395847287339668,
+      "Diagnostic A/B": 0.2631578947368318
+    }
+  }
+}

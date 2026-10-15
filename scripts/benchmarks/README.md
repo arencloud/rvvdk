@@ -242,3 +242,25 @@ variation and are not confidence intervals. Emulated correctness is never native
 performance evidence. Keep native/probe lifetime RSS separate from CLI child RSS. Child high-water RSS
 can include inherited launcher memory before exec; PERF.1a records a diagnostic,
 so these counters must not be treated as isolated CLI working sets.
+
+[PERF.1b](../../docs/benchmark-results/2026-10-15-perf1b/README.md) adds native
+non-SHA fallback qualification, conditional-backend controls on both CPU profiles,
+and seven PNG/SVG pairs. `measure_hash_fallback.py` extends the micro matrix through
+512 MiB; `qualify_hash_candidate.py` exercises frozen library/CLI fixtures before
+timing. `measure_hash_workflows.py` supports explicit `--disk-fs xfs|btrfs` and
+`--disk-parent` (the earlier `--btrfs-parent` remains an alias).
+`measure_assessment_controls.py` records separately declared A/A and A/B startup
+diagnostics; these never replace the primary observations.
+
+```sh
+python3 scripts/benchmarks/check_hash_fallback.py docs/benchmark-results/2026-10-15-perf1b
+target/benchmark-plots/bin/python scripts/benchmarks/plot_hash_fallback.py docs/benchmark-results/2026-10-15-perf1b
+```
+
+The checker replays 3,120 observations, independent digests, frozen binary/log hashes
+and corruption rejections. Use normal Python execution: `-O` disables assertions
+used by the evidence validators. SHA-NI and non-SHA results are separate same-host
+comparisons. Changed guest resources are recorded; old/new or cross-host timing
+ratios cannot establish an implementation gain. No VMware credentials are accepted
+by these offline fixture tools. The shared tools still replay PERF.1a summaries
+byte-identically.

@@ -1,0 +1,29 @@
+{
+  "commands": [
+    "cargo fmt --all -- --check",
+    "cargo test --workspace --locked",
+    "cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "cargo build --release --locked -p rvvdk-cli"
+  ],
+  "exit_statuses": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "workspace_tests_passed": 807,
+  "workspace_tests_failed": 0,
+  "workspace_tests_ignored": 19,
+  "cargo_test_targets": 81,
+  "nested_child_test_results_excluded": 29,
+  "source_files_matching_measured_candidate": 297,
+  "log_sha256": {
+    "root-tests.txt": "0359d60ebc46177a51410408a7349ec04036825f13ceba23ccde398b66eb9947",
+    "root-clippy.txt": "4966c42438866183158eba5a1b61c432a3a671f50a9aeb869769c7e5822dc517",
+    "root-release.txt": "b1b2caaf096be336e6dc2b9c9317850940ad56b8856e1d7eb0fe4ae53e6ab840"
+  },
+  "release_cli_sha256": "edc96def448557b9144ca10dc3f5c0e316d8daab088a5c308d8e97de098d2052",
+  "release_cli_bytes": 3141384,
+  "scope": "Final root workspace checks after exact source promotion; all 297 source hashes match and the rebuilt release CLI is byte-identical to the frozen measured candidate.",
+  "release_cli_identical_to_measured_candidate": true
+}

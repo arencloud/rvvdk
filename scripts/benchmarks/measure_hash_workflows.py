@@ -20,6 +20,12 @@ CASES = [(kind, 'btrfs', 'stored_64', None) for kind in TESTS] + [
 ]
 
 
+def cases_for(filesystem):
+    assert filesystem in ['btrfs', 'xfs']
+    return [(kind, filesystem if fs == 'btrfs' else fs, fixture, history)
+            for kind, fs, fixture, history in CASES]
+
+
 def validate(report, run):
     medians = {}
     count = 0
@@ -60,7 +66,9 @@ def summarize(report):
             m = g[run['stage']].setdefault(mode, {})
             for key, value in metrics.items():
                 m.setdefault(key, []).append(value)
-    expected = {f'{k}-{fs}-{fix}' + (f'-{hist}' if hist else '') for k, fs, fix, hist in CASES} | {'help', 'assess'}
+    filesystem = load(report / 'workflow-environment.json').get('disk_filesystem', 'btrfs')
+    expected = {f'{k}-{fs}-{fix}' + (f'-{hist}' if hist else '')
+                for k, fs, fix, hist in cases_for(filesystem)} | {'help', 'assess'}
     assert set(groups) == expected and len(runs) == 54 and operations == 1152
     for name in expected:
         for stage, pairs in [('initial', 4), ('repeat', 8)]:
@@ -80,8 +88,10 @@ def summarize(report):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for key in ['reference', 'candidate', 'reference-cli', 'candidate-cli', 'report',
-                'private', 'btrfs-parent', 'tmpfs-parent']:
+                'private', 'tmpfs-parent']:
         parser.add_argument('--' + key, required=True, type=Path)
+    parser.add_argument('--disk-parent', '--btrfs-parent', dest='btrfs_parent', required=True, type=Path)
+    parser.add_argument('--disk-fs', choices=['btrfs', 'xfs'], default='btrfs')
     parser.add_argument('--resume-aux', action='store_true',
                         help='Retain the complete seven workflow groups and run only help/assessment')
     a = parser.parse_args()
@@ -89,7 +99,7 @@ def main():
         if isinstance(value, Path):
             setattr(a, key, value.resolve())
     assert a.resume_aux == (a.report / 'workflow-measurements.json').exists()
-    parents = {'btrfs': a.btrfs_parent, 'tmpfs': a.tmpfs_parent}
+    parents = {a.disk_fs: a.btrfs_parent, 'tmpfs': a.tmpfs_parent}
     for fs, parent in parents.items():
         assert subprocess.check_output(['stat', '-f', '-c', '%T', parent], text=True).strip() == fs
         assert not list(parent.iterdir())
@@ -97,7 +107,8 @@ def main():
     os.sched_setaffinity(0, {affinity[0]})
     environment = {
         'affinity': [affinity[0]], 'available_affinity': affinity,
-        'kernel': list(os.uname()), 'binary_sha256': {k: digest(getattr(a, k)) for k in
+        'kernel': {k: getattr(os.uname(), k) for k in ['sysname', 'release', 'version', 'machine']},
+        'disk_filesystem': a.disk_fs, 'binary_sha256': {k: digest(getattr(a, k)) for k in
             ['reference', 'candidate', 'reference_cli', 'candidate_cli']},
         'scripts': {Path(p).name: digest(Path(p)) for p in [__file__, native.__file__,
             'scripts/benchmarks/measure_attestation.py', 'scripts/benchmarks/measure_reconciliation.py',
@@ -123,7 +134,7 @@ def main():
         write(a.report / 'workflow-measurements.json', runs)
         print(run['group'], run['stage'], run['round'], flush=True)
 
-    for kind, fs, fixture, history in CASES:
+    for kind, fs, fixture, history in cases_for(a.disk_fs):
         if a.resume_aux:
             continue
         group = f'{kind}-{fs}-{fixture}' + (f'-{history}' if history else '')
@@ -180,7 +191,13 @@ def main():
                                 assert not data['data']['publication']['output']['pending_transaction']
                             if expected is None:
                                 expected = output
-                            assert output == expected
+                            if output != expected:
+                                # Keep timing diagnostics even when the output oracle rejects a command.
+                                write(a.report / f'failed-{group}-{stage}-{round_}.json', {
+                                    'completed_rows': rows, 'failed': {'pair': pair, 'binary': binary,
+                                        'metrics': metrics, 'oracle_passed': False},
+                                    'reason': 'command output differs after exact Usage-name normalization'})
+                                raise AssertionError('Command output oracle failed')
                             rows.append({'pair': pair, 'binary': binary, 'metrics': metrics, 'oracle_passed': True})
                     filename = f'workflow-{group}-{stage}-{round_}.json'
                     write(a.report / filename, rows)

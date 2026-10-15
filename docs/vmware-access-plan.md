@@ -411,9 +411,14 @@ following bounded packages in order:
    checks, frozen comparisons and unresolved timing variation.
    **PERF.1a complete:** [current SHA-NI host qualification](sha256-performance-qualification.md)
    retains `sha2` after digest checks and repeated hash/workflow/CLI comparisons; the isolated
-   `ring` experiment is rejected. **Next PERF.1b:** reconfirm the earlier runner without SHA-NI
-   and benchmark the same frozen builds natively on that runner. No new ESXi trial, license,
-   VM or vCenter is required; runner access is needed for native performance evidence.
+   `ring` experiment is rejected. **PERF.1b complete:** [native fallback qualification](sha256-fallback-qualification.md)
+   adopts conditional hashing in three retained bulk paths, preserving SHA-NI behavior.
+   The existing guest now exposes 2 CPUs/8 GiB; both sides use that current configuration,
+   without historical timing ratios. No ESXi operation or VM change was performed.
+   **Next PERF.1c:** separately audit and qualify remaining transfer/worker bulk hashes
+   with frozen same-host comparisons and complete correctness/control/persistence gates.
+   Existing native runner access is sufficient for local/loopback qualification; no new
+   ESXi trial, license, VM or vCenter is required. Live export remains a separate scope.
    Live retained-artifact command qualification, capacity proof and general production R6
    recovery remain open.
 6. Keep online snapshots, multi-disk consistency, CBT, restore, vCenter and vSphere 9

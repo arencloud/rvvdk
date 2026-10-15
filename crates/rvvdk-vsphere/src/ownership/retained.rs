@@ -250,7 +250,7 @@ fn members(
 fn verify_bytes(mut file: File, metadata: &ExportArtifact, control: &Control<'_>) -> Result<()> {
     let mut left = metadata.container_bytes();
     let mut buffer = vec![0; 1 << 20];
-    let mut hash = Sha256::new();
+    let mut hash = crate::payload_hash::Sha256::new();
     while left > 0 {
         control.check()?;
         let n = left.min(buffer.len() as u64) as usize;
@@ -261,7 +261,7 @@ fn verify_bytes(mut file: File, metadata: &ExportArtifact, control: &Control<'_>
     }
     let size = file.metadata().map_err(|_| OwnershipError::Io)?.len();
     metadata
-        .check_container(size, &hash.finalize().into())
+        .check_container(size, &hash.finalize())
         .map_err(|_| OwnershipError::Content)?;
     control.check()
 }

@@ -1,5 +1,10 @@
 # SHA-256 backend qualification
 
+Historical PERF.1a decision. [PERF.1b](sha256-fallback-qualification.md) subsequently
+qualifies a conditional fallback on native non-SHA hardware, while preserving the
+accepted accelerated backend. The results and rejected unconditional patch
+below remain unchanged.
+
 PERF.1a, completed 2026-10-15; measurements began 2026-10-14. Baseline:
 `95ca5245a60438965bec71a461687d41b6ce292d`. This is a bounded performance
 investigation with a rejected experimental backend. Production continues to use
@@ -61,7 +66,7 @@ experiment. Private tmpfs is a timing/allocation control, not durable storage.
 CPU affinity is fixed; host activity, frequency and SMT are not isolated. All
 slower results and initial/repeat spread remain recorded. PERF.0 stays open.
 
-## Next package: PERF.1b
+## Recorded continuation: PERF.1b (now complete)
 
 Qualify the earlier runner without SHA-NI before selecting any alternate fallback:
 

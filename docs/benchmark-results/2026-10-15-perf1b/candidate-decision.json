@@ -1,0 +1,12 @@
+{
+  "decision": "Proceed with a private feature-aware candidate based on three completed repeated bulk groups; full matrix remains required before promotion.",
+  "completed_group_wall_changes_percent": {
+    "chunk64k": -46.94,
+    "dense64": -43.22,
+    "sparse64": -45.67
+  },
+  "larger_groups": "Still running at candidate creation; retained, no early stopping.",
+  "scope": "Same three retained bulk contexts as PERF.1a. x86-64 with all sha2 SHA-NI prerequisites keeps sha2; otherwise ring SHA-256. Other architectures keep sha2. Identity/journal/TLS/export/worker hashes unchanged.",
+  "additional_test_harness_change": "Existing cross-filesystem test honors RVVDK_RETAINED_PARENT so a frozen test executable can run on the guest without its compile-time checkout path. No production behavior change.",
+  "promotion_gate": "All native hash groups; guest correctness/fault/cancellation/CLI tests and 1152 end-to-end observations; SHA-NI host full workspace checks and 1152 end-to-end observations; retain or investigate every adverse result/variance."
+}

@@ -135,7 +135,7 @@ fn main() {
             let pairs: usize = args[5].parse().unwrap();
             let sparse = args[6] == "sparse";
             assert!(
-                (1..=256 << 20).contains(&size)
+                (1..=512 << 20).contains(&size)
                     && chunk > 0
                     && (1..=1_000_000).contains(&iterations)
                     && (1..=64).contains(&pairs)
